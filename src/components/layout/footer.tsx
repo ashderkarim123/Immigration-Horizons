@@ -17,13 +17,20 @@ export function Footer() {
       <Container width="wide" className="py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="flex max-w-sm flex-col gap-5">
-            <Link href="/" aria-label="Immigration Horizons — home">
+            {/* The logo is full-colour navy + gold on transparency, so it needs
+                a light backing to read on the navy footer — recolouring it to a
+                flat white silhouette would lose the mark entirely. */}
+            <Link
+              href="/"
+              aria-label="Immigration Horizons — home"
+              className="inline-flex w-fit rounded-xl bg-white px-4 py-3 shadow-subtle"
+            >
               <Image
                 src="/images/logo-header.png"
                 alt="Immigration Horizons"
                 width={551}
                 height={320}
-                className="h-12 w-auto brightness-0 invert"
+                className="h-14 w-auto"
               />
             </Link>
             <p className="font-display text-gold-300 text-lg">{site.tagline}</p>

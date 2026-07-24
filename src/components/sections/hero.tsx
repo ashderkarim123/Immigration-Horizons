@@ -24,7 +24,7 @@ export function Hero() {
       />
 
       <Container width="wide" className="relative py-20 sm:py-24 lg:py-28">
-        <div className="grid items-center gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <Reveal className="flex flex-col gap-6">
             <Eyebrow className="text-gold-300">
               Employment-Based U.S. Immigration
@@ -84,8 +84,11 @@ export function Hero() {
             </a>
           </Reveal>
 
-          <Reveal delay={0.14} className="lg:pl-4">
-            <HeroVisual />
+          <Reveal
+            delay={0.14}
+            className="flex justify-center lg:justify-end"
+          >
+            <HeroVisual className="max-w-sm sm:max-w-md lg:max-w-lg" />
           </Reveal>
         </div>
       </Container>

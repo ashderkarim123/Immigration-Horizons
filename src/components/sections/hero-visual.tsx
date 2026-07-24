@@ -56,9 +56,12 @@ const evidenceCards = [
   },
 ];
 
-export function HeroVisual() {
+export function HeroVisual({ className }: { className?: string }) {
   return (
-    <div className="relative mx-auto w-full max-w-md" aria-hidden>
+    <div
+      className={`relative mx-auto w-full max-w-md ${className ?? ""}`}
+      aria-hidden
+    >
       <svg
         viewBox="0 0 200 200"
         className="h-auto w-full"
