@@ -1,0 +1,234 @@
+@import "tailwindcss";
+
+/*
+  Immigration Horizons — Global Design System
+  ------------------------------------------------------------------
+  Light-only by design. This is a trust-led professional brand; an
+  auto-inverting dark theme would undermine the navy/gold identity,
+  so the scaffold's prefers-color-scheme switch is intentionally gone.
+*/
+
+@theme {
+  /* ---------- Brand: Navy (primary) ---------- */
+  --color-navy-50: #f3f6fb;
+  --color-navy-100: #e4ebf5;
+  --color-navy-200: #c6d5e9;
+  --color-navy-300: #9cb2d3;
+  --color-navy-400: #6a88b5;
+  --color-navy-500: #446498;
+  --color-navy-600: #2e4c7b;
+  --color-navy-700: #223a61;
+  --color-navy-800: #152c54; /* brand navy */
+  --color-navy-900: #0f1f3d;
+  --color-navy-950: #08132a;
+
+  /* ---------- Brand: Gold (secondary) ----------
+     500 is the brand gold. It fails AA as text on white (~2.6:1), so it
+     is reserved for fills, rules, and ornament. Gold text on light
+     surfaces must use 700+; on navy surfaces use 300/400. */
+  --color-gold-50: #fbf7ec;
+  --color-gold-100: #f7ecd3;
+  --color-gold-200: #efdba6;
+  --color-gold-300: #e4c46f;
+  --color-gold-400: #d6ac46;
+  --color-gold-500: #c9992e; /* brand gold */
+  --color-gold-600: #a67c1e;
+  --color-gold-700: #83601a;
+  --color-gold-800: #674c1b;
+  --color-gold-900: #563f1b;
+
+  /* ---------- Neutrals ---------- */
+  --color-ink-50: #f7f8fa;
+  --color-ink-100: #eff1f5;
+  --color-ink-200: #e1e5ec;
+  --color-ink-300: #c9d0db;
+  --color-ink-400: #98a2b3;
+  --color-ink-500: #6b7688;
+  --color-ink-600: #4d5766;
+  --color-ink-700: #38414e;
+  --color-ink-800: #252c36;
+  --color-ink-900: #141922;
+
+  /* ---------- Typography ---------- */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-source-serif), ui-serif, Georgia, serif;
+
+  /* Display scale — used for hero and section headings.
+     Paired line-heights and tracking keep large type optically tight. */
+  --text-display-2xl: 4.5rem;
+  --text-display-2xl--line-height: 1.04;
+  --text-display-2xl--letter-spacing: -0.022em;
+  --text-display-xl: 3.5rem;
+  --text-display-xl--line-height: 1.07;
+  --text-display-xl--letter-spacing: -0.02em;
+  --text-display-lg: 2.75rem;
+  --text-display-lg--line-height: 1.12;
+  --text-display-lg--letter-spacing: -0.018em;
+  --text-display-md: 2.125rem;
+  --text-display-md--line-height: 1.18;
+  --text-display-md--letter-spacing: -0.014em;
+  --text-display-sm: 1.625rem;
+  --text-display-sm--line-height: 1.25;
+  --text-display-sm--letter-spacing: -0.01em;
+
+  /* Body scale */
+  --text-lead: 1.1875rem;
+  --text-lead--line-height: 1.68;
+
+  /* ---------- Radii ---------- */
+  --radius-card: 1rem;
+  --radius-panel: 1.5rem;
+
+  /* ---------- Elevation — navy-tinted, deliberately soft ---------- */
+  --shadow-subtle: 0 1px 2px rgba(15, 31, 61, 0.04),
+    0 4px 12px rgba(15, 31, 61, 0.05);
+  --shadow-card: 0 2px 4px rgba(15, 31, 61, 0.04),
+    0 12px 28px rgba(15, 31, 61, 0.07);
+  --shadow-lifted: 0 4px 8px rgba(15, 31, 61, 0.05),
+    0 24px 48px rgba(15, 31, 61, 0.11);
+
+  /* ---------- Motion ----------
+     Decorative animations are CSS-only so the hero illustration costs no
+     JavaScript and cannot shift layout. All are suppressed by the
+     prefers-reduced-motion block below. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-float-slow: float-slow 7s ease-in-out infinite;
+  --animate-pulse-dot: pulse-dot 3.2s ease-in-out infinite;
+
+  /* Sweeping the ellipse radius is what sells rotation on a wireframe
+     globe — each meridian is offset in time so the set reads as one
+     turning sphere. `rx` is an animatable SVG presentation attribute, so
+     this needs no JavaScript. */
+  @keyframes meridian-sweep {
+    0%,
+    100% {
+      rx: 68;
+      opacity: 0.5;
+    }
+    50% {
+      rx: 3;
+      opacity: 0.22;
+    }
+  }
+
+  @keyframes float-slow {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-9px);
+    }
+  }
+
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 0.35;
+      r: 2.5;
+    }
+    50% {
+      opacity: 1;
+      r: 4;
+    }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Offset anchor targets so a sticky header never covers a heading. */
+    scroll-padding-top: 6rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-white);
+    color: var(--color-ink-700);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-navy-800);
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  /* A single, consistent focus ring across every interactive element.
+     Visible on both light and navy surfaces. */
+  :focus-visible {
+    outline: 2px solid var(--color-gold-500);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-navy-800);
+    color: var(--color-white);
+  }
+}
+
+/*
+  Scroll-driven entrance animations.
+
+  Everything sits inside @supports so that a browser without scroll-driven
+  animations (currently Firefox) renders content fully visible rather than
+  stuck at opacity 0. Never move the `opacity: 0` outside this guard.
+*/
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .ih-reveal {
+      opacity: 0;
+      animation: ih-rise 1ms linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 26%;
+    }
+
+    /* Cascade grid children instead of revealing the whole row at once. */
+    .ih-reveal-group > .ih-reveal {
+      animation-range: entry 0% cover 30%;
+    }
+    .ih-reveal-group > .ih-reveal:nth-child(2) {
+      animation-range: entry 2% cover 33%;
+    }
+    .ih-reveal-group > .ih-reveal:nth-child(3) {
+      animation-range: entry 4% cover 36%;
+    }
+    .ih-reveal-group > .ih-reveal:nth-child(4) {
+      animation-range: entry 6% cover 39%;
+    }
+    .ih-reveal-group > .ih-reveal:nth-child(n + 5) {
+      animation-range: entry 8% cover 42%;
+    }
+  }
+}
+
+@keyframes ih-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
