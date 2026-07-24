@@ -24,14 +24,19 @@ export function Faqs({
   eyebrow = "Questions",
   title = "Frequently asked questions",
   description = "Straight answers on eligibility, scope, and what we can and cannot do. If yours is not here, ask us directly.",
+  tone = "tint",
+  id,
 }: {
   faqs: Faq[];
   eyebrow?: string;
   title?: string;
   description?: string;
+  /** Set to "white" when the preceding section is already tinted. */
+  tone?: "tint" | "white";
+  id?: string;
 }) {
   return (
-    <Section tone="tint">
+    <Section id={id} tone={tone} className={id ? "scroll-mt-28" : undefined}>
       <SectionHeading eyebrow={eyebrow} title={title} description={description} />
 
       <div className="mx-auto mt-14 max-w-3xl">

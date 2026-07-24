@@ -1,10 +1,33 @@
-import { Check, X } from "lucide-react";
+import {
+  Check,
+  Cpu,
+  FlaskConical,
+  GraduationCap,
+  HardHat,
+  Rocket,
+  Stethoscope,
+  UserRoundCog,
+  Users,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { SnippetAnswer } from "@/components/ui/snippet-answer";
 import { whoCanApply, whoWeDontHelp } from "@/lib/content/brand";
+
+// Icons mapped by audience title order — a quiet visual cue per profession.
+const audienceIcons = [
+  HardHat, // Engineers
+  FlaskConical, // Researchers & scientists
+  Stethoscope, // Physicians
+  Cpu, // AI & data
+  GraduationCap, // Professors
+  Rocket, // Entrepreneurs
+  UserRoundCog, // Executives
+  Users, // Attorneys & paralegals
+];
 
 export function WhoCanApply() {
   return (
@@ -33,18 +56,27 @@ export function WhoCanApply() {
         </h3>
 
         <RevealGroup className="grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
-          {whoCanApply.map((audience) => (
-            <RevealItem key={audience.title}>
-              <div className="flex flex-col gap-2.5">
-                <h4 className="font-display text-navy-800 text-lg font-semibold">
-                  {audience.title}
-                </h4>
-                <p className="text-ink-600 text-[0.9375rem] leading-relaxed text-pretty">
-                  {audience.body}
-                </p>
-              </div>
-            </RevealItem>
-          ))}
+          {whoCanApply.map((audience, index) => {
+            const Icon = audienceIcons[index] ?? Users;
+            return (
+              <RevealItem key={audience.title}>
+                <div className="flex flex-col gap-3">
+                  <span
+                    aria-hidden
+                    className="bg-navy-50 text-navy-700 inline-flex h-11 w-11 items-center justify-center rounded-xl"
+                  >
+                    <Icon size={20} strokeWidth={1.75} />
+                  </span>
+                  <h4 className="font-display text-navy-800 text-lg font-semibold">
+                    {audience.title}
+                  </h4>
+                  <p className="text-ink-600 text-[0.9375rem] leading-relaxed text-pretty">
+                    {audience.body}
+                  </p>
+                </div>
+              </RevealItem>
+            );
+          })}
         </RevealGroup>
       </div>
 
