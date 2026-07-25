@@ -1,0 +1,124 @@
+<%
+const pageTitle = 'Leads';
+const currentPage = 'leads';
+%>
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>Leads</h1>
+    <p class="page-subtitle"><%= total %> total consultation requests</p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/leads/export/csv?status=<%= statusFilter %>&service=<%= serviceFilter %>&search=<%= encodeURIComponent(search) %>" class="btn btn-ghost btn-sm">
+      <i class="fas fa-download"></i> Export CSV
+    </a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+  <form method="GET" action="/admin/leads" class="filter-form">
+    <div class="search-input-wrap">
+      <i class="fas fa-search"></i>
+      <input type="text" name="search" class="search-input" placeholder="Search by name, email, or phone..." value="<%= search %>" autocomplete="off">
+    </div>
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All Statuses</option>
+      <% leadStatuses.forEach(function(s) { %>
+        <option value="<%= s %>" <%= statusFilter === s ? 'selected' : '' %>><%= s.replace('_', ' ') %></option>
+      <% }); %>
+    </select>
+    <select name="service" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= serviceFilter === 'all' ? 'selected' : '' %>>All Services</option>
+      <% serviceCategories.forEach(function(s) { %>
+        <option value="<%= s %>" <%= serviceFilter === s ? 'selected' : '' %>><%= s %></option>
+      <% }); %>
+    </select>
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
+  </form>
+</div>
+
+<!-- Leads Table -->
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <% if (!leads.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>No leads found</h3>
+        <p><%= search ? 'Try a different search term.' : 'Waiting for consultation requests to come in.' %></p>
+      </div>
+    <% } else { %>
+      <div class="admin-table-wrap">
+        <table class="admin-table leads-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Service</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th class="shrink">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% leads.forEach(function(lead) { %>
+              <tr class="clickable-row" data-href="/admin/leads/<%= lead._id %>">
+                <td>
+                  <span class="cell-title"><%= lead.name %></span>
+                  <% if (lead.occupation) { %><span class="cell-sub"><%= lead.occupation %></span><% } %>
+                </td>
+                <td><span class="cell-email"><%= lead.email %></span></td>
+                <td><%= lead.phone || '—' %></td>
+                <td><%= lead.service || '—' %></td>
+                <td>
+                  <span class="badge badge-<%= lead.status || 'new' %>"><%= (lead.status || 'new').replace('_', ' ') %></span>
+                </td>
+                <td><%= new Date(lead.createdAt).toLocaleDateString() %></td>
+                <td class="cell-actions">
+                  <a href="/admin/leads/<%= lead._id %>" class="btn btn-sm btn-ghost" title="View Details">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently?');" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+  <% if (totalPages > 1) { %>
+    <div class="admin-card-footer">
+      <div class="admin-pagination">
+        <span class="page-info">Page <%= page %> of <%= totalPages %> (<%= total %> total)</span>
+        <div class="page-buttons">
+          <% if (page > 1) { %>
+            <a href="?page=<%= page - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= serviceFilter !== 'all' ? '&service=' + serviceFilter : '' %>" class="page-link">&laquo; Prev</a>
+          <% } %>
+          <% for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) { %>
+            <a href="?page=<%= p %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= serviceFilter !== 'all' ? '&service=' + serviceFilter : '' %>" class="page-link <%= p === page ? 'active' : '' %>"><%= p %></a>
+          <% } %>
+          <% if (page < totalPages) { %>
+            <a href="?page=<%= page + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= serviceFilter !== 'all' ? '&service=' + serviceFilter : '' %>" class="page-link">Next &raquo;</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.clickable-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('a, button, form')) return;
+      window.location.href = this.dataset.href;
+    });
+  });
+});
+</script>

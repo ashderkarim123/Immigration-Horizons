@@ -1,0 +1,44 @@
+<div class="page-header">
+  <div>
+    <h1>SEO Manager</h1>
+    <p class="page-subtitle">Manage SEO metadata for all pages</p>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Page</th>
+            <th>SEO Title</th>
+            <th>Meta Description</th>
+            <th>Status</th>
+            <th class="shrink">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% pages.forEach(function(p) { %>
+            <% var meta = seoMap[p.ref]; %>
+            <tr>
+              <td><span class="cell-title"><%= p.label %></span><span class="cell-sub"><%= p.pageType || 'static' %></span></td>
+              <td><%= meta ? (meta.seoTitle || '—') : '—' %></td>
+              <td style="max-width:300px"><%= meta ? (meta.metaDescription ? meta.metaDescription.slice(0,80) + (meta.metaDescription.length > 80 ? '…' : '') : '—') : '—' %></td>
+              <td>
+                <% if (meta) { %>
+                  <span class="badge badge-published">Configured</span>
+                <% } else { %>
+                  <span class="badge badge-draft">Not Set</span>
+                <% } %>
+              </td>
+              <td class="cell-actions">
+                <a href="/admin/seo/<%= p.ref %>/edit" class="btn btn-sm btn-ghost"><i class="fas fa-edit"></i> Edit</a>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,32 @@
+<div class="page-header">
+  <div>
+    <h1>Contact Form &amp; Integrations</h1>
+    <p class="page-subtitle">Live status of the systems that receive your leads</p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/settings" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> Back to settings</a>
+  </div>
+</div>
+
+<div class="alert alert-info">
+  <i class="fas fa-info-circle"></i>
+  <span>This page is read-only. It shows whether each integration is configured — it does not change them.</span>
+</div>
+
+<div class="stat-grid">
+  <% Object.keys(integrations).forEach(function(k) { var it = integrations[k]; var ok = (it.status === 'connected' || it.status === 'configured'); %>
+    <div class="stat-card">
+      <div class="label"><i class="fas fa-<%= k === 'mongodb' ? 'database' : (k === 'googleSheets' ? 'table' : 'envelope') %>"></i> <%= it.label %></div>
+      <div class="value" style="font-size:1.1rem;margin-top:12px">
+        <span class="badge <%= ok ? 'badge-on' : 'badge-off' %>">
+          <i class="fas fa-<%= ok ? 'check-circle' : 'times-circle' %>"></i> <%= it.status %>
+        </span>
+      </div>
+      <div class="sub">
+        <% if (k === 'mongodb') { %>Stores every lead and blog post.
+        <% } else if (k === 'googleSheets') { %>Appends each lead as a spreadsheet row.
+        <% } else { %>Emails you a notification on each new lead.<% } %>
+      </div>
+    </div>
+  <% }); %>
+</div>

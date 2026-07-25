@@ -1,0 +1,75 @@
+<div class="page-header">
+  <div>
+    <h1><%= testimonial ? 'Edit Testimonial' : 'New Testimonial' %></h1>
+    <p class="page-subtitle"><%= testimonial ? 'Update this testimonial' : 'Add a client testimonial' %></p>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body">
+    <form action="/admin/testimonials<%= testimonial ? '/' + testimonial._id + '?_method=PUT' : '' %>" method="POST" enctype="multipart/form-data" class="admin-form">
+      <div class="admin-form-grid">
+        <div class="admin-form-group">
+          <label>Client Name</label>
+          <input type="text" name="name" class="form-control" value="<%= testimonial ? testimonial.name : '' %>" required>
+        </div>
+        <div class="admin-form-group">
+          <label>Country</label>
+          <input type="text" name="country" class="form-control" value="<%= testimonial ? testimonial.country : '' %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Profession / Occupation</label>
+          <input type="text" name="profession" class="form-control" value="<%= testimonial ? testimonial.profession : '' %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Rating (1–5)</label>
+          <input type="number" name="rating" class="form-control" min="1" max="5" value="<%= testimonial ? testimonial.rating : 5 %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Verification URL</label>
+          <input type="url" name="verificationUrl" class="form-control" value="<%= testimonial ? testimonial.verificationUrl : '' %>" placeholder="Link to public review">
+        </div>
+        <div class="admin-form-group">
+          <label>Display Order</label>
+          <input type="number" name="displayOrder" class="form-control" value="<%= testimonial ? testimonial.displayOrder : 0 %>">
+        </div>
+      </div>
+
+      <div class="admin-form-group full-width">
+        <label>Review</label>
+        <textarea name="review" class="form-control" rows="5" required><%= testimonial ? testimonial.review : '' %></textarea>
+      </div>
+
+      <div class="admin-form-grid">
+        <div class="admin-form-group full-width">
+          <label>Client Photo (optional)</label>
+          <input type="file" name="photo" class="form-control" accept="image/*">
+          <% if (testimonial && testimonial.photo) { %>
+            <span class="form-hint">Current: <a href="<%= testimonial.photo %>" target="_blank"><%= testimonial.photo %></a></span>
+          <% } %>
+        </div>
+        <div class="admin-form-group">
+          <label>Status</label>
+          <select name="status" class="form-control">
+            <% ['published','draft','archived'].forEach(function(s) { %>
+              <option value="<%= s %>" <%= testimonial && testimonial.status === s ? 'selected' : '' %>><%= s %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="admin-form-group">
+          <label class="toggle-switch">
+            <input type="hidden" name="featured" value="false">
+            <input type="checkbox" name="featured" value="true" <%= testimonial && testimonial.featured ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            <span>Featured</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="admin-form-actions">
+        <a href="/admin/testimonials" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <%= testimonial ? 'Update' : 'Create' %></button>
+      </div>
+    </form>
+  </div>
+</div>

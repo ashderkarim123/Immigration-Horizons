@@ -1,0 +1,39 @@
+<div class="page-header">
+  <div>
+    <h1>New Admin User</h1>
+    <p class="page-subtitle">Create a named, role-based admin account</p>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body">
+    <form action="/admin/users" method="POST" class="admin-form">
+      <div class="admin-form-grid">
+        <div class="admin-form-group">
+          <label>Name</label>
+          <input type="text" name="name" class="form-control" value="<%= user ? user.name : '' %>" required>
+        </div>
+        <div class="admin-form-group">
+          <label>Email</label>
+          <input type="email" name="email" class="form-control" value="<%= user ? user.email : '' %>" required>
+        </div>
+        <div class="admin-form-group">
+          <label>Password</label>
+          <input type="password" name="password" class="form-control" required>
+        </div>
+        <div class="admin-form-group">
+          <label>Role</label>
+          <select name="role" class="form-control">
+            <% ['editor','admin','super_admin'].forEach(function(r) { %>
+              <option value="<%= r %>" <%= user && user.role === r ? 'selected' : '' %>><%= r %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+      <div class="admin-form-actions">
+        <a href="/admin/users" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create User</button>
+      </div>
+    </form>
+  </div>
+</div>

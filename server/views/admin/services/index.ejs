@@ -1,0 +1,43 @@
+<div class="page-header">
+  <div>
+    <h1>Services</h1>
+    <p class="page-subtitle">Manage service page SEO and content</p>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Service</th><th>Slug</th><th>SEO status</th><th class="shrink">Actions</th></tr>
+        </thead>
+        <tbody>
+          <% services.forEach(function(s) { %>
+            <% var ref = 'service-' + s.slug; var seo = seoMap[ref]; %>
+            <tr>
+              <td><span class="cell-title"><%= s.name %></span><span class="cell-sub"><%= s.tagline || '' %></span></td>
+              <td>/services/<%= s.slug %></td>
+              <td>
+                <% if (seo && seo.seoTitle) { %>
+                  <span class="badge badge-published">Configured</span>
+                <% } else { %>
+                  <span class="badge badge-draft">Default</span>
+                <% } %>
+              </td>
+              <td class="cell-actions">
+                <a href="/services/<%= s.slug %>" target="_blank" class="btn btn-sm btn-ghost" title="View"><i class="fas fa-eye"></i></a>
+                <a href="/admin/seo/service-<%= s.slug %>/edit" class="btn btn-sm btn-ghost" title="Edit SEO"><i class="fas fa-search-plus"></i> SEO</a>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-info" style="margin-top:20px">
+  <i class="fas fa-info-circle"></i>
+  <span>Service copy (hero, eligibility, deliverables) is currently defined in the site content. Use the SEO editor above to override per-service search metadata.</span>
+</div>

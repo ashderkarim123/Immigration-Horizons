@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Admin | Immigration Horizons' %></title>
+
+  <!-- Font Awesome 5 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Admin Styles -->
+  <link rel="stylesheet" href="/css/admin.css">
+
+  <% if (typeof extraStyles !== 'undefined' && extraStyles) { %>
+    <%= extraStyles %>
+  <% } %>
+</head>
+<body class="admin-body">
+  <div class="admin-wrapper">
+    <!-- Sidebar -->
+    <%- include('partials/sidebar') %>
+
+    <!-- Main Content Area -->
+    <div class="admin-main">
+      <!-- Topbar -->
+      <%- include('partials/topbar') %>
+
+      <!-- Page Content -->
+      <main class="admin-content">
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-danger alert-dismissible" role="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            <span><%= error %></span>
+            <button type="button" class="alert-close" data-dismiss="alert">&times;</button>
+          </div>
+        <% } %>
+
+        <% if (typeof success !== 'undefined' && success) { %>
+          <div class="alert alert-success alert-dismissible" role="alert">
+            <i class="fas fa-check-circle"></i>
+            <span><%= success %></span>
+            <button type="button" class="alert-close" data-dismiss="alert">&times;</button>
+          </div>
+        <% } %>
+
+        <%- typeof body !== 'undefined' ? body : '' %>
+      </main>
+
+      <!-- Footer -->
+      <footer class="admin-footer">
+        <div class="footer-left">
+          &copy; <%= new Date().getFullYear() %> Immigration Horizons. All rights reserved.
+        </div>
+        <div class="footer-right">
+          <span>v1.0</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Simple alert dismiss
+    document.addEventListener('DOMContentLoaded', function() {
+      var closeBtns = document.querySelectorAll('.alert-close');
+      closeBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          this.parentElement.style.display = 'none';
+        });
+      });
+
+      // Sidebar toggle
+      var toggleBtn = document.getElementById('sidebarToggle');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+          document.querySelector('.admin-wrapper').classList.toggle('sidebar-collapsed');
+        });
+      }
+    });
+  </script>
+
+  <% if (typeof extraScripts !== 'undefined' && extraScripts) { %>
+    <%= extraScripts %>
+  <% } %>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<%
+// Helper: read a saved setting value or fall back to empty.
+function val(group, key) {
+  return (settings && settings[group] && settings[group][key] != null) ? settings[group][key] : '';
+}
+const sections = [
+  {
+    group: 'general', title: 'Company', icon: 'building',
+    fields: [
+      ['companyName', 'Company Name', 'text'],
+      ['phone', 'Phone', 'text'],
+      ['email', 'Email', 'email'],
+      ['whatsapp1', 'WhatsApp 1', 'text'],
+      ['whatsapp2', 'WhatsApp 2', 'text'],
+      ['address', 'Address', 'text'],
+    ],
+  },
+  {
+    group: 'social', title: 'Social Media', icon: 'share-alt',
+    fields: [
+      ['facebook', 'Facebook', 'url'],
+      ['instagram', 'Instagram', 'url'],
+      ['linkedin', 'LinkedIn', 'url'],
+      ['youtube', 'YouTube', 'url'],
+      ['x', 'X (Twitter)', 'url'],
+    ],
+  },
+  {
+    group: 'analytics', title: 'Analytics', icon: 'chart-line',
+    fields: [
+      ['ga4Id', 'Google Analytics ID', 'text'],
+      ['gtmId', 'Google Tag Manager ID', 'text'],
+      ['metaPixelId', 'Meta Pixel ID', 'text'],
+      ['searchConsole', 'Search Console Verification', 'text'],
+    ],
+  },
+  {
+    group: 'seo_defaults', title: 'SEO Defaults', icon: 'search',
+    fields: [
+      ['metaTitle', 'Default Meta Title', 'text'],
+      ['metaDescription', 'Default Meta Description', 'text'],
+      ['organizationName', 'Organization Name', 'text'],
+      ['organizationLogo', 'Organization Logo URL', 'url'],
+      ['ogImage', 'Default OG Image URL', 'url'],
+    ],
+  },
+  {
+    group: 'contact_form', title: 'Contact', icon: 'envelope',
+    fields: [
+      ['smtpEmail', 'SMTP Email', 'email'],
+      ['gmailAddress', 'Gmail Address', 'email'],
+    ],
+  },
+];
+%>
+
+<div class="page-header">
+  <div>
+    <h1>Settings</h1>
+    <p class="page-subtitle">Site-wide configuration</p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/contact-form" class="btn btn-ghost btn-sm"><i class="fas fa-plug"></i> Integrations status</a>
+  </div>
+</div>
+
+<% sections.forEach(function(sec) { %>
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <h2><i class="fas fa-<%= sec.icon %>"></i> <%= sec.title %></h2>
+    </div>
+    <div class="admin-card-body">
+      <form action="/admin/settings" method="POST" class="admin-form">
+        <input type="hidden" name="group" value="<%= sec.group %>">
+        <div class="admin-form-grid">
+          <% sec.fields.forEach(function(f) { %>
+            <div class="admin-form-group">
+              <label><%= f[1] %></label>
+              <input type="<%= f[2] %>" name="<%= f[0] %>" class="form-control" value="<%= val(sec.group, f[0]) %>">
+            </div>
+          <% }); %>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save <%= sec.title %></button>
+        </div>
+      </form>
+    </div>
+  </div>
+<% }); %>

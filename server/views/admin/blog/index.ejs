@@ -1,0 +1,97 @@
+<div class="page-header">
+  <div>
+    <h1>Blog Posts</h1>
+    <p class="page-subtitle"><%= total %> posts</p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/blog/new" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Post</a>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/admin/blog" class="filter-form">
+    <div class="search-input-wrap">
+      <i class="fas fa-search"></i>
+      <input type="text" name="search" class="search-input" placeholder="Search posts..." value="<%= search %>" autocomplete="off">
+    </div>
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All</option>
+      <option value="published" <%= statusFilter === 'published' ? 'selected' : '' %>>Published</option>
+      <option value="draft" <%= statusFilter === 'draft' ? 'selected' : '' %>>Drafts</option>
+    </select>
+    <select name="category" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= categoryFilter === 'all' ? 'selected' : '' %>>All Categories</option>
+      <% categories.forEach(function(c) { %>
+        <option value="<%= c %>" <%= categoryFilter === c ? 'selected' : '' %>><%= c %></option>
+      <% }); %>
+    </select>
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
+  </form>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <% if (!posts.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-edit"></i>
+        <h3>No posts found</h3>
+        <p><%= search ? 'Try a different search term.' : 'Create your first blog post.' %></p>
+        <a href="/admin/blog/new" class="btn btn-primary">Create Post</a>
+      </div>
+    <% } else { %>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Title</th><th>Category</th><th>Author</th><th>Status</th><th>Date</th><th class="shrink">Actions</th></tr>
+          </thead>
+          <tbody>
+            <% posts.forEach(function(post) { %>
+              <tr>
+                <td>
+                  <span class="cell-title"><%= post.title %></span>
+                  <% if (post.slug) { %><span class="cell-sub">/<%= post.slug %></span><% } %>
+                </td>
+                <td><%= post.category || '—' %></td>
+                <td><%= post.author || '—' %></td>
+                <td>
+                  <span class="badge <%= post.published ? 'badge-published' : 'badge-draft' %>"><%= post.published ? 'Published' : 'Draft' %></span>
+                </td>
+                <td><%= new Date(post.createdAt).toLocaleDateString() %></td>
+                <td class="cell-actions">
+                  <a href="/blog/<%= post.slug %>" target="_blank" class="btn btn-sm btn-ghost" title="View"><i class="fas fa-eye"></i></a>
+                  <a href="/admin/blog/<%= post._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
+                  <form action="/admin/blog/<%= post._id %>/toggle-publish" method="POST" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-ghost" title="<%= post.published ? 'Unpublish' : 'Publish' %>">
+                      <i class="fas <%= post.published ? 'fa-eye-slash' : 'fa-check-circle' %>"></i>
+                    </button>
+                  </form>
+                  <form action="/admin/blog/<%= post._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this post?');" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+  <% if (totalPages > 1) { %>
+    <div class="admin-card-footer">
+      <div class="admin-pagination">
+        <span class="page-info">Page <%= page %> of <%= totalPages %> (<%= total %> total)</span>
+        <div class="page-buttons">
+          <% if (page > 1) { %>
+            <a href="?page=<%= page - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= categoryFilter !== 'all' ? '&category=' + categoryFilter : '' %>" class="page-link">&laquo; Prev</a>
+          <% } %>
+          <% for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) { %>
+            <a href="?page=<%= p %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= categoryFilter !== 'all' ? '&category=' + categoryFilter : '' %>" class="page-link <%= p === page ? 'active' : '' %>"><%= p %></a>
+          <% } %>
+          <% if (page < totalPages) { %>
+            <a href="?page=<%= page + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= categoryFilter !== 'all' ? '&category=' + categoryFilter : '' %>" class="page-link">Next &raquo;</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>

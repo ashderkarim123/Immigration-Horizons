@@ -1,0 +1,147 @@
+<!-- Stats Grid -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-icon blue"><i class="fas fa-users"></i></div>
+    <div class="stat-card-value"><%= stats.totalLeads || 0 %></div>
+    <div class="stat-card-label">Total Leads</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon green"><i class="fas fa-user-plus"></i></div>
+    <div class="stat-card-value"><%= stats.newLeadsToday || 0 %></div>
+    <div class="stat-card-label">New Today</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon orange"><i class="fas fa-calendar-week"></i></div>
+    <div class="stat-card-value"><%= stats.leadsThisMonth || 0 %></div>
+    <div class="stat-card-label">Leads This Month</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon purple"><i class="fas fa-edit"></i></div>
+    <div class="stat-card-value"><%= stats.blogPosts || 0 %></div>
+    <div class="stat-card-label">Blog Posts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon cyan"><i class="fas fa-check-circle"></i></div>
+    <div class="stat-card-value"><%= stats.publishedPosts || 0 %></div>
+    <div class="stat-card-label">Published</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon rose"><i class="fas fa-clock"></i></div>
+    <div class="stat-card-value"><%= stats.draftPosts || 0 %></div>
+    <div class="stat-card-label">Drafts</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon gold"><i class="fas fa-star"></i></div>
+    <div class="stat-card-value"><%= stats.testimonials || 0 %></div>
+    <div class="stat-card-label">Testimonials</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon blue"><i class="fas fa-question-circle"></i></div>
+    <div class="stat-card-value"><%= stats.faqs || 0 %></div>
+    <div class="stat-card-label">FAQs</div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- Recent Leads -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <h3>Recent Consultation Requests</h3>
+      <a href="/admin/leads" class="btn btn-ghost btn-sm">View All</a>
+    </div>
+    <div class="admin-card-body no-padding">
+      <% if (!recentLeads || !recentLeads.length) { %>
+        <div class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>No consultation requests yet.</p>
+        </div>
+      <% } else { %>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Name</th><th>Service</th><th>Status</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              <% recentLeads.forEach(function(lead) { %>
+                <tr class="clickable-row" data-href="/admin/leads/<%= lead._id %>">
+                  <td><span class="cell-title"><%= lead.name %></span><span class="cell-email"><%= lead.email %></span></td>
+                  <td><%= lead.service || '—' %></td>
+                  <td><span class="badge badge-<%= lead.status || 'new' %>"><%= (lead.status || 'new').replace('_', ' ') %></span></td>
+                  <td><%= new Date(lead.createdAt).toLocaleDateString() %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Quick Actions & Recent Posts -->
+  <div>
+    <div class="admin-card" style="margin-bottom:16px">
+      <div class="admin-card-header"><h3>Quick Actions</h3></div>
+      <div class="admin-card-body">
+        <div class="quick-actions">
+          <a href="/admin/blog/new" class="quick-action-item">
+            <i class="fas fa-plus-circle"></i>
+            <span>New Blog Post</span>
+          </a>
+          <a href="/admin/leads" class="quick-action-item">
+            <i class="fas fa-inbox"></i>
+            <span>View Leads</span>
+          </a>
+          <a href="/admin/seo" class="quick-action-item">
+            <i class="fas fa-search"></i>
+            <span>SEO Manager</span>
+          </a>
+          <a href="/admin/settings" class="quick-action-item">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h3>Recent Blog Posts</h3>
+        <a href="/admin/blog" class="btn btn-ghost btn-sm">View All</a>
+      </div>
+      <div class="admin-card-body no-padding">
+        <% if (!recentPosts || !recentPosts.length) { %>
+          <div class="empty-state">
+            <i class="fas fa-edit"></i>
+            <p>No posts yet.</p>
+          </div>
+        <% } else { %>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Title</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody>
+                <% recentPosts.forEach(function(post) { %>
+                  <tr>
+                    <td><span class="cell-title"><%= post.title %></span></td>
+                    <td><span class="badge <%= post.published ? 'badge-published' : 'badge-draft' %>"><%= post.published ? 'Published' : 'Draft' %></span></td>
+                    <td><%= new Date(post.createdAt).toLocaleDateString() %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.clickable-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('a, button, form')) return;
+      window.location.href = this.dataset.href;
+    });
+  });
+});
+</script>

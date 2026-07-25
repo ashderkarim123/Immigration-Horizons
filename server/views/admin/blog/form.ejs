@@ -1,0 +1,88 @@
+<div class="page-header">
+  <div>
+    <h1><%= post ? 'Edit Post' : 'New Post' %></h1>
+    <p class="page-subtitle"><%= post ? 'Edit blog post' : 'Create a new blog post' %></p>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body">
+    <form action="/admin/blog<%= post ? '/' + post._id + '?_method=PUT' : '' %>" method="POST" enctype="multipart/form-data" class="admin-form">
+      <div class="admin-form-grid">
+        <div class="admin-form-group full-width">
+          <label>Title</label>
+          <input type="text" name="title" class="form-control" value="<%= post ? post.title : '' %>" required>
+        </div>
+        <div class="admin-form-group">
+          <label>Slug</label>
+          <input type="text" name="slug" class="form-control" value="<%= post ? post.slug : '' %>" placeholder="Auto-generated from title">
+        </div>
+        <div class="admin-form-group">
+          <label>Category</label>
+          <select name="category" class="form-control">
+            <% categories.forEach(function(c) { %>
+              <option value="<%= c %>" <%= post && post.category === c ? 'selected' : '' %>><%= c %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="admin-form-group">
+          <label>Author</label>
+          <input type="text" name="author" class="form-control" value="<%= post ? post.author : 'Immigration Horizons Team' %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Reading Time (minutes)</label>
+          <input type="number" name="readingTime" class="form-control" value="<%= post ? post.readingTime : '' %>" min="0">
+        </div>
+        <div class="admin-form-group">
+          <label>Tags (comma-separated)</label>
+          <input type="text" name="tags" class="form-control" value="<%= post && post.tags ? post.tags.join(', ') : '' %>" placeholder="e.g. EB-2 NIW, USCIS, Green Card">
+        </div>
+      </div>
+
+      <div class="admin-form-grid cols-3">
+        <div class="admin-form-group full-width">
+          <label>Featured Image</label>
+          <input type="file" name="coverImage" class="form-control" accept="image/*">
+          <% if (post && post.coverImage) { %>
+            <p style="margin-top:8px;font-size:.875rem;color:#64748b">
+              <i class="fas fa-image"></i> Current: <a href="<%= post.coverImage %>" target="_blank"><%= post.coverImage %></a>
+            </p>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="admin-form-group full-width">
+        <label>Short Description / Excerpt</label>
+        <textarea name="excerpt" class="form-control" rows="2" maxlength="300" required><%= post ? post.excerpt : '' %></textarea>
+        <span class="form-hint">Brief summary shown in blog listings. Max 300 characters.</span>
+      </div>
+
+      <div class="admin-form-group full-width">
+        <label>Content (HTML)</label>
+        <textarea name="content" class="form-control" rows="20" style="font-family:monospace;font-size:.875rem" required><%= post ? post.content : '' %></textarea>
+        <span class="form-hint">Write HTML content. Supports headings, lists, images, links.</span>
+      </div>
+
+      <div class="admin-form-group">
+        <label>Publish Date</label>
+        <input type="datetime-local" name="publishDate" class="form-control" value="<%= post && post.publishDate ? new Date(post.publishDate).toISOString().slice(0,16) : '' %>">
+      </div>
+
+      <div class="admin-form-group">
+        <label class="toggle-switch">
+          <input type="hidden" name="published" value="false">
+          <input type="checkbox" name="published" value="true" <%= post && post.published ? 'checked' : '' %>>
+          <span class="toggle-slider"></span>
+          <span><%= post && post.published ? 'Published' : 'Draft' %></span>
+        </label>
+      </div>
+
+      <div class="admin-form-actions">
+        <a href="/admin/blog" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> <%= post ? 'Update Post' : 'Create Post' %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+<div class="page-header">
+  <div>
+    <h1>Testimonials</h1>
+    <p class="page-subtitle"><%= total %> testimonials</p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/testimonials/new" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Testimonial</a>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/admin/testimonials" class="filter-form">
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All statuses</option>
+      <option value="published" <%= statusFilter === 'published' ? 'selected' : '' %>>Published</option>
+      <option value="draft" <%= statusFilter === 'draft' ? 'selected' : '' %>>Draft</option>
+      <option value="archived" <%= statusFilter === 'archived' ? 'selected' : '' %>>Archived</option>
+    </select>
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
+  </form>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <% if (!testimonials.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-star"></i>
+        <h3>No testimonials yet</h3>
+        <p>Add your first client testimonial.</p>
+        <a href="/admin/testimonials/new" class="btn btn-primary">Add Testimonial</a>
+      </div>
+    <% } else { %>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Name</th><th>Country</th><th>Profession</th><th>Rating</th><th>Featured</th><th>Status</th><th class="shrink">Actions</th></tr>
+          </thead>
+          <tbody>
+            <% testimonials.forEach(function(t) { %>
+              <tr>
+                <td><span class="cell-title"><%= t.name %></span><span class="cell-sub"><%= (t.review || '').slice(0, 50) %>…</span></td>
+                <td><%= t.country || '—' %></td>
+                <td><%= t.profession || '—' %></td>
+                <td><%= '★'.repeat(t.rating || 5) %></td>
+                <td><%= t.featured ? '<span class="badge badge-published">Featured</span>' : '—' %></td>
+                <td><span class="badge <%= t.status === 'published' ? 'badge-published' : 'badge-draft' %>"><%= t.status %></span></td>
+                <td class="cell-actions">
+                  <a href="/admin/testimonials/<%= t._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
+                  <form action="/admin/testimonials/<%= t._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this testimonial?');" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+  <% if (totalPages > 1) { %>
+    <div class="admin-card-footer">
+      <div class="admin-pagination">
+        <span class="page-info">Page <%= page %> of <%= totalPages %></span>
+        <div class="page-buttons">
+          <% if (page > 1) { %><a href="?page=<%= page - 1 %>" class="page-link">&laquo; Prev</a><% } %>
+          <% if (page < totalPages) { %><a href="?page=<%= page + 1 %>" class="page-link">Next &raquo;</a><% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>

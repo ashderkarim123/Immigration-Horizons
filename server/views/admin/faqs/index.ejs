@@ -1,0 +1,75 @@
+<div class="page-header">
+  <div>
+    <h1>FAQs</h1>
+    <p class="page-subtitle"><%= total %> questions</p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/faqs/new" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New FAQ</a>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/admin/faqs" class="filter-form">
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All statuses</option>
+      <option value="published" <%= statusFilter === 'published' ? 'selected' : '' %>>Published</option>
+      <option value="draft" <%= statusFilter === 'draft' ? 'selected' : '' %>>Draft</option>
+    </select>
+    <select name="category" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= categoryFilter === 'all' ? 'selected' : '' %>>All categories</option>
+      <% categories.forEach(function(c) { %>
+        <option value="<%= c %>" <%= categoryFilter === c ? 'selected' : '' %>><%= c %></option>
+      <% }); %>
+    </select>
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
+  </form>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <% if (!faqs.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-question-circle"></i>
+        <h3>No FAQs yet</h3>
+        <p>Add your first frequently asked question.</p>
+        <a href="/admin/faqs/new" class="btn btn-primary">Add FAQ</a>
+      </div>
+    <% } else { %>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Question</th><th>Category</th><th>Homepage</th><th>Order</th><th>Status</th><th class="shrink">Actions</th></tr>
+          </thead>
+          <tbody>
+            <% faqs.forEach(function(f) { %>
+              <tr>
+                <td><span class="cell-title"><%= f.question %></span></td>
+                <td><%= f.category %></td>
+                <td><%= f.showOnHomepage ? '<i class="fas fa-check" style="color:#15803d"></i>' : '—' %></td>
+                <td><%= f.displayOrder %></td>
+                <td><span class="badge <%= f.status === 'published' ? 'badge-published' : 'badge-draft' %>"><%= f.status %></span></td>
+                <td class="cell-actions">
+                  <a href="/admin/faqs/<%= f._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
+                  <form action="/admin/faqs/<%= f._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this FAQ?');" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+  <% if (totalPages > 1) { %>
+    <div class="admin-card-footer">
+      <div class="admin-pagination">
+        <span class="page-info">Page <%= page %> of <%= totalPages %></span>
+        <div class="page-buttons">
+          <% if (page > 1) { %><a href="?page=<%= page - 1 %>" class="page-link">&laquo; Prev</a><% } %>
+          <% if (page < totalPages) { %><a href="?page=<%= page + 1 %>" class="page-link">Next &raquo;</a><% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>

@@ -1,0 +1,85 @@
+<div class="page-header">
+  <div>
+    <h1>SEO: <%= pageInfo.label %></h1>
+    <p class="page-subtitle">Edit search engine metadata for this page</p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/seo" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body">
+    <form action="/admin/seo/<%= seo.pageRef %>" method="POST" class="admin-form">
+      <div class="admin-form-grid">
+        <div class="admin-form-group full-width">
+          <label>SEO Title</label>
+          <input type="text" name="seoTitle" class="form-control" value="<%= seo.seoTitle || '' %>" maxlength="70">
+          <span class="form-hint">Recommended: under 60 characters.</span>
+        </div>
+        <div class="admin-form-group full-width">
+          <label>Meta Description</label>
+          <textarea name="metaDescription" class="form-control" rows="3" maxlength="200"><%= seo.metaDescription || '' %></textarea>
+          <span class="form-hint">Recommended: 150–160 characters.</span>
+        </div>
+        <div class="admin-form-group">
+          <label>Canonical URL</label>
+          <input type="url" name="canonicalUrl" class="form-control" value="<%= seo.canonicalUrl || '' %>" placeholder="https://immigrationhorizons.com/...">
+        </div>
+        <div class="admin-form-group">
+          <label>Slug</label>
+          <input type="text" name="slug" class="form-control" value="<%= seo.slug || '' %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Keywords (comma-separated)</label>
+          <input type="text" name="keywords" class="form-control" value="<%= seo.keywords || '' %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Schema Type</label>
+          <input type="text" name="schemaType" class="form-control" value="<%= seo.schemaType || 'WebPage' %>">
+        </div>
+      </div>
+
+      <div class="fieldset-title">Open Graph / Social</div>
+      <div class="admin-form-grid">
+        <div class="admin-form-group full-width">
+          <label>OG Title</label>
+          <input type="text" name="ogTitle" class="form-control" value="<%= seo.ogTitle || '' %>">
+        </div>
+        <div class="admin-form-group full-width">
+          <label>OG Description</label>
+          <textarea name="ogDescription" class="form-control" rows="2"><%= seo.ogDescription || '' %></textarea>
+        </div>
+        <div class="admin-form-group">
+          <label>OG Image URL</label>
+          <input type="url" name="ogImage" class="form-control" value="<%= seo.ogImage || '' %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Twitter Image URL</label>
+          <input type="url" name="twitterImage" class="form-control" value="<%= seo.twitterImage || '' %>">
+        </div>
+      </div>
+
+      <div class="fieldset-title">Indexing</div>
+      <div class="admin-form-grid">
+        <div class="admin-form-group">
+          <label>Robots</label>
+          <input type="text" name="robots" class="form-control" value="<%= seo.robots || 'index,follow' %>">
+        </div>
+        <div class="admin-form-group">
+          <label class="toggle-switch">
+            <input type="hidden" name="noindex" value="false">
+            <input type="checkbox" name="noindex" value="true" <%= seo.noindex ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            <span>No-index this page</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="admin-form-actions">
+        <a href="/admin/seo" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save SEO</button>
+      </div>
+    </form>
+  </div>
+</div>

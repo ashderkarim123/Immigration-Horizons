@@ -1,0 +1,26 @@
+<div class="page-header">
+  <div>
+    <h1>Search results</h1>
+    <p class="page-subtitle">Results for “<%= query %>”</p>
+  </div>
+</div>
+
+<% function section(title, items, render) { %>
+  <div class="admin-card">
+    <div class="admin-card-header"><h2><%= title %> (<%= items.length %>)</h2></div>
+    <div class="admin-card-body no-padding">
+      <% if (!items.length) { %>
+        <div class="empty-state" style="padding:24px"><p>No matches.</p></div>
+      <% } else { %>
+        <div class="admin-table-wrap"><table class="admin-table"><tbody>
+          <%- items.map(render).join('') %>
+        </tbody></table></div>
+      <% } %>
+    </div>
+  </div>
+<% } %>
+
+<% section('Blog posts', blogs, function(b){ return '<tr><td><a href="/admin/blog/' + b._id + '/edit">' + b.title + '</a></td><td>' + (b.published ? 'Published' : 'Draft') + '</td></tr>'; }) %>
+<% section('Leads', leads, function(l){ return '<tr><td><a href="/admin/leads/' + l._id + '">' + l.name + '</a></td><td>' + l.email + '</td><td>' + (l.status||'') + '</td></tr>'; }) %>
+<% section('Testimonials', testimonials, function(t){ return '<tr><td>' + t.name + '</td><td>' + (t.status||'') + '</td></tr>'; }) %>
+<% section('FAQs', faqs, function(f){ return '<tr><td>' + f.question + '</td><td>' + (f.category||'') + '</td></tr>'; }) %>

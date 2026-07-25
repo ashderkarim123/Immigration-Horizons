@@ -1,0 +1,64 @@
+<div class="page-header">
+  <div>
+    <h1>Media Library</h1>
+    <p class="page-subtitle"><%= total %> files</p>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body">
+    <form action="/admin/media/upload" method="POST" enctype="multipart/form-data" class="admin-form" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div class="admin-form-group" style="flex:1;min-width:240px;margin:0">
+        <label>Upload image / SVG / WebP</label>
+        <input type="file" name="file" class="form-control" accept="image/*,.svg,.webp" required>
+      </div>
+      <div class="admin-form-group" style="margin:0">
+        <label>Alt text (optional)</label>
+        <input type="text" name="altText" class="form-control" placeholder="Describe the image">
+      </div>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload</button>
+    </form>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body">
+    <% if (!mediaItems.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-images"></i>
+        <h3>No media yet</h3>
+        <p>Upload your first file above.</p>
+      </div>
+    <% } else { %>
+      <div class="media-grid">
+        <% mediaItems.forEach(function(m) { %>
+          <div class="media-item">
+            <div class="thumb">
+              <img src="<%= m.url %>" alt="<%= m.altText || m.originalName %>" loading="lazy">
+            </div>
+            <div class="meta">
+              <div class="name" title="<%= m.originalName %>"><%= m.originalName %></div>
+              <div class="actions">
+                <button type="button" class="btn btn-sm btn-ghost" onclick="navigator.clipboard.writeText(location.origin + '<%= m.url %>');this.innerText='Copied!';" title="Copy URL"><i class="fas fa-link"></i></button>
+                <form action="/admin/media/<%= m._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this file?');" style="display:inline">
+                  <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                </form>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+  <% if (totalPages > 1) { %>
+    <div class="admin-card-footer">
+      <div class="admin-pagination">
+        <span class="page-info">Page <%= page %> of <%= totalPages %></span>
+        <div class="page-buttons">
+          <% if (page > 1) { %><a href="?page=<%= page - 1 %>" class="page-link">&laquo; Prev</a><% } %>
+          <% if (page < totalPages) { %><a href="?page=<%= page + 1 %>" class="page-link">Next &raquo;</a><% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>

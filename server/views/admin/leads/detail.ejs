@@ -1,0 +1,130 @@
+<!-- Back button -->
+<a href="/admin/leads" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to Leads</a>
+
+<div class="page-header">
+  <div>
+    <h1><%= lead.name %></h1>
+    <p class="page-subtitle">Submitted <%= new Date(lead.createdAt).toLocaleString() %></p>
+  </div>
+  <div class="page-actions">
+    <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently? This cannot be undone.');" style="display:inline">
+      <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Lead</button>
+    </form>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <!-- Primary -->
+  <div class="detail-primary">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Contact Information</h3></div>
+      <div class="admin-card-body">
+        <div class="detail-grid">
+          <div class="detail-field">
+            <label>Name</label>
+            <span><%= lead.name || '—' %></span>
+          </div>
+          <div class="detail-field">
+            <label>Email</label>
+            <span><a href="mailto:<%= lead.email %>"><%= lead.email %></a></span>
+          </div>
+          <div class="detail-field">
+            <label>Phone</label>
+            <span><%= lead.phone || '—' %></span>
+          </div>
+          <div class="detail-field">
+            <label>Country</label>
+            <span><%= lead.country || '—' %></span>
+          </div>
+          <div class="detail-field">
+            <label>Occupation</label>
+            <span><%= lead.occupation || '—' %></span>
+          </div>
+          <div class="detail-field">
+            <label>Service Interested In</label>
+            <span><%= lead.service || '—' %></span>
+          </div>
+          <div class="detail-field">
+            <label>Status</label>
+            <span class="badge badge-<%= lead.status || 'new' %>"><%= (lead.status || 'new').replace('_', ' ') %></span>
+          </div>
+          <div class="detail-field">
+            <label>Source</label>
+            <span><%= lead.source || '—' %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Message</h3></div>
+      <div class="admin-card-body">
+        <p style="white-space:pre-wrap;line-height:1.7"><%= lead.message || 'No message provided.' %></p>
+        <% if (lead.attachmentUrl) { %>
+          <p><a href="<%= lead.attachmentUrl %>" target="_blank" class="btn btn-sm btn-ghost"><i class="fas fa-paperclip"></i> View Attachment</a></p>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (lead.utmSource || lead.utmMedium || lead.gclid) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Tracking Information</h3></div>
+      <div class="admin-card-body">
+        <div class="detail-grid">
+          <div class="detail-field"><label>UTM Source</label><span><%= lead.utmSource || '—' %></span></div>
+          <div class="detail-field"><label>UTM Medium</label><span><%= lead.utmMedium || '—' %></span></div>
+          <div class="detail-field"><label>UTM Campaign</label><span><%= lead.utmCampaign || '—' %></span></div>
+          <div class="detail-field"><label>Landing Page</label><span><%= lead.landingPage || '—' %></span></div>
+        </div>
+      </div>
+    </div>
+    <% } %>
+  </div>
+
+  <!-- Side Panel -->
+  <div class="detail-side">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Update Status</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/leads/<%= lead._id %>/status" method="POST">
+          <div class="admin-form-group">
+            <select name="status" class="form-control">
+              <% leadStatuses.forEach(function(s) { %>
+                <option value="<%= s %>" <%= lead.status === s ? 'selected' : '' %>><%= s.replace(/_/g, ' ') %></option>
+              <% }); %>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" style="width:100%">Update Status</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Internal Notes</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/leads/<%= lead._id %>/notes" method="POST">
+          <div class="admin-form-group">
+            <textarea name="content" class="form-control" rows="3" placeholder="Add a note..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-blue btn-sm" style="width:100%"><i class="fas fa-plus"></i> Add Note</button>
+        </form>
+
+        <% if (notes.length > 0) { %>
+          <div class="notes-timeline" style="margin-top:16px">
+            <% notes.forEach(function(n) { %>
+              <div class="note-item">
+                <div class="note-header">
+                  <strong><%= n.author %></strong>
+                  <span class="note-date"><%= new Date(n.createdAt).toLocaleString() %></span>
+                </div>
+                <p class="note-content"><%= n.content %></p>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p style="color:#94a3b8;font-size:.875rem;margin-top:16px">No internal notes yet.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

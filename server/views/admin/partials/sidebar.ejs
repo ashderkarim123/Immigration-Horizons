@@ -1,0 +1,56 @@
+<%
+// Sidebar navigation for admin panel
+const menuItems = [
+  { label: 'Dashboard', icon: 'tachometer-alt', page: 'dashboard', url: '/admin' },
+  { label: 'Leads', icon: 'users', page: 'leads', url: '/admin/leads', badge: true, badgeVar: 'leadCount' },
+  { label: 'Blog', icon: 'edit', page: 'blog', url: '/admin/blog' },
+  { label: 'SEO Manager', icon: 'search-plus', page: 'seo', url: '/admin/seo' },
+  { label: 'Testimonials', icon: 'star', page: 'testimonials', url: '/admin/testimonials' },
+  { label: 'FAQs', icon: 'question-circle', page: 'faqs', url: '/admin/faqs' },
+  { label: 'Services', icon: 'cogs', page: 'services', url: '/admin/services' },
+  { label: 'Media Library', icon: 'images', page: 'media', url: '/admin/media' },
+  { label: 'Settings', icon: 'cog', page: 'settings', url: '/admin/settings' },
+  { label: 'Users', icon: 'user-shield', page: 'users', url: '/admin/users' },
+];
+%>
+<aside class="admin-sidebar">
+  <div class="sidebar-brand">
+    <a href="/admin">
+      <div class="brand-icon">
+        <i class="fas fa-globe-americas"></i>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">Immigration</span>
+        <span class="brand-subtitle">Horizons</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <nav class="sidebar-nav">
+    <ul class="nav-list">
+      <% menuItems.forEach(function(item) { %>
+        <li class="nav-item <%= currentPage === item.page ? 'active' : '' %>">
+          <a href="<%= item.url %>" class="nav-link">
+            <span class="nav-icon">
+              <i class="fas fa-<%= item.icon %>"></i>
+            </span>
+            <span class="nav-label"><%= item.label %></span>
+            <% if (item.badge) { %>
+              <span class="nav-badge" id="<%= item.page %>-count"><%= typeof leadCount !== 'undefined' ? leadCount : 0 %></span>
+            <% } %>
+          </a>
+        </li>
+      <% }); %>
+    </ul>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-divider"></div>
+    <a href="/" class="nav-link" target="_blank" title="View Website">
+      <span class="nav-icon"><i class="fas fa-external-link-alt"></i></span>
+      <span class="nav-label">View Website</span>
+    </a>
+  </div>
+</aside>

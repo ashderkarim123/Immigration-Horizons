@@ -1,0 +1,72 @@
+<div class="page-header">
+  <div>
+    <h1><%= faq ? 'Edit FAQ' : 'New FAQ' %></h1>
+    <p class="page-subtitle"><%= faq ? 'Update this question' : 'Add a frequently asked question' %></p>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body">
+    <form action="/admin/faqs<%= faq ? '/' + faq._id + '?_method=PUT' : '' %>" method="POST" class="admin-form">
+      <div class="admin-form-group full-width">
+        <label>Question</label>
+        <input type="text" name="question" class="form-control" value="<%= faq ? faq.question : '' %>" required>
+      </div>
+
+      <div class="admin-form-group full-width">
+        <label>Answer</label>
+        <textarea name="answer" class="form-control" rows="6" required><%= faq ? faq.answer : '' %></textarea>
+        <span class="form-hint">Plain text. This is also used for FAQ schema, so keep it self-contained.</span>
+      </div>
+
+      <div class="admin-form-grid">
+        <div class="admin-form-group">
+          <label>Category</label>
+          <input type="text" name="category" class="form-control" value="<%= faq ? faq.category : 'General' %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Display Order</label>
+          <input type="number" name="displayOrder" class="form-control" value="<%= faq ? faq.displayOrder : 0 %>">
+        </div>
+        <div class="admin-form-group">
+          <label>Show on service page (slug)</label>
+          <select name="showOnServicePage" class="form-control">
+            <option value="">— None —</option>
+            <% serviceSlugs.forEach(function(slug) { %>
+              <option value="<%= slug %>" <%= faq && faq.showOnServicePage === slug ? 'selected' : '' %>><%= slug %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="admin-form-group">
+          <label>Status</label>
+          <select name="status" class="form-control">
+            <% ['published','draft'].forEach(function(s) { %>
+              <option value="<%= s %>" <%= faq && faq.status === s ? 'selected' : '' %>><%= s %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="admin-form-group">
+          <label class="toggle-switch">
+            <input type="hidden" name="showOnHomepage" value="false">
+            <input type="checkbox" name="showOnHomepage" value="true" <%= faq && faq.showOnHomepage ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            <span>Show on homepage</span>
+          </label>
+        </div>
+        <div class="admin-form-group">
+          <label class="toggle-switch">
+            <input type="hidden" name="schemaEnabled" value="false">
+            <input type="checkbox" name="schemaEnabled" value="true" <%= !faq || faq.schemaEnabled ? 'checked' : '' %>>
+            <span class="toggle-slider"></span>
+            <span>Include in FAQ schema</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="admin-form-actions">
+        <a href="/admin/faqs" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <%= faq ? 'Update' : 'Create' %></button>
+      </div>
+    </form>
+  </div>
+</div>
