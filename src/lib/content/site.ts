@@ -19,7 +19,7 @@ export const site = {
 } as const;
 
 export const contact = {
-  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "smartforce54@gmail.com",
+  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "info@immigrationhorizons.com",
   whatsappPrimary:
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER_1 ?? "923305507598",
   whatsappSecondary:

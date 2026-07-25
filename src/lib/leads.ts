@@ -3,19 +3,27 @@ import "server-only";
 import { Resend } from "resend";
 
 import { contact } from "./content/site";
+import { getDb } from "./db";
+import { Consultation } from "./models/Consultation";
 
 /**
  * Lead delivery.
  *
- * Email via Resend is the delivery path that matters — it is how the owner
- * actually receives leads, mirroring the legacy Express app. When
- * RESEND_API_KEY is not configured (e.g. local dev), delivery degrades
- * gracefully: the submission is logged server-side and the caller is told to
- * reach out directly, rather than failing silently or pretending to send.
+ * Two independent paths run on every submission:
+ *   1. Persist to MongoDB (the `consultations` collection shared with the
+ *      admin CMS at web/server) — this is what fills the Leads dashboard.
+ *   2. Email via Resend — the immediate notification to the inbox.
  *
- * NOTE (cutover): the legacy app also persists leads to MongoDB and appends
- * them to a Google Sheet. Those integrations are intentionally deferred to
- * the production cutover; email is the critical path and is wired here.
+ * The two are intentionally decoupled: a MongoDB hiccup should not stop a
+ * lead's email notification from going out, and a missing Resend key should
+ * not stop the lead from being saved. The user-facing success/failure
+ * message is driven by email delivery, since that is the promise made on
+ * the form ("we'll follow up by email or WhatsApp") — but every lead is
+ * saved to the database whenever the database is reachable, independent of
+ * whether the email step succeeds.
+ *
+ * NOTE (cutover): Google Sheets sync (utils/sheets.js in the legacy app) is
+ * not ported here yet.
  */
 
 export type LeadKind = "consultation" | "contact";
@@ -30,6 +38,34 @@ export type LeadInput = {
   tracking?: Record<string, string>;
 };
 
+async function persistLead(lead: LeadInput): Promise<void> {
+  const db = getDb();
+  if (!db) return; // MONGODB_URI not set — already warned in getDb()
+
+  try {
+    await db;
+    await Consultation.create({
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone || "",
+      service: lead.service || "Not Sure / Need Guidance",
+      message: lead.message,
+      source: lead.kind,
+      utmSource: lead.tracking?.utm_source || "",
+      utmMedium: lead.tracking?.utm_medium || "",
+      utmCampaign: lead.tracking?.utm_campaign || "",
+      utmTerm: lead.tracking?.utm_term || "",
+      utmContent: lead.tracking?.utm_content || "",
+      gclid: lead.tracking?.gclid || "",
+      fbclid: lead.tracking?.fbclid || "",
+    });
+  } catch (err) {
+    // Persistence is additive to email delivery — log and move on rather
+    // than failing the whole submission over a database problem.
+    console.error("[leads] Failed to save lead to MongoDB:", err);
+  }
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -42,6 +78,9 @@ function escapeHtml(value = "") {
  * false only when a configured send actually failed.
  */
 export async function deliverLead(lead: LeadInput): Promise<boolean> {
+  // Save first so the lead is captured even if the email step throws.
+  await persistLead(lead);
+
   const apiKey = process.env.RESEND_API_KEY;
   const receiver = process.env.CONTACT_RECEIVER_EMAIL || contact.email;
 

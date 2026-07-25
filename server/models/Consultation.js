@@ -7,7 +7,12 @@ const ConsultationSchema = new mongoose.Schema(
     phone: { type: String, trim: true },
     service: {
       type: String,
-      enum: ['EB-2 NIW', 'EB-1A', 'EB-1B', 'EB-1C', 'Not Sure / Need Guidance'],
+      enum: [
+        'EB-2 NIW', 'EB-1A', 'EB-1B', 'EB-1C', 'O-1 Visa',
+        'RFE & NOID Responses', 'Recommendation Letters', 'Expert Opinion Letters',
+        'Business & Personal Plans', 'Evidence Review & Packaging',
+        'Immigration Consultation', 'Not Sure / Need Guidance',
+      ],
       default: 'Not Sure / Need Guidance',
     },
     message: { type: String, required: true },

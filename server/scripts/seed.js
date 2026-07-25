@@ -38,7 +38,7 @@ const DEFAULT_FAQS = [
 
 const DEFAULT_SETTINGS = [
   ['general', 'companyName', 'Immigration Horizons'],
-  ['general', 'email', process.env.CONTACT_RECEIVER_EMAIL || 'smartforce54@gmail.com'],
+  ['general', 'email', process.env.CONTACT_RECEIVER_EMAIL || 'info@immigrationhorizons.com'],
   ['general', 'whatsapp1', process.env.WHATSAPP_NUMBER_1 || '923305507598'],
   ['general', 'whatsapp2', process.env.WHATSAPP_NUMBER_2 || '923418883635'],
   ['social', 'fiverr', social.FIVERR_PROFILE_URL],
