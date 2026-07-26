@@ -14,11 +14,21 @@ const SEOMeta = require('../../models/admin/SEOMeta');
 const AdminUser = require('../../models/admin/User');
 const InternalNote = require('../../models/admin/InternalNote');
 const Media = require('../../models/admin/Media');
+const Task = require('../../models/admin/Task');
+const Sprint = require('../../models/admin/Sprint');
+const Notification = require('../../models/admin/Notification');
+const DeliveryRecord = require('../../models/admin/DeliveryRecord');
+const ActivityLog = require('../../models/admin/ActivityLog');
 
 const { requireAdmin } = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
 const categories = require('../../utils/blogCategories');
 const servicesList = require('../../utils/services');
+const { notify, notifyMany } = require('../../utils/notify');
+const { logActivity } = require('../../utils/activity');
+const { ROLE_LABELS } = require('../../utils/permissions');
+const attachLeadOps = require('./leadOps');
+const { ASSIGNMENT_SLOTS } = attachLeadOps;
 
 // ========================================================================
 // AUTHENTICATION
@@ -79,11 +89,31 @@ router.post('/admin/logout', (req, res) => {
 // ADMIN LAYOUT MIDDLEWARE
 // ========================================================================
 
-router.use('/admin', requireAdmin, (req, res, next) => {
+router.use('/admin', requireAdmin, async (req, res, next) => {
   res.locals.adminUser = req.session.adminUser || { name: 'Admin', role: 'super_admin' };
   res.locals.currentAdminPath = req.path;
   // Use admin layout instead of default public layout
   res.locals.layout = 'admin/layout';
+
+  // Notification bell data, available on every admin page (the topbar
+  // partial is included from the shared layout, so it has no route of its
+  // own to fetch this itself). A failure here must never block the page.
+  try {
+    const recipientName = res.locals.adminUser.name;
+    const [unreadCount, recentNotifications, newLeadsCount] = await Promise.all([
+      Notification.countDocuments({ recipientName, read: false }),
+      Notification.find({ recipientName }).sort({ createdAt: -1 }).limit(8).lean(),
+      Consultation.countDocuments({ status: 'new' }),
+    ]);
+    res.locals.unreadNotificationCount = unreadCount;
+    res.locals.recentNotifications = recentNotifications;
+    res.locals.newLeadsCount = newLeadsCount;
+  } catch (err) {
+    res.locals.unreadNotificationCount = 0;
+    res.locals.recentNotifications = [];
+    res.locals.newLeadsCount = 0;
+  }
+
   next();
 });
 
@@ -153,23 +183,39 @@ router.get('/admin', async (req, res) => {
 // LEADS MANAGEMENT
 // ========================================================================
 
-const LEAD_STATUSES = ['new', 'contacted', 'consultation_scheduled', 'in_progress', 'closed'];
+// Canonical 12-stage lifecycle (see Consultation.STATUS_STAGES). Kept as a
+// plain value array too, since several existing call sites just need the
+// list of valid values rather than the {value,label} pairs.
+const LEAD_STATUSES = Consultation.STATUS_STAGES.map((s) => s.value);
 
 router.get('/admin/leads', async (req, res) => {
   try {
-    const { search, status, service, page = 1, limit = 20 } = req.query;
+    const { search, status, service, assignee, leadSource, priority, page = 1, limit = 20 } = req.query;
     const filter = {};
 
     if (status && status !== 'all') filter.status = status;
     if (service && service !== 'all') filter.service = service;
+    if (leadSource && leadSource !== 'all') filter.leadSource = leadSource;
+    if (priority && priority !== 'all') filter.priority = priority;
+    if (assignee && assignee !== 'all') {
+      filter.$or = [{ owner: assignee }, { 'assignees.user': assignee }];
+    }
     if (search) {
       const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      filter.$or = [
+      const searchOr = [
         { name: { $regex: safe, $options: 'i' } },
         { email: { $regex: safe, $options: 'i' } },
         { phone: { $regex: safe, $options: 'i' } },
         { message: { $regex: safe, $options: 'i' } },
       ];
+      // `$or` may already be set by the assignee filter above — combine
+      // both with `$and` rather than one clobbering the other.
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or }, { $or: searchOr }];
+        delete filter.$or;
+      } else {
+        filter.$or = searchOr;
+      }
     }
 
     const total = await Consultation.countDocuments(filter);
@@ -179,8 +225,9 @@ router.get('/admin/leads', async (req, res) => {
       .limit(Number(limit))
       .lean();
 
-    const serviceCounts = await Consultation.aggregate([
-      { $group: { _id: '$service', count: { $sum: 1 } } },
+    const [serviceCounts, teamMembers] = await Promise.all([
+      Consultation.aggregate([{ $group: { _id: '$service', count: { $sum: 1 } } }]),
+      AdminUser.find({ isActive: true }).select('name role').sort({ name: 1 }).lean(),
     ]);
     const countsByService = Object.fromEntries(serviceCounts.map((s) => [s._id, s.count]));
 
@@ -194,8 +241,14 @@ router.get('/admin/leads', async (req, res) => {
       search: search || '',
       statusFilter: status || 'all',
       serviceFilter: service || 'all',
+      assigneeFilter: assignee || 'all',
+      leadSourceFilter: leadSource || 'all',
+      priorityFilter: priority || 'all',
       serviceCategories: Consultation.schema.path('service').enumValues,
+      leadSourceValues: Consultation.schema.path('leadSource').enumValues,
       leadStatuses: LEAD_STATUSES,
+      leadStatusStages: Consultation.STATUS_STAGES,
+      teamMembers,
       countsByService,
       currentPage: 'leads',
     });
@@ -207,18 +260,53 @@ router.get('/admin/leads', async (req, res) => {
 
 router.get('/admin/leads/:id', async (req, res) => {
   try {
-    const lead = await Consultation.findById(req.params.id).lean();
+    const lead = await Consultation.findById(req.params.id)
+      .populate('owner', 'name role')
+      .populate('assignees.user', 'name role')
+      .lean();
     if (!lead) return res.redirect('/admin/leads');
 
-    const notes = await InternalNote.find({ leadId: req.params.id })
-      .sort({ createdAt: -1 })
-      .lean();
+    let [notes, tasks, activity, deliveryRecord, teamMembers] = await Promise.all([
+      InternalNote.find({ leadId: req.params.id }).sort({ createdAt: -1 }).lean(),
+      Task.find({ lead: req.params.id }).populate('assignee', 'name').sort({ createdAt: -1 }).lean(),
+      ActivityLog.find({ lead: req.params.id }).sort({ createdAt: -1 }).limit(50).lean(),
+      DeliveryRecord.findOne({ lead: req.params.id }).lean(),
+      AdminUser.find({ isActive: true }).select('name role').sort({ name: 1 }).lean(),
+    ]);
+
+    // Backfill a "received" entry for leads that predate the activity log,
+    // so the case-history timeline always has a starting point. Runs once —
+    // the empty check makes this idempotent on every later view.
+    if (!activity.length) {
+      const entry = await ActivityLog.create({
+        lead: req.params.id,
+        type: 'received',
+        message: `Lead received via ${lead.source === 'contact' ? 'contact form' : 'consultation form'}.`,
+        actor: 'System',
+        createdAt: lead.createdAt,
+      });
+      activity = [entry.toObject()];
+    }
+
+    const membersBySlotRole = {};
+    ASSIGNMENT_SLOTS.forEach((slot) => {
+      membersBySlotRole[slot.taskType] = teamMembers.filter((m) => m.role === slot.role);
+    });
 
     res.render('admin/leads/detail', {
       title: `Lead: ${lead.name} | Admin`,
       lead,
       notes,
+      tasks,
+      activity,
+      deliveryRecord,
+      teamMembers,
+      assignmentSlots: ASSIGNMENT_SLOTS,
+      membersBySlotRole,
+      taskTypes: Task.TYPES,
+      taskPriorities: Task.PRIORITIES,
       leadStatuses: LEAD_STATUSES,
+      leadStatusStages: Consultation.STATUS_STAGES,
       currentPage: 'leads',
     });
   } catch (err) {
@@ -231,7 +319,31 @@ router.post('/admin/leads/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
     if (LEAD_STATUSES.includes(status)) {
+      const previous = await Consultation.findById(req.params.id).select('status name ownerName assignees').lean();
       await Consultation.findByIdAndUpdate(req.params.id, { status });
+
+      if (previous && previous.status !== status) {
+        const actor = req.session.adminUser?.name || 'Admin';
+        const label = (Consultation.STATUS_STAGES.find((s) => s.value === status) || {}).label || status;
+        await logActivity(req.params.id, 'status_changed', `Status changed to "${label}" by ${actor}.`, actor);
+
+        const recipients = [previous.ownerName, ...(previous.assignees || []).map((a) => a.name)];
+        const eventByStatus = {
+          waiting_on_client: 'lead_waiting_on_client',
+          internal_review: 'lead_in_review',
+          ready_for_filing: 'lead_package_ready',
+          submitted: 'lead_submitted',
+          delivered: 'lead_delivered',
+        };
+        if (eventByStatus[status]) {
+          await notifyMany(recipients, {
+            title: `Lead moved to "${label}"`,
+            message: `"${previous.name}" is now ${label}.`,
+            type: eventByStatus[status],
+            relatedLead: req.params.id,
+          });
+        }
+      }
     }
     res.redirect(req.headers.referer || '/admin/leads');
   } catch (err) {
@@ -242,13 +354,16 @@ router.post('/admin/leads/:id/status', async (req, res) => {
 
 router.post('/admin/leads/:id/notes', async (req, res) => {
   try {
-    const { content } = req.body;
+    const { content, noteType } = req.body;
     if (content && content.trim()) {
       await InternalNote.create({
         leadId: req.params.id,
         author: req.session.adminUser?.name || 'Admin',
+        authorId: req.session.adminUser?.id || null,
         content: content.trim(),
+        noteType: noteType || 'general',
       });
+      await logActivity(req.params.id, 'note_added', 'Internal note added.', req.session.adminUser?.name);
     }
     res.redirect(`/admin/leads/${req.params.id}`);
   } catch (err) {
@@ -1033,6 +1148,7 @@ router.get('/admin/users', async (req, res) => {
     res.render('admin/users/index', {
       title: 'Users | Admin',
       users,
+      roleLabels: ROLE_LABELS,
       error: null,
       currentPage: 'users',
     });
@@ -1047,6 +1163,7 @@ router.get('/admin/users/new', (req, res) => {
   res.render('admin/users/form', {
     title: 'New User | Admin',
     user: null,
+    roleLabels: ROLE_LABELS,
     error: null,
     currentPage: 'users',
   });
@@ -1067,6 +1184,7 @@ router.post('/admin/users', async (req, res) => {
     res.render('admin/users/form', {
       title: 'New User | Admin',
       user: req.body,
+      roleLabels: ROLE_LABELS,
       error: err.message,
       currentPage: 'users',
     });
@@ -1133,5 +1251,12 @@ router.get('/admin/search', async (req, res) => {
     res.redirect('/admin');
   }
 });
+
+// ========================================================================
+// LEAD OPERATIONS (Phase 9) — tasks, sprints, notifications, assignment,
+// delivery workflow. Attached onto this same router so those routes
+// inherit the requireAdmin + session-locals middleware registered above.
+// ========================================================================
+attachLeadOps(router);
 
 module.exports = router;

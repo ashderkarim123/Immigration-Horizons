@@ -1,6 +1,20 @@
 <%
 const pageTitle = 'Leads';
 const currentPage = 'leads';
+const STATUS_LABEL = {};
+leadStatusStages.forEach(function(s) { STATUS_LABEL[s.value] = s.label; });
+function labelFor(status) { return STATUS_LABEL[status] || String(status || '').replace(/_/g, ' '); }
+// Extra query-string params carried across pagination links.
+function qs(extra) {
+  var parts = [];
+  if (search) parts.push('search=' + encodeURIComponent(search));
+  if (statusFilter !== 'all') parts.push('status=' + statusFilter);
+  if (serviceFilter !== 'all') parts.push('service=' + serviceFilter);
+  if (assigneeFilter !== 'all') parts.push('assignee=' + assigneeFilter);
+  if (leadSourceFilter !== 'all') parts.push('leadSource=' + encodeURIComponent(leadSourceFilter));
+  if (priorityFilter !== 'all') parts.push('priority=' + priorityFilter);
+  return parts.join('&');
+}
 %>
 <!-- Page Header -->
 <div class="page-header">
@@ -24,14 +38,32 @@ const currentPage = 'leads';
     </div>
     <select name="status" class="filter-select" onchange="this.form.submit()">
       <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All Statuses</option>
-      <% leadStatuses.forEach(function(s) { %>
-        <option value="<%= s %>" <%= statusFilter === s ? 'selected' : '' %>><%= s.replace('_', ' ') %></option>
+      <% leadStatusStages.forEach(function(s) { %>
+        <option value="<%= s.value %>" <%= statusFilter === s.value ? 'selected' : '' %>><%= s.label %></option>
       <% }); %>
     </select>
     <select name="service" class="filter-select" onchange="this.form.submit()">
       <option value="all" <%= serviceFilter === 'all' ? 'selected' : '' %>>All Services</option>
       <% serviceCategories.forEach(function(s) { %>
         <option value="<%= s %>" <%= serviceFilter === s ? 'selected' : '' %>><%= s %></option>
+      <% }); %>
+    </select>
+    <select name="assignee" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= assigneeFilter === 'all' ? 'selected' : '' %>>All Assignees</option>
+      <% teamMembers.forEach(function(m) { %>
+        <option value="<%= m._id %>" <%= assigneeFilter === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
+      <% }); %>
+    </select>
+    <select name="leadSource" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= leadSourceFilter === 'all' ? 'selected' : '' %>>All Sources</option>
+      <% leadSourceValues.forEach(function(s) { %>
+        <option value="<%= s %>" <%= leadSourceFilter === s ? 'selected' : '' %>><%= s %></option>
+      <% }); %>
+    </select>
+    <select name="priority" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= priorityFilter === 'all' ? 'selected' : '' %>>All Priorities</option>
+      <% ['low','medium','high','urgent'].forEach(function(p) { %>
+        <option value="<%= p %>" <%= priorityFilter === p ? 'selected' : '' %>><%= p %></option>
       <% }); %>
     </select>
     <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
@@ -53,9 +85,9 @@ const currentPage = 'leads';
           <thead>
             <tr>
               <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
               <th>Service</th>
+              <th>Owner</th>
+              <th>Priority</th>
               <th>Status</th>
               <th>Date</th>
               <th class="shrink">Actions</th>
@@ -66,13 +98,13 @@ const currentPage = 'leads';
               <tr class="clickable-row" data-href="/admin/leads/<%= lead._id %>">
                 <td>
                   <span class="cell-title"><%= lead.name %></span>
-                  <% if (lead.occupation) { %><span class="cell-sub"><%= lead.occupation %></span><% } %>
+                  <span class="cell-email"><%= lead.email %></span>
                 </td>
-                <td><span class="cell-email"><%= lead.email %></span></td>
-                <td><%= lead.phone || '—' %></td>
                 <td><%= lead.service || '—' %></td>
+                <td><%= lead.ownerName || '—' %></td>
+                <td><span class="badge badge-priority-<%= lead.priority || 'medium' %>"><%= lead.priority || 'medium' %></span></td>
                 <td>
-                  <span class="badge badge-<%= lead.status || 'new' %>"><%= (lead.status || 'new').replace('_', ' ') %></span>
+                  <span class="badge badge-<%= lead.status || 'new' %>"><%= labelFor(lead.status || 'new') %></span>
                 </td>
                 <td><%= new Date(lead.createdAt).toLocaleDateString() %></td>
                 <td class="cell-actions">
@@ -98,13 +130,13 @@ const currentPage = 'leads';
         <span class="page-info">Page <%= page %> of <%= totalPages %> (<%= total %> total)</span>
         <div class="page-buttons">
           <% if (page > 1) { %>
-            <a href="?page=<%= page - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= serviceFilter !== 'all' ? '&service=' + serviceFilter : '' %>" class="page-link">&laquo; Prev</a>
+            <a href="?page=<%= page - 1 %><%= qs() ? '&' + qs() : '' %>" class="page-link">&laquo; Prev</a>
           <% } %>
           <% for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) { %>
-            <a href="?page=<%= p %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= serviceFilter !== 'all' ? '&service=' + serviceFilter : '' %>" class="page-link <%= p === page ? 'active' : '' %>"><%= p %></a>
+            <a href="?page=<%= p %><%= qs() ? '&' + qs() : '' %>" class="page-link <%= p === page ? 'active' : '' %>"><%= p %></a>
           <% } %>
           <% if (page < totalPages) { %>
-            <a href="?page=<%= page + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %><%= statusFilter !== 'all' ? '&status=' + statusFilter : '' %><%= serviceFilter !== 'all' ? '&service=' + serviceFilter : '' %>" class="page-link">Next &raquo;</a>
+            <a href="?page=<%= page + 1 %><%= qs() ? '&' + qs() : '' %>" class="page-link">Next &raquo;</a>
           <% } %>
         </div>
       </div>

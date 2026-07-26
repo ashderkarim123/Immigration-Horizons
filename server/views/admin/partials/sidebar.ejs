@@ -2,7 +2,11 @@
 // Sidebar navigation for admin panel
 const menuItems = [
   { label: 'Dashboard', icon: 'tachometer-alt', page: 'dashboard', url: '/admin' },
-  { label: 'Leads', icon: 'users', page: 'leads', url: '/admin/leads', badge: true, badgeVar: 'leadCount' },
+  { label: 'Leads', icon: 'users', page: 'leads', url: '/admin/leads', badge: 'newLeadsCount' },
+  { label: 'Task Board', icon: 'clipboard-list', page: 'tasks', url: '/admin/tasks' },
+  { label: 'Sprint Board', icon: 'flag', page: 'sprints', url: '/admin/sprints' },
+  { label: 'Delivery', icon: 'truck', page: 'delivery', url: '/admin/delivery' },
+  { label: 'Notifications', icon: 'bell', page: 'notifications', url: '/admin/notifications', badge: 'unreadNotificationCount' },
   { label: 'Blog', icon: 'edit', page: 'blog', url: '/admin/blog' },
   { label: 'SEO Manager', icon: 'search-plus', page: 'seo', url: '/admin/seo' },
   { label: 'Testimonials', icon: 'star', page: 'testimonials', url: '/admin/testimonials' },
@@ -37,8 +41,13 @@ const menuItems = [
               <i class="fas fa-<%= item.icon %>"></i>
             </span>
             <span class="nav-label"><%= item.label %></span>
-            <% if (item.badge) { %>
-              <span class="nav-badge" id="<%= item.page %>-count"><%= typeof leadCount !== 'undefined' ? leadCount : 0 %></span>
+            <%
+              var badgeCount = 0;
+              if (item.badge === 'newLeadsCount') badgeCount = typeof newLeadsCount !== 'undefined' ? newLeadsCount : 0;
+              else if (item.badge === 'unreadNotificationCount') badgeCount = typeof unreadNotificationCount !== 'undefined' ? unreadNotificationCount : 0;
+            %>
+            <% if (item.badge && badgeCount > 0) { %>
+              <span class="nav-badge" id="<%= item.page %>-count"><%= badgeCount %></span>
             <% } %>
           </a>
         </li>

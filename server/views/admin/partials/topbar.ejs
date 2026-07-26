@@ -1,12 +1,30 @@
 <%
-// Admin topbar with search and user menu
+// Admin topbar with page title, search, notifications, and user menu
 var user = typeof adminUser !== 'undefined' && adminUser ? adminUser : { name: 'Admin', role: 'super_admin' };
+// The route already sets `title` as e.g. "Leads | Admin" for the <title> tag;
+// reuse it here rather than adding a second, separate variable everywhere.
+var pageHeading = typeof title !== 'undefined' && title ? String(title).split('|')[0].trim() : 'Admin';
+// Set on every /admin/* request by the shared middleware in routes/admin/index.js.
+var unreadCount = typeof unreadNotificationCount !== 'undefined' ? unreadNotificationCount : 0;
+var notifList = typeof recentNotifications !== 'undefined' ? recentNotifications : [];
+function timeAgoShort(d) {
+  var s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  if (s < 60) return 'now';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h';
+  return Math.floor(s / 86400) + 'd';
+}
 %>
 <header class="admin-topbar">
   <div class="topbar-left">
-    <button id="sidebarToggle" class="btn btn-icon topbar-btn" title="Toggle Sidebar">
+    <button id="sidebarToggle" class="btn btn-icon topbar-btn" title="Toggle sidebar" aria-label="Toggle sidebar">
       <i class="fas fa-bars"></i>
     </button>
+    <%
+    // A <div>, not a heading — every page body already renders its own <h1>
+    // inside .page-header, and a page must have exactly one h1.
+    %>
+    <div class="topbar-page-title"><%= pageHeading %></div>
     <div class="topbar-search">
       <form action="/admin/search" method="GET" class="search-form">
         <div class="search-wrapper">
@@ -19,11 +37,31 @@ var user = typeof adminUser !== 'undefined' && adminUser ? adminUser : { name: '
   </div>
 
   <div class="topbar-right">
-    <div class="topbar-notifications">
-      <button class="btn btn-icon topbar-btn" title="Notifications">
+    <div class="topbar-notifications dropdown">
+      <button class="dropdown-toggle btn btn-icon topbar-btn" id="notifMenuButton" aria-haspopup="true" aria-expanded="false" title="Notifications">
         <i class="fas fa-bell"></i>
-        <span class="notification-dot"></span>
+        <% if (unreadCount > 0) { %><span class="notification-dot"></span><% } %>
       </button>
+
+      <div class="dropdown-menu dropdown-menu-right notification-dropdown" aria-labelledby="notifMenuButton">
+        <div class="dropdown-header notification-dropdown-header">
+          <strong>Notifications</strong>
+          <% if (unreadCount > 0) { %><span class="badge badge-new"><%= unreadCount %> unread</span><% } %>
+        </div>
+        <div class="dropdown-divider"></div>
+        <% if (!notifList.length) { %>
+          <p class="notification-dropdown-empty">You're all caught up.</p>
+        <% } else { %>
+          <% notifList.forEach(function(n) { %>
+            <a href="<%= n.relatedLead ? '/admin/leads/' + n.relatedLead : '/admin/notifications' %>" class="dropdown-item notification-dropdown-item <%= n.read ? '' : 'is-unread' %>">
+              <span class="notification-dropdown-title"><%= n.title %></span>
+              <span class="notification-dropdown-time"><%= timeAgoShort(n.createdAt) %></span>
+            </a>
+          <% }); %>
+        <% } %>
+        <div class="dropdown-divider"></div>
+        <a href="/admin/notifications" class="dropdown-item" style="justify-content:center;font-weight:700">View all notifications</a>
+      </div>
     </div>
 
     <div class="topbar-user dropdown">
@@ -61,23 +99,47 @@ var user = typeof adminUser !== 'undefined' && adminUser ? adminUser : { name: '
 </header>
 
 <script>
-// Simple dropdown toggle for user menu
+// Shared dropdown toggle — wires up both the notification bell and the user
+// menu the same way, and closes whichever one is open on an outside click
+// or Escape.
 document.addEventListener('DOMContentLoaded', function() {
-  var userBtn = document.getElementById('userMenuButton');
-  if (userBtn) {
-    userBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var menu = this.nextElementSibling;
-      menu.classList.toggle('show');
-    });
-    document.addEventListener('click', function(e) {
-      var menus = document.querySelectorAll('.dropdown-menu');
-      menus.forEach(function(m) {
-        if (m.classList.contains('show') && !m.previousElementSibling.contains(e.target)) {
-          m.classList.remove('show');
-        }
-      });
-    });
+  var toggles = [document.getElementById('notifMenuButton'), document.getElementById('userMenuButton')]
+    .filter(Boolean)
+    .map(function(btn) { return { btn: btn, menu: btn.nextElementSibling }; });
+
+  function setOpen(entry, open) {
+    entry.menu.classList.toggle('show', open);
+    entry.btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
+  function closeAll(except) {
+    toggles.forEach(function(entry) { if (entry !== except) setOpen(entry, false); });
+  }
+
+  toggles.forEach(function(entry) {
+    entry.btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var willOpen = !entry.menu.classList.contains('show');
+      closeAll(null);
+      setOpen(entry, willOpen);
+    });
+  });
+
+  document.addEventListener('click', function(e) {
+    toggles.forEach(function(entry) {
+      if (entry.menu.classList.contains('show') && !entry.btn.contains(e.target) && !entry.menu.contains(e.target)) {
+        setOpen(entry, false);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    toggles.forEach(function(entry) {
+      if (entry.menu.classList.contains('show')) {
+        setOpen(entry, false);
+        entry.btn.focus();
+      }
+    });
+  });
 });
 </script>

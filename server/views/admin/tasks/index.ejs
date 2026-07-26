@@ -1,0 +1,156 @@
+<%
+const STATUS_LABELS = { todo: 'To Do', in_progress: 'In Progress', waiting: 'Waiting', review: 'Review', completed: 'Completed' };
+const PRIORITY_LABELS = { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' };
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
+function isOverdue(t) { return t.dueDate && t.status !== 'completed' && new Date(t.dueDate) < new Date(); }
+%>
+<div class="page-header">
+  <div>
+    <h1>Task Board</h1>
+    <p class="page-subtitle">All petition-production tasks across every lead</p>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/admin/tasks" class="filter-form">
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>All statuses</option>
+      <% taskStatuses.forEach(function(s) { %>
+        <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= STATUS_LABELS[s] %></option>
+      <% }); %>
+    </select>
+    <select name="priority" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= filters.priority === 'all' ? 'selected' : '' %>>All priorities</option>
+      <% taskPriorities.forEach(function(p) { %>
+        <option value="<%= p %>" <%= filters.priority === p ? 'selected' : '' %>><%= PRIORITY_LABELS[p] %></option>
+      <% }); %>
+    </select>
+    <select name="assignee" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= filters.assignee === 'all' ? 'selected' : '' %>>All assignees</option>
+      <% teamMembers.forEach(function(m) { %>
+        <option value="<%= m._id %>" <%= filters.assignee === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
+      <% }); %>
+    </select>
+    <select name="lead" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= filters.lead === 'all' ? 'selected' : '' %>>All leads</option>
+      <% leads.forEach(function(l) { %>
+        <option value="<%= l._id %>" <%= filters.lead === String(l._id) ? 'selected' : '' %>><%= l.name %></option>
+      <% }); %>
+    </select>
+    <select name="sprint" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= filters.sprint === 'all' ? 'selected' : '' %>>All sprints</option>
+      <option value="none" <%= filters.sprint === 'none' ? 'selected' : '' %>>No sprint</option>
+      <% sprints.forEach(function(s) { %>
+        <option value="<%= s._id %>" <%= filters.sprint === String(s._id) ? 'selected' : '' %>><%= s.name %></option>
+      <% }); %>
+    </select>
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
+  </form>
+</div>
+
+<div class="kanban-board">
+  <% columns.forEach(function(col) { %>
+    <div class="kanban-column">
+      <div class="kanban-column-header">
+        <span><%= STATUS_LABELS[col.status] %></span>
+        <span class="kanban-count"><%= col.tasks.length %></span>
+      </div>
+      <div class="kanban-column-body">
+        <% if (!col.tasks.length) { %>
+          <p class="kanban-empty">No tasks</p>
+        <% } %>
+        <% col.tasks.forEach(function(t) { %>
+          <div class="task-card <%= isOverdue(t) ? 'is-overdue' : '' %>">
+            <div class="task-card-top">
+              <span class="badge badge-priority-<%= t.priority %>"><%= PRIORITY_LABELS[t.priority] %></span>
+              <span class="task-type"><%= t.type %></span>
+            </div>
+            <p class="task-title"><%= t.title %></p>
+            <% if (t.lead) { %>
+              <a href="/admin/leads/<%= t.lead._id %>" class="task-lead-link"><i class="fas fa-user"></i> <%= t.lead.name %></a>
+            <% } %>
+            <div class="task-card-meta">
+              <span><i class="fas fa-user-circle"></i> <%= t.assignee ? t.assignee.name : (t.assigneeName || 'Unassigned') %></span>
+              <span class="<%= isOverdue(t) ? 'text-danger' : '' %>"><i class="fas fa-calendar"></i> <%= fmtDate(t.dueDate) %></span>
+            </div>
+
+            <form action="/admin/tasks/<%= t._id %>/status" method="POST" class="task-quick-status">
+              <select name="status" class="filter-select" onchange="this.form.submit()">
+                <% taskStatuses.forEach(function(s) { %>
+                  <option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= STATUS_LABELS[s] %></option>
+                <% }); %>
+              </select>
+            </form>
+
+            <details class="task-details">
+              <summary>Edit</summary>
+              <form action="/admin/tasks/<%= t._id %>?_method=PUT" method="POST" class="admin-form task-edit-form">
+                <div class="admin-form-group">
+                  <label>Title</label>
+                  <input type="text" name="title" class="form-control" value="<%= t.title %>" required>
+                </div>
+                <div class="admin-form-group">
+                  <label>Description</label>
+                  <textarea name="description" class="form-control" rows="2"><%= t.description %></textarea>
+                </div>
+                <div class="admin-form-grid">
+                  <div class="admin-form-group">
+                    <label>Assignee</label>
+                    <select name="assignee" class="form-control">
+                      <option value="">Unassigned</option>
+                      <% teamMembers.forEach(function(m) { %>
+                        <option value="<%= m._id %>" <%= t.assignee && String(t.assignee._id) === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
+                      <% }); %>
+                    </select>
+                  </div>
+                  <div class="admin-form-group">
+                    <label>Due date</label>
+                    <input type="date" name="dueDate" class="form-control" value="<%= t.dueDate ? new Date(t.dueDate).toISOString().slice(0,10) : '' %>">
+                  </div>
+                  <div class="admin-form-group">
+                    <label>Priority</label>
+                    <select name="priority" class="form-control">
+                      <% taskPriorities.forEach(function(p) { %>
+                        <option value="<%= p %>" <%= t.priority === p ? 'selected' : '' %>><%= PRIORITY_LABELS[p] %></option>
+                      <% }); %>
+                    </select>
+                  </div>
+                  <div class="admin-form-group">
+                    <label>Type</label>
+                    <select name="type" class="form-control">
+                      <% taskTypes.forEach(function(ty) { %>
+                        <option value="<%= ty %>" <%= t.type === ty ? 'selected' : '' %>><%= ty %></option>
+                      <% }); %>
+                    </select>
+                  </div>
+                </div>
+                <div class="admin-form-group">
+                  <label>Notes</label>
+                  <textarea name="notes" class="form-control" rows="2"><%= t.notes %></textarea>
+                </div>
+                <div class="admin-form-actions" style="justify-content:space-between">
+                  <% if (['super_admin','admin','pm'].includes(adminUser.role)) { %>
+                    <form action="/admin/tasks/<%= t._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this task?');">
+                      <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Delete</button>
+                    </form>
+                  <% } else { %><span></span><% } %>
+                  <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save"></i> Save</button>
+                </div>
+              </form>
+
+              <form action="/admin/tasks/<%= t._id %>/sprint" method="POST" class="task-sprint-form">
+                <label>Sprint</label>
+                <select name="sprintId" class="form-control" onchange="this.form.submit()">
+                  <option value="">No sprint</option>
+                  <% sprints.forEach(function(s) { %>
+                    <option value="<%= s._id %>" <%= t.sprint && String(t.sprint) === String(s._id) ? 'selected' : '' %>><%= s.name %></option>
+                  <% }); %>
+                </select>
+              </form>
+            </details>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  <% }); %>
+</div>

@@ -23,11 +23,14 @@ const BlogPostSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-BlogPostSchema.pre('validate', function (next) {
+// Mongoose 7+ dropped callback-style middleware — a synchronous hook takes
+// no `next` parameter and must not call one. (Pre-existing bug: leaving the
+// slug field blank when creating a post threw "next is not a function"
+// instead of auto-generating the slug.)
+BlogPostSchema.pre('validate', function () {
   if (this.title && !this.slug) {
     this.slug = slugify(this.title, { lower: true, strict: true });
   }
-  next();
 });
 
 module.exports = mongoose.model('BlogPost', BlogPostSchema);

@@ -21,7 +21,38 @@ const ConsultationSchema = new mongoose.Schema(
     country: { type: String, default: '', trim: true },
     occupation: { type: String, default: '', trim: true },
     attachmentUrl: { type: String, default: '' },
+    // NOTE: `source` means "which form was submitted" (consultation vs
+    // contact page) and is read by the mailer in the root app — do not
+    // repurpose it. Marketing-channel tracking lives in `leadSource` below.
     source: { type: String, enum: ['consultation', 'contact'], default: 'consultation' },
+
+    // ---- Lead-operations fields (Phase 9). All additive/optional so
+    // existing documents and the root/Next.js apps' own schema copies are
+    // completely unaffected. ----
+    leadSource: {
+      type: String,
+      enum: ['Website Form', 'Facebook', 'Instagram', 'Manual Entry', 'Email', 'Referral', 'WhatsApp', 'Other'],
+      default: 'Website Form',
+    },
+    campaign: { type: String, default: '' },
+
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'AdminUser', default: null },
+    ownerName: { type: String, default: '' },
+    assignees: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'AdminUser', default: null },
+        name: { type: String, required: true },
+        taskType: { type: String, default: '' },
+      },
+    ],
+
+    priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
+
+    deliveryStatus: {
+      type: String,
+      enum: ['drafting', 'internal_review', 'client_review', 'ready', 'delivered'],
+      default: 'drafting',
+    },
     utmSource: { type: String, default: '' },
     utmMedium: { type: String, default: '' },
     utmCampaign: { type: String, default: '' },
@@ -32,13 +63,45 @@ const ConsultationSchema = new mongoose.Schema(
     landingPage: { type: String, default: '' },
     referrer: { type: String, default: '' },
     emailSent: { type: Boolean, default: false },
+    // Superset of the original 5-value enum — every prior status string
+    // remains valid so no existing document is invalidated. The 12-stage
+    // petition-operations lifecycle (Phase 9) reuses 'new'/'contacted'/
+    // 'in_progress'/'closed' where they already mean the same thing, and
+    // adds the 8 stages that didn't previously exist. See STATUS_STAGES
+    // below for the canonical display order.
     status: {
       type: String,
-      enum: ['new', 'contacted', 'consultation_scheduled', 'in_progress', 'closed'],
+      enum: [
+        // Original values (kept for back-compat with existing records)
+        'new', 'contacted', 'consultation_scheduled', 'in_progress', 'closed',
+        // New stages introduced by the 12-stage lifecycle
+        'qualified', 'assigned', 'tasks_created',
+        'waiting_on_client', 'internal_review', 'ready_for_filing', 'submitted', 'delivered',
+      ],
       default: 'new',
     },
   },
   { timestamps: true }
 );
+
+/**
+ * Canonical 12-stage lifecycle, in order, for the status dropdown and any
+ * progress indicator. `consultation_scheduled` is intentionally excluded —
+ * it's a legacy value kept valid for old records, not part of the active flow.
+ */
+ConsultationSchema.statics.STATUS_STAGES = [
+  { value: 'new', label: 'New Lead' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'qualified', label: 'Qualified' },
+  { value: 'assigned', label: 'Assigned to Team' },
+  { value: 'tasks_created', label: 'Petition Tasks Created' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'waiting_on_client', label: 'Waiting on Client' },
+  { value: 'internal_review', label: 'Internal Review' },
+  { value: 'ready_for_filing', label: 'Ready for Filing' },
+  { value: 'submitted', label: 'Submitted' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'closed', label: 'Closed' },
+];
 
 module.exports = mongoose.model('Consultation', ConsultationSchema);

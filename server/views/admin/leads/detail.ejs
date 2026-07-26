@@ -1,10 +1,27 @@
-<!-- Back button -->
+<%
+const STATUS_LABEL = {};
+leadStatusStages.forEach(function(s) { STATUS_LABEL[s.value] = s.label; });
+function labelFor(status) { return STATUS_LABEL[status] || String(status || '').replace(/_/g, ' '); }
+const TASK_STATUS_LABELS = { todo: 'To Do', in_progress: 'In Progress', waiting: 'Waiting', review: 'Review', completed: 'Completed' };
+const DELIVERY_LABELS = { drafting: 'Drafting', internal_review: 'Internal Review', client_review: 'Client Review', ready: 'Ready for Delivery', delivered: 'Delivered' };
+const ACTIVITY_ICONS = {
+  received: 'inbox', contacted: 'phone', assigned: 'user-tag', note_added: 'sticky-note',
+  task_created: 'clipboard-list', task_completed: 'check-circle', status_changed: 'exchange-alt',
+  file_uploaded: 'file-upload', message_sent: 'paper-plane', package_delivered: 'truck',
+};
+function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
+function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
+%>
 <a href="/admin/leads" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to Leads</a>
 
 <div class="page-header">
   <div>
     <h1><%= lead.name %></h1>
-    <p class="page-subtitle">Submitted <%= new Date(lead.createdAt).toLocaleString() %></p>
+    <p class="page-subtitle">
+      Submitted <%= fmtDateTime(lead.createdAt) %>
+      · <span class="badge badge-priority-<%= lead.priority %>"><%= lead.priority %> priority</span>
+      · <span class="badge badge-<%= lead.status %>"><%= labelFor(lead.status) %></span>
+    </p>
   </div>
   <div class="page-actions">
     <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently? This cannot be undone.');" style="display:inline">
@@ -20,38 +37,14 @@
       <div class="admin-card-header"><h3>Contact Information</h3></div>
       <div class="admin-card-body">
         <div class="detail-grid">
-          <div class="detail-field">
-            <label>Name</label>
-            <span><%= lead.name || '—' %></span>
-          </div>
-          <div class="detail-field">
-            <label>Email</label>
-            <span><a href="mailto:<%= lead.email %>"><%= lead.email %></a></span>
-          </div>
-          <div class="detail-field">
-            <label>Phone</label>
-            <span><%= lead.phone || '—' %></span>
-          </div>
-          <div class="detail-field">
-            <label>Country</label>
-            <span><%= lead.country || '—' %></span>
-          </div>
-          <div class="detail-field">
-            <label>Occupation</label>
-            <span><%= lead.occupation || '—' %></span>
-          </div>
-          <div class="detail-field">
-            <label>Service Interested In</label>
-            <span><%= lead.service || '—' %></span>
-          </div>
-          <div class="detail-field">
-            <label>Status</label>
-            <span class="badge badge-<%= lead.status || 'new' %>"><%= (lead.status || 'new').replace('_', ' ') %></span>
-          </div>
-          <div class="detail-field">
-            <label>Source</label>
-            <span><%= lead.source || '—' %></span>
-          </div>
+          <div class="detail-field"><label>Name</label><span><%= lead.name || '—' %></span></div>
+          <div class="detail-field"><label>Email</label><span><a href="mailto:<%= lead.email %>"><%= lead.email %></a></span></div>
+          <div class="detail-field"><label>Phone</label><span><%= lead.phone || '—' %></span></div>
+          <div class="detail-field"><label>Country</label><span><%= lead.country || '—' %></span></div>
+          <div class="detail-field"><label>Occupation</label><span><%= lead.occupation || '—' %></span></div>
+          <div class="detail-field"><label>Service interested in</label><span><%= lead.service || '—' %></span></div>
+          <div class="detail-field"><label>Lead source</label><span><%= lead.leadSource || '—' %></span></div>
+          <div class="detail-field"><label>Form</label><span><%= lead.source || '—' %></span></div>
         </div>
       </div>
     </div>
@@ -66,7 +59,185 @@
       </div>
     </div>
 
-    <% if (lead.utmSource || lead.utmMedium || lead.gclid) { %>
+    <!-- Tasks -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h3>Tasks <span class="cell-sub">(<%= tasks.length %>)</span></h3>
+      </div>
+      <div class="admin-card-body">
+        <% if (!tasks.length) { %>
+          <p class="cell-sub" style="margin-bottom:16px">No tasks created for this lead yet.</p>
+        <% } else { %>
+          <div class="admin-table-wrap" style="margin-bottom:20px">
+            <table class="admin-table">
+              <thead><tr><th>Task</th><th>Assignee</th><th>Due</th><th>Priority</th><th>Status</th></tr></thead>
+              <tbody>
+                <% tasks.forEach(function(t) { %>
+                  <tr>
+                    <td><span class="cell-title"><%= t.title %></span><span class="cell-sub"><%= t.type %></span></td>
+                    <td><%= t.assignee ? t.assignee.name : (t.assigneeName || 'Unassigned') %></td>
+                    <td><%= t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '—' %></td>
+                    <td><span class="badge badge-priority-<%= t.priority %>"><%= t.priority %></span></td>
+                    <td>
+                      <form action="/admin/tasks/<%= t._id %>/status" method="POST" style="display:inline">
+                        <select name="status" class="filter-select" onchange="this.form.submit()">
+                          <% Object.keys(TASK_STATUS_LABELS).forEach(function(s) { %>
+                            <option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= TASK_STATUS_LABELS[s] %></option>
+                          <% }); %>
+                        </select>
+                      </form>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+
+        <details>
+          <summary>+ Create task</summary>
+          <form action="/admin/leads/<%= lead._id %>/tasks" method="POST" class="admin-form" style="margin-top:16px">
+            <div class="admin-form-grid">
+              <div class="admin-form-group full-width">
+                <label>Title</label>
+                <input type="text" name="title" class="form-control" required>
+              </div>
+              <div class="admin-form-group">
+                <label>Type</label>
+                <select name="type" class="form-control">
+                  <% taskTypes.forEach(function(ty) { %><option value="<%= ty %>"><%= ty %></option><% }); %>
+                </select>
+              </div>
+              <div class="admin-form-group">
+                <label>Assignee</label>
+                <select name="assignee" class="form-control">
+                  <option value="">Unassigned</option>
+                  <% teamMembers.forEach(function(m) { %><option value="<%= m._id %>"><%= m.name %></option><% }); %>
+                </select>
+              </div>
+              <div class="admin-form-group">
+                <label>Due date</label>
+                <input type="date" name="dueDate" class="form-control">
+              </div>
+              <div class="admin-form-group">
+                <label>Priority</label>
+                <select name="priority" class="form-control">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div class="admin-form-group full-width">
+              <label>Description</label>
+              <textarea name="description" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="admin-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create Task</button>
+            </div>
+          </form>
+        </details>
+      </div>
+    </div>
+
+    <!-- Delivery workflow -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h3>Delivery</h3>
+        <span class="badge badge-delivery-<%= (deliveryRecord && deliveryRecord.state) || 'drafting' %>">
+          <%= DELIVERY_LABELS[(deliveryRecord && deliveryRecord.state) || 'drafting'] %>
+        </span>
+      </div>
+      <div class="admin-card-body">
+        <form action="/admin/leads/<%= lead._id %>/delivery" method="POST" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label>Delivery state</label>
+              <select name="state" class="form-control">
+                <% Object.keys(DELIVERY_LABELS).forEach(function(s) { %>
+                  <option value="<%= s %>" <%= deliveryRecord && deliveryRecord.state === s ? 'selected' : '' %>><%= DELIVERY_LABELS[s] %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label>Delivery method</label>
+              <select name="method" class="form-control">
+                <% ['email','dashboard','both'].forEach(function(m) { %>
+                  <option value="<%= m %>" <%= deliveryRecord && deliveryRecord.method === m ? 'selected' : '' %>><%= m %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Update Delivery</button>
+          </div>
+        </form>
+
+        <% if (deliveryRecord && deliveryRecord.files && deliveryRecord.files.length) { %>
+          <table class="admin-table" style="margin:16px 0">
+            <thead><tr><th>File</th><th>Status</th></tr></thead>
+            <tbody>
+              <% deliveryRecord.files.forEach(function(f) { %>
+                <tr><td><%= f.url ? '<a href="' + f.url + '" target="_blank">' + f.name + '</a>' : f.name %></td><td><span class="badge badge-default"><%= f.status %></span></td></tr>
+              <% }); %>
+            </tbody>
+          </table>
+        <% } %>
+
+        <details style="margin-top:12px">
+          <summary>+ Add file to package</summary>
+          <form action="/admin/leads/<%= lead._id %>/delivery/files" method="POST" class="admin-form" style="margin-top:12px">
+            <div class="admin-form-grid">
+              <div class="admin-form-group"><label>File name</label><input type="text" name="fileName" class="form-control" placeholder="Petition letter — final.pdf" required></div>
+              <div class="admin-form-group"><label>URL (optional)</label><input type="url" name="fileUrl" class="form-control"></div>
+              <div class="admin-form-group">
+                <label>Status</label>
+                <select name="fileStatus" class="form-control">
+                  <option value="pending">Pending</option>
+                  <option value="ready">Ready</option>
+                  <option value="sent">Sent</option>
+                </select>
+              </div>
+            </div>
+            <div class="admin-form-actions"><button type="submit" class="btn btn-sm btn-primary">Add File</button></div>
+          </form>
+        </details>
+
+        <form action="/admin/leads/<%= lead._id %>/delivery/export" method="POST" style="margin-top:16px">
+          <button type="submit" class="btn btn-ghost btn-sm"><i class="fas fa-file-export"></i> Export Package</button>
+          <span class="cell-sub">Placeholder — logs the request; automatic file generation isn't wired up yet.</span>
+        </form>
+
+        <% if (deliveryRecord && deliveryRecord.confirmationNote) { %>
+          <div class="alert alert-info" style="margin-top:16px"><i class="fas fa-info-circle"></i><span><%= deliveryRecord.confirmationNote %></span></div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Activity / communication history -->
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Case History</h3></div>
+      <div class="admin-card-body">
+        <% if (!activity.length) { %>
+          <p class="cell-sub">No activity recorded yet.</p>
+        <% } else { %>
+          <div class="notes-timeline">
+            <% activity.forEach(function(a) { %>
+              <div class="note-item">
+                <div class="note-header">
+                  <strong><i class="fas fa-<%= ACTIVITY_ICONS[a.type] || 'circle' %>" style="margin-right:6px;color:var(--gold-600)"></i><%= a.actor %></strong>
+                  <span class="note-date"><%= fmtDateTime(a.createdAt) %></span>
+                </div>
+                <p class="note-content"><%= a.message %></p>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (lead.utmSource || lead.utmMedium || lead.gclid || lead.campaign) { %>
     <div class="admin-card">
       <div class="admin-card-header"><h3>Tracking Information</h3></div>
       <div class="admin-card-body">
@@ -74,6 +245,7 @@
           <div class="detail-field"><label>UTM Source</label><span><%= lead.utmSource || '—' %></span></div>
           <div class="detail-field"><label>UTM Medium</label><span><%= lead.utmMedium || '—' %></span></div>
           <div class="detail-field"><label>UTM Campaign</label><span><%= lead.utmCampaign || '—' %></span></div>
+          <div class="detail-field"><label>Campaign</label><span><%= lead.campaign || '—' %></span></div>
           <div class="detail-field"><label>Landing Page</label><span><%= lead.landingPage || '—' %></span></div>
         </div>
       </div>
@@ -89,13 +261,63 @@
         <form action="/admin/leads/<%= lead._id %>/status" method="POST">
           <div class="admin-form-group">
             <select name="status" class="form-control">
-              <% leadStatuses.forEach(function(s) { %>
-                <option value="<%= s %>" <%= lead.status === s ? 'selected' : '' %>><%= s.replace(/_/g, ' ') %></option>
+              <% leadStatusStages.forEach(function(s) { %>
+                <option value="<%= s.value %>" <%= lead.status === s.value ? 'selected' : '' %>><%= s.label %></option>
               <% }); %>
             </select>
           </div>
           <button type="submit" class="btn btn-primary btn-sm" style="width:100%">Update Status</button>
         </form>
+
+        <div class="quick-status-row">
+          <% [['waiting_on_client','Waiting on client'], ['ready_for_filing','Ready for filing'], ['submitted','Submitted'], ['delivered','Delivered']].forEach(function(pair) { %>
+            <form action="/admin/leads/<%= lead._id %>/status" method="POST">
+              <input type="hidden" name="status" value="<%= pair[0] %>">
+              <button type="submit" class="btn btn-xs btn-ghost" <%= lead.status === pair[0] ? 'disabled' : '' %>><%= pair[1] %></button>
+            </form>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignment -->
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Assignment</h3></div>
+      <div class="admin-card-body">
+        <% if (['super_admin','admin','pm'].includes(adminUser.role)) { %>
+          <form action="/admin/leads/<%= lead._id %>/assign" method="POST" class="admin-form">
+            <div class="admin-form-group">
+              <label>Primary owner</label>
+              <select name="owner" class="form-control">
+                <option value="">Unassigned</option>
+                <% teamMembers.forEach(function(m) { %>
+                  <option value="<%= m._id %>" <%= lead.owner && String(lead.owner._id) === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <% assignmentSlots.forEach(function(slot) { %>
+              <% var current = (lead.assignees || []).find(function(a) { return a.taskType === slot.taskType; }); %>
+              <div class="admin-form-group">
+                <label><%= slot.taskType %></label>
+                <select name="assignee_<%= slot.taskType.toLowerCase().replace(/[^a-z0-9]+/g,'_') %>" class="form-control">
+                  <option value="">Unassigned</option>
+                  <% (membersBySlotRole[slot.taskType] || []).forEach(function(m) { %>
+                    <option value="<%= m._id %>" <%= current && current.user && String(current.user._id) === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
+                  <% }); %>
+                </select>
+              </div>
+            <% }); %>
+            <button type="submit" class="btn btn-primary btn-sm" style="width:100%"><i class="fas fa-user-tag"></i> Save Assignment</button>
+          </form>
+        <% } else { %>
+          <p class="cell-sub">Owner: <%= lead.ownerName || 'Unassigned' %></p>
+          <ul style="margin-top:8px">
+            <% (lead.assignees || []).forEach(function(a) { %>
+              <li class="cell-sub"><%= a.taskType %>: <%= a.name %></li>
+            <% }); %>
+          </ul>
+          <p class="cell-sub" style="margin-top:8px">Only PM/Admin roles can change assignment.</p>
+        <% } %>
       </div>
     </div>
 
@@ -115,7 +337,7 @@
               <div class="note-item">
                 <div class="note-header">
                   <strong><%= n.author %></strong>
-                  <span class="note-date"><%= new Date(n.createdAt).toLocaleString() %></span>
+                  <span class="note-date"><%= fmtDateTime(n.createdAt) %></span>
                 </div>
                 <p class="note-content"><%= n.content %></p>
               </div>

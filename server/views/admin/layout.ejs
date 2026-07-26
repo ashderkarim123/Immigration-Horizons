@@ -19,6 +19,7 @@
   <div class="admin-wrapper">
     <!-- Sidebar -->
     <%- include('partials/sidebar') %>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Main Content Area -->
     <div class="admin-main">
@@ -60,22 +61,47 @@
 
   <!-- Scripts -->
   <script>
-    // Simple alert dismiss
     document.addEventListener('DOMContentLoaded', function() {
-      var closeBtns = document.querySelectorAll('.alert-close');
-      closeBtns.forEach(function(btn) {
+      // Dismissible alerts
+      document.querySelectorAll('.alert-close').forEach(function(btn) {
         btn.addEventListener('click', function() {
-          this.parentElement.style.display = 'none';
+          this.closest('.alert').style.display = 'none';
         });
       });
 
-      // Sidebar toggle
+      // Mobile sidebar toggle (off-canvas drawer + backdrop)
+      var sidebar = document.querySelector('.admin-sidebar');
+      var overlay = document.getElementById('sidebarOverlay');
       var toggleBtn = document.getElementById('sidebarToggle');
-      if (toggleBtn) {
+
+      function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('open');
+      }
+
+      if (toggleBtn && sidebar && overlay) {
         toggleBtn.addEventListener('click', function() {
-          document.querySelector('.admin-wrapper').classList.toggle('sidebar-collapsed');
+          sidebar.classList.toggle('open');
+          overlay.classList.toggle('open');
+        });
+        overlay.addEventListener('click', closeSidebar);
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') closeSidebar();
         });
       }
+
+      // Progressive enhancement only: disables the submit button and shows a
+      // spinner so a slow request can't be submitted twice. Skipped for
+      // filter/search forms (GET) since those aren't mutating requests.
+      document.querySelectorAll('form.admin-form, form.login-form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+          var btn = form.querySelector('button[type="submit"]');
+          if (btn && !btn.disabled) {
+            btn.disabled = true;
+            btn.classList.add('is-loading');
+          }
+        });
+      });
     });
   </script>
 

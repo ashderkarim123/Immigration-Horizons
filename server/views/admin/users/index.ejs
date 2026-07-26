@@ -28,7 +28,7 @@
               <tr>
                 <td><span class="cell-title"><%= u.name %></span></td>
                 <td><%= u.email %></td>
-                <td><span class="badge badge-published"><%= u.role %></span></td>
+                <td><span class="badge badge-published"><%= (roleLabels && roleLabels[u.role]) || u.role %></span></td>
                 <td><%= u.isActive ? '<i class="fas fa-check" style="color:#15803d"></i>' : '—' %></td>
                 <td class="cell-actions">
                   <form action="/admin/users/<%= u._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline">

@@ -1,0 +1,84 @@
+<%
+const TYPE_ICONS = {
+  new_lead: 'inbox', lead_assigned: 'user-tag', task_assigned: 'clipboard-list',
+  task_completed: 'check-circle', task_overdue: 'exclamation-triangle',
+  lead_waiting_on_client: 'hourglass-half', lead_in_review: 'search',
+  lead_package_ready: 'box', lead_submitted: 'paper-plane', lead_delivered: 'truck',
+  note_added: 'sticky-note', client_response: 'reply',
+};
+function timeAgo(d) {
+  const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+%>
+<div class="page-header">
+  <div>
+    <h1>Notifications</h1>
+    <p class="page-subtitle">Everything relevant to you across leads and tasks</p>
+  </div>
+  <div class="page-actions">
+    <form action="/admin/notifications/read-all" method="POST">
+      <button type="submit" class="btn btn-ghost btn-sm"><i class="fas fa-check-double"></i> Mark all read</button>
+    </form>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/admin/notifications" class="filter-form">
+    <select name="type" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= filters.type === 'all' ? 'selected' : '' %>>All types</option>
+      <% notificationTypes.forEach(function(t) { %>
+        <option value="<%= t %>" <%= filters.type === t ? 'selected' : '' %>><%= t.replace(/_/g,' ') %></option>
+      <% }); %>
+    </select>
+    <select name="lead" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= filters.lead === 'all' ? 'selected' : '' %>>All leads</option>
+      <% leads.forEach(function(l) { %>
+        <option value="<%= l._id %>" <%= filters.lead === String(l._id) ? 'selected' : '' %>><%= l.name %></option>
+      <% }); %>
+    </select>
+    <label class="toggle-switch" style="margin-left:4px">
+      <input type="hidden" name="unread" value="0">
+      <input type="checkbox" name="unread" value="1" <%= filters.unread ? 'checked' : '' %> onchange="this.form.submit()">
+      <span class="toggle-slider"></span>
+      <span>Unread only</span>
+    </label>
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
+  </form>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <% if (!notifications.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-bell"></i>
+        <h3>All caught up</h3>
+        <p>No notifications match these filters.</p>
+      </div>
+    <% } else { %>
+      <ul class="notification-list">
+        <% notifications.forEach(function(n) { %>
+          <li class="notification-row <%= n.read ? '' : 'is-unread' %>">
+            <span class="notification-icon"><i class="fas fa-<%= TYPE_ICONS[n.type] || 'bell' %>"></i></span>
+            <div class="notification-body">
+              <p class="notification-title"><%= n.title %></p>
+              <p class="notification-message"><%= n.message %></p>
+              <p class="notification-meta">
+                <%= timeAgo(n.createdAt) %>
+                <% if (n.relatedLead) { %> · <a href="/admin/leads/<%= n.relatedLead._id %>"><%= n.relatedLead.name %></a><% } %>
+              </p>
+            </div>
+            <% if (!n.read) { %>
+              <form action="/admin/notifications/<%= n._id %>/read" method="POST">
+                <button type="submit" class="btn btn-sm btn-ghost">Mark read</button>
+              </form>
+            <% } %>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</div>

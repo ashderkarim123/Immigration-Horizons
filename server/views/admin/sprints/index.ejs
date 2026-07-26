@@ -1,0 +1,140 @@
+<%
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
+const isManager = ['super_admin','admin','pm'].includes(adminUser.role);
+%>
+<div class="page-header">
+  <div>
+    <h1>Sprint Board</h1>
+    <p class="page-subtitle">Lightweight sprint tracking across petition-production tasks</p>
+  </div>
+</div>
+
+<% if (isManager) { %>
+<div class="admin-card">
+  <div class="admin-card-header"><h3>New Sprint</h3></div>
+  <div class="admin-card-body">
+    <form action="/admin/sprints" method="POST" class="admin-form">
+      <div class="admin-form-grid">
+        <div class="admin-form-group">
+          <label>Sprint name</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Sprint 4 — Filing push" required>
+        </div>
+        <div class="admin-form-group">
+          <label>Start date</label>
+          <input type="date" name="startDate" class="form-control" required>
+        </div>
+        <div class="admin-form-group">
+          <label>End date</label>
+          <input type="date" name="endDate" class="form-control" required>
+        </div>
+        <div class="admin-form-group full-width">
+          <label>Sprint goal</label>
+          <input type="text" name="goal" class="form-control" placeholder="What should be true by the end of this sprint?">
+        </div>
+      </div>
+      <div class="admin-form-actions">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Create Sprint</button>
+      </div>
+    </form>
+  </div>
+</div>
+<% } %>
+
+<% if (!sprintCards.length) { %>
+  <div class="admin-card">
+    <div class="empty-state">
+      <i class="fas fa-flag"></i>
+      <h3>No sprints yet</h3>
+      <p>Create your first sprint above to start grouping tasks into a work cycle.</p>
+    </div>
+  </div>
+<% } %>
+
+<div class="sprint-grid">
+  <% sprintCards.forEach(function(sprint) { %>
+    <div class="admin-card sprint-card">
+      <div class="admin-card-header">
+        <h3><%= sprint.name %></h3>
+        <span class="badge badge-sprint-<%= sprint.status %>"><%= sprint.status %></span>
+      </div>
+      <div class="admin-card-body">
+        <% if (sprint.goal) { %><p class="sprint-goal"><%= sprint.goal %></p><% } %>
+        <p class="sprint-dates"><i class="fas fa-calendar"></i> <%= fmtDate(sprint.startDate) %> &rarr; <%= fmtDate(sprint.endDate) %></p>
+
+        <div class="progress-bar">
+          <div class="progress-bar-fill" style="width:<%= sprint.progress %>%"></div>
+        </div>
+        <p class="progress-label"><%= sprint.completed %> of <%= sprint.total %> tasks completed (<%= sprint.progress %>%)</p>
+
+        <div class="sprint-stats">
+          <span><i class="fas fa-check-circle" style="color:#15803d"></i> <%= sprint.completed %> completed</span>
+          <span><i class="fas fa-hourglass-half" style="color:#b45309"></i> <%= sprint.blocked %> waiting</span>
+        </div>
+
+        <% if (sprint.tasks.length) { %>
+          <ul class="sprint-task-list">
+            <% sprint.tasks.forEach(function(t) { %>
+              <li>
+                <span class="badge badge-task-<%= t.status %>"><%= t.status.replace('_',' ') %></span>
+                <%= t.title %>
+                <span class="cell-sub"><%= t.assignee ? t.assignee.name : 'Unassigned' %></span>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
+
+        <% if (isManager) { %>
+          <div class="sprint-actions">
+            <form action="/admin/sprints/<%= sprint._id %>/status" method="POST">
+              <select name="status" class="filter-select" onchange="this.form.submit()">
+                <% ['planning','active','completed'].forEach(function(s) { %>
+                  <option value="<%= s %>" <%= sprint.status === s ? 'selected' : '' %>><%= s %></option>
+                <% }); %>
+              </select>
+            </form>
+            <form action="/admin/sprints/<%= sprint._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this sprint? Tasks will be unassigned from it, not deleted.');">
+              <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+            </form>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>Unassigned tasks</h3></div>
+  <div class="admin-card-body no-padding">
+    <% if (!unassignedTasks.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>Every open task is already in a sprint.</p>
+      </div>
+    <% } else { %>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>Task</th><th>Lead</th><th>Assignee</th><th class="shrink">Add to sprint</th></tr></thead>
+          <tbody>
+            <% unassignedTasks.forEach(function(t) { %>
+              <tr>
+                <td><span class="cell-title"><%= t.title %></span><span class="cell-sub"><%= t.type %></span></td>
+                <td><%= t.lead ? t.lead.name : '—' %></td>
+                <td><%= t.assigneeName || 'Unassigned' %></td>
+                <td>
+                  <form action="/admin/tasks/<%= t._id %>/sprint" method="POST">
+                    <select name="sprintId" class="filter-select" onchange="this.form.submit()">
+                      <option value="">Choose sprint…</option>
+                      <% sprintCards.forEach(function(s) { %>
+                        <option value="<%= s._id %>"><%= s.name %></option>
+                      <% }); %>
+                    </select>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
