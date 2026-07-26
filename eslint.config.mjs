@@ -26,7 +26,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // web/server is a separate, standalone CommonJS Express app (its own
+    // server/ is a separate, standalone CommonJS Express app (its own
     // package.json/node_modules) — not part of this Next.js TypeScript app.
     "server/**",
   ]),

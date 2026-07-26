@@ -3,8 +3,8 @@ import "server-only";
 import mongoose from "mongoose";
 
 /**
- * Cached MongoDB connection, shared with the legacy Express app and the
- * standalone admin CMS (web/server) — same MONGODB_URI, same database, same
+ * Cached MongoDB connection, shared with the legacy Express app (separate
+ * repo) and the standalone admin CMS (server/) — same MONGODB_URI, same database, same
  * `consultations` collection, so leads submitted here show up in the admin
  * Leads dashboard.
  *

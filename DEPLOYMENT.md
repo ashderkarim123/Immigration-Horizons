@@ -1,13 +1,13 @@
 # Deployment Guide — Immigration Horizons (New Stack)
 
-Scope: this guide covers the **new** stack only —
+This repo contains the new stack, split out from the legacy monorepo —
 
-- **`web/`** — the public Next.js 16 site (marketing pages, service pages, consultation/contact forms)
-- **`web/server/`** — the standalone Express/EJS admin CMS (leads, blog, SEO, tasks, notifications)
+- **repo root** — the public Next.js 16 site (marketing pages, service pages, consultation/contact forms)
+- **`server/`** — the standalone Express/EJS admin CMS (leads, blog, SEO, tasks, notifications)
 
 Both apps share one MongoDB Atlas cluster/database (`immigration-horizons`, collection `consultations` in particular) but are deployed and run as **two independent Node processes**, typically on the same VPS behind the same reverse proxy, on different subdomains.
 
-The legacy root Express+EJS app (repo root, port 3000) is **out of scope** — it has its own `DEPLOYMENT.md` at the repo root and stays live until an explicit cutover decision is made.
+The legacy Express+EJS site (a separate repo, port 3000) is **out of scope** — it has its own `DEPLOYMENT.md` and stays live until an explicit cutover decision is made.
 
 ---
 
@@ -23,7 +23,7 @@ Internet ── HTTPS ──▶ │  nginx (reverse proxy, TLS) │
      immigrationhorizons.com                admin.immigrationhorizons.com
      (proxy → 127.0.0.1:3000)                (proxy → 127.0.0.1:4000)
                  │                                       │
-        Next.js `web/`  (PM2: "ih-web")        Admin `web/server` (PM2: "ih-admin")
+        Next.js (repo root, PM2: "ih-web")     Admin `server/` (PM2: "ih-admin")
                  │                                       │
                  └───────────────┬───────────────────────┘
                                   ▼
@@ -62,7 +62,7 @@ sudo npm install -g pm2
 
 Neither app validates these at build time (no schema/zod check exists in either codebase as of this phase) — missing values degrade silently rather than crash, so this checklist is the actual safety net. Go through it line by line before first deploy.
 
-### `web/.env` (Next.js — copy from `web/.env.example`)
+### `.env` at repo root (Next.js — copy from `.env.example`)
 
 | Variable | Required? | Notes |
 |---|---|---|
@@ -73,41 +73,40 @@ Neither app validates these at build time (no schema/zod check exists in either 
 | `NEXT_PUBLIC_SITE_URL` | Recommended | Must be `https://immigrationhorizons.com` in production — feeds canonical/OG URLs. Already defaults correctly, but set it explicitly so a staging value can never leak into a prod build. |
 | `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_WHATSAPP_NUMBER_1/2` | Recommended | Public-facing contact details, safe to expose in the client bundle. |
 
-### `web/server/.env` (Admin CMS — copy from `web/server/.env.example`)
+### `server/.env` (Admin CMS — copy from `server/.env.example`)
 
 | Variable | Required? | Notes |
 |---|---|---|
 | `NODE_ENV=production` | **Yes** | Gates secure cookies, `trust proxy`, and startup guards below. **The server now refuses to start in production without this being set correctly alongside the two items below** (see Part 3 hardening notes). |
-| `MONGODB_URI` | **Yes** | Same cluster as `web/`. Also required for the session store — **the server refuses to start in production if this is missing**, since sessions would otherwise fall back to in-memory (broken across restarts/multiple instances). |
+| `MONGODB_URI` | **Yes** | Same cluster as the root app. Also required for the session store — **the server refuses to start in production if this is missing**, since sessions would otherwise fall back to in-memory (broken across restarts/multiple instances). |
 | `SESSION_SECRET` | **Yes** | Must be a real random value, not the placeholder in `.env.example`. Generate: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. **The server refuses to start in production with the placeholder value.** |
 | `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASH` | **Yes** | Change from the default. Prefer `ADMIN_PASSWORD_HASH` (bcrypt) over plaintext `ADMIN_PASSWORD` — generate with `node -e "console.log(require('bcryptjs').hashSync('yourRealPassword', 12))"`. **The server refuses to start in production if `ADMIN_PASSWORD` is left at `admin`/`admin123`/`admin123456`.** |
 | `ADMIN_USERNAME` | Recommended | Change from `admin` if you want a non-obvious fallback login identity (DB-backed users under **Users** are the real long-term auth path; this env pair is the break-glass fallback). |
 | `SITE_URL` | Recommended | Set to `https://admin.immigrationhorizons.com` (or wherever the admin panel is reachable) — used in a few view-rendered links. |
 | `PORT` | No | Defaults to `4000`. |
-| `GOOGLE_*`, `RESEND_API_KEY` (in this app) | No | Only used to render a status string on `/admin/contact-form`; the actual Sheets/email sending happens in the legacy root app and (for email) in `web/`, not here. |
+| `GOOGLE_*`, `RESEND_API_KEY` (in this app) | No | Only used to render a status string on `/admin/contact-form`; the actual Sheets/email sending happens in the legacy site's repo and (for email) in the root Next.js app here, not here. |
 
-**Do not commit either `.env` file.** Both are already gitignored; confirm with `git check-ignore web/.env web/server/.env` before your first deploy.
+**Do not commit either `.env` file.** Both are already gitignored; confirm with `git check-ignore .env server/.env` before your first deploy.
 
 ---
 
 ## Part 3 — Local build verification (do this before touching the server)
 
 ```bash
-# Next.js site
-cd web
+# Next.js site (repo root)
 npm ci
 npm run lint      # must be clean
 npm run build     # must compile + typecheck; watch for ignored TS/ESLint errors — none are configured, so a real error fails the build
 
 # Admin CMS
-cd ../server
+cd server
 npm ci
 node -e "require('./server.js')"   # sanity-check it boots locally with your .env; Ctrl+C to stop
 ```
 
-If `npm run build` in `web/` fails, do not deploy — fix it first. There is no `ignoreBuildErrors`/`ignoreDuringBuilds` bypass configured in `next.config.ts`, so a clean local build is a reliable signal the production build will also succeed.
+If `npm run build` fails at the repo root, do not deploy — fix it first. There is no `ignoreBuildErrors`/`ignoreDuringBuilds` bypass configured in `next.config.ts`, so a clean local build is a reliable signal the production build will also succeed.
 
-**Production-mode hardening now enforced by `web/server/server.js`** (added this phase — know these before your first prod boot, so you don't mistake an intentional refusal-to-start for a bug):
+**Production-mode hardening now enforced by `server/server.js`** (added this phase — know these before your first prod boot, so you don't mistake an intentional refusal-to-start for a bug):
 
 - Refuses to start if `NODE_ENV=production` and `SESSION_SECRET`/`ADMIN_PASSWORD` are left at their documented placeholder values.
 - Refuses to start if `NODE_ENV=production` and no real `MONGODB_URI` is set (no persistent session store available).
@@ -120,20 +119,19 @@ If `npm run build` in `web/` fails, do not deploy — fix it first. There is no 
 ```bash
 # --- clone / update ---
 cd /var/www
-git clone <your-repo-url> immigrationhorizons   # first time only
-cd immigrationhorizons
+git clone <this-repo-url> immigrationhorizons-web   # first time only
+cd immigrationhorizons-web
 git fetch origin
 git checkout main                                # or whichever branch you're cutting over from
 git pull
 
-# --- web/ (Next.js) ---
-cd web
+# --- Next.js site (repo root) ---
 cp .env.example .env        # then fill in real values, see Part 2
 npm ci
 npm run build
 
-# --- web/server/ (Admin CMS) ---
-cd ../server
+# --- server/ (Admin CMS) ---
+cd server
 cp .env.example .env        # then fill in real values, see Part 2
 npm ci
 ```
@@ -144,15 +142,14 @@ The admin CMS is EJS-rendered server-side with no build step — `npm ci` is suf
 
 ## Part 5 — Process manager (PM2)
 
-From `/var/www/immigrationhorizons`:
+From `/var/www/immigrationhorizons-web`:
 
 ```bash
-# Next.js site — production start
-cd web
+# Next.js site — production start (repo root)
 pm2 start npm --name ih-web -- start
 
 # Admin CMS
-cd ../server
+cd server
 pm2 start server.js --name ih-admin
 
 # Persist across reboots
@@ -166,8 +163,8 @@ Useful day-to-day commands:
 pm2 status                 # see both processes, restart counts, uptime
 pm2 logs ih-web            # tail Next.js logs
 pm2 logs ih-admin          # tail admin CMS logs
-pm2 restart ih-web         # restart after a redeploy of web/
-pm2 restart ih-admin       # restart after a redeploy of web/server
+pm2 restart ih-web         # restart after a redeploy of the Next.js site
+pm2 restart ih-admin       # restart after a redeploy of server/
 ```
 
 PM2 auto-restarts a crashed process, which matters specifically for `ih-admin`: its `uncaughtException`/`unhandledRejection` handlers deliberately log-and-continue rather than exit (a documented choice to survive transient DB hiccups), so PM2's restart-on-crash is a backstop for the rarer case where that assumption doesn't hold, not the primary recovery mechanism.
@@ -216,7 +213,7 @@ server {
 }
 ```
 
-The `X-Forwarded-Proto` header is **required** for the admin CMS: `web/server/server.js` sets `app.set('trust proxy', 1)` only when `NODE_ENV=production`, and secure session cookies depend on Express correctly reading `req.secure` from this header through the proxy. Without it, admin login will silently fail to keep users logged in (the `secure` cookie gets set, but the browser refuses to send it back on the next request unless the connection is genuinely recognized as HTTPS end-to-end).
+The `X-Forwarded-Proto` header is **required** for the admin CMS: `server/server.js` sets `app.set('trust proxy', 1)` only when `NODE_ENV=production`, and secure session cookies depend on Express correctly reading `req.secure` from this header through the proxy. Without it, admin login will silently fail to keep users logged in (the `secure` cookie gets set, but the browser refuses to send it back on the next request unless the connection is genuinely recognized as HTTPS end-to-end).
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/immigrationhorizons.com /etc/nginx/sites-enabled/
@@ -243,7 +240,7 @@ certbot rewrites the nginx server blocks above in place to add the `listen 443 s
    - `A` record: `immigrationhorizons.com` → VPS public IP
    - `A` record: `www.immigrationhorizons.com` → VPS public IP (or `CNAME` to the apex)
    - `A` record: `admin.immigrationhorizons.com` → VPS public IP
-2. If `immigrationhorizons.com` currently points at the **legacy root app**, this is the actual cutover moment — the new Next.js site takes over the apex domain. Lower the DNS TTL to 300s a day beforehand so the change propagates quickly, and raise it back after confirming stability.
+2. If `immigrationhorizons.com` currently points at the **legacy site**, this is the actual cutover moment — the new Next.js site takes over the apex domain. Lower the DNS TTL to 300s a day beforehand so the change propagates quickly, and raise it back after confirming stability.
 3. Confirm propagation before assuming it's live: `dig +short immigrationhorizons.com` from a machine outside your network, or use a third-party propagation checker.
 4. Run the SSL step (6b) only after DNS has propagated — certbot's HTTP-01 challenge requires the domain to already resolve to this server.
 
@@ -261,7 +258,7 @@ mongodump --uri="<MONGODB_URI>" --out=./backup-$(date +%F)
 mongorestore --uri="<MONGODB_URI>" ./backup-2026-07-26
 ```
 
-Take this dump **immediately before** the DNS cutover in Part 7 and again immediately before any future schema-changing deploy (both `web/` and `web/server` write to the same `consultations` collection with independently-validated Mongoose schemas — a bad deploy on either side is a data-shape risk to the other).
+Take this dump **immediately before** the DNS cutover in Part 7 and again immediately before any future schema-changing deploy (both the root app and `server/` write to the same `consultations` collection with independently-validated Mongoose schemas — a bad deploy on either side is a data-shape risk to the other).
 
 ---
 
@@ -269,14 +266,14 @@ Take this dump **immediately before** the DNS cutover in Part 7 and again immedi
 
 Run every item; do not skip on the assumption "it built, so it works."
 
-**Public site (`web/`):**
+**Public site (repo root):**
 - [ ] `https://immigrationhorizons.com` loads, single `<h1>`, no console errors
 - [ ] `/consultation` and `/contact` forms submit successfully (real test submission — see checklist below)
 - [ ] `https://immigrationhorizons.com/robots.txt` and `/sitemap.xml` both resolve and list the real domain
 - [ ] A 404 (e.g. `/this-does-not-exist`) renders the custom `not-found.tsx`, not a raw error
 - [ ] No horizontal scroll at mobile/tablet/desktop widths
 
-**Admin CMS (`web/server`):**
+**Admin CMS (`server/`):**
 - [ ] `https://admin.immigrationhorizons.com/admin/login` loads over HTTPS
 - [ ] Login succeeds and the session persists across a page reload (validates the `secure`/`trust proxy` wiring from Part 6a — this is the one most likely to silently break on a fresh nginx config)
 - [ ] Dashboard, Leads, Task Board, Sprint Board, Notifications, Delivery, Blog, SEO, Testimonials, FAQs, Media, Settings, Users all load without error
@@ -298,15 +295,15 @@ Both apps are plain git checkouts running under PM2 — rollback is a revert-and
 
 ```bash
 # 1. Identify the last known-good commit
-cd /var/www/immigrationhorizons
+cd /var/www/immigrationhorizons-web
 git log --oneline -10
 
 # 2. Roll back the code
 git checkout <last-good-commit-sha>
 
 # 3. Rebuild only what changed
-cd web && npm ci && npm run build && pm2 restart ih-web
-cd ../server && npm ci && pm2 restart ih-admin
+npm ci && npm run build && pm2 restart ih-web
+cd server && npm ci && pm2 restart ih-admin
 
 # 4. If the bad deploy included a schema change that already wrote
 #    incompatible documents, restore from the Part 8 backup instead of (or
@@ -314,7 +311,7 @@ cd ../server && npm ci && pm2 restart ih-admin
 mongorestore --uri="<MONGODB_URI>" --drop ./backup-<date>
 ```
 
-Keep the previous production `.env` files backed up outside the repo (they're gitignored, so `git checkout` alone won't restore them) — e.g. `cp web/.env /root/backups/web.env.$(date +%F)` before every deploy.
+Keep the previous production `.env` files backed up outside the repo (they're gitignored, so `git checkout` alone won't restore them) — e.g. `cp .env /root/backups/web.env.$(date +%F)` before every deploy.
 
 **When to roll back vs. hotfix:** if the issue is cosmetic or isolated to one page, prefer a forward-fix (small commit, redeploy) over a rollback, since a rollback also discards any leads/data-model changes that shipped alongside the bug. Reserve rollback for anything that breaks lead capture, admin login, or the database connection.
 
@@ -324,22 +321,22 @@ Keep the previous production `.env` files backed up outside the repo (they're gi
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Admin login redirects back to `/admin/login` in a loop | `trust proxy`/`X-Forwarded-Proto` not reaching Express, so the `secure` cookie is set but never sent back | Confirm nginx config includes `proxy_set_header X-Forwarded-Proto $scheme;` (Part 6a) and that `NODE_ENV=production` is actually set in `web/server/.env` |
+| Admin login redirects back to `/admin/login` in a loop | `trust proxy`/`X-Forwarded-Proto` not reaching Express, so the `secure` cookie is set but never sent back | Confirm nginx config includes `proxy_set_header X-Forwarded-Proto $scheme;` (Part 6a) and that `NODE_ENV=production` is actually set in `server/.env` |
 | Admin server won't start, logs "Refusing to start in production..." | A required env var (`SESSION_SECRET`, `ADMIN_PASSWORD`, `MONGODB_URI`) is missing or still a placeholder | This is an intentional startup guard added this phase — fill in the real value per Part 2, don't bypass it |
-| Leads aren't arriving by email but do appear in the admin dashboard | `RESEND_API_KEY` unset or invalid | Check `pm2 logs ih-web` for `[leads] RESEND_API_KEY not set` or `[leads] Resend send failed`; this fails silently to the visitor by design (see `web/src/lib/leads.ts`) |
-| Leads arrive by email but never appear in the admin dashboard | `MONGODB_URI` unset/unreachable from `web/`, or the VPS IP isn't Atlas-allowlisted | Check `pm2 logs ih-web` for `[leads] Failed to save lead to MongoDB`; verify Atlas Network Access includes this server's IP |
-| Every single admin page 500s at once (not just DB-backed ones) | MongoDB Atlas is unreachable, and the session store failure isn't degrading gracefully | Should no longer happen after this phase's session-store resilience fix (`web/server/server.js`) — if it recurs, check `pm2 logs ih-admin` for `[session store] ... failed, continuing without session`; if that log line itself is missing, the fix regressed |
-| Uploaded blog/media images 404 after a redeploy | Uploads live on local disk (`web/server/public/uploads/`) — a redeploy to a fresh container/instance loses them | This topology (git checkout + PM2 on one persistent VPS) keeps the same disk across deploys, so this shouldn't occur; it *will* occur if you ever move `web/server` to an ephemeral-filesystem platform (see the legacy app's root `DEPLOYMENT.md` "file-upload problem" section for the same issue explained in more depth) |
+| Leads aren't arriving by email but do appear in the admin dashboard | `RESEND_API_KEY` unset or invalid | Check `pm2 logs ih-web` for `[leads] RESEND_API_KEY not set` or `[leads] Resend send failed`; this fails silently to the visitor by design (see `src/lib/leads.ts`) |
+| Leads arrive by email but never appear in the admin dashboard | `MONGODB_URI` unset/unreachable from the root app, or the VPS IP isn't Atlas-allowlisted | Check `pm2 logs ih-web` for `[leads] Failed to save lead to MongoDB`; verify Atlas Network Access includes this server's IP |
+| Every single admin page 500s at once (not just DB-backed ones) | MongoDB Atlas is unreachable, and the session store failure isn't degrading gracefully | Should no longer happen after this phase's session-store resilience fix (`server/server.js`) — if it recurs, check `pm2 logs ih-admin` for `[session store] ... failed, continuing without session`; if that log line itself is missing, the fix regressed |
+| Uploaded blog/media images 404 after a redeploy | Uploads live on local disk (`server/public/uploads/`) — a redeploy to a fresh container/instance loses them | This topology (git checkout + PM2 on one persistent VPS) keeps the same disk across deploys, so this shouldn't occur; it *will* occur if you ever move `server/` to an ephemeral-filesystem platform (see the legacy site's own `DEPLOYMENT.md` "file-upload problem" section for the same issue explained in more depth) |
 | `next build` fails with a type error that wasn't there in a previous build | A real regression, not a bypassed check — `next.config.ts` has no `ignoreBuildErrors`/`ignoreDuringBuilds` flag | Fix the actual error; do not add those flags as a shortcut |
-| Google Sheets sync doesn't happen for a `web/` (new site) lead | Not a bug — Sheets sync was never ported to the new stack, only to the legacy root app (documented in `web/src/lib/leads.ts`) | Out of scope for this phase; flagged as a known gap below |
+| Google Sheets sync doesn't happen for a lead on this site | Not a bug — Sheets sync was never ported to the new stack, only to the legacy site (documented in `src/lib/leads.ts`) | Out of scope for this phase; flagged as a known gap below |
 
 ---
 
 ## Part 12 — Final go-live checklist
 
 **Before DNS cutover:**
-- [ ] `web/.env` and `web/server/.env` both filled in with real production values (Part 2)
-- [ ] `npm run build` succeeds cleanly in `web/`
+- [ ] `.env` (repo root) and `server/.env` both filled in with real production values (Part 2)
+- [ ] `npm run build` succeeds cleanly at the repo root
 - [ ] Both apps boot successfully under PM2 on the VPS
 - [ ] nginx configs pass `nginx -t`, SSL issued for both domains
 - [ ] Atlas Network Access includes the VPS IP; a real DB user with least-privilege access is used (not the cluster admin)
@@ -359,7 +356,7 @@ Keep the previous production `.env` files backed up outside the repo (they're gi
 - [ ] Rotate the pre-cutover backup into whatever regular backup cadence you keep long-term
 
 **Known, deliberately out-of-scope gaps** (carried over from earlier phases, not addressed in this hardening pass — flag to the business owner, don't silently assume they're fixed):
-- Google Sheets sync is not implemented in the new stack (`web/`) — only email + MongoDB.
+- Google Sheets sync is not implemented in the new stack — only email + MongoDB.
 - Uploaded media/blog images are local-disk only; a future migration to a multi-instance or ephemeral-filesystem host will need cloud storage (S3/Cloudinary) first.
 - No CSRF token protection on admin forms (mitigated by `sameSite: 'lax'` session cookies, not eliminated) — full `csurf`-style protection across every admin form was out of scope for this pass given the size of that change relative to the phase's "no new features" instruction.
-- The legacy root app's `models/BlogPost.js` has the same Mongoose-callback bug fixed in `web/server`'s copy this phase — not fixed there, since it's outside this stack.
+- The legacy site's `models/BlogPost.js` has the same Mongoose-callback bug fixed in `server/`'s copy this phase — not fixed there, since it's outside this stack.

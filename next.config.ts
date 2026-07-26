@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // The legacy Express app at the repo root has its own lockfile, so Turbopack
-  // has to be told that this directory — not the parent — is the workspace root.
+  // Pin the workspace root explicitly so Turbopack doesn't try to infer it
+  // from a lockfile in a parent directory outside this repo.
   turbopack: {
     root: __dirname,
   },

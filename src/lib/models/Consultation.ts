@@ -3,8 +3,8 @@ import "server-only";
 import mongoose, { Schema } from "mongoose";
 
 /**
- * Mirrors models/Consultation.js (root) and web/server/models/Consultation.js
- * exactly — same field names, same enum, same collection ('consultations',
+ * Mirrors the legacy site's models/Consultation.js and this repo's own
+ * server/models/Consultation.js exactly — same field names, same enum, same collection ('consultations',
  * the default pluralisation of 'Consultation') — so a lead submitted through
  * this Next.js app shows up in the admin CMS's Leads dashboard untouched.
  *

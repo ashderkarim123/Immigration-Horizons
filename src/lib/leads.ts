@@ -11,7 +11,7 @@ import { Consultation } from "./models/Consultation";
  *
  * Two independent paths run on every submission:
  *   1. Persist to MongoDB (the `consultations` collection shared with the
- *      admin CMS at web/server) — this is what fills the Leads dashboard.
+ *      admin CMS at server/) — this is what fills the Leads dashboard.
  *   2. Email via Resend — the immediate notification to the inbox.
  *
  * The two are intentionally decoupled: a MongoDB hiccup should not stop a

@@ -8,7 +8,7 @@ shares only the database.
 ## Run it
 
 ```bash
-cd web/server
+cd server
 npm install
 cp .env.example .env      # then fill in MONGODB_URI etc.
 npm run seed              # optional: migrate existing testimonials/FAQs/settings
