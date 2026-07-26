@@ -1,6 +1,7 @@
 "use server";
 
 import { deliverLead } from "@/lib/leads";
+import { isRateLimited } from "@/lib/rate-limit";
 import type { FormState } from "@/app/consultation/actions";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -11,6 +12,13 @@ export async function submitContact(
 ): Promise<FormState> {
   if (formData.get("company")) {
     return { status: "success" };
+  }
+
+  if (await isRateLimited("contact")) {
+    return {
+      status: "error",
+      message: "Too many requests. Please wait a minute and try again.",
+    };
   }
 
   const name = String(formData.get("name") ?? "").trim();

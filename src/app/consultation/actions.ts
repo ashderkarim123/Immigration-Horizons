@@ -1,6 +1,7 @@
 "use server";
 
 import { deliverLead } from "@/lib/leads";
+import { isRateLimited } from "@/lib/rate-limit";
 import { caseCategories, supportServices } from "@/lib/content/services";
 
 export type FormState = {
@@ -41,6 +42,13 @@ export async function submitConsultation(
   // Honeypot: a real user never fills this hidden field.
   if (formData.get("company")) {
     return { status: "success" };
+  }
+
+  if (await isRateLimited("consultation")) {
+    return {
+      status: "error",
+      message: "Too many requests. Please wait a minute and try again.",
+    };
   }
 
   const name = String(formData.get("name") ?? "").trim();

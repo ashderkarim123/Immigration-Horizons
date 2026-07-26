@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 
 // Models
 const BlogPost = require('../../models/BlogPost');
@@ -34,6 +36,36 @@ const { ASSIGNMENT_SLOTS } = attachLeadOps;
 // AUTHENTICATION
 // ========================================================================
 
+// Constant-time string compare (pads to equal length first so the timing
+// side-channel doesn't leak length either) — used for the plaintext
+// ADMIN_PASSWORD fallback path, which has no other timing protection.
+function safeEqual(a, b) {
+  const bufA = Buffer.from(String(a || ''));
+  const bufB = Buffer.from(String(b || ''));
+  if (bufA.length !== bufB.length) {
+    // Still run a comparison of equal-length buffers so failure here takes
+    // roughly the same time as a length-matched failure below.
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many login attempts. Please try again in 15 minutes.',
+  handler: (req, res) => {
+    res.status(429).render('admin/login', {
+      title: 'Admin Login | Immigration Horizons',
+      layout: false,
+      error: 'Too many login attempts. Please try again in 15 minutes.',
+    });
+  },
+});
+
 router.get('/admin/login', (req, res) => {
   if (req.session && req.session.isAdmin) return res.redirect('/admin');
   res.render('admin/login', {
@@ -43,17 +75,29 @@ router.get('/admin/login', (req, res) => {
   });
 });
 
-router.post('/admin/login', async (req, res) => {
+router.post('/admin/login', loginLimiter, async (req, res) => {
   const { username, password } = req.body;
+
+  const finishLogin = (sessionData) => {
+    // Regenerate the session ID on privilege change so a pre-login session
+    // (e.g. one an attacker planted via a shared/public machine) can't be
+    // fixated into an authenticated one.
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('[login] session regenerate failed:', err.message);
+        return res.redirect('/admin/login');
+      }
+      Object.assign(req.session, sessionData);
+      req.session.save(() => res.redirect('/admin'));
+    });
+  };
 
   // Check admin users in DB first
   if (mongoose.connection.readyState === 1) {
     try {
       const user = await AdminUser.findOne({ email: username, isActive: true });
       if (user && (await user.comparePassword(password))) {
-        req.session.isAdmin = true;
-        req.session.adminUser = { id: user._id, name: user.name, role: user.role };
-        return res.redirect('/admin');
+        return finishLogin({ isAdmin: true, adminUser: { id: user._id, name: user.name, role: user.role } });
       }
     } catch (_) { /* fall through to env-based auth */ }
   }
@@ -63,9 +107,9 @@ router.post('/admin/login', async (req, res) => {
   const validPasswordPlain = process.env.ADMIN_PASSWORD || 'admin';
   let ok = false;
   if (process.env.ADMIN_PASSWORD_HASH) {
-    ok = username === validUsername && (await bcrypt.compare(password || '', process.env.ADMIN_PASSWORD_HASH));
+    ok = safeEqual(username, validUsername) && (await bcrypt.compare(password || '', process.env.ADMIN_PASSWORD_HASH));
   } else {
-    ok = username === validUsername && password === validPasswordPlain;
+    ok = safeEqual(username, validUsername) && safeEqual(password, validPasswordPlain);
   }
 
   if (!ok) {
@@ -76,9 +120,7 @@ router.post('/admin/login', async (req, res) => {
     });
   }
 
-  req.session.isAdmin = true;
-  req.session.adminUser = { name: 'Admin', role: 'super_admin' };
-  res.redirect('/admin');
+  finishLogin({ isAdmin: true, adminUser: { name: 'Admin', role: 'super_admin' } });
 });
 
 router.post('/admin/logout', (req, res) => {

@@ -16,9 +16,16 @@ const storage = multer.diskStorage({
   },
 });
 
+const allowedExt = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
+const allowedMime = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+
 const fileFilter = (req, file, cb) => {
-  const allowed = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
-  if (allowed.includes(path.extname(file.originalname).toLowerCase())) {
+  const extOk = allowedExt.includes(path.extname(file.originalname).toLowerCase());
+  // Client-supplied mimetype isn't authoritative on its own, but checking it
+  // alongside the extension catches the common case of a renamed non-image
+  // file at near-zero cost — no magic-byte sniffing dependency needed.
+  const mimeOk = allowedMime.includes(file.mimetype);
+  if (extOk && mimeOk) {
     cb(null, true);
   } else {
     cb(new Error('Only image files are allowed (png, jpg, jpeg, webp, gif).'));
