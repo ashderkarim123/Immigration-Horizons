@@ -283,7 +283,11 @@ body.admin-body {
 }
 
 .nav-link:hover {
-  background: rgba(255, 255, 255, .07);
+  background: rgba(201, 153, 46, .16);
+  color: var(--gold-300);
+}
+
+.nav-item.active .nav-link:hover {
   color: #ffffff;
 }
 
