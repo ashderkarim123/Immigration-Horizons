@@ -1,35 +1,18 @@
 # DESIGN_SYSTEM.md
 # Immigration Horizons Design System
 Version: 1.0
-Status: Production
+Status: Production (public site) / Target (admin dashboard, CRM, client portal)
 
 ---
 
-# Purpose
+# How to read this document
 
-This document defines the official design language for the Immigration Horizons platform.
+This design system governs both what's built today and what the platform is being built toward. Two things to keep straight:
 
-Every engineer, designer, and AI agent must follow these standards before designing or implementing any interface.
+1. **Brand, color, typography, spacing, and grid** (early sections below) are already implemented on the public site and are marked **(Current)**. Treat these as binding constraints, not suggestions.
+2. **The full component library, dashboard design, CRM screens, Kanban boards, petition/case UI** (Parts 2–3 below) describe the platform this is being built toward. **The current admin CMS (`server/`) is a separate server-rendered EJS application with its own plain CSS (`server/public/css/admin.css`, `style.css`) — it is not built against this design system, and is not a React app at all.** Whether the admin is ever rebuilt inside the Next.js app using this design system is an open architectural question (see `ARCHITECTURE.md` Part 2), not a decided migration. Sections describing dashboard/CRM/Kanban UI are marked **(Target)** throughout.
 
-The goal is to ensure every screen feels like it belongs to the same product regardless of who builds it.
-
-This design system governs:
-
-- Public Website
-- Admin Dashboard
-- CRM
-- Lead Management
-- Petition Workflow
-- Blog
-- CMS
-- Client Portal
-- Future Mobile Applications
-
-This document is mandatory.
-
-Do not create new UI patterns unless absolutely necessary.
-
-Always reuse existing design patterns.
+Every engineer, designer, and AI agent must follow these standards before designing or implementing any interface within their actual scope (public site today; the fuller system once/if the admin moves onto it).
 
 ---
 
@@ -41,2997 +24,349 @@ It is a premium technology company specializing in immigration consulting and pe
 
 The interface should communicate:
 
-• Trust
+• Trust • Professionalism • Authority • Precision • Simplicity • Modern Engineering • Transparency • Premium Quality
 
-• Professionalism
-
-• Authority
-
-• Precision
-
-• Simplicity
-
-• Modern Engineering
-
-• Transparency
-
-• Premium Quality
-
-Every page should feel calm, organized, and intentionally designed.
-
-Never make the interface feel crowded.
-
-Never sacrifice readability for decoration.
-
-The interface should help users make decisions with confidence.
+Every page should feel calm, organized, and intentionally designed. Never make the interface feel crowded. Never sacrifice readability for decoration. The interface should help users make decisions with confidence.
 
 ---
 
 # Brand Personality
 
-Every screen should reflect these characteristics.
+Professional, Reliable, Premium, Elegant, Modern, Minimal, Calm, Educational, Structured, Technology Driven, Trustworthy, Transparent.
 
-Professional
-
-Reliable
-
-Premium
-
-Elegant
-
-Modern
-
-Minimal
-
-Calm
-
-Educational
-
-Structured
-
-Technology Driven
-
-Trustworthy
-
-Transparent
-
-Never create interfaces that feel:
-
-Cheap
-
-Flashy
-
-Noisy
-
-Salesy
-
-Over Animated
-
-Childish
-
-Corporate Template
-
-Generic WordPress
+Never: Cheap, Flashy, Noisy, Salesy, Over Animated, Childish, Corporate Template, Generic WordPress.
 
 ---
 
 # Design Inspiration
 
-The user experience should be inspired by companies such as:
-
-Stripe
-
-Linear
-
-Vercel
-
-Notion
-
-Clerk
-
-Mercury
-
-Ramp
-
-Apple
-
-GitHub
-
-Intercom
-
-The objective is not to copy these products.
-
-The objective is to match their quality level.
+Stripe, Linear, Vercel, Notion, Clerk, Mercury, Ramp, Apple, GitHub, Intercom. The objective is not to copy these products — it's to match their quality level.
 
 ---
 
 # Overall Design Language
 
-Every page should follow the same principles.
-
-Large white space.
-
-Clear hierarchy.
-
-Simple navigation.
-
-Readable typography.
-
-Strong imagery.
-
-Meaningful graphics.
-
-Thoughtful animations.
-
-Excellent accessibility.
-
-Fast performance.
-
-Every section should have a clear purpose.
-
-If a section does not contribute to user understanding or conversion, remove it.
+Large white space. Clear hierarchy. Simple navigation. Readable typography. Strong imagery. Meaningful graphics. Thoughtful animations. Excellent accessibility. Fast performance. Every section should have a clear purpose — if a section doesn't contribute to user understanding or conversion, remove it.
 
 ---
 
-# Brand Colors
+# Brand Colors (Current)
 
-Primary
+Verified against `src/app/globals.css` Tailwind v4 `@theme` tokens.
 
-Navy Blue
+**Primary — Navy Blue**: authority, trust, navigation, buttons, headings, links, tables, charts, primary actions.
 
-Purpose:
+**Secondary — Gold**: highlights, statistics, icons, hover states, accents, timeline, progress, success moments. **Never use gold for large paragraphs of text** — `gold-500` is ~2.6:1 contrast on white and fails AA as text; gold text on light backgrounds must be `gold-700`+, on navy use `gold-300`/`400`. The gold CTA button pattern is `gold-500` fill + `navy-900` text (passes AA).
 
-Authority
+**Background — White**: content, cards, forms, sections.
 
-Trust
+**Neutral — Light Gray**: borders, section separation, table rows, input backgrounds.
 
-Navigation
+**Dark — Slate**: footer, dark overlays. **(Target for admin)**: admin navigation/analytics dark accents — n/a today since the admin isn't built against this token set.
 
-Buttons
-
-Headings
-
-Dashboard Sidebar
-
-Links
-
-Tables
-
-Charts
-
-Primary Actions
-
-Secondary
-
-Gold
-
-Purpose:
-
-Highlights
-
-Statistics
-
-Icons
-
-Hover States
-
-Accents
-
-Timeline
-
-Progress Indicators
-
-Success Moments
-
-Never use gold for large paragraphs of text.
-
-Background
-
-White
-
-Purpose:
-
-Content
-
-Cards
-
-Forms
-
-Blog
-
-Dashboard
-
-Sections
-
-Neutral
-
-Light Gray
-
-Purpose:
-
-Borders
-
-Cards
-
-Section Separation
-
-Table Rows
-
-Input Backgrounds
-
-Dark
-
-Slate
-
-Purpose:
-
-Footer
-
-Charts
-
-Dark Overlays
-
-Admin Navigation
-
-Analytics
-
-Success
-
-Green
-
-Warnings
-
-Amber
-
-Errors
-
-Red
-
-Information
-
-Blue
-
-Maintain these meanings consistently across the application.
+**Status colors**: Success (Green), Warnings (Amber), Errors (Red), Information (Blue) — maintain these meanings consistently once used; not yet applied anywhere outside a few form states on the public site.
 
 ---
 
 # Color Usage Rules
 
-Blue establishes authority.
-
-Gold attracts attention.
-
-White improves readability.
-
-Gray separates content.
-
-Do not use gradients excessively.
-
-Avoid bright saturated colors.
-
-Avoid rainbow dashboards.
-
-Avoid random accent colors.
-
-The entire platform should feel visually consistent.
+Blue establishes authority. Gold attracts attention. White improves readability. Gray separates content. Do not use gradients excessively. Avoid bright saturated colors, rainbow dashboards, random accent colors. The entire platform should feel visually consistent — this is a forward-looking goal for whenever the admin adopts the same tokens; today only the public site is bound by it.
 
 ---
 
-# Typography
+# Typography (Current)
 
-Headings
-
-Source Serif 4
-
-Purpose:
-
-Authority
-
-Professionalism
-
-Editorial Feel
-
-Body Text
-
-Inter
-
-Purpose:
-
-Maximum readability
-
-Forms
-
-Tables
-
-Dashboard
-
-Documentation
-
-Never introduce additional font families.
+Headings: **Source Serif 4**. Body: **Inter**. Both self-hosted variable fonts via `next/font` — zero external font requests. Never introduce additional font families.
 
 ---
 
 # Typography Scale
 
-Display
-
-Homepage Hero
-
-H1
-
-Page Titles
-
-H2
-
-Major Sections
-
-H3
-
-Cards
-
-H4
-
-Subsections
-
-Body Large
-
-Lead Paragraphs
-
-Body
-
-Normal Reading
-
-Small
-
-Labels
-
-Caption
-
-Metadata
-
-Footer
-
-Every page must follow the same hierarchy.
-
-Never skip heading levels.
+Display (homepage hero) → H1 (page titles) → H2 (major sections) → H3 (cards) → H4 (subsections) → Body Large (lead paragraphs) → Body (normal reading) → Small (labels) → Caption (metadata, footer). Every page must follow the same hierarchy; never skip heading levels. **(Current — already enforced on the public site: single `<h1>` per page is part of the verification checklist in the site's own `CLAUDE.md`.)**
 
 ---
 
-# Spacing System
+# Spacing System (Current)
 
-Base Unit
-
-4px
-
-Spacing Scale
-
-4
-
-8
-
-12
-
-16
-
-20
-
-24
-
-32
-
-40
-
-48
-
-64
-
-80
-
-96
-
-120
-
-160
-
-Section spacing should be generous.
-
-Cards should breathe.
-
-Never compress layouts simply to fit more content.
-
-Whitespace is a design element.
+Base unit 4px. Scale: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 120, 160. Section spacing should be generous; cards should breathe. Never compress layouts simply to fit more content. Whitespace is a design element.
 
 ---
 
-# Grid System
+# Grid System (Current, public site)
 
-Desktop
-
-12 Columns
-
-Container Width
-
-1280px
-
-Content Width
-
-760–860px
-
-Reading Width
-
-680–760px
-
-Tablet
-
-8 Columns
-
-Mobile
-
-4 Columns
-
-Maintain consistent gutters.
-
-Never place content against screen edges.
+Desktop 12 columns, container width 1280px, content width 760–860px, reading width 680–760px. Tablet 8 columns. Mobile 4 columns. Maintain consistent gutters; never place content against screen edges.
 
 ---
 
-# Border Radius
+# Border Radius, Shadows, Icons (Current)
 
-Small
+Radius: Small 8px, Medium 12px, Large 16px, XL 24px — cards 12–16px, buttons/inputs 12px, dialogs 16px. Keep consistent throughout.
 
-8px
+Shadows: subtle elevation only, no harsh shadows, no exaggerated floating effects.
 
-Medium
-
-12px
-
-Large
-
-16px
-
-Extra Large
-
-24px
-
-Cards
-
-12–16px
-
-Buttons
-
-12px
-
-Inputs
-
-12px
-
-Dialogs
-
-16px
-
-Keep radius consistent throughout the platform.
+Icons: **Lucide** throughout (matches `lucide-react` dependency) — never mix icon libraries. Sizing: Small 16px, Normal 20px, Large 24px, Hero 32–48px.
 
 ---
 
-# Shadows
+# Buttons, Inputs, Cards, Tables, Forms, Empty States, Loading States (Current on public site, Target for admin-scale tooling)
 
-Use subtle elevation.
-
-Avoid harsh shadows.
-
-Cards should appear lightweight.
-
-Dialogs may have stronger shadows.
-
-Never use exaggerated floating effects.
-
----
-
-# Icons
-
-Use Lucide Icons throughout the application.
-
-Never mix multiple icon libraries.
-
-Icons should clarify meaning.
-
-Never decorate purely for aesthetics.
-
-Use consistent sizing.
-
-Small
-
-16px
-
-Normal
-
-20px
-
-Large
-
-24px
-
-Hero
-
-32–48px
-
----
-
-# Buttons
-
-Button Types
-
-Primary
-
-Secondary
-
-Ghost
-
-Outline
-
-Danger
-
-Success
-
-Icon
-
-Loading
-
-Disabled
-
-Every button must have:
-
-Hover State
-
-Focus State
-
-Active State
-
-Disabled State
-
-Loading State
-
-Buttons should feel tactile but not oversized.
-
----
-
-# Inputs
-
-Every form element must include:
-
-Label
-
-Placeholder
-
-Helper Text
-
-Validation
-
-Error Message
-
-Success State
-
-Disabled State
-
-Required Indicator
-
-Focus State
-
-Forms should guide users through completion.
-
-Never rely solely on placeholder text.
-
----
-
-# Cards
-
-Cards are the primary content container.
-
-Every card should include:
-
-Padding
-
-Border
-
-Radius
-
-Hover State
-
-Responsive Layout
-
-Optional Footer
-
-Optional Actions
-
-Optional Tags
-
-Optional Status
-
-Cards should never feel overloaded.
-
-Use multiple cards rather than one giant container.
-
----
-
-# Tables
-
-Admin tables must support:
-
-Sorting
-
-Filtering
-
-Searching
-
-Pagination
-
-Bulk Actions
-
-Column Visibility
-
-Export
-
-Sticky Headers
-
-Responsive Layout
-
-Never display raw database information without formatting.
-
----
-
-# Forms
-
-Forms are conversion points.
-
-Every form should:
-
-Reduce friction.
-
-Validate instantly.
-
-Explain errors clearly.
-
-Preserve entered values.
-
-Prevent duplicate submissions.
-
-Show progress indicators.
-
-Provide success confirmation.
-
-Support keyboard navigation.
-
----
-
-# Empty States
-
-Never leave blank pages.
-
-Every empty state should explain:
-
-Why no data exists.
-
-How to create data.
-
-Provide an action button.
-
-Use a simple illustration where appropriate.
-
-Examples:
-
-No Leads
-
-Create Lead
-
-No Blog Posts
-
-Write Article
-
-No Tasks
-
-Assign Task
-
-No Notifications
-
-Everything is up to date.
-
----
-
-# Loading States
-
-Never show blank white pages during loading.
-
-Use:
-
-Skeleton Components
-
-Progress Indicators
-
-Optimistic UI where appropriate
-
-Loading Text
-
-Spinners only when unavoidable.
-
-Prefer skeletons.
+The philosophy (button types communicate importance; cards create visual grouping with subtle shadows/soft borders/consistent padding; forms should reduce friction and validate instantly; never leave blank empty/loading screens) applies today on the public site's forms (`consultation-form.tsx`, `contact-form.tsx`) and `ui/` primitives. The fuller catalog below — data tables with sorting/filtering/bulk actions, skeleton loaders, dashboard-scale empty states — is **(Target)**, sized for admin/dashboard use once that's built against this system.
 
 ---
 
 # Design Consistency Rules
 
-Before creating any new UI:
-
-Search the existing component library.
-
-Reuse existing components.
-
-Improve existing components.
-
-Never duplicate components.
-
-Never redesign a component for one page only.
-
-The design system is the single source of truth.
+Before creating any new UI: search the existing component library, reuse existing components, improve existing components. Never duplicate components. Never redesign a component for one page only. The design system is the single source of truth.
 
 ---
 
 # ============================================================
-# PART 2 — COMPONENT LIBRARY
+# PART 2 — COMPONENT LIBRARY (mostly Target — see notes per section)
 # ============================================================
+
+**Scope note**: the component philosophy and naming conventions below are timeless and apply to whatever gets built. The specific component catalog (data tables, Kanban cards, CRM-specific cards, dashboard widgets) is **(Target)** — it describes a much larger library than what exists today. Current `ui/` primitives: `button.tsx`, `card.tsx`, `container.tsx`, `feature-icon.tsx`, `photo-slot.tsx`, `reveal.tsx`, `section.tsx`, `snippet-answer.tsx` (see `FRONTEND_ARCHITECTURE.md` Part 1). Everything in this Part 2 beyond that current list is aspirational scope for future work — build incrementally, driven by real need, not ahead of it.
 
 ---
 
 # Component Philosophy
 
-Every component in Immigration Horizons must be:
-
-Reusable
-
-Accessible
-
-Responsive
-
-Well Documented
-
-Highly Performant
-
-Composable
-
-Theme Consistent
-
-Never create one-off components.
-
-If two pages require similar functionality,
-create one reusable component.
+Every component in Immigration Horizons must be: Reusable, Accessible, Responsive, Well Documented, Highly Performant, Composable, Theme Consistent. Never create one-off components — if two pages require similar functionality, create one reusable component.
 
 ---
 
-# Component Categories
+# Component Categories (Target catalog)
 
-The design system consists of:
-
-Layout Components
-
-Navigation Components
-
-Typography Components
-
-Data Display Components
-
-Forms
-
-Feedback Components
-
-Dashboard Components
-
-Marketing Components
-
-CMS Components
-
-CRM Components
-
-Workflow Components
-
-Analytics Components
-
-Media Components
+Layout, Navigation, Typography, Data Display, Forms, Feedback, Dashboard, Marketing, CMS, CRM, Workflow, Analytics, Media components. **(Current)**: Layout/Marketing-adjacent components exist (Page Container equivalent via `Container`/`Section`); CRM/Dashboard/Workflow/Analytics component categories don't exist yet.
 
 ---
 
-# Layout Components
+# Layout Components (Current, roughly — verify against actual `ui/` primitives)
 
-## Page Container
+**Page Container**: max-width 1280px, centered, responsive, horizontal padding 32/24/16px desktop/tablet/mobile — matches `Container`.
 
-Purpose
+**Section**: heading/body/CTA/optional graphics, ~96px top/bottom spacing (64px mobile) — matches `Section`.
 
-Provides the maximum readable width.
+**Content Wrapper** (760–860px reading width, for blogs/service pages/policies): **(Current)** — used across service pages.
 
-Rules
-
-Max Width:
-1280px
-
-Centered
-
-Responsive
-
-Horizontal Padding:
-
-Desktop:
-32px
-
-Tablet:
-24px
-
-Mobile:
-16px
-
-Never place content directly on screen edges.
-
----
-
-## Section
-
-Purpose
-
-Separates logical content.
-
-Contains:
-
-Heading
-
-Body
-
-CTA
-
-Optional Graphics
-
-Spacing
-
-Top:
-96px
-
-Bottom:
-96px
-
-Mobile:
-64px
-
----
-
-## Content Wrapper
-
-Maximum reading width
-
-760–860px
-
-Used for:
-
-Blogs
-
-Service Pages
-
-Policies
-
-Documentation
-
----
-
-## Two Column Layout
-
-Desktop
-
-Content
-
-Sidebar
-
-Tablet
-
-Stack
-
-Mobile
-
-Stack
-
-Never reverse reading order.
-
----
-
-## Dashboard Layout
-
-Contains
-
-Sidebar
-
-Top Navigation
-
-Page Header
-
-Content
-
-Right Utility Panel (optional)
-
-Sticky Header
-
-Scrollable Content
-
-Responsive Collapse
+**Two Column Layout, Dashboard Layout**: **(Target)** — no dashboard layout exists in this app yet.
 
 ---
 
 # Navigation Components
 
-## Header
+**Header** (logo, primary nav, mega menu, consultation CTA, sticky on scroll): **(Current)** — `layout/header.tsx`, the app's one Client Component.
 
-Must Include
+**Mega Menu** (services grouped by category, icons, keyboard nav): **(Current)** — nav derives from `lib/content/services.ts`.
 
-Logo
+**Sidebar** (admin, nested nav, collapsed state), **Dashboard breadcrumb pattern**: **(Target)** — the current admin has its own simpler EJS sidebar (`server/views/admin/partials/sidebar.ejs`), not this component.
 
-Primary Navigation
-
-Mega Menu
-
-Search (future)
-
-Consultation CTA
-
-Dashboard Login
-
-Sticky on Scroll
-
-Transparent on Hero
-
-Solid after scroll
+**Breadcrumb**: **(Current)** on service pages (`components/service/breadcrumbs.tsx`), schema-matched.
 
 ---
 
-## Mega Menu
+# Hero Components (Current)
 
-Services grouped by:
-
-Employment Immigration
-
-Support Services
-
-Resources
-
-Company
-
-Dashboard
-
-Use icons.
-
-Support keyboard navigation.
+Every public page begins with a Hero: badge, H1, supporting paragraph, primary/secondary CTA, trust indicators, professional image, background graphic. Variants: Homepage, Service, Blog, About, Contact — **all Current**. Dashboard/Landing Page/Resource hero variants beyond what exists: **(Target)** as those page types get built out.
 
 ---
 
-## Sidebar
+# Buttons, Cards (Current subset + Target full catalog)
 
-Admin only.
+**(Current)**: `ui/button.tsx`, `ui/card.tsx` cover the public site's needs.
 
-Contains
-
-Dashboard
-
-CRM
-
-Leads
-
-Clients
-
-Petitions
-
-Tasks
-
-Blog
-
-SEO
-
-Analytics
-
-Settings
-
-Support nested navigation.
-
-Collapsed state required.
+**(Target)**: the fuller catalog — Split Button, Dropdown Button, Floating Button, and CRM-specific cards (Lead Card, Client Card, Petition Card, Task Card, Notification Card, Dashboard Widget) — none of these exist as React components since the admin isn't built in React. The equivalent functionality exists today as EJS partials/views in `server/views/admin/`.
 
 ---
 
-## Breadcrumb
+# Statistics Cards, Feature Cards, Service Cards (mixed)
 
-Every internal page requires breadcrumb navigation.
+**Feature Cards, Service Cards**: **(Current)** — used on the homepage/services pages.
 
-Example
-
-Home
-
->
-
-Services
-
->
-
-EB2 NIW
-
-Schema must match.
+**Statistics Cards** (dashboard/analytics widgets with metric/trend/chart): **(Target)**.
 
 ---
 
-# Hero Components
+# Blog Cards (Current)
 
-Every public page begins with a Hero.
-
-Hero Contains
-
-Badge
-
-H1
-
-Supporting Paragraph
-
-Primary CTA
-
-Secondary CTA
-
-Trust Indicators
-
-Professional Image
-
-Background Graphic
-
-Optional Statistics
-
-Optional Video
+Featured image, category, reading time, author, title, summary, publish date, CTA — matches the blog listing pattern once the blog data layer ships (flagged as in-progress in the site's own `CLAUDE.md` phase status).
 
 ---
 
-Hero Variants
+# Testimonial Card (Current)
 
-Homepage
-
-Service
-
-Blog
-
-About
-
-Contact
-
-Dashboard
-
-Landing Page
-
-Resource
-
-Each variant follows the same spacing system.
+Photo, name, role, country, review, rating, verification badge. **Never fabricate testimonials** — real testimonials only, each with a working `verifyUrl` (see the site's own content-accuracy rules).
 
 ---
 
-# Buttons
+# Timeline Component (Current, for process illustration)
 
-Supported Types
-
-Primary
-
-Secondary
-
-Outline
-
-Ghost
-
-Text
-
-Danger
-
-Success
-
-Warning
-
-Loading
-
-Disabled
-
-Icon
-
-Split Button
-
-Dropdown Button
-
-Floating Button
+Used for the immigration process illustration on service pages (vertical, animated) — **(Current)**. Petition Workflow / Roadmap / Project Progress timeline variants for an admin/CRM context: **(Target)**.
 
 ---
 
-Button Sizes
+# Accordion (Current)
 
-Small
-
-Medium
-
-Large
-
-Hero
-
-Icon
-
-Buttons always include
-
-Hover
-
-Focus
-
-Active
-
-Loading
-
-Disabled
-
-ARIA labels
+FAQs use native `<details>`/`<summary>` — accessible, SEO-visible, zero JS, not a custom Accordion component. Keep it this way; it's a deliberate simplicity choice, not a gap to fill with a JS accordion library.
 
 ---
 
-# Cards
+# Tabs, Badge, Alerts, Toast, Modal, Drawer (Target)
 
-Cards are the most common UI element.
-
-Types
-
-Service Card
-
-Blog Card
-
-Feature Card
-
-Statistic Card
-
-Lead Card
-
-Client Card
-
-Petition Card
-
-Task Card
-
-Notification Card
-
-Media Card
-
-Dashboard Widget
-
-Profile Card
-
-Pricing Card
-
-Comparison Card
-
-FAQ Card
-
-Every card supports
-
-Hover
-
-Responsive Layout
-
-Optional Badge
-
-Optional CTA
-
-Optional Footer
-
-Optional Actions
+None of these exist as components in the current public site (which has no need for them yet) or the current admin (which uses full-page EJS views and server-side flash-style messaging, not toasts/modals/drawers). Build these when a real feature needs them.
 
 ---
 
-# Statistics Cards
+# Forms (Current pattern + Target input catalog)
 
-Homepage
+**(Current)**: `consultation-form.tsx`/`contact-form.tsx` use plain controlled inputs + Server Actions + `useActionState`, with field label/validation/error/success states already present.
 
-Dashboard
-
-Analytics
-
-Contains
-
-Icon
-
-Title
-
-Metric
-
-Trend
-
-Description
-
-Optional Chart
-
-Optional Link
+**(Target)**: the fuller supported-input catalog (rich text editor, tag selector, country selector, date range, multi-select) — build as forms actually need them; don't add a form library speculatively (see `FRONTEND_ARCHITECTURE.md` Part 2 on React Hook Form + Zod).
 
 ---
 
-# Feature Cards
+# Search Component (Current, admin only; Target for public site)
 
-Contains
-
-Icon
-
-Heading
-
-Description
-
-Optional CTA
-
-Equal height.
-
-Responsive.
+**(Current)**: `/admin/search` — plain server-rendered search, no instant/debounced client-side search yet. **(Target)**: instant search with debounce/filters/suggestions, wherever it's next needed.
 
 ---
 
-# Service Cards
+# Data Table, Pagination, Charts, Progress, File Upload, Rich Text Editor, Notifications Panel, Activity Feed, Calendar (Target)
 
-Contains
+Full-featured versions of all of these (sortable/filterable/paginated tables with bulk actions and CSV export; charts with a 5-color-max rule; drag-drop file upload with version history; rich text editor with auto-save and revision history; a dedicated notifications panel; a calendar component) are **(Target)**.
 
-Service Icon
-
-Title
-
-Description
-
-Benefits
-
-CTA
-
-Related Services
-
-SEO Friendly URL
+**(Current, simpler versions that already work)**:
+- CSV export exists today for leads (`/admin/leads/export/csv`) — just not as part of a generic reusable Data Table component.
+- File upload exists today via `multer` (blog covers, testimonial photos, media library) — without drag-drop, version history, or a reusable component wrapper.
+- A working Notifications list exists today (`/admin/notifications`) as an EJS view, not a dedicated "Notifications Panel" component.
 
 ---
 
-# Blog Cards
+# Empty States, Skeleton Components, Error States, Success Screens (Target for a component library; philosophy applies now)
 
-Contains
-
-Featured Image
-
-Category
-
-Reading Time
-
-Author
-
-Title
-
-Summary
-
-Publish Date
-
-CTA
-
----
-
-# Testimonial Card
-
-Contains
-
-Photo
-
-Name
-
-Role
-
-Country
-
-Review
-
-Rating
-
-Verification Badge
-
-Never fabricate testimonials.
-
----
-
-# Timeline Component
-
-Supports
-
-Vertical
-
-Horizontal
-
-Collapsible
-
-Animated
-
-Used for
-
-Immigration Process
-
-Petition Workflow
-
-Roadmap
-
-Project Progress
-
----
-
-# Accordion
-
-Used for
-
-FAQs
-
-Policies
-
-Documentation
-
-Keyboard Accessible
-
-Searchable
-
-Deep Link Support
-
----
-
-# Tabs
-
-Use only when content is naturally grouped.
-
-Avoid excessive nesting.
-
----
-
-# Badge
-
-Types
-
-Success
-
-Warning
-
-Information
-
-Primary
-
-Secondary
-
-Pending
-
-Completed
-
-Rejected
-
-Draft
-
-Published
-
----
-
-# Alerts
-
-Success
-
-Error
-
-Information
-
-Warning
-
-Critical
-
-Dismissible
-
-Optional Action Button
-
----
-
-# Toast Notifications
-
-Top Right
-
-Auto Dismiss
-
-Persistent
-
-Action Support
-
-Undo Support
-
-Queue Support
-
----
-
-# Modal
-
-Small
-
-Medium
-
-Large
-
-Fullscreen
-
-Confirmation
-
-Wizard
-
-Never use modal for long forms.
-
----
-
-# Drawer
-
-Right Drawer
-
-Left Drawer
-
-Bottom Drawer
-
-Used for
-
-Quick Edit
-
-Preview
-
-Lead Details
-
-Client Details
-
----
-
-# Forms
-
-Every form uses
-
-Field Label
-
-Description
-
-Placeholder
-
-Validation
-
-Helper Text
-
-Success
-
-Error
-
-Loading
-
-Character Counter
-
----
-
-Supported Inputs
-
-Text
-
-Textarea
-
-Email
-
-Phone
-
-Number
-
-Password
-
-URL
-
-Date
-
-Time
-
-Date Range
-
-Checkbox
-
-Switch
-
-Radio
-
-Dropdown
-
-Multi Select
-
-Tag Selector
-
-Country Selector
-
-File Upload
-
-Image Upload
-
-Rich Text Editor
-
-Search Box
-
----
-
-# Search Component
-
-Supports
-
-Instant Search
-
-Debounce
-
-Filters
-
-Recent Searches
-
-Suggestions
-
-Keyboard Navigation
-
----
-
-# Data Table
-
-Features
-
-Sorting
-
-Filtering
-
-Searching
-
-Pagination
-
-Bulk Actions
-
-Export CSV
-
-Column Toggle
-
-Sticky Header
-
-Responsive
-
-Selection
-
-Inline Actions
-
----
-
-# Pagination
-
-Desktop
-
-Numbers
-
-Previous
-
-Next
-
-Mobile
-
-Previous
-
-Next
-
-Infinite Scroll only where appropriate.
-
----
-
-# Charts
-
-Supported
-
-Line
-
-Bar
-
-Area
-
-Pie
-
-Donut
-
-Heatmap
-
-Progress Ring
-
-Funnel
-
-Timeline
-
-Growth
-
-Calendar Heatmap
-
-Never use more than five colors.
-
----
-
-# Progress Components
-
-Progress Bar
-
-Circular Progress
-
-Step Indicator
-
-Timeline Progress
-
-Checklist Progress
-
----
-
-# File Upload
-
-Supports
-
-Drag Drop
-
-Browse
-
-Preview
-
-Validation
-
-Progress
-
-Version History
-
-Multiple Files
-
-Image Preview
-
-PDF Preview
-
-Virus Scan Hook
-
----
-
-# Rich Text Editor
-
-Used for
-
-Blog
-
-Resources
-
-Documentation
-
-Supports
-
-Headings
-
-Lists
-
-Tables
-
-Images
-
-Videos
-
-Callouts
-
-Code
-
-Links
-
-Internal Link Picker
-
-SEO Metadata
-
-Auto Save
-
-Revision History
-
----
-
-# Notifications Panel
-
-Displays
-
-Unread
-
-Read
-
-Priority
-
-Task Updates
-
-Lead Updates
-
-Mentions
-
-Assignments
-
-Comments
-
-Deadlines
-
-Supports
-
-Filtering
-
-Mark All Read
-
-Deep Linking
-
----
-
-# Activity Feed
-
-Displays
-
-User Actions
-
-Lead Changes
-
-Task Updates
-
-Comments
-
-Blog Publishing
-
-Assignments
-
-System Events
-
-Newest First
-
----
-
-# Calendar Component
-
-Views
-
-Day
-
-Week
-
-Month
-
-Agenda
-
-Supports
-
-Meetings
-
-Deadlines
-
-Consultations
-
-Task Due Dates
-
-Petition Milestones
-
----
-
-# Empty States
-
-Each empty state contains
-
-Illustration
-
-Title
-
-Explanation
-
-Primary CTA
-
-Secondary CTA
-
-Never leave empty pages blank.
-
----
-
-# Skeleton Components
-
-Create skeleton versions for
-
-Cards
-
-Tables
-
-Forms
-
-Blog
-
-Dashboard
-
-Charts
-
-Sidebar
-
-Hero
-
-Avoid spinner-only loading.
-
----
-
-# Error States
-
-Must include
-
-Clear Explanation
-
-Error Code (optional)
-
-Retry Button
-
-Support Link
-
-Home Button
-
----
-
-# Success Screens
-
-Contains
-
-Success Icon
-
-Confirmation Message
-
-Summary
-
-Next Action
-
-Return Button
+The *principle* (never leave blank/blank-loading/unclear-error screens) applies today wherever it's relevant — e.g., the custom `not-found.tsx` 404 page is already a deliberate, non-generic error state. The specific *component* catalog (skeleton loaders for cards/tables/charts, dedicated empty-state illustrations) is Target — build them as new dashboard-style surfaces are built, not preemptively.
 
 ---
 
 # Component Naming Convention
 
-Components/
-
-Button/
-
-Card/
-
-Hero/
-
-ServiceCard/
-
-LeadCard/
-
-TaskCard/
-
-Chart/
-
-Sidebar/
-
-Navbar/
-
-Modal/
-
-Accordion/
-
-Timeline/
-
-Calendar/
-
-Never create inconsistent naming.
+`Button/`, `Card/`, `Hero/`, `ServiceCard/`, `LeadCard/`, `TaskCard/`, `Chart/`, `Sidebar/`, `Navbar/`, `Modal/`, `Accordion/`, `Timeline/`, `Calendar/` — PascalCase directories, consistent naming, whenever each is actually built. Never create inconsistent naming.
 
 ---
 
 # Component Rules
 
-Every reusable component must include
-
-TypeScript Types
-
-Accessibility
-
-Responsive Design
-
-Loading State
-
-Empty State
-
-Error State
-
-Documentation
-
-Storybook Compatibility (future)
-
-Unit Testing (future)
-
-Never build UI without considering reusability.
+Every reusable component must include TypeScript types, accessibility, responsive design, loading/empty/error states, and documentation. Storybook and unit testing are Target (not currently set up in this repo). Never build UI without considering reusability.
 
 ---
 # End of Part 2
 
 # ============================================================
 # PART 3 — PAGE TEMPLATES, DASHBOARD, UX, MEDIA, AI RULES
+# (Public-page templates are Current; Dashboard/CRM/Petition/Kanban sections are Target)
 # ============================================================
 
 ---
 
-# WEBSITE PAGE STANDARDS
+# WEBSITE PAGE STANDARDS (Current)
 
-Every public-facing page must follow a consistent information architecture.
-
-Users should always know:
-
-• Where they are
-
-• What this page is about
-
-• Why it matters
-
-• What action they should take next
-
-Never create pages without a clear conversion goal.
+Every public-facing page must follow a consistent information architecture. Users should always know: where they are, what this page is about, why it matters, what action to take next. Never create pages without a clear conversion goal.
 
 ---
 
-# HOMEPAGE TEMPLATE
+# HOMEPAGE TEMPLATE (Current)
 
-Homepage Structure
+1. Hero · 2. Trust Indicators · 3. Services Overview · 4. Why Choose Immigration Horizons · 5. Immigration Process Timeline · 6. Client Success/Testimonials · 7. About · 8. Featured Resources · 9. FAQs · 10. Final Consultation CTA · 11. Footer.
 
-1. Hero Section
-2. Trust Indicators
-3. Services Overview
-4. Why Choose Immigration Horizons
-5. Immigration Process Timeline
-6. Client Success / Testimonials
-7. About Immigration Horizons
-8. Featured Resources
-9. Frequently Asked Questions
-10. Final Consultation CTA
-11. Footer
-
-Homepage Requirements
-
-✓ Premium Hero
-
-✓ Professional Photography
-
-✓ Animated SVG Graphics
-
-✓ Statistics
-
-✓ Interactive Service Cards
-
-✓ Process Timeline
-
-✓ Internal Links
-
-✓ FAQ Schema
-
-✓ Organization Schema
-
-✓ Strong CTAs
-
-✓ Mobile Optimized
+Requirements: premium hero, professional photography (per the site's own content rules: no stock photography of people — real photography via `PhotoSlot` when supplied, SVG illustrations otherwise), animated SVG graphics, statistics, interactive service cards, process timeline, internal links, FAQ schema, Organization schema, strong CTAs, mobile optimized. **This already matches the current homepage structure.**
 
 ---
 
-# SERVICE PAGE TEMPLATE
+# SERVICE PAGE TEMPLATE (Current)
 
-Every service page must follow exactly the same structure.
-
-Hero
-
-↓
-
-Quick Overview
-
-↓
-
-Who Can Apply
-
-↓
-
-Eligibility Criteria
-
-↓
-
-Benefits
-
-↓
-
-Required Evidence
-
-↓
-
-Immigration Process
-
-↓
-
-Timeline Graphic
-
-↓
-
-Frequently Asked Questions
-
-↓
-
-Related Services
-
-↓
-
-Final CTA
-
-↓
-
-Footer
-
-Every service page should contain:
-
-Professional Illustration
-
-Process Diagram
-
-Comparison Table
-
-FAQ
-
-Internal Links
-
-External USCIS References
-
-Schema
-
-Breadcrumb
+Hero → Quick Overview → Who Can Apply → Eligibility Criteria → Benefits → Required Evidence → Immigration Process → Timeline Graphic → FAQs → Related Services → Final CTA → Footer, with professional illustration, process diagram, comparison table, FAQ, internal links, external USCIS references, schema, breadcrumb. **Matches the site's actual data-driven service-page renderer** (`app/services/[slug]/page.tsx` + `lib/content/service-pages/*.ts`) — see the site's own `CLAUDE.md`.
 
 ---
 
-# ABOUT PAGE
+# ABOUT PAGE, CONTACT PAGE, BLOG PAGE, RESOURCE PAGE, ERROR PAGES (Current, mostly)
 
-Sections
-
-Hero
-
-Mission
-
-Vision
-
-Core Values
-
-Company Story
-
-Leadership
-
-Our Process
-
-Why Clients Trust Us
-
-Global Reach
-
-CTA
+Structure as described applies to the existing `/about`, `/contact`, `/blog`, `/resources` pages and the custom 404. "Newsletter" on the blog page and full resource-library search/categories/downloads are **(Target)** — verify what's actually built on `/resources` before assuming the full catalog exists.
 
 ---
 
-# CONTACT PAGE
+# DASHBOARD DESIGN (Target)
 
-Contains
-
-Contact Information
-
-Business Hours
-
-Office Location
-
-Google Map
-
-Consultation Form
-
-Social Media
-
-FAQs
-
-Emergency Notice
+The dashboard should feel like enterprise software (Linear, Stripe, Vercel, GitHub, Notion, Mercury): Sidebar, Top Navigation, Breadcrumb, Page Header, Quick Actions, Content, Widgets, Activity Feed, Footer. Dashboard Home widgets: Today's Leads, Open Tasks, Pending Reviews, Upcoming Consultations, Recent Activity, Analytics, Notifications, Quick Actions, Calendar. **None of this describes the current admin CMS**, which is a simpler EJS-rendered dashboard (`/admin`) showing lead + content counts and recent activity. This section is the target if/when the admin is rebuilt against this design system.
 
 ---
 
-# BLOG PAGE
+# CRM DESIGN, KANBAN BOARD, TASK MANAGEMENT, PETITION MANAGEMENT (Target)
 
-Must Include
+Full Lead Table / Lead Profile / Kanban columns (New → Contacted → Qualified → Proposal → Client → Evidence Collection → Petition Draft → QA → USCIS Forms → Ready for Submission → Submitted → RFE → Completed → Archived) with drag/drop cards — **this is the target Kanban UI, not what exists today.**
 
-Hero Image
-
-Category
-
-Author
-
-Reading Time
-
-Publish Date
-
-Last Updated
-
-Table of Contents
-
-Content
-
-Callout Boxes
-
-Images
-
-Infographics
-
-Related Articles
-
-Newsletter
-
-CTA
-
-Author Bio
-
-Comments (Future)
+**(Current, real but simpler)**: `/admin/tasks` and `/admin/sprints` provide real task/sprint management (see `DATABASE.md` Part 1, `ADMIN_WORKFLOW.md` Part 1) — server-rendered EJS views with status dropdowns and sprint assignment, not a drag-and-drop Kanban board. Petition Management as a distinct entity/screen doesn't exist — task management today happens directly against the lead (`Consultation`).
 
 ---
 
-# RESOURCE PAGE
+# BLOG CMS, MEDIA LIBRARY (Current, simpler than described)
 
-Contains
+**(Current)**: Blog editor with slug/meta title/description/featured image/categories/tags/author, draft/publish toggle — real and working (`/admin/blog`). No SEO score widget, no internal-linking suggestions, no scheduling, no revision history yet.
 
-Search
-
-Categories
-
-Downloads
-
-Guides
-
-Templates
-
-FAQs
-
-Latest Articles
-
-CTA
+**(Current)**: Media library supports images/documents via local-disk upload (`/admin/media`) — no folder structure, no video support, no version history yet.
 
 ---
 
-# ERROR PAGES
+# ANALYTICS DASHBOARD, REPORTS (Target)
 
-404
-
-500
-
-403
-
-Maintenance
-
-Every error page should provide
-
-Clear explanation
-
-Action button
-
-Search
-
-Helpful links
-
-Never display technical errors to users.
+Traffic/leads/conversions/blog-performance/revenue charts, CSV/Excel/PDF report generation — **not implemented**. Today's `/admin` dashboard only shows counts; there's no stored analytics or report export beyond the existing leads CSV export.
 
 ---
 
-# DASHBOARD DESIGN
+# GRAPHICS SYSTEM (Current on public pages; Target for admin)
 
-The dashboard should feel like enterprise software.
-
-Inspired by
-
-Linear
-
-Stripe
-
-Vercel
-
-GitHub
-
-Notion
-
-Mercury
+Homepage/service-page graphics (animated globe/timeline/icons/illustrations) — **(Current)**, all inline SVG + CSS per the site's own performance rules (no canvas/WebGL/JS animation). Admin dashboard graphics (heatmaps, lead funnel, progress rings) — **(Target)**.
 
 ---
 
-Dashboard Layout
+# PHOTOGRAPHY GUIDELINES (Current — binding content rule)
 
-Sidebar
-
-Top Navigation
-
-Breadcrumb
-
-Page Header
-
-Quick Actions
-
-Content
-
-Widgets
-
-Activity Feed
-
-Footer
+Only use professional/authentic imagery (office, business meetings, universities, scientists, engineers, researchers, immigration documents) — never fake stock call centers, overused handshake photos, artificial AI faces, generic office cubicles. This is a binding current rule, not aspirational: the site's own content rules already say no stock photography of people, SVG/PhotoSlot instead until real photography is supplied.
 
 ---
 
-Dashboard Home
+# ICONOGRAPHY (Current)
 
-Widgets
-
-Today's Leads
-
-Open Tasks
-
-Pending Reviews
-
-Upcoming Consultations
-
-Recent Activity
-
-Analytics
-
-Notifications
-
-Quick Actions
-
-Calendar
+Lucide icons only, never mixed with other icon packs. Icons support content, not decorate it.
 
 ---
 
-# CRM DESIGN
+# ANIMATION SYSTEM — the binding current constraint
 
-CRM contains
-
-Lead Table
-
-Lead Details
-
-Timeline
-
-Notes
-
-Tasks
-
-Documents
-
-Emails
-
-Assignments
-
-Activity
-
-Every lead should have a complete history.
-
-Nothing should be lost.
+Animations should improve usability, never distract. Allowed categories (fade, slide, scale, reveal, hover, progress, accordion, timeline, card hover, micro interactions, page transition, number counter, chart animation, notification, skeleton loading, drag & drop) describe *effects*, not *implementation technology* — **on the current public site, all of these must be achieved with CSS only, no JS animation library** (see `FRONTEND_ARCHITECTURE.md` Part 1's hard constraint on Framer Motion). Avoid long animations, infinite floating objects, heavy parallax, autoplay carousels, flashing effects. Durations: Fast 150ms, Medium 250ms, Slow 350ms — anything above 500ms requires justification. **A future admin dashboard (Target) may use a JS animation library if the interaction complexity genuinely justifies it — that doesn't extend to the current public pages.**
 
 ---
 
-Lead Profile Layout
+# ACCESSIBILITY, RESPONSIVE DESIGN, SEO INTEGRATION (Current — binding)
 
-Header
-
-Status
-
-Priority
-
-Owner
-
-Source
-
-Contact Details
-
-Timeline
-
-Tasks
-
-Notes
-
-Documents
-
-Communication
-
-Activity
-
----
-
-# KANBAN BOARD
-
-Columns
-
-New
-
-Contacted
-
-Qualified
-
-Proposal
-
-Client
-
-Evidence Collection
-
-Petition Draft
-
-QA
-
-USCIS Forms
-
-Ready for Submission
-
-Submitted
-
-RFE
-
-Completed
-
-Archived
-
-Cards must support
-
-Drag
-
-Drop
-
-Comments
-
-Files
-
-Checklist
-
-Priority
-
-Assignee
-
-Due Date
-
----
-
-# TASK MANAGEMENT
-
-Every task includes
-
-Title
-
-Description
-
-Owner
-
-Priority
-
-Sprint
-
-Deadline
-
-Attachments
-
-Comments
-
-Subtasks
-
-Status
-
-History
-
-Estimated Hours
-
-Actual Hours
-
----
-
-# PETITION MANAGEMENT
-
-Each petition should display
-
-Client
-
-Visa Type
-
-Current Stage
-
-Assigned Team
-
-Documents
-
-Deadlines
-
-Forms
-
-Letters
-
-Evidence
-
-QA
-
-Submission
-
-Status
-
-Timeline
-
----
-
-# BLOG CMS
-
-Editor
-
-Preview
-
-SEO Score
-
-Internal Linking Suggestions
-
-Slug
-
-Meta Title
-
-Description
-
-Featured Image
-
-Categories
-
-Tags
-
-Author
-
-Scheduling
-
-Revision History
-
-Publishing Workflow
-
----
-
-# MEDIA LIBRARY
-
-Supports
-
-Images
-
-PDFs
-
-Word Files
-
-Videos
-
-SVG
-
-Icons
-
-Documents
-
-Folders
-
-Search
-
-Tags
-
-Optimization
-
-Version History
-
----
-
-# ANALYTICS DASHBOARD
-
-Charts
-
-Traffic
-
-Leads
-
-Conversions
-
-Blog Performance
-
-Page Views
-
-Bounce Rate
-
-Keywords
-
-Campaigns
-
-Revenue (Future)
-
-Team Productivity
-
----
-
-# REPORTS
-
-Generate reports for
-
-Leads
-
-Marketing
-
-SEO
-
-Blog
-
-Tasks
-
-Petitions
-
-Revenue
-
-User Activity
-
-Support CSV
-
-Excel
-
-PDF
-
----
-
-# GRAPHICS SYSTEM
-
-Every page should contain meaningful graphics.
-
-Never rely on text alone.
-
----
-
-Homepage Graphics
-
-Animated Globe
-
-USA Map
-
-Immigration Timeline
-
-Professional Office
-
-Team Photo
-
-Icons
-
-Statistics
-
-Workflow Diagram
-
-Trust Badges
-
-Background Shapes
-
----
-
-EB2 NIW
-
-Research Illustration
-
-Scientist
-
-Innovation Icons
-
-Evidence Flowchart
-
-USCIS Process Diagram
-
-Timeline
-
-Checklist
-
-Professional Photography
-
----
-
-EB1A
-
-Awards
-
-Research
-
-Conference
-
-Scientific Publication
-
-Professor
-
-Laboratory
-
-Achievement Timeline
-
----
-
-EB1B
-
-University
-
-Professor
-
-Research Institution
-
-Academic Publications
-
-Peer Review
-
-Teaching
-
----
-
-EB1C
-
-Corporate
-
-Executive
-
-Global Company
-
-Management Structure
-
-Business Expansion
-
-Organization Chart
-
----
-
-O1 Visa
-
-Creative Professional
-
-Artist
-
-Athlete
-
-Scientist
-
-Media
-
-Awards
-
-Recognition
-
----
-
-Admin Dashboard Graphics
-
-Charts
-
-Heatmaps
-
-Lead Funnel
-
-Activity Timeline
-
-Progress Rings
-
-Calendar
-
-Kanban
-
-Notifications
-
-Statistics
-
----
-
-# PHOTOGRAPHY GUIDELINES
-
-Only use
-
-Professional Office
-
-Business Meetings
-
-Universities
-
-Scientists
-
-Engineers
-
-Medical Professionals
-
-Researchers
-
-Immigration Documents
-
-US Skyline
-
-International Professionals
-
-Conference
-
-Library
-
-Innovation
-
-Avoid
-
-Fake Stock Call Centers
-
-Overused Handshake Photos
-
-Artificial AI Faces
-
-Random Smiling Teams
-
-Generic Office Cubicles
-
-Poor Quality Images
-
-Always use optimized
-
-WebP
-
-AVIF
-
-SVG
-
----
-
-# ICONOGRAPHY
-
-Use Lucide Icons.
-
-Never mix icon packs.
-
-Icons should support content.
-
-Not decorate content.
-
----
-
-# ANIMATION SYSTEM
-
-Animations should improve usability.
-
-Never distract.
-
-Allowed
-
-Fade
-
-Slide
-
-Scale
-
-Reveal
-
-Hover
-
-Progress
-
-Accordion
-
-Timeline
-
-Card Hover
-
-Micro Interactions
-
-Page Transition
-
-Number Counter
-
-Chart Animation
-
-Notification
-
-Skeleton Loading
-
-Drag & Drop
-
-Avoid
-
-Long Animations
-
-Infinite Floating Objects
-
-Heavy Parallax
-
-Autoplay Carousels
-
-Flashing Effects
-
-Animation Duration
-
-Fast
-
-150ms
-
-Medium
-
-250ms
-
-Slow
-
-350ms
-
-Anything above 500ms requires justification.
-
----
-
-# ACCESSIBILITY
-
-WCAG AA minimum.
-
-Prefer AAA.
-
-Support
-
-Keyboard
-
-Screen Reader
-
-Reduced Motion
-
-High Contrast
-
-Focus States
-
-Semantic HTML
-
-ARIA Labels
-
-Alt Text
-
-Accessible Forms
-
-Error Announcements
-
-Logical Heading Structure
-
----
-
-# RESPONSIVE DESIGN
-
-Desktop
-
-1440+
-
-Laptop
-
-1024
-
-Tablet
-
-768
-
-Mobile
-
-390+
-
-Touch Targets
-
-Minimum 44x44px
-
-Navigation must adapt gracefully.
-
-Never hide essential functionality on mobile.
-
----
-
-# SEO INTEGRATION
-
-Every page automatically includes
-
-Title
-
-Description
-
-Canonical
-
-Open Graph
-
-Twitter Cards
-
-Schema
-
-Breadcrumb
-
-Internal Links
-
-XML Sitemap
-
-Robots Compliance
-
-Performance Optimization
+WCAG AA minimum (prefer AAA): keyboard nav, screen reader support, reduced motion, high contrast, focus states, semantic HTML, ARIA labels, alt text, accessible forms, logical heading structure. Responsive breakpoints: Desktop 1440+, Laptop 1024, Tablet 768, Mobile 390+, touch targets minimum 44×44px. SEO: every page auto-includes title/description/canonical/OG/Twitter/schema/breadcrumb/internal links/sitemap/robots — **already true on the current public site** (see the site's own `CLAUDE.md` verification checklist).
 
 ---
 
 # AI DESIGN RULES
 
-Before building anything Claude must
-
-Search existing components.
-
-Reuse existing layouts.
-
-Follow this design system.
-
-Avoid duplicate UI.
-
-Maintain consistency.
-
-Improve rather than replace.
-
-Respect accessibility.
-
-Respect SEO.
-
-Respect performance.
-
-Think like a Senior Product Designer.
-
-Think like a Frontend Architect.
-
-Think like a UX Researcher.
-
-Think like a Creative Director.
-
-Never create inconsistent experiences.
+Before building anything: search existing components, reuse existing layouts, follow this design system, avoid duplicate UI, maintain consistency, improve rather than replace, respect accessibility/SEO/performance. Think like a Senior Product Designer, Frontend Architect, UX Researcher, Creative Director. Never create inconsistent experiences. **Applies to whatever you're building — check whether it's public-site work (bound by the Current sections above) or a future admin/dashboard build (bound by the Target sections) before assuming which constraints apply.**
 
 ---
 
 # QUALITY CHECKLIST
 
-Before every commit verify
-
-✓ Brand consistency
-
-✓ Typography
-
-✓ Colors
-
-✓ Responsive
-
-✓ Accessibility
-
-✓ SEO
-
-✓ Component reuse
-
-✓ Performance
-
-✓ Animation quality
-
-✓ Professional imagery
-
-✓ Internal linking
-
-✓ Semantic HTML
-
-✓ Mobile UX
-
-✓ Desktop UX
-
-✓ Loading states
-
-✓ Empty states
-
-✓ Error states
-
-✓ Documentation updated
-
-✓ TypeScript passes
-
-✓ Lint passes
-
-✓ Build passes
-
-✓ Production Ready
+Before every commit, verify: brand consistency, typography, colors, responsive, accessibility, SEO, component reuse, performance, animation quality (CSS-only on the public site), professional imagery, internal linking, semantic HTML, mobile/desktop UX, loading/empty/error states, documentation updated, TypeScript passes, lint passes, build passes, production ready.
 
 ---
 
 # FINAL DIRECTIVE
 
-Every interface produced for Immigration Horizons must communicate:
+Every interface produced for Immigration Horizons must communicate: Trust, Authority, Professionalism, Transparency, Technical Excellence, Premium Quality, Educational Value, Operational Efficiency. Every screen should feel like it belongs to one cohesive enterprise platform — including the current admin CMS, even while it's visually simpler and not yet built against this exact token/component system. If a design decision conflicts with these principles, choose the solution that best supports long-term consistency, usability, accessibility, and maintainability.
 
-Trust
-
-Authority
-
-Professionalism
-
-Transparency
-
-Technical Excellence
-
-Premium Quality
-
-Educational Value
-
-Operational Efficiency
-
-Every screen should feel like it belongs to one cohesive enterprise platform.
-
-If a design decision conflicts with these principles, choose the solution that best supports long-term consistency, usability, accessibility, and maintainability.
-
-This Design System is the single source of truth for all visual, interaction, and user experience decisions across the Immigration Horizons platform.
+This Design System is the single source of truth for all visual, interaction, and user experience decisions across the Immigration Horizons platform — both what's shipped and what's planned.
 
 # End of DESIGN_SYSTEM.md

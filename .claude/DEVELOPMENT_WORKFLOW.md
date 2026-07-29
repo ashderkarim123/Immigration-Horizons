@@ -79,47 +79,15 @@ Understand existing architecture before implementing new features.
 
 ---
 
-# Backend Workflow
+# Backend Workflow (Target — see note)
 
-For every backend feature:
+For every backend feature, the target flow is:
 
-Requirement
+Requirement → Database Model → Validation → Repository → Service → Controller → API Route → Testing → Documentation.
 
-↓
+Business logic belongs in Services; Controllers remain thin.
 
-Database Model
-
-↓
-
-Validation
-
-↓
-
-Repository
-
-↓
-
-Service
-
-↓
-
-Controller
-
-↓
-
-API Route
-
-↓
-
-Testing
-
-↓
-
-Documentation
-
-Business logic belongs in Services.
-
-Controllers remain thin.
+**Current reality**: `server/routes/admin/` has routes calling Mongoose models directly — no Repository/Service/Controller layering exists yet (see `ARCHITECTURE.md` Part 1). For now, keep new admin features consistent with that existing pattern rather than introducing the target layering piecemeal in just one feature — a full migration to the layered approach should be its own deliberate, scoped effort, not something a single feature quietly starts.
 
 ---
 

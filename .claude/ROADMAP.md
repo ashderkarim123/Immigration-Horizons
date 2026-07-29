@@ -32,17 +32,15 @@ Defines the long-term product roadmap.
 
 ✔ Authentication
 
-✔ CRM
+✔ Lead Management (Consultation-centric — see DATABASE.md, ADMIN_WORKFLOW.md)
 
-✔ Lead Management
+✔ Task Management (Task + Sprint models, real and working)
 
-✔ Client Management
+✔ Notifications (in-app)
 
-✔ Petition Management
-
-✔ Task Management
-
-✔ Notifications
+- CRM (no Client/Case entity yet — leads stay Consultation documents throughout)
+- Client Management (not started — no Client entity)
+- Petition Management (not started — no Petition entity; petition-shaped work happens as Tasks against a lead today)
 
 ---
 

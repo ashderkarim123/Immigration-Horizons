@@ -6,6 +6,8 @@
 > Immigration Horizons project. It provides business context, product
 > goals, architecture direction, workflows, roadmap, and engineering
 > expectations for all contributors and AI agents.
+>
+> **Scope note:** this is a business/product document, so most sections describe the long-term product (Target), not just what's shipped. Where a section could be mistaken for "this already exists," it's flagged below. For the precise current-implementation detail, see `ARCHITECTURE.md`, `DATABASE.md`, `ADMIN_WORKFLOW.md`, and `API_ARCHITECTURE.md` — each split into Current/Target parts.
 
 ------------------------------------------------------------------------
 
@@ -210,24 +212,9 @@ Role-based permissions (RBAC) are mandatory.
 
 # 9. Admin Dashboard Modules
 
--   Dashboard
--   CRM
--   Leads
--   Clients
--   Petitions
--   Tasks
--   Kanban Board
--   Team
--   Calendar
--   Notifications
--   Documents
--   Media Library
--   Blog CMS
--   SEO Manager
--   Analytics
--   Reports
--   Settings
--   Audit Logs
+**Current**: Dashboard, Leads, Tasks, Sprints, Notifications, Delivery, Blog CMS, SEO Manager, Testimonials, FAQs, Media Library, Settings, Users, Search.
+
+**Target** (not yet built — see `ADMIN_WORKFLOW.md` Part 2): CRM, Clients, Petitions, Kanban Board (today's task view is list/status-based, not drag-and-drop), Team (beyond user management), Calendar, Documents (beyond `DeliveryRecord.files`), Analytics, Reports, Audit Logs (beyond per-lead `ActivityLog`).
 
 ------------------------------------------------------------------------
 

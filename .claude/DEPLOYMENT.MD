@@ -8,7 +8,9 @@ Version: 1.0
 
 # Purpose
 
-Defines the deployment process for development, staging, and production.
+Defines the target deployment process for development, staging, and production.
+
+**Scope note (Current vs Target)**: this describes a Dev → Staging → Production pipeline; **there is no staging environment today**. The repo's own root `DEPLOYMENT.md` is the authoritative, detailed, current process (single VPS, PM2, nginx, direct dev → production) — read that first for anything you're actually about to do. Treat this file as the target shape, not the current runbook.
 
 ---
 

@@ -8,545 +8,155 @@ Version: 2.0
 
 # Purpose
 
-This document defines the data architecture for Immigration Horizons.
+This document defines the data architecture for Immigration Horizons — both what exists in the database today and the target model the platform is being built toward.
 
-It explains how data is organized, how modules relate to each other, and the rules developers must follow when implementing database models.
+It is split into two parts:
 
-The database must support:
-
-- Website
-- Admin Dashboard
-- CRM
-- Lead Management
-- Petition Management
-- Blog CMS
-- SEO
-- Notifications
-- Client Portal
-- Analytics
+- **Part 1 — Current Implementation**: matches the actual Mongoose schemas in `server/models/` right now. Keep this in sync with the code; if you change a schema, update this section in the same change.
+- **Part 2 — Target Architecture**: the long-term data model (CRM, Clients, Cases, Petitions, Documents, Audit Logs, Analytics). This is the product specification for where the platform is going, not a bug list. Do not treat gaps here as things to silently "fix" — they're scoped work for a future phase.
 
 ---
 
-# Database Stack
+# Part 1 — Current Implementation
 
-Database
-- MongoDB
+# Database Stack (actual)
 
-ODM
-- Mongoose
+- **Database**: MongoDB
+- **ODM**: Mongoose
+- **Auth**: `express-session` + `connect-mongo` (session store in Mongo), not a custom `Sessions` collection
+- **Password hashing**: **bcryptjs**, not Argon2 — `UserSchema.pre('save')` in `server/models/admin/User.js` hashes with `bcrypt.genSalt(12)`
+- **Email**: Resend (site's `src/lib/leads.ts`), not Gmail SMTP
+- **Validation**: plain Mongoose schema validation — no Zod layer on the backend yet
 
-Validation
-- Zod
+# Current Collections
 
-Authentication
-- Session Based
+All models live in `server/models/` (root: `BlogPost`, `Comment`, `Consultation`) and `server/models/admin/` (the rest).
 
-Password Hashing
-- Argon2
+## Consultation (the "Lead")
 
-Email
-- Resend
+The core entity. There is no separate Lead → Client → Case → Petition chain yet — a `Consultation` document *is* the lead, and it carries its own lifecycle via `status`, plus everything else (tasks, activity, delivery) references it directly by `lead: ObjectId`.
 
-Future
-- Redis
-- BullMQ
-- Mongo Atlas Search
+Shared exactly with the legacy site and the Next.js site's own copy (`src/lib/models/Consultation.ts`) — same collection name, same enum, same field names, so a lead submitted through either frontend shows up in the same admin dashboard.
+
+## AdminUser
+
+Roles enum (already richer than "just admin/editor"):
+
+```
+super_admin, admin, editor                                   — original roles, kept for back-compat
+pm, petition_writer, business_plan_specialist,
+recommendation_letter_specialist, uscis_forms_specialist,
+evidence_collector, reviewer, viewer                          — added for lead-ops (see Permissions below)
+```
+
+Permissions are **not** a separate configurable collection yet — see Part 1 Permissions below for the actual (coarser) model.
+
+## Task
+
+Tied directly to a `Consultation` (`lead: ObjectId, ref: 'Consultation'`), not to a Case/Petition entity. Fields: `type` (Petition Writing, Business Plan, Recommendation Letters, Expert Opinion Letters, USCIS Forms, Evidence Review, Client Follow-Up, QC Review, Package Assembly, Delivery, Other), `status` (todo/in_progress/waiting/review/completed), `priority`, `assignee` + `assigneeName` (denormalized so a task still displays if the assigned user is later removed), `dependencies` (self-referencing), `sprint` (ref `Sprint`), `attachments`.
+
+## Sprint
+
+Simple: `name`, `goal`, `startDate`, `endDate`, `status` (planning/active/completed). Tasks link to a sprint via `Task.sprint`.
+
+## ActivityLog
+
+Append-only, per-lead event log — powers the lead detail page's timeline. Fixed `type` enum: `received, contacted, assigned, note_added, task_created, task_completed, status_changed, file_uploaded, message_sent, package_delivered`. This *is* the current audit trail for lead activity — there is no separate general-purpose `AuditLogs` collection covering the rest of the admin (blog edits, settings changes, etc.) yet.
+
+## Notification
+
+In-app only right now (no email/SMS/push delivery for notifications themselves — that's separate from lead email via Resend). Typed (`new_lead`, `lead_assigned`, `task_assigned`, `task_overdue`, etc.), targeted by `recipientId` or `recipientName` (so it works for both DB-backed users and the env-credential fallback admin), links back to `relatedLead`/`relatedTask`.
+
+## DeliveryRecord
+
+Tracks the "final package to client" state per lead: `state` (drafting/internal_review/client_review/ready/delivered), `method` (email/dashboard/both), `files[]` with per-file status. **Real file generation (PDF bundle/ZIP) is not wired up** — this is a clean tracking record for a workflow that's usable now, with export completion deferred.
+
+## BlogPost, Comment, FAQ, Testimonial, SEOMeta, Media, Setting, InternalNote
+
+Standard CMS-support collections backing the admin's Blog, FAQs, Testimonials, SEO, Media, and Settings sections. No versioning on `Media` yet; uploads are local-disk (`server/public/uploads/`).
+
+# Current Auth & Permissions Model
+
+Not full RBAC with a configurable permissions matrix — it's two layers:
+
+1. **Page-level gate**: `requireAdmin` (`server/middleware/auth.js`) — a single boolean session check (`req.session.isAdmin`), used for most admin routes.
+2. **Lead-ops role gate**: `server/utils/permissions.js` — coarser than the 11-role enum suggests. Only two buckets actually matter for authorization:
+   - `MANAGER_ROLES = ['super_admin', 'admin', 'pm']` — can assign leads/tasks, create sprints, change delivery state, delete records.
+   - `READ_ONLY_ROLES = ['viewer']` — blocked from all mutations.
+   - Every other role (`petition_writer`, `business_plan_specialist`, etc.) behaves like a full read-write user for now — the role exists on the user record and shows up in `ROLE_LABELS` for display, but doesn't yet gate access to specific modules.
+
+Do not describe this as "full RBAC" in current-state language elsewhere in the docs — it's a two-tier manager/read-only split today, with room to grow into per-role permissions later (see Target Architecture).
 
 ---
 
-# Architecture
+# Part 2 — Target Architecture
+
+The following describes the platform this project is being built toward. None of it exists in the current schema. This is the product specification, not a defect list — treat it as scoped future work, and don't rewrite Part 1 to match it.
+
+## Planned Collections
 
 ```
 Users
 │
-├── Roles
-├── Permissions
-├── Sessions
+├── Roles              (configurable, not a hardcoded enum)
+├── Permissions         (per-role, independently assignable)
+├── Sessions            (device/browser/IP/last-activity tracking, beyond the current connect-mongo store)
 │
 Leads
 │
-└── Clients
+└── Clients             (a Lead converts into exactly one Client)
       │
       ├── Cases
       │     ├── Petitions
-      │     ├── Tasks
-      │     └── Documents
+      │     ├── Tasks    (currently tied to Lead directly, not Case/Petition)
+      │     └── Documents (first-class, versioned, not DeliveryRecord.files)
       │
       └── Communications
 
 CMS
 │
-├── Blog
-├── Categories
-├── Tags
-├── Media
-└── SEO
+├── Blog / Categories / Tags / Media (versioned) / SEO
 
 System
 │
-├── Notifications
-├── Audit Logs
+├── Notifications (queue-based, multi-channel: in-app + email + future SMS/push)
+├── Audit Logs (platform-wide, not just per-lead ActivityLog)
 ├── Settings
 └── Analytics
 ```
 
----
+## Planned: Roles & Permissions
 
-# Core Collections
+Move from the current hardcoded `MANAGER_ROLES`/`READ_ONLY_ROLES` split to a real `Roles` + `Permissions` collection pair, independently assignable per module (Leads, Clients, Cases, Petitions, Documents, Blog, SEO, Settings, Audit Logs, etc.), so access control doesn't require a code change to adjust.
 
-## Users
+## Planned: Client / Case / Petition hierarchy
 
-### Purpose
+Introduce `Clients` (created when a Lead is won), `Cases` (one client, multiple immigration matters — EB-2 NIW, EB-1A, etc.), and `Petitions` (the actual petition work item within a case: eligibility → evidence → draft → QA → forms → submission → RFE → completion). Today's `Task`/`ActivityLog`/`DeliveryRecord` all reference `Consultation` directly; migrating them to reference `Case`/`Petition` instead is part of this work, not a rename done casually.
 
-Stores authenticated users.
+## Planned: Documents as first-class entities
 
-### Relationships
+Versioned, with preview/download/replace/history/tags/category/owner, replacing today's `DeliveryRecord.files` array and local-disk `Media` uploads. Needs cloud storage (S3/Cloudinary) first — local disk doesn't survive a move to a multi-instance or ephemeral host (flagged already in the deployment docs).
 
-- One Role
-- Many Tasks
-- Many Notifications
-- Many Audit Logs
+## Planned: Platform-wide Audit Logs
 
-### Rules
+Today's `ActivityLog` only covers per-lead events. A general `AuditLogs` collection would also cover blog publishing, settings changes, user/role changes, login/logout — anything sensitive across the whole admin, not just the lead-ops module.
 
-- Email must be unique.
-- Passwords are hashed.
-- Soft delete only.
-- Activity is logged.
+## Planned: Analytics collection
+
+Business metrics (lead sources, conversion rate, blog performance, traffic) as stored, queryable data — not yet implemented; today's `/admin/contact-form` only shows integration *status*, not analytics.
 
 ---
 
-## Roles
-
-### Purpose
-
-Defines user roles.
-
-### Default Roles
-
-- Super Admin
-- Admin
-- Project Manager
-- Case Manager
-- Petition Writer
-- Business Plan Writer
-- USCIS Specialist
-- SEO Manager
-- Marketing
-- Finance
-- Client
-
-### Rules
-
-Permissions are assigned to roles.
-
-Never hardcode permissions.
-
----
-
-## Permissions
-
-### Purpose
-
-Controls access across the platform.
-
-Examples
-
-- Manage Users
-- Manage Leads
-- Manage Cases
-- Manage Petitions
-- Publish Blogs
-- Manage SEO
-- Manage Settings
-
----
-
-## Sessions
-
-Stores active login sessions.
-
-Tracks
-
-- Device
-- Browser
-- IP
-- Last Activity
-- Expiration
-
----
-
-# CRM Collections
-
-## Leads
-
-### Purpose
-
-Stores every inquiry before becoming a client.
-
-### Sources
-
-- Website
-- Facebook
-- Instagram
-- Google Ads
-- WhatsApp
-- Referral
-- Manual
-
-### Workflow
-
-New
-
-↓
-
-Contacted
-
-↓
-
-Qualified
-
-↓
-
-Consultation
-
-↓
-
-Proposal
-
-↓
-
-Won / Lost
-
-↓
-
-Client
-
-### Stores
-
-- Contact Information
-- Immigration Interest
-- Source
-- Campaign
-- Notes
-- Tags
-- Timeline
-- Attachments
-
-### Rules
-
-- One owner per lead.
-- Assignment creates notification.
-- Every change is logged.
-- Can be converted into one client.
-
----
-
-## Clients
-
-### Purpose
-
-Stores active customers.
-
-### Relationships
-
-One Client
-
-↓
-
-Many Cases
-
-### Stores
-
-- Personal Details
-- Immigration Profile
-- Documents
-- Billing
-- Portal Access
-
----
-
-## Cases
-
-### Purpose
-
-Represents one immigration engagement.
-
-Examples
-
-- EB-2 NIW
-- EB-1A
-- EB-1B
-- EB-1C
-- O-1
-
-### Stores
-
-- Assigned Team
-- Timeline
-- Status
-- Deadlines
-- Related Petition
-
----
-
-## Petitions
-
-### Purpose
-
-Stores petition work.
-
-### Includes
-
-- Eligibility
-- Evidence
-- Recommendation Letters
-- Business Plan
-- USCIS Forms
-- QA
-- Submission
-
-### Workflow
-
-Planning
-
-↓
-
-Evidence
-
-↓
-
-Draft
-
-↓
-
-Review
-
-↓
-
-Forms
-
-↓
-
-QA
-
-↓
-
-Submission
-
-↓
-
-RFE
-
-↓
-
-Completed
-
----
-
-## Tasks
-
-### Purpose
-
-Tracks work across teams.
-
-### Types
-
-- Petition Writing
-- Business Plan
-- Recommendation Letter
-- Research
-- USCIS Forms
-- QA
-- Marketing
-- SEO
-
-### Status
-
-Backlog
-
-Todo
-
-In Progress
-
-Review
-
-Completed
-
-Blocked
-
----
-
-## Documents
-
-Stores every uploaded file.
-
-Examples
-
-- Passport
-- CV
-- Publications
-- Recommendation Letters
-- Business Plans
-- USCIS Forms
-- Evidence
-
-### Rules
-
-- Version history
-- Soft delete
-- Approval workflow
-
----
-
-# CMS Collections
-
-## Blog
-
-Stores blog articles.
-
-Supports
-
-- Drafts
-- Publishing
-- SEO
-- Authors
-- Categories
-- Tags
-
----
-
-## Media
-
-Stores images, PDFs, videos and downloadable resources.
-
-Supports
-
-- Folder structure
-- Optimization
-- Metadata
-- Versioning
-
----
-
-## SEO
-
-Stores
-
-- Meta Titles
-- Descriptions
-- Canonicals
-- Open Graph
-- Schema
-- Redirects
-
----
-
-# System Collections
-
-## Notifications
-
-Supports
-
-- Dashboard
-- Email
-- Future SMS
-- Future Push
-
----
-
-## Audit Logs
-
-Every important action is logged.
-
-Examples
-
-- Login
-- Lead Assignment
-- Petition Update
-- Blog Published
-- User Created
-
----
-
-## Settings
-
-Stores
-
-- Company Settings
-- Branding
-- Email
-- Integrations
-- SEO Defaults
-- Feature Flags
-
----
-
-## Analytics
-
-Stores business metrics.
-
-Examples
-
-- Leads
-- Conversions
-- Traffic
-- Blog Views
-- User Activity
-
----
-
-# Business Rules
-
-- Every Lead becomes one Client.
-- One Client can have multiple Cases.
-- One Case can have multiple Petitions.
-- Every Petition has Tasks.
-- Every Task belongs to one owner.
-- Every upload creates a document record.
-- Every assignment creates notifications.
-- Every important action creates an audit log.
-
----
-
-# Development Standards
-
-- Use ObjectId references.
-- Use soft deletes.
-- Validate all inputs with Zod.
-- Never duplicate business data.
-- Keep schemas modular.
-- Index searchable fields.
-- Maintain backward compatibility.
-
----
-
-# Future Expansion
-
-- AI Case Assistant
-- Workflow Automation
-- Payments
-- Client Portal
-- Calendar
-- Video Meetings
-- Internal Chat
-- Knowledge Base
-- AI Document Analysis
-- OCR
-- eSignature
-- Mobile App
+# Development Standards (applies to both current work and future migrations)
+
+- Use `ObjectId` references, not embedded duplication.
+- Prefer soft deletes for anything user-facing (not yet applied everywhere in the current schema — e.g. `Testimonial`/`FAQ` deletes are currently hard deletes; treat this as a gap to close deliberately, not silently).
+- Validate all inputs — currently via Mongoose schema validation; Zod is part of the target stack (see `FRONTEND_ARCHITECTURE.md`), not yet wired into the backend.
+- Keep schemas modular; index searchable fields.
+- Maintain backward compatibility — see the `AdminUser.role` enum's own comment (`// Original roles — kept for back-compat with existing accounts`) as the model to follow.
 
 ---
 
 # Success Criteria
 
-The database should support:
-
-- Multi-user collaboration
-- High-volume lead management
-- Complex petition workflows
-- SEO-driven CMS
-- Enterprise reporting
-- Future AI automation
-
-without requiring major architectural changes.
+The database should eventually support multi-user collaboration, high-volume lead management, complex petition workflows, SEO-driven CMS, enterprise reporting, and future AI automation — without requiring a rewrite of what's built today. The current schema already gets partway there (Task/Sprint/Notification/ActivityLog/DeliveryRecord are real and working); the Target Architecture section above is the remaining distance.
