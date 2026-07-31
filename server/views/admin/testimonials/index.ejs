@@ -4,7 +4,9 @@
     <p class="page-subtitle"><%= total %> testimonials</p>
   </div>
   <div class="page-actions">
-    <a href="/admin/testimonials/new" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Testimonial</a>
+    <% if (can('testimonials.manage')) { %>
+      <a href="/admin/testimonials/new" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Testimonial</a>
+    <% } %>
   </div>
 </div>
 
@@ -45,10 +47,12 @@
                 <td><%= t.featured ? '<span class="badge badge-published">Featured</span>' : '—' %></td>
                 <td><span class="badge <%= t.status === 'published' ? 'badge-published' : 'badge-draft' %>"><%= t.status %></span></td>
                 <td class="cell-actions">
-                  <a href="/admin/testimonials/<%= t._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
-                  <form action="/admin/testimonials/<%= t._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this testimonial?');" style="display:inline">
-                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
-                  </form>
+                  <% if (can('testimonials.manage')) { %>
+                    <a href="/admin/testimonials/<%= t._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
+                    <form action="/admin/testimonials/<%= t._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this testimonial?');" style="display:inline">
+                      <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                    </form>
+                  <% } %>
                 </td>
               </tr>
             <% }); %>

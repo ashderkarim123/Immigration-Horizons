@@ -9,7 +9,11 @@ const ActivityLog = require('../../models/admin/ActivityLog');
 
 const { notify, notifyMany } = require('../../utils/notify');
 const { logActivity } = require('../../utils/activity');
-const { blockReadOnly, requireManager, ROLE_LABELS } = require('../../utils/permissions');
+const {
+  requireCapability,
+  canManageTask,
+  ROLE_LABELS,
+} = require('../../utils/permissions');
 
 // PM/assignment slots, mapped to the role that normally does that work —
 // mirrors the brief's example mapping exactly.
@@ -87,7 +91,10 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.post('/admin/leads/:leadId/tasks', blockReadOnly, async (req, res) => {
+  // Creating a new task is manager-level: specialists/reviewer "manage tasks
+  // assigned to them" (see canManageTask below), which presupposes the task
+  // already exists — creating one from nothing isn't part of that grant.
+  router.post('/admin/leads/:leadId/tasks', requireCapability('tasks.manage'), async (req, res) => {
     try {
       const { title, type, description, assignee, dueDate, priority, notes } = req.body;
       if (!title || !title.trim()) return res.redirect(`/admin/leads/${req.params.leadId}`);
@@ -130,11 +137,17 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.put('/admin/tasks/:id', blockReadOnly, async (req, res) => {
+  // No middleware here: authorization needs the actual task document (to
+  // check ownership for specialist/reviewer roles), so it's checked inline
+  // right after the fetch, before any mutation — see canManageTask().
+  router.put('/admin/tasks/:id', async (req, res) => {
     try {
       const { title, type, description, assignee, dueDate, priority, status, notes } = req.body;
       const task = await Task.findById(req.params.id);
       if (!task) return res.redirect('/admin/tasks');
+      if (!canManageTask(req, task)) {
+        return res.status(403).send('You can only manage tasks assigned to you.');
+      }
 
       let assigneeName = task.assigneeName;
       const assigneeChanged = String(task.assignee || '') !== String(assignee || '');
@@ -180,13 +193,16 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.post('/admin/tasks/:id/status', blockReadOnly, async (req, res) => {
+  router.post('/admin/tasks/:id/status', async (req, res) => {
     try {
       const { status } = req.body;
       if (!Task.STATUSES.includes(status)) return res.redirect(req.headers.referer || '/admin/tasks');
 
       const task = await Task.findById(req.params.id);
       if (!task) return res.redirect('/admin/tasks');
+      if (!canManageTask(req, task)) {
+        return res.status(403).send('You can only manage tasks assigned to you.');
+      }
 
       const wasCompleted = task.status === 'completed';
       task.status = status;
@@ -203,10 +219,17 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.post('/admin/tasks/:id/sprint', blockReadOnly, async (req, res) => {
+  router.post('/admin/tasks/:id/sprint', async (req, res) => {
     try {
       const { sprintId } = req.body;
-      await Task.findByIdAndUpdate(req.params.id, { sprint: sprintId || null });
+      const task = await Task.findById(req.params.id);
+      if (!task) return res.redirect('/admin/sprints');
+      if (!canManageTask(req, task)) {
+        return res.status(403).send('You can only manage tasks assigned to you.');
+      }
+
+      task.sprint = sprintId || null;
+      await task.save();
       res.redirect(req.headers.referer || '/admin/sprints');
     } catch (err) {
       console.error('[admin/tasks/sprint]', err.message);
@@ -214,7 +237,7 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.delete('/admin/tasks/:id', requireManager, async (req, res) => {
+  router.delete('/admin/tasks/:id', requireCapability('tasks.manage'), async (req, res) => {
     try {
       await Task.findByIdAndDelete(req.params.id);
       res.redirect(req.headers.referer || '/admin/tasks');
@@ -262,7 +285,7 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.post('/admin/sprints', requireManager, async (req, res) => {
+  router.post('/admin/sprints', requireCapability('sprints.manage'), async (req, res) => {
     try {
       const { name, goal, startDate, endDate } = req.body;
       if (name && startDate && endDate) {
@@ -281,7 +304,7 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.post('/admin/sprints/:id/status', requireManager, async (req, res) => {
+  router.post('/admin/sprints/:id/status', requireCapability('sprints.manage'), async (req, res) => {
     try {
       const { status } = req.body;
       if (['planning', 'active', 'completed'].includes(status)) {
@@ -293,7 +316,7 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.delete('/admin/sprints/:id', requireManager, async (req, res) => {
+  router.delete('/admin/sprints/:id', requireCapability('sprints.manage'), async (req, res) => {
     try {
       await Task.updateMany({ sprint: req.params.id }, { sprint: null });
       await Sprint.findByIdAndDelete(req.params.id);
@@ -358,7 +381,7 @@ module.exports = function attachLeadOps(router) {
   // LEAD ASSIGNMENT
   // ======================================================================
 
-  router.post('/admin/leads/:id/assign', requireManager, async (req, res) => {
+  router.post('/admin/leads/:id/assign', requireCapability('leads.assign'), async (req, res) => {
     try {
       const lead = await Consultation.findById(req.params.id);
       if (!lead) return res.redirect('/admin/leads');
@@ -442,7 +465,7 @@ module.exports = function attachLeadOps(router) {
     return record;
   }
 
-  router.post('/admin/leads/:id/delivery', blockReadOnly, async (req, res) => {
+  router.post('/admin/leads/:id/delivery', requireCapability('deliveries.manage'), async (req, res) => {
     try {
       const { state, method } = req.body;
       const record = await getOrCreateDelivery(req.params.id);
@@ -480,7 +503,7 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
-  router.post('/admin/leads/:id/delivery/files', blockReadOnly, async (req, res) => {
+  router.post('/admin/leads/:id/delivery/files', requireCapability('deliveries.manage'), async (req, res) => {
     try {
       const { fileName, fileUrl, fileStatus } = req.body;
       if (fileName && fileName.trim()) {
@@ -498,7 +521,7 @@ module.exports = function attachLeadOps(router) {
   // Placeholder export — records the request; real PDF/ZIP generation is
   // deferred (per the brief, a clean delivery record beats a rushed
   // half-working file generator).
-  router.post('/admin/leads/:id/delivery/export', blockReadOnly, async (req, res) => {
+  router.post('/admin/leads/:id/delivery/export', requireCapability('deliveries.manage'), async (req, res) => {
     try {
       const actor = req.session.adminUser?.name || 'Admin';
       const record = await getOrCreateDelivery(req.params.id);

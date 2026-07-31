@@ -24,9 +24,11 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
     </p>
   </div>
   <div class="page-actions">
-    <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently? This cannot be undone.');" style="display:inline">
-      <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Lead</button>
-    </form>
+    <% if (can('leads.delete')) { %>
+      <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently? This cannot be undone.');" style="display:inline">
+        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Lead</button>
+      </form>
+    <% } %>
   </div>
 </div>
 
@@ -79,13 +81,17 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
                     <td><%= t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '—' %></td>
                     <td><span class="badge badge-priority-<%= t.priority %>"><%= t.priority %></span></td>
                     <td>
-                      <form action="/admin/tasks/<%= t._id %>/status" method="POST" style="display:inline">
-                        <select name="status" class="filter-select" onchange="this.form.submit()">
-                          <% Object.keys(TASK_STATUS_LABELS).forEach(function(s) { %>
-                            <option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= TASK_STATUS_LABELS[s] %></option>
-                          <% }); %>
-                        </select>
-                      </form>
+                      <% if (canManageTask(t)) { %>
+                        <form action="/admin/tasks/<%= t._id %>/status" method="POST" style="display:inline">
+                          <select name="status" class="filter-select" onchange="this.form.submit()">
+                            <% Object.keys(TASK_STATUS_LABELS).forEach(function(s) { %>
+                              <option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= TASK_STATUS_LABELS[s] %></option>
+                            <% }); %>
+                          </select>
+                        </form>
+                      <% } else { %>
+                        <span class="badge badge-task-<%= t.status %>"><%= TASK_STATUS_LABELS[t.status] %></span>
+                      <% } %>
                     </td>
                   </tr>
                 <% }); %>
@@ -94,6 +100,7 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
           </div>
         <% } %>
 
+        <% if (can('tasks.manage')) { %>
         <details>
           <summary>+ Create task</summary>
           <form action="/admin/leads/<%= lead._id %>/tasks" method="POST" class="admin-form" style="margin-top:16px">
@@ -138,6 +145,7 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
             </div>
           </form>
         </details>
+        <% } %>
       </div>
     </div>
 
@@ -150,6 +158,7 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
         </span>
       </div>
       <div class="admin-card-body">
+        <% if (can('deliveries.manage')) { %>
         <form action="/admin/leads/<%= lead._id %>/delivery" method="POST" class="admin-form">
           <div class="admin-form-grid">
             <div class="admin-form-group">
@@ -173,6 +182,7 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Update Delivery</button>
           </div>
         </form>
+        <% } %>
 
         <% if (deliveryRecord && deliveryRecord.files && deliveryRecord.files.length) { %>
           <table class="admin-table" style="margin:16px 0">
@@ -185,6 +195,7 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
           </table>
         <% } %>
 
+        <% if (can('deliveries.manage')) { %>
         <details style="margin-top:12px">
           <summary>+ Add file to package</summary>
           <form action="/admin/leads/<%= lead._id %>/delivery/files" method="POST" class="admin-form" style="margin-top:12px">
@@ -208,6 +219,7 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
           <button type="submit" class="btn btn-ghost btn-sm"><i class="fas fa-file-export"></i> Export Package</button>
           <span class="cell-sub">Placeholder — logs the request; automatic file generation isn't wired up yet.</span>
         </form>
+        <% } %>
 
         <% if (deliveryRecord && deliveryRecord.confirmationNote) { %>
           <div class="alert alert-info" style="margin-top:16px"><i class="fas fa-info-circle"></i><span><%= deliveryRecord.confirmationNote %></span></div>
@@ -258,25 +270,29 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
     <div class="admin-card">
       <div class="admin-card-header"><h3>Update Status</h3></div>
       <div class="admin-card-body">
-        <form action="/admin/leads/<%= lead._id %>/status" method="POST">
-          <div class="admin-form-group">
-            <select name="status" class="form-control">
-              <% leadStatusStages.forEach(function(s) { %>
-                <option value="<%= s.value %>" <%= lead.status === s.value ? 'selected' : '' %>><%= s.label %></option>
-              <% }); %>
-            </select>
-          </div>
-          <button type="submit" class="btn btn-primary btn-sm" style="width:100%">Update Status</button>
-        </form>
+        <% if (can('leads.edit')) { %>
+          <form action="/admin/leads/<%= lead._id %>/status" method="POST">
+            <div class="admin-form-group">
+              <select name="status" class="form-control">
+                <% leadStatusStages.forEach(function(s) { %>
+                  <option value="<%= s.value %>" <%= lead.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+                <% }); %>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="width:100%">Update Status</button>
+          </form>
 
-        <div class="quick-status-row">
-          <% [['waiting_on_client','Waiting on client'], ['ready_for_filing','Ready for filing'], ['submitted','Submitted'], ['delivered','Delivered']].forEach(function(pair) { %>
-            <form action="/admin/leads/<%= lead._id %>/status" method="POST">
-              <input type="hidden" name="status" value="<%= pair[0] %>">
-              <button type="submit" class="btn btn-xs btn-ghost" <%= lead.status === pair[0] ? 'disabled' : '' %>><%= pair[1] %></button>
-            </form>
-          <% }); %>
-        </div>
+          <div class="quick-status-row">
+            <% [['waiting_on_client','Waiting on client'], ['ready_for_filing','Ready for filing'], ['submitted','Submitted'], ['delivered','Delivered']].forEach(function(pair) { %>
+              <form action="/admin/leads/<%= lead._id %>/status" method="POST">
+                <input type="hidden" name="status" value="<%= pair[0] %>">
+                <button type="submit" class="btn btn-xs btn-ghost" <%= lead.status === pair[0] ? 'disabled' : '' %>><%= pair[1] %></button>
+              </form>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="cell-sub">Current status: <%= labelFor(lead.status) %></p>
+        <% } %>
       </div>
     </div>
 
@@ -284,7 +300,7 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
     <div class="admin-card">
       <div class="admin-card-header"><h3>Assignment</h3></div>
       <div class="admin-card-body">
-        <% if (['super_admin','admin','pm'].includes(adminUser.role)) { %>
+        <% if (can('leads.assign')) { %>
           <form action="/admin/leads/<%= lead._id %>/assign" method="POST" class="admin-form">
             <div class="admin-form-group">
               <label>Primary owner</label>
@@ -324,12 +340,14 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
     <div class="admin-card">
       <div class="admin-card-header"><h3>Internal Notes</h3></div>
       <div class="admin-card-body">
-        <form action="/admin/leads/<%= lead._id %>/notes" method="POST">
-          <div class="admin-form-group">
-            <textarea name="content" class="form-control" rows="3" placeholder="Add a note..." required></textarea>
-          </div>
-          <button type="submit" class="btn btn-blue btn-sm" style="width:100%"><i class="fas fa-plus"></i> Add Note</button>
-        </form>
+        <% if (can('notes.create')) { %>
+          <form action="/admin/leads/<%= lead._id %>/notes" method="POST">
+            <div class="admin-form-group">
+              <textarea name="content" class="form-control" rows="3" placeholder="Add a note..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-blue btn-sm" style="width:100%"><i class="fas fa-plus"></i> Add Note</button>
+          </form>
+        <% } %>
 
         <% if (notes.length > 0) { %>
           <div class="notes-timeline" style="margin-top:16px">

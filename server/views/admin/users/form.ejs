@@ -25,6 +25,7 @@
           <label>Role</label>
           <select name="role" class="form-control">
             <% Object.keys(roleLabels).forEach(function(r) { %>
+              <% if (r === 'super_admin' && currentRole !== 'super_admin') return; %>
               <option value="<%= r %>" <%= user && user.role === r ? 'selected' : '' %>><%= roleLabels[r] %></option>
             <% }); %>
           </select>

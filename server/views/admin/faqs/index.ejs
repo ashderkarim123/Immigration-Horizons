@@ -4,7 +4,9 @@
     <p class="page-subtitle"><%= total %> questions</p>
   </div>
   <div class="page-actions">
-    <a href="/admin/faqs/new" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New FAQ</a>
+    <% if (can('faqs.manage')) { %>
+      <a href="/admin/faqs/new" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New FAQ</a>
+    <% } %>
   </div>
 </div>
 
@@ -49,10 +51,12 @@
                 <td><%= f.displayOrder %></td>
                 <td><span class="badge <%= f.status === 'published' ? 'badge-published' : 'badge-draft' %>"><%= f.status %></span></td>
                 <td class="cell-actions">
-                  <a href="/admin/faqs/<%= f._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
-                  <form action="/admin/faqs/<%= f._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this FAQ?');" style="display:inline">
-                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
-                  </form>
+                  <% if (can('faqs.manage')) { %>
+                    <a href="/admin/faqs/<%= f._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
+                    <form action="/admin/faqs/<%= f._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this FAQ?');" style="display:inline">
+                      <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                    </form>
+                  <% } %>
                 </td>
               </tr>
             <% }); %>

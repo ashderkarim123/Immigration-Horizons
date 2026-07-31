@@ -74,6 +74,7 @@ function isOverdue(t) { return t.dueDate && t.status !== 'completed' && new Date
               <span class="<%= isOverdue(t) ? 'text-danger' : '' %>"><i class="fas fa-calendar"></i> <%= fmtDate(t.dueDate) %></span>
             </div>
 
+            <% if (canManageTask(t)) { %>
             <form action="/admin/tasks/<%= t._id %>/status" method="POST" class="task-quick-status">
               <select name="status" class="filter-select" onchange="this.form.submit()">
                 <% taskStatuses.forEach(function(s) { %>
@@ -129,7 +130,7 @@ function isOverdue(t) { return t.dueDate && t.status !== 'completed' && new Date
                   <textarea name="notes" class="form-control" rows="2"><%= t.notes %></textarea>
                 </div>
                 <div class="admin-form-actions" style="justify-content:space-between">
-                  <% if (['super_admin','admin','pm'].includes(adminUser.role)) { %>
+                  <% if (can('tasks.manage')) { %>
                     <form action="/admin/tasks/<%= t._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this task?');">
                       <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Delete</button>
                     </form>
@@ -148,6 +149,9 @@ function isOverdue(t) { return t.dueDate && t.status !== 'completed' && new Date
                 </select>
               </form>
             </details>
+            <% } else { %>
+              <span class="badge badge-task-<%= t.status %>"><%= STATUS_LABELS[t.status] %></span>
+            <% } %>
           </div>
         <% }); %>
       </div>

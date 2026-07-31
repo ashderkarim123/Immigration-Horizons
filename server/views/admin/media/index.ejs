@@ -5,6 +5,7 @@
   </div>
 </div>
 
+<% if (can('media.manage')) { %>
 <div class="admin-card">
   <div class="admin-card-body">
     <form action="/admin/media/upload" method="POST" enctype="multipart/form-data" class="admin-form" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
@@ -20,6 +21,7 @@
     </form>
   </div>
 </div>
+<% } %>
 
 <div class="admin-card">
   <div class="admin-card-body">
@@ -40,9 +42,11 @@
               <div class="name" title="<%= m.originalName %>"><%= m.originalName %></div>
               <div class="actions">
                 <button type="button" class="btn btn-sm btn-ghost" onclick="navigator.clipboard.writeText(location.origin + '<%= m.url %>');this.innerText='Copied!';" title="Copy URL"><i class="fas fa-link"></i></button>
-                <form action="/admin/media/<%= m._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this file?');" style="display:inline">
-                  <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
-                </form>
+                <% if (can('media.manage')) { %>
+                  <form action="/admin/media/<%= m._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this file?');" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                  </form>
+                <% } %>
               </div>
             </div>
           </div>

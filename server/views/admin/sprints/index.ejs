@@ -1,6 +1,6 @@
 <%
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
-const isManager = ['super_admin','admin','pm'].includes(adminUser.role);
+const isManager = can('sprints.manage');
 %>
 <div class="page-header">
   <div>
@@ -121,14 +121,16 @@ const isManager = ['super_admin','admin','pm'].includes(adminUser.role);
                 <td><%= t.lead ? t.lead.name : '—' %></td>
                 <td><%= t.assigneeName || 'Unassigned' %></td>
                 <td>
-                  <form action="/admin/tasks/<%= t._id %>/sprint" method="POST">
-                    <select name="sprintId" class="filter-select" onchange="this.form.submit()">
-                      <option value="">Choose sprint…</option>
-                      <% sprintCards.forEach(function(s) { %>
-                        <option value="<%= s._id %>"><%= s.name %></option>
-                      <% }); %>
-                    </select>
-                  </form>
+                  <% if (canManageTask(t)) { %>
+                    <form action="/admin/tasks/<%= t._id %>/sprint" method="POST">
+                      <select name="sprintId" class="filter-select" onchange="this.form.submit()">
+                        <option value="">Choose sprint…</option>
+                        <% sprintCards.forEach(function(s) { %>
+                          <option value="<%= s._id %>"><%= s.name %></option>
+                        <% }); %>
+                      </select>
+                    </form>
+                  <% } else { %>—<% } %>
                 </td>
               </tr>
             <% }); %>

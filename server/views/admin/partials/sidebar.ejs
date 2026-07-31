@@ -13,9 +13,9 @@ const menuItems = [
   { label: 'FAQs', icon: 'question-circle', page: 'faqs', url: '/admin/faqs' },
   { label: 'Services', icon: 'cogs', page: 'services', url: '/admin/services' },
   { label: 'Media Library', icon: 'images', page: 'media', url: '/admin/media' },
-  { label: 'Settings', icon: 'cog', page: 'settings', url: '/admin/settings' },
-  { label: 'Users', icon: 'user-shield', page: 'users', url: '/admin/users' },
-];
+  { label: 'Settings', icon: 'cog', page: 'settings', url: '/admin/settings', capability: 'settings.manage' },
+  { label: 'Users', icon: 'user-shield', page: 'users', url: '/admin/users', capability: 'users.manage' },
+].filter(function(item) { return !item.capability || can(item.capability); });
 %>
 <aside class="admin-sidebar">
   <div class="sidebar-brand">

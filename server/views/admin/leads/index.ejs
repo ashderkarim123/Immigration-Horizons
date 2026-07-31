@@ -23,9 +23,11 @@ function qs(extra) {
     <p class="page-subtitle"><%= total %> total consultation requests</p>
   </div>
   <div class="page-actions">
-    <a href="/admin/leads/export/csv?status=<%= statusFilter %>&service=<%= serviceFilter %>&search=<%= encodeURIComponent(search) %>" class="btn btn-ghost btn-sm">
-      <i class="fas fa-download"></i> Export CSV
-    </a>
+    <% if (can('csv.export')) { %>
+      <a href="/admin/leads/export/csv?status=<%= statusFilter %>&service=<%= serviceFilter %>&search=<%= encodeURIComponent(search) %>" class="btn btn-ghost btn-sm">
+        <i class="fas fa-download"></i> Export CSV
+      </a>
+    <% } %>
   </div>
 </div>
 
@@ -111,11 +113,13 @@ function qs(extra) {
                   <a href="/admin/leads/<%= lead._id %>" class="btn btn-sm btn-ghost" title="View Details">
                     <i class="fas fa-eye"></i>
                   </a>
-                  <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently?');" style="display:inline">
-                    <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </form>
+                  <% if (can('leads.delete')) { %>
+                    <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently?');" style="display:inline">
+                      <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </form>
+                  <% } %>
                 </td>
               </tr>
             <% }); %>

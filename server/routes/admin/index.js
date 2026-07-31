@@ -28,7 +28,8 @@ const categories = require('../../utils/blogCategories');
 const servicesList = require('../../utils/services');
 const { notify, notifyMany } = require('../../utils/notify');
 const { logActivity } = require('../../utils/activity');
-const { ROLE_LABELS } = require('../../utils/permissions');
+const { ROLE_LABELS, getRole, can, requireCapability, canManageTask } = require('../../utils/permissions');
+const { csvCell } = require('../../utils/csv');
 const attachLeadOps = require('./leadOps');
 const { ASSIGNMENT_SLOTS } = attachLeadOps;
 
@@ -132,7 +133,23 @@ router.post('/admin/logout', (req, res) => {
 // ========================================================================
 
 router.use('/admin', requireAdmin, async (req, res, next) => {
-  res.locals.adminUser = req.session.adminUser || { name: 'Admin', role: 'super_admin' };
+  // Fail-closed display fallback: a session missing `adminUser` (never
+  // produced by the current login routes — every real login sets it
+  // alongside `isAdmin` — but not something to paper over with a fake
+  // elevated role either) now displays/authorizes as no-role, not
+  // super_admin. Templates that gate on `adminUser.role` (e.g.
+  // `['super_admin','admin','pm'].includes(adminUser.role)`) correctly
+  // deny when role is null; server-side enforcement uses `can()` directly
+  // against the session, independent of this display object.
+  res.locals.adminUser = req.session.adminUser || { name: 'Admin', role: null };
+  res.locals.currentRole = getRole(req);
+  // Centralized template permission helper (Step 6) — templates call
+  // `can('blog.manage')` etc. instead of duplicating role arrays.
+  res.locals.can = (capability) => can(req, capability);
+  // Task ownership is record-specific (needs the actual task, not just a
+  // capability name) — exposed separately for the task-board/lead-detail
+  // templates that render per-task controls.
+  res.locals.canManageTask = (task) => canManageTask(req, task);
   res.locals.currentAdminPath = req.path;
   // Use admin layout instead of default public layout
   res.locals.layout = 'admin/layout';
@@ -357,7 +374,7 @@ router.get('/admin/leads/:id', async (req, res) => {
   }
 });
 
-router.post('/admin/leads/:id/status', async (req, res) => {
+router.post('/admin/leads/:id/status', requireCapability('leads.edit'), async (req, res) => {
   try {
     const { status } = req.body;
     if (LEAD_STATUSES.includes(status)) {
@@ -394,7 +411,7 @@ router.post('/admin/leads/:id/status', async (req, res) => {
   }
 });
 
-router.post('/admin/leads/:id/notes', async (req, res) => {
+router.post('/admin/leads/:id/notes', requireCapability('notes.create'), async (req, res) => {
   try {
     const { content, noteType } = req.body;
     if (content && content.trim()) {
@@ -414,7 +431,7 @@ router.post('/admin/leads/:id/notes', async (req, res) => {
   }
 });
 
-router.delete('/admin/leads/:id', async (req, res) => {
+router.delete('/admin/leads/:id', requireCapability('leads.delete'), async (req, res) => {
   try {
     await InternalNote.deleteMany({ leadId: req.params.id });
     await Consultation.findByIdAndDelete(req.params.id);
@@ -425,7 +442,7 @@ router.delete('/admin/leads/:id', async (req, res) => {
   }
 });
 
-router.get('/admin/leads/export/csv', async (req, res) => {
+router.get('/admin/leads/export/csv', requireCapability('csv.export'), async (req, res) => {
   try {
     const { status, service, search } = req.query;
     const filter = {};
@@ -443,23 +460,31 @@ router.get('/admin/leads/export/csv', async (req, res) => {
 
     const headers = [
       'Name', 'Email', 'Phone', 'Country', 'Occupation', 'Service', 'Message',
-      'Status', 'Source', 'Date Submitted',
+      'Status', 'Source', 'Lead Source', 'UTM Source', 'UTM Medium', 'UTM Campaign', 'Date Submitted',
     ];
 
+    // Every field below can originate from the anonymous public consultation/
+    // contact form — csvCell() neutralizes formula/DDE injection (a leading
+    // =, +, -, @, tab, or CR) and CSV-escapes quotes. Do not interpolate a
+    // lead field into the export without going through it.
     const rows = leads.map((l) => [
-      l.name,
-      l.email,
-      l.phone || '',
-      l.country || '',
-      l.occupation || '',
-      l.service || '',
-      `"${(l.message || '').replace(/"/g, '""')}"`,
-      l.status || 'new',
-      l.source || '',
-      l.createdAt ? new Date(l.createdAt).toISOString() : '',
+      csvCell(l.name),
+      csvCell(l.email),
+      csvCell(l.phone),
+      csvCell(l.country),
+      csvCell(l.occupation),
+      csvCell(l.service),
+      csvCell(l.message),
+      csvCell(l.status || 'new'),
+      csvCell(l.source),
+      csvCell(l.leadSource),
+      csvCell(l.utmSource),
+      csvCell(l.utmMedium),
+      csvCell(l.utmCampaign),
+      csvCell(l.createdAt ? new Date(l.createdAt).toISOString() : ''),
     ]);
 
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csv = [headers.map(csvCell).join(','), ...rows.map((r) => r.join(','))].join('\n');
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=leads-${Date.now()}.csv`);
@@ -526,7 +551,7 @@ router.get('/admin/blog/new', (req, res) => {
   });
 });
 
-router.post('/admin/blog', requireAdmin, upload.single('coverImage'), async (req, res) => {
+router.post('/admin/blog', requireCapability('blog.manage'), upload.single('coverImage'), async (req, res) => {
   try {
     const { title, slug, category, excerpt, content, tags, author, readingTime, published, publishDate } = req.body;
 
@@ -578,7 +603,7 @@ router.get('/admin/blog/:id/edit', async (req, res) => {
   }
 });
 
-router.put('/admin/blog/:id', requireAdmin, upload.single('coverImage'), async (req, res) => {
+router.put('/admin/blog/:id', requireCapability('blog.manage'), upload.single('coverImage'), async (req, res) => {
   try {
     const { title, slug, category, excerpt, content, tags, author, readingTime, published, publishDate } = req.body;
 
@@ -615,7 +640,7 @@ router.put('/admin/blog/:id', requireAdmin, upload.single('coverImage'), async (
   }
 });
 
-router.delete('/admin/blog/:id', async (req, res) => {
+router.delete('/admin/blog/:id', requireCapability('blog.manage'), async (req, res) => {
   try {
     await BlogPost.findByIdAndDelete(req.params.id);
     res.redirect('/admin/blog');
@@ -624,7 +649,7 @@ router.delete('/admin/blog/:id', async (req, res) => {
   }
 });
 
-router.post('/admin/blog/:id/toggle-publish', async (req, res) => {
+router.post('/admin/blog/:id/toggle-publish', requireCapability('blog.manage'), async (req, res) => {
   try {
     const post = await BlogPost.findById(req.params.id);
     if (post) {
@@ -790,7 +815,7 @@ router.get('/admin/testimonials/new', (req, res) => {
   });
 });
 
-router.post('/admin/testimonials', upload.single('photo'), async (req, res) => {
+router.post('/admin/testimonials', requireCapability('testimonials.manage'), upload.single('photo'), async (req, res) => {
   try {
     const { name, country, profession, review, rating, verificationUrl, featured, displayOrder, status } = req.body;
     await Testimonial.create({
@@ -831,7 +856,7 @@ router.get('/admin/testimonials/:id/edit', async (req, res) => {
   }
 });
 
-router.put('/admin/testimonials/:id', upload.single('photo'), async (req, res) => {
+router.put('/admin/testimonials/:id', requireCapability('testimonials.manage'), upload.single('photo'), async (req, res) => {
   try {
     const { name, country, profession, review, rating, verificationUrl, featured, displayOrder, status } = req.body;
     const update = {
@@ -861,7 +886,7 @@ router.put('/admin/testimonials/:id', upload.single('photo'), async (req, res) =
   }
 });
 
-router.delete('/admin/testimonials/:id', async (req, res) => {
+router.delete('/admin/testimonials/:id', requireCapability('testimonials.manage'), async (req, res) => {
   try {
     await Testimonial.findByIdAndDelete(req.params.id);
     res.redirect('/admin/testimonials');
@@ -918,7 +943,7 @@ router.get('/admin/faqs/new', (req, res) => {
   });
 });
 
-router.post('/admin/faqs', async (req, res) => {
+router.post('/admin/faqs', requireCapability('faqs.manage'), async (req, res) => {
   try {
     const { question, answer, category, displayOrder, showOnHomepage, showOnServicePage, schemaEnabled, status } = req.body;
     await FAQ.create({
@@ -959,7 +984,7 @@ router.get('/admin/faqs/:id/edit', async (req, res) => {
   }
 });
 
-router.put('/admin/faqs/:id', async (req, res) => {
+router.put('/admin/faqs/:id', requireCapability('faqs.manage'), async (req, res) => {
   try {
     const { question, answer, category, displayOrder, showOnHomepage, showOnServicePage, schemaEnabled, status } = req.body;
     await FAQ.findByIdAndUpdate(req.params.id, {
@@ -987,7 +1012,7 @@ router.put('/admin/faqs/:id', async (req, res) => {
   }
 });
 
-router.delete('/admin/faqs/:id', async (req, res) => {
+router.delete('/admin/faqs/:id', requireCapability('faqs.manage'), async (req, res) => {
   try {
     await FAQ.findByIdAndDelete(req.params.id);
     res.redirect('/admin/faqs');
@@ -1049,7 +1074,7 @@ router.get('/admin/media', async (req, res) => {
   }
 });
 
-router.post('/admin/media/upload', upload.single('file'), async (req, res) => {
+router.post('/admin/media/upload', requireCapability('media.manage'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) throw new Error('No file uploaded');
     const { folder, altText } = req.body;
@@ -1070,7 +1095,7 @@ router.post('/admin/media/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-router.delete('/admin/media/:id', async (req, res) => {
+router.delete('/admin/media/:id', requireCapability('media.manage'), async (req, res) => {
   try {
     const media = await Media.findById(req.params.id);
     if (media) {
@@ -1086,7 +1111,7 @@ router.delete('/admin/media/:id', async (req, res) => {
   }
 });
 
-router.post('/admin/media/:id/alt', async (req, res) => {
+router.post('/admin/media/:id/alt', requireCapability('media.manage'), async (req, res) => {
   try {
     const { altText } = req.body;
     await Media.findByIdAndUpdate(req.params.id, { altText: altText || '' });
@@ -1125,7 +1150,7 @@ router.get('/admin/settings', async (req, res) => {
   }
 });
 
-router.post('/admin/settings', async (req, res) => {
+router.post('/admin/settings', requireCapability('settings.manage'), async (req, res) => {
   try {
     const { group, ...keys } = req.body;
     if (!group) throw new Error('Group is required');
@@ -1178,13 +1203,7 @@ router.get('/admin/contact-form', async (req, res) => {
 // USER MANAGEMENT
 // ========================================================================
 
-router.get('/admin/users', async (req, res) => {
-  // Only super_admin and admin can manage users
-  const currentRole = req.session.adminUser?.role || 'super_admin';
-  if (!['super_admin', 'admin'].includes(currentRole)) {
-    return res.redirect('/admin');
-  }
-
+router.get('/admin/users', requireCapability('users.manage'), async (req, res) => {
   try {
     const users = await AdminUser.find().select('-password').sort({ createdAt: -1 }).lean();
     res.render('admin/users/index', {
@@ -1199,9 +1218,7 @@ router.get('/admin/users', async (req, res) => {
   }
 });
 
-router.get('/admin/users/new', (req, res) => {
-  const currentRole = req.session.adminUser?.role || 'super_admin';
-  if (!['super_admin', 'admin'].includes(currentRole)) return res.redirect('/admin');
+router.get('/admin/users/new', requireCapability('users.manage'), (req, res) => {
   res.render('admin/users/form', {
     title: 'New User | Admin',
     user: null,
@@ -1211,14 +1228,17 @@ router.get('/admin/users/new', (req, res) => {
   });
 });
 
-router.post('/admin/users', async (req, res) => {
-  const currentRole = req.session.adminUser?.role || 'super_admin';
-  if (!['super_admin', 'admin'].includes(currentRole)) return res.redirect('/admin');
-
+router.post('/admin/users', requireCapability('users.manage'), async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
     if (!name || !email || !password) {
       throw new Error('Name, email, and password are required');
+    }
+    // A lower-privileged administrator must not be able to mint a
+    // super_admin account for themselves or anyone else — only an existing
+    // super_admin may create one.
+    if (role === 'super_admin' && getRole(req) !== 'super_admin') {
+      throw new Error('Only a Super Admin can create another Super Admin account.');
     }
     await AdminUser.create({ name, email, password, role: role || 'editor' });
     res.redirect('/admin/users');
@@ -1233,10 +1253,27 @@ router.post('/admin/users', async (req, res) => {
   }
 });
 
-router.delete('/admin/users/:id', async (req, res) => {
-  const currentRole = req.session.adminUser?.role || 'super_admin';
-  if (currentRole !== 'super_admin') return res.redirect('/admin/users');
+router.delete('/admin/users/:id', requireCapability('users.delete'), async (req, res) => {
   try {
+    const currentUserId = req.session.adminUser && req.session.adminUser.id;
+    if (currentUserId && String(currentUserId) === String(req.params.id)) {
+      return res.status(400).send('You cannot delete your own account while logged in as it.');
+    }
+
+    const target = await AdminUser.findById(req.params.id);
+    if (!target) return res.redirect('/admin/users');
+
+    if (target.role === 'super_admin') {
+      const remainingSuperAdmins = await AdminUser.countDocuments({
+        role: 'super_admin',
+        isActive: true,
+        _id: { $ne: target._id },
+      });
+      if (remainingSuperAdmins === 0) {
+        return res.status(400).send('Cannot delete the last remaining Super Admin account.');
+      }
+    }
+
     await AdminUser.findByIdAndDelete(req.params.id);
     res.redirect('/admin/users');
   } catch (err) {

@@ -76,13 +76,15 @@ const sections = [
           <% sec.fields.forEach(function(f) { %>
             <div class="admin-form-group">
               <label><%= f[1] %></label>
-              <input type="<%= f[2] %>" name="<%= f[0] %>" class="form-control" value="<%= val(sec.group, f[0]) %>">
+              <input type="<%= f[2] %>" name="<%= f[0] %>" class="form-control" value="<%= val(sec.group, f[0]) %>" <%= can('settings.manage') ? '' : 'disabled' %>>
             </div>
           <% }); %>
         </div>
-        <div class="admin-form-actions">
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save <%= sec.title %></button>
-        </div>
+        <% if (can('settings.manage')) { %>
+          <div class="admin-form-actions">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save <%= sec.title %></button>
+          </div>
+        <% } %>
       </form>
     </div>
   </div>
