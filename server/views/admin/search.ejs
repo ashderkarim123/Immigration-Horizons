@@ -5,22 +5,62 @@
   </div>
 </div>
 
-<% function section(title, items, render) { %>
-  <div class="admin-card">
-    <div class="admin-card-header"><h2><%= title %> (<%= items.length %>)</h2></div>
-    <div class="admin-card-body no-padding">
-      <% if (!items.length) { %>
-        <div class="empty-state" style="padding:24px"><p>No matches.</p></div>
-      <% } else { %>
-        <div class="admin-table-wrap"><table class="admin-table"><tbody>
-          <%- items.map(render).join('') %>
-        </tbody></table></div>
-      <% } %>
-    </div>
+<div class="admin-card">
+  <div class="admin-card-header"><h2>Blog posts (<%= blogs.length %>)</h2></div>
+  <div class="admin-card-body no-padding">
+    <% if (!blogs.length) { %>
+      <div class="empty-state" style="padding:24px"><p>No matches.</p></div>
+    <% } else { %>
+      <div class="admin-table-wrap"><table class="admin-table"><tbody>
+        <% blogs.forEach(function(b) { %>
+          <tr><td><a href="/admin/blog/<%= b._id %>/edit"><%= b.title %></a></td><td><%= b.published ? 'Published' : 'Draft' %></td></tr>
+        <% }); %>
+      </tbody></table></div>
+    <% } %>
   </div>
-<% } %>
+</div>
 
-<% section('Blog posts', blogs, function(b){ return '<tr><td><a href="/admin/blog/' + b._id + '/edit">' + b.title + '</a></td><td>' + (b.published ? 'Published' : 'Draft') + '</td></tr>'; }) %>
-<% section('Leads', leads, function(l){ return '<tr><td><a href="/admin/leads/' + l._id + '">' + l.name + '</a></td><td>' + l.email + '</td><td>' + (l.status||'') + '</td></tr>'; }) %>
-<% section('Testimonials', testimonials, function(t){ return '<tr><td>' + t.name + '</td><td>' + (t.status||'') + '</td></tr>'; }) %>
-<% section('FAQs', faqs, function(f){ return '<tr><td>' + f.question + '</td><td>' + (f.category||'') + '</td></tr>'; }) %>
+<div class="admin-card">
+  <div class="admin-card-header"><h2>Leads (<%= leads.length %>)</h2></div>
+  <div class="admin-card-body no-padding">
+    <% if (!leads.length) { %>
+      <div class="empty-state" style="padding:24px"><p>No matches.</p></div>
+    <% } else { %>
+      <div class="admin-table-wrap"><table class="admin-table"><tbody>
+        <% leads.forEach(function(l) { %>
+          <tr><td><a href="/admin/leads/<%= l._id %>"><%= l.name %></a></td><td><%= l.email %></td><td><%= l.status || '' %></td></tr>
+        <% }); %>
+      </tbody></table></div>
+    <% } %>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h2>Testimonials (<%= testimonials.length %>)</h2></div>
+  <div class="admin-card-body no-padding">
+    <% if (!testimonials.length) { %>
+      <div class="empty-state" style="padding:24px"><p>No matches.</p></div>
+    <% } else { %>
+      <div class="admin-table-wrap"><table class="admin-table"><tbody>
+        <% testimonials.forEach(function(t) { %>
+          <tr><td><%= t.name %></td><td><%= t.status || '' %></td></tr>
+        <% }); %>
+      </tbody></table></div>
+    <% } %>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h2>FAQs (<%= faqs.length %>)</h2></div>
+  <div class="admin-card-body no-padding">
+    <% if (!faqs.length) { %>
+      <div class="empty-state" style="padding:24px"><p>No matches.</p></div>
+    <% } else { %>
+      <div class="admin-table-wrap"><table class="admin-table"><tbody>
+        <% faqs.forEach(function(f) { %>
+          <tr><td><%= f.question %></td><td><%= f.category || '' %></td></tr>
+        <% }); %>
+      </tbody></table></div>
+    <% } %>
+  </div>
+</div>
