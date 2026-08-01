@@ -15,12 +15,16 @@ import { Consultation } from "./models/Consultation";
  *   2. Email via Resend — the immediate notification to the inbox.
  *
  * The two are intentionally decoupled: a MongoDB hiccup should not stop a
- * lead's email notification from going out, and a missing Resend key should
- * not stop the lead from being saved. The user-facing success/failure
- * message is driven by email delivery, since that is the promise made on
- * the form ("we'll follow up by email or WhatsApp") — but every lead is
- * saved to the database whenever the database is reachable, independent of
- * whether the email step succeeds.
+ * lead's email notification from going out, and a missing/failing Resend
+ * key should not stop the lead from being saved. The user-facing
+ * success/failure message reflects whether EITHER channel captured the
+ * lead: if it's sitting in the Leads dashboard, staff will see it and
+ * follow up, so the visitor should see success even if the email
+ * notification happened to fail (e.g. an unverified Resend sending
+ * domain) — showing an error in that case is actively misleading, since
+ * the request was in fact received. Only surface the "something went
+ * wrong" message when neither channel worked, i.e. nobody at Immigration
+ * Horizons will ever see this submission.
  *
  * NOTE (cutover): Google Sheets sync (utils/sheets.js in the legacy app) is
  * not ported here yet.
@@ -38,9 +42,9 @@ export type LeadInput = {
   tracking?: Record<string, string>;
 };
 
-async function persistLead(lead: LeadInput): Promise<void> {
+async function persistLead(lead: LeadInput): Promise<boolean> {
   const db = getDb();
-  if (!db) return; // MONGODB_URI not set — already warned in getDb()
+  if (!db) return false; // MONGODB_URI not set — already warned in getDb()
 
   try {
     await db;
@@ -59,10 +63,12 @@ async function persistLead(lead: LeadInput): Promise<void> {
       gclid: lead.tracking?.gclid || "",
       fbclid: lead.tracking?.fbclid || "",
     });
+    return true;
   } catch (err) {
     // Persistence is additive to email delivery — log and move on rather
     // than failing the whole submission over a database problem.
     console.error("[leads] Failed to save lead to MongoDB:", err);
+    return false;
   }
 }
 
@@ -74,22 +80,24 @@ function escapeHtml(value = "") {
 }
 
 /**
- * Returns true when the lead was delivered (or safely accepted for delivery),
- * false only when a configured send actually failed.
+ * Returns true when the lead was captured by at least one channel (saved to
+ * MongoDB and/or emailed) — false only when both failed, meaning nobody at
+ * Immigration Horizons will see this submission.
  */
 export async function deliverLead(lead: LeadInput): Promise<boolean> {
   // Save first so the lead is captured even if the email step throws.
-  await persistLead(lead);
+  const saved = await persistLead(lead);
 
   const apiKey = process.env.RESEND_API_KEY;
   const receiver = process.env.CONTACT_RECEIVER_EMAIL || contact.email;
 
   if (!apiKey) {
-    // Not configured — accept the lead but make the gap visible in logs.
+    // Not configured — make the gap visible in logs, but the lead still
+    // counts as delivered if it made it into the database.
     console.warn(
       `[leads] RESEND_API_KEY not set — ${lead.kind} lead from ${lead.email} was not emailed.`,
     );
-    return true;
+    return saved;
   }
 
   const resend = new Resend(apiKey);
@@ -134,11 +142,11 @@ export async function deliverLead(lead: LeadInput): Promise<boolean> {
 
     if (error) {
       console.error("[leads] Resend send failed:", error);
-      return false;
+      return saved;
     }
     return true;
   } catch (err) {
     console.error("[leads] Resend send threw:", err);
-    return false;
+    return saved;
   }
 }
