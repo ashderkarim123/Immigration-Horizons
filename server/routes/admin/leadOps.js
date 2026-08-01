@@ -396,13 +396,19 @@ module.exports = function attachLeadOps(router) {
 
       const { owner } = req.body;
       let ownerName = '';
+      let resolvedOwnerId = null;
       if (owner) {
         // isActive: true — a stale form submission (tab left open across a
         // deactivation) must not be able to (re-)assign a deactivated user.
+        // A validation failure here must not leave `lead.owner` pointing at
+        // an id whose name we never resolved — fall through to unassigned.
         const ownerUser = await AdminUser.findOne({ _id: owner, isActive: true }).select('name').lean();
-        ownerName = ownerUser ? ownerUser.name : '';
+        if (ownerUser) {
+          ownerName = ownerUser.name;
+          resolvedOwnerId = String(ownerUser._id);
+        }
       }
-      const ownerChanged = previousOwnerId !== (owner || null);
+      const ownerChanged = previousOwnerId !== resolvedOwnerId;
 
       const assignees = [];
       const newlyAssignedNames = [];
@@ -423,7 +429,7 @@ module.exports = function attachLeadOps(router) {
         (prev) => !assignees.some((a) => String(a.user) === prev.userId && a.taskType === prev.taskType)
       );
 
-      lead.owner = owner || null;
+      lead.owner = resolvedOwnerId;
       lead.ownerName = ownerName;
       lead.assignees = assignees;
 

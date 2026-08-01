@@ -11,6 +11,16 @@ const ACTIVITY_ICONS = {
 };
 function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
 function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
+// Mirrors server/utils/taskDeadlines.js — kept inline (like tasks/index.ejs)
+// rather than requiring a server module from a template.
+const _now = new Date();
+function isOverdue(t) { return !!t.dueDate && t.status !== 'completed' && new Date(t.dueDate) < _now; }
+function isDueSoon(t) {
+  if (!t.dueDate || t.status === 'completed') return false;
+  const due = new Date(t.dueDate);
+  const threshold = new Date(_now); threshold.setDate(threshold.getDate() + dueSoonDays);
+  return due >= _now && due <= threshold;
+}
 %>
 <a href="/admin/leads" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to Leads</a>
 
@@ -62,9 +72,14 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
     </div>
 
     <!-- Tasks -->
+    <% const overdueCount = tasks.filter(isOverdue).length; const dueSoonCount = tasks.filter(isDueSoon).length; %>
     <div class="admin-card">
       <div class="admin-card-header">
-        <h3>Tasks <span class="cell-sub">(<%= tasks.length %>)</span></h3>
+        <h3>
+          Tasks <span class="cell-sub">(<%= tasks.length %>)</span>
+          <% if (overdueCount) { %><span class="badge badge-priority-urgent" style="margin-left:6px"><%= overdueCount %> overdue</span><% } %>
+          <% if (dueSoonCount) { %><span class="badge badge-priority-medium" style="margin-left:6px"><%= dueSoonCount %> due soon</span><% } %>
+        </h3>
       </div>
       <div class="admin-card-body">
         <% if (!tasks.length) { %>
@@ -72,13 +87,17 @@ function fmtDate(d) { return d ? new Date(d).toISOString().slice(0,10) : ''; }
         <% } else { %>
           <div class="admin-table-wrap" style="margin-bottom:20px">
             <table class="admin-table">
-              <thead><tr><th>Task</th><th>Assignee</th><th>Due</th><th>Priority</th><th>Status</th></tr></thead>
+              <thead><tr><th>Task</th><th>Assignee</th><th>Sprint</th><th>Due</th><th>Priority</th><th>Status</th></tr></thead>
               <tbody>
                 <% tasks.forEach(function(t) { %>
                   <tr>
                     <td><span class="cell-title"><%= t.title %></span><span class="cell-sub"><%= t.type %></span></td>
                     <td><%= t.assignee ? t.assignee.name : (t.assigneeName || 'Unassigned') %></td>
-                    <td><%= t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '—' %></td>
+                    <td class="cell-sub"><%= t.sprint ? t.sprint.name : '—' %></td>
+                    <td class="<%= isOverdue(t) ? 'text-danger' : '' %>">
+                      <%= t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '—' %>
+                      <% if (isOverdue(t)) { %><br><span class="cell-sub text-danger">Overdue</span><% } else if (isDueSoon(t)) { %><br><span class="cell-sub">Due soon</span><% } %>
+                    </td>
                     <td><span class="badge badge-priority-<%= t.priority %>"><%= t.priority %></span></td>
                     <td>
                       <% if (canManageTask(t)) { %>

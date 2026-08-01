@@ -462,6 +462,7 @@ router.get('/admin/leads/:id', async (req, res) => {
       taskPriorities: Task.PRIORITIES,
       leadStatuses: LEAD_STATUSES,
       leadStatusStages: Consultation.STATUS_STAGES,
+      dueSoonDays: DUE_SOON_DAYS,
       currentPage: 'leads',
     });
   } catch (err) {
