@@ -30,6 +30,7 @@ const { notify, notifyMany } = require('../../utils/notify');
 const { logActivity } = require('../../utils/activity');
 const { ROLE_LABELS, getRole, can, requireCapability, canManageTask } = require('../../utils/permissions');
 const { csvCell } = require('../../utils/csv');
+const { DUE_SOON_DAYS, overdueTaskMatch, dueSoonTaskMatch, isOverdue, isDueSoon } = require('../../utils/taskDeadlines');
 const attachLeadOps = require('./leadOps');
 const { ASSIGNMENT_SLOTS } = attachLeadOps;
 
@@ -250,65 +251,156 @@ router.get('/admin', async (req, res) => {
 // plain value array too, since several existing call sites just need the
 // list of valid values rather than the {value,label} pairs.
 const LEAD_STATUSES = Consultation.STATUS_STAGES.map((s) => s.value);
+const SERVICE_VALUES = Consultation.schema.path('service').enumValues;
+const LEAD_SOURCE_VALUES = Consultation.schema.path('leadSource').enumValues;
+const PRIORITY_VALUES = ['low', 'medium', 'high', 'urgent'];
+
+const MAX_SEARCH_LENGTH = 100;
+const MAX_PAGE_LIMIT = 100;
+const DEFAULT_PAGE_LIMIT = 20;
+
+/** Falls back to 'all' for anything not in the real enum — never passes an untrusted raw string into an exact-match filter. */
+function sanitizeEnumParam(value, allowed) {
+  return typeof value === 'string' && allowed.includes(value) ? value : 'all';
+}
+
+function parseBoundedInt(value, fallback, min, max) {
+  const n = parseInt(value, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+/** A validated Date, or null — never lets an unparsable query param reach a Mongo query. */
+function parseDateParam(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
 router.get('/admin/leads', async (req, res) => {
   try {
-    const { search, status, service, assignee, leadSource, priority, page = 1, limit = 20 } = req.query;
-    const filter = {};
+    const status = sanitizeEnumParam(req.query.status, LEAD_STATUSES.concat('all'));
+    const service = sanitizeEnumParam(req.query.service, SERVICE_VALUES.concat('all'));
+    const leadSource = sanitizeEnumParam(req.query.leadSource, LEAD_SOURCE_VALUES.concat('all'));
+    const priority = sanitizeEnumParam(req.query.priority, PRIORITY_VALUES.concat('all'));
+    const assignee = mongoose.Types.ObjectId.isValid(req.query.assignee || '') ? req.query.assignee : 'all';
+    const unassignedOnly = req.query.unassigned === '1';
+    const overdueOnly = req.query.overdueTasks === '1';
+    const dueSoonOnly = req.query.dueSoon === '1';
+    const createdFrom = parseDateParam(req.query.createdFrom);
+    const createdTo = parseDateParam(req.query.createdTo);
+    const search = typeof req.query.search === 'string' ? req.query.search.slice(0, MAX_SEARCH_LENGTH) : '';
+    const page = parseBoundedInt(req.query.page, 1, 1, Number.MAX_SAFE_INTEGER);
+    const limit = parseBoundedInt(req.query.limit, DEFAULT_PAGE_LIMIT, 1, MAX_PAGE_LIMIT);
 
-    if (status && status !== 'all') filter.status = status;
-    if (service && service !== 'all') filter.service = service;
-    if (leadSource && leadSource !== 'all') filter.leadSource = leadSource;
-    if (priority && priority !== 'all') filter.priority = priority;
-    if (assignee && assignee !== 'all') {
-      filter.$or = [{ owner: assignee }, { 'assignees.user': assignee }];
+    const filter = {};
+    const andClauses = [];
+
+    if (status !== 'all') filter.status = status;
+    if (service !== 'all') filter.service = service;
+    if (leadSource !== 'all') filter.leadSource = leadSource;
+    if (priority !== 'all') filter.priority = priority;
+    if (unassignedOnly) {
+      filter.owner = null;
+    } else if (assignee !== 'all') {
+      andClauses.push({ $or: [{ owner: assignee }, { 'assignees.user': assignee }] });
+    }
+    if (createdFrom || createdTo) {
+      filter.createdAt = {};
+      if (createdFrom) filter.createdAt.$gte = createdFrom;
+      if (createdTo) filter.createdAt.$lte = createdTo;
     }
     if (search) {
       const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const searchOr = [
-        { name: { $regex: safe, $options: 'i' } },
-        { email: { $regex: safe, $options: 'i' } },
-        { phone: { $regex: safe, $options: 'i' } },
-        { message: { $regex: safe, $options: 'i' } },
-      ];
-      // `$or` may already be set by the assignee filter above — combine
-      // both with `$and` rather than one clobbering the other.
-      if (filter.$or) {
-        filter.$and = [{ $or: filter.$or }, { $or: searchOr }];
-        delete filter.$or;
-      } else {
-        filter.$or = searchOr;
-      }
+      andClauses.push({
+        $or: [
+          { name: { $regex: safe, $options: 'i' } },
+          { email: { $regex: safe, $options: 'i' } },
+          { phone: { $regex: safe, $options: 'i' } },
+          { message: { $regex: safe, $options: 'i' } },
+        ],
+      });
     }
 
-    const total = await Consultation.countDocuments(filter);
-    const leads = await Consultation.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
-      .lean();
+    // Leads with an overdue / due-soon task are identified via the Task
+    // collection (indexed on `lead`) rather than joining in application
+    // code — `distinct` also naturally de-dupes multi-task leads.
+    let overdueLeadIds = null;
+    let dueSoonLeadIds = null;
+    if (overdueOnly || dueSoonOnly) {
+      const [overdueIds, dueSoonIds] = await Promise.all([
+        overdueOnly ? Task.distinct('lead', overdueTaskMatch()) : Promise.resolve(null),
+        dueSoonOnly ? Task.distinct('lead', dueSoonTaskMatch()) : Promise.resolve(null),
+      ]);
+      overdueLeadIds = overdueIds;
+      dueSoonLeadIds = dueSoonIds;
+      const idFilters = [overdueIds, dueSoonIds].filter(Boolean).map((ids) => ({ _id: { $in: ids } }));
+      andClauses.push(...idFilters);
+    }
 
-    const [serviceCounts, teamMembers] = await Promise.all([
+    if (andClauses.length) filter.$and = andClauses;
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [total, leads, serviceCounts, teamMembers, summaryStatusGroups, summaryUnassigned, summaryNewThisWeek, summaryOverdueIds, summaryDueSoonIds] = await Promise.all([
+      Consultation.countDocuments(filter),
+      Consultation.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       Consultation.aggregate([{ $group: { _id: '$service', count: { $sum: 1 } } }]),
       AdminUser.find({ isActive: true }).select('name role').sort({ name: 1 }).lean(),
+      // Operational summary is intentionally unfiltered (whole backlog, not
+      // the current filtered view) and reuses the overdue/due-soon id sets
+      // computed above when those filters are already active, instead of
+      // running the same Task.distinct() query twice.
+      Consultation.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      Consultation.countDocuments({ owner: null }),
+      Consultation.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
+      overdueLeadIds !== null ? Promise.resolve(overdueLeadIds) : Task.distinct('lead', overdueTaskMatch()),
+      dueSoonLeadIds !== null ? Promise.resolve(dueSoonLeadIds) : Task.distinct('lead', dueSoonTaskMatch()),
     ]);
     const countsByService = Object.fromEntries(serviceCounts.map((s) => [s._id, s.count]));
+    const countsByStatus = Object.fromEntries(summaryStatusGroups.map((s) => [s._id, s.count]));
+    const closedCount = countsByStatus.closed || 0;
+    const summary = {
+      total: summaryStatusGroups.reduce((sum, s) => sum + s.count, 0),
+      active: summaryStatusGroups.reduce((sum, s) => sum + s.count, 0) - closedCount,
+      unassigned: summaryUnassigned,
+      newThisWeek: summaryNewThisWeek,
+      overdueTaskLeads: summaryOverdueIds.length,
+      dueSoonTaskLeads: summaryDueSoonIds.length,
+    };
+
+    const activeFilterCount = [
+      status !== 'all', service !== 'all', leadSource !== 'all', priority !== 'all',
+      assignee !== 'all', unassignedOnly, overdueOnly, dueSoonOnly, !!createdFrom, !!createdTo, !!search,
+    ].filter(Boolean).length;
 
     res.render('admin/leads/index', {
       title: 'Leads | Admin',
       leads,
       total,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / limit),
-      search: search || '',
-      statusFilter: status || 'all',
-      serviceFilter: service || 'all',
-      assigneeFilter: assignee || 'all',
-      leadSourceFilter: leadSource || 'all',
-      priorityFilter: priority || 'all',
-      serviceCategories: Consultation.schema.path('service').enumValues,
-      leadSourceValues: Consultation.schema.path('leadSource').enumValues,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+      search,
+      statusFilter: status,
+      serviceFilter: service,
+      assigneeFilter: assignee,
+      leadSourceFilter: leadSource,
+      priorityFilter: priority,
+      unassignedOnly,
+      overdueOnly,
+      dueSoonOnly,
+      createdFrom: req.query.createdFrom && createdFrom ? req.query.createdFrom : '',
+      createdTo: req.query.createdTo && createdTo ? req.query.createdTo : '',
+      activeFilterCount,
+      dueSoonDays: DUE_SOON_DAYS,
+      summary,
+      serviceCategories: SERVICE_VALUES,
+      leadSourceValues: LEAD_SOURCE_VALUES,
       leadStatuses: LEAD_STATUSES,
       leadStatusStages: Consultation.STATUS_STAGES,
       teamMembers,
@@ -330,8 +422,8 @@ router.get('/admin/leads/:id', async (req, res) => {
     if (!lead) return res.redirect('/admin/leads');
 
     let [notes, tasks, activity, deliveryRecord, teamMembers] = await Promise.all([
-      InternalNote.find({ leadId: req.params.id }).sort({ createdAt: -1 }).lean(),
-      Task.find({ lead: req.params.id }).populate('assignee', 'name').sort({ createdAt: -1 }).lean(),
+      InternalNote.find({ leadId: req.params.id }).sort({ createdAt: -1 }).limit(50).lean(),
+      Task.find({ lead: req.params.id }).populate('assignee', 'name').populate('sprint', 'name status').sort({ createdAt: -1 }).lean(),
       ActivityLog.find({ lead: req.params.id }).sort({ createdAt: -1 }).limit(50).lean(),
       DeliveryRecord.findOne({ lead: req.params.id }).lean(),
       AdminUser.find({ isActive: true }).select('name role').sort({ name: 1 }).lean(),
@@ -388,7 +480,14 @@ router.post('/admin/leads/:id/status', requireCapability('leads.edit'), async (r
       if (previous && previous.status !== status) {
         const actor = req.session.adminUser?.name || 'Admin';
         const label = (Consultation.STATUS_STAGES.find((s) => s.value === status) || {}).label || status;
-        await logActivity(req.params.id, 'status_changed', `Status changed to "${label}" by ${actor}.`, actor);
+        const previousLabel = (Consultation.STATUS_STAGES.find((s) => s.value === previous.status) || {}).label || previous.status;
+        await logActivity(
+          req.params.id,
+          'status_changed',
+          `Status changed from "${previousLabel}" to "${label}" by ${actor}.`,
+          actor,
+          { previousStatus: previous.status, newStatus: status }
+        );
 
         const recipients = [previous.ownerName, ...(previous.assignees || []).map((a) => a.name)];
         const eventByStatus = {
@@ -448,10 +547,12 @@ router.delete('/admin/leads/:id', requireCapability('leads.delete'), async (req,
 
 router.get('/admin/leads/export/csv', requireCapability('csv.export'), async (req, res) => {
   try {
-    const { status, service, search } = req.query;
+    const status = sanitizeEnumParam(req.query.status, LEAD_STATUSES.concat('all'));
+    const service = sanitizeEnumParam(req.query.service, SERVICE_VALUES.concat('all'));
+    const search = typeof req.query.search === 'string' ? req.query.search.slice(0, MAX_SEARCH_LENGTH) : '';
     const filter = {};
-    if (status && status !== 'all') filter.status = status;
-    if (service && service !== 'all') filter.service = service;
+    if (status !== 'all') filter.status = status;
+    if (service !== 'all') filter.service = service;
     if (search) {
       const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       filter.$or = [
@@ -1290,10 +1391,10 @@ router.delete('/admin/users/:id', requireCapability('users.delete'), async (req,
 // ========================================================================
 
 router.get('/admin/search', async (req, res) => {
-  const { q } = req.query;
-  if (!q || !q.trim()) return res.redirect('/admin');
+  const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, MAX_SEARCH_LENGTH) : '';
+  if (!q) return res.redirect('/admin');
 
-  const safe = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   try {
     const [blogs, leads, testimonials, faqs] = await Promise.all([

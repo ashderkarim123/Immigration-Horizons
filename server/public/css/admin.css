@@ -1097,6 +1097,34 @@ body.admin-body {
   box-shadow: var(--focus-ring);
 }
 
+.filter-date {
+  padding: 8px 12px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-sm);
+  font-size: .82rem;
+  font-family: inherit;
+  background: var(--white);
+  color: var(--text-primary);
+}
+.filter-date:focus {
+  outline: none;
+  border-color: var(--navy-500);
+  box-shadow: var(--focus-ring);
+}
+
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .82rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.filter-checkbox input[type="checkbox"] {
+  cursor: pointer;
+}
+
 /* =====================================================================
    FORMS
    ===================================================================== */

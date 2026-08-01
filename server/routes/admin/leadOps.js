@@ -386,12 +386,23 @@ module.exports = function attachLeadOps(router) {
       const lead = await Consultation.findById(req.params.id);
       if (!lead) return res.redirect('/admin/leads');
 
+      const previousOwnerId = lead.owner ? String(lead.owner) : null;
+      const previousOwnerName = lead.ownerName || '';
+      const previousAssignees = (lead.assignees || []).map((a) => ({
+        userId: a.user ? String(a.user) : null,
+        name: a.name,
+        taskType: a.taskType,
+      }));
+
       const { owner } = req.body;
       let ownerName = '';
       if (owner) {
-        const ownerUser = await AdminUser.findById(owner).select('name').lean();
+        // isActive: true — a stale form submission (tab left open across a
+        // deactivation) must not be able to (re-)assign a deactivated user.
+        const ownerUser = await AdminUser.findOne({ _id: owner, isActive: true }).select('name').lean();
         ownerName = ownerUser ? ownerUser.name : '';
       }
+      const ownerChanged = previousOwnerId !== (owner || null);
 
       const assignees = [];
       const newlyAssignedNames = [];
@@ -399,15 +410,18 @@ module.exports = function attachLeadOps(router) {
         const fieldName = `assignee_${slugifySlot(slot.taskType)}`;
         const userId = req.body[fieldName];
         if (!userId) continue;
-        const user = await AdminUser.findById(userId).select('name').lean();
+        const user = await AdminUser.findOne({ _id: userId, isActive: true }).select('name').lean();
         if (!user) continue;
         assignees.push({ user: user._id, name: user.name, taskType: slot.taskType });
 
-        const alreadyAssigned = (lead.assignees || []).some(
-          (a) => String(a.user) === String(user._id) && a.taskType === slot.taskType
+        const alreadyAssigned = previousAssignees.some(
+          (a) => a.userId === String(user._id) && a.taskType === slot.taskType
         );
         if (!alreadyAssigned) newlyAssignedNames.push(user.name);
       }
+      const removedAssignees = previousAssignees.filter(
+        (prev) => !assignees.some((a) => String(a.user) === prev.userId && a.taskType === prev.taskType)
+      );
 
       lead.owner = owner || null;
       lead.ownerName = ownerName;
@@ -425,9 +439,27 @@ module.exports = function attachLeadOps(router) {
       const assigneeSummary = assignees.length
         ? assignees.map((a) => `${a.taskType} → ${a.name}`).join(', ')
         : 'no assignees';
-      await logActivity(lead._id, 'assigned', `Assigned by ${actor}. Owner: ${ownerName || 'none'}. ${assigneeSummary}.`, actor);
+      const ownerSummary = ownerChanged
+        ? `Owner: ${previousOwnerName || 'none'} → ${ownerName || 'none'}.`
+        : `Owner: ${ownerName || 'none'} (unchanged).`;
+      await logActivity(
+        lead._id,
+        'assigned',
+        `Assigned by ${actor}. ${ownerSummary} ${assigneeSummary}.`,
+        actor,
+        {
+          previousOwner: previousOwnerName || null,
+          newOwner: ownerName || null,
+          added: newlyAssignedNames,
+          removed: removedAssignees.map((a) => `${a.taskType} → ${a.name}`),
+        }
+      );
 
-      await notifyMany([ownerName, ...newlyAssignedNames], {
+      // Only notify people whose assignment actually changed — re-saving
+      // the same assignment must not re-notify the owner every time.
+      const namesToNotify = [...newlyAssignedNames];
+      if (ownerChanged && ownerName) namesToNotify.push(ownerName);
+      await notifyMany(namesToNotify, {
         title: 'Lead assigned',
         message: `You were assigned to "${lead.name}"'s case.`,
         type: 'lead_assigned',

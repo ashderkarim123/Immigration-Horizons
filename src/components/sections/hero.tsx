@@ -1,19 +1,10 @@
-import { BadgeCheck, Globe2, ScaleIcon, ShieldCheck } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
-import { contact, social, stats, whatsappLink } from "@/lib/content/site";
+import { contact, whatsappLink } from "@/lib/content/site";
 
 import { HeroVisual } from "./hero-visual";
-
-const trustBadges = [
-  { label: `${stats.casesHandled} cases handled`, icon: BadgeCheck },
-  { label: `${stats.yearsExperience} years experience`, icon: ShieldCheck },
-  { label: "Clients across the globe", icon: Globe2 },
-  { label: "Consultants, not attorneys", icon: ScaleIcon },
-];
 
 export function Hero() {
   return (
@@ -23,14 +14,17 @@ export function Hero() {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.16),transparent_55%)]"
       />
 
-      <Container width="wide" className="relative py-20 sm:py-24 lg:py-28">
-        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-          <Reveal className="flex flex-col gap-6">
+      <Container
+        width="wide"
+        className="relative px-6 py-10 sm:px-10 sm:py-14 lg:px-16 lg:py-16"
+      >
+        <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          <Reveal className="flex flex-col gap-5">
             <Eyebrow className="text-gold-300">
               Employment-Based U.S. Immigration
             </Eyebrow>
 
-            <h1 className="text-display-lg sm:text-display-xl lg:text-display-2xl font-semibold text-white">
+            <h1 className="text-display-md sm:text-display-lg lg:text-display-xl font-semibold text-white">
               EB-2 NIW &amp; EB-1 petition preparation for professionals
               worldwide
             </h1>
@@ -45,7 +39,7 @@ export function Hero() {
               responses for professionals and law firms worldwide.
             </p>
 
-            <div className="mt-1 flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button href="/consultation" variant="gold" size="lg">
                 Book a free consultation
               </Button>
@@ -57,38 +51,13 @@ export function Hero() {
                 Chat on WhatsApp
               </Button>
             </div>
-
-            <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-7">
-              {trustBadges.map((badge) => (
-                <li
-                  key={badge.label}
-                  className="text-navy-200 inline-flex items-center gap-2 font-sans text-[0.8125rem] font-medium"
-                >
-                  <badge.icon
-                    size={15}
-                    className="text-gold-400 shrink-0"
-                    aria-hidden
-                  />
-                  {badge.label}
-                </li>
-              ))}
-            </ul>
-
-            <a
-              href={social.fiverrProfile}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-navy-300 inline-flex w-fit items-center gap-2 font-sans text-sm underline-offset-4 transition-colors duration-200 hover:text-white hover:underline"
-            >
-              Every review on this site is verifiable on our public profile
-            </a>
           </Reveal>
 
           <Reveal
             delay={0.14}
-            className="flex justify-center lg:justify-end"
+            className="flex justify-center lg:justify-end lg:pt-6"
           >
-            <HeroVisual className="max-w-sm sm:max-w-md lg:max-w-lg" />
+            <HeroVisual className="max-w-[15rem] sm:max-w-xs lg:max-w-sm" />
           </Reveal>
         </div>
       </Container>

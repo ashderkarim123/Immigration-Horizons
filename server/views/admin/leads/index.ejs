@@ -13,6 +13,11 @@ function qs(extra) {
   if (assigneeFilter !== 'all') parts.push('assignee=' + assigneeFilter);
   if (leadSourceFilter !== 'all') parts.push('leadSource=' + encodeURIComponent(leadSourceFilter));
   if (priorityFilter !== 'all') parts.push('priority=' + priorityFilter);
+  if (unassignedOnly) parts.push('unassigned=1');
+  if (overdueOnly) parts.push('overdueTasks=1');
+  if (dueSoonOnly) parts.push('dueSoon=1');
+  if (createdFrom) parts.push('createdFrom=' + encodeURIComponent(createdFrom));
+  if (createdTo) parts.push('createdTo=' + encodeURIComponent(createdTo));
   return parts.join('&');
 }
 %>
@@ -20,7 +25,7 @@ function qs(extra) {
 <div class="page-header">
   <div>
     <h1>Leads</h1>
-    <p class="page-subtitle"><%= total %> total consultation requests</p>
+    <p class="page-subtitle"><%= total %> matching <%= activeFilterCount ? 'filtered' : 'total' %> consultation requests</p>
   </div>
   <div class="page-actions">
     <% if (can('csv.export')) { %>
@@ -29,6 +34,35 @@ function qs(extra) {
       </a>
     <% } %>
   </div>
+</div>
+
+<!-- Operational summary -->
+<div class="stats-grid">
+  <a href="/admin/leads" class="stat-card" style="text-decoration:none">
+    <div class="stat-card-icon blue"><i class="fas fa-folder-open"></i></div>
+    <div class="stat-card-value"><%= summary.active %></div>
+    <div class="stat-card-label">Active Leads</div>
+  </a>
+  <a href="/admin/leads?unassigned=1" class="stat-card" style="text-decoration:none">
+    <div class="stat-card-icon orange"><i class="fas fa-user-slash"></i></div>
+    <div class="stat-card-value"><%= summary.unassigned %></div>
+    <div class="stat-card-label">Unassigned</div>
+  </a>
+  <a href="/admin/leads" class="stat-card" style="text-decoration:none">
+    <div class="stat-card-icon green"><i class="fas fa-calendar-week"></i></div>
+    <div class="stat-card-value"><%= summary.newThisWeek %></div>
+    <div class="stat-card-label">New This Week</div>
+  </a>
+  <a href="/admin/leads?overdueTasks=1" class="stat-card" style="text-decoration:none">
+    <div class="stat-card-icon rose"><i class="fas fa-exclamation-triangle"></i></div>
+    <div class="stat-card-value <%= summary.overdueTaskLeads ? 'text-danger' : '' %>"><%= summary.overdueTaskLeads %></div>
+    <div class="stat-card-label">Overdue Tasks</div>
+  </a>
+  <a href="/admin/leads?dueSoon=1" class="stat-card" style="text-decoration:none">
+    <div class="stat-card-icon gold"><i class="fas fa-hourglass-half"></i></div>
+    <div class="stat-card-value"><%= summary.dueSoonTaskLeads %></div>
+    <div class="stat-card-label">Due Within <%= dueSoonDays %>d</div>
+  </a>
 </div>
 
 <!-- Filters -->
@@ -50,7 +84,7 @@ function qs(extra) {
         <option value="<%= s %>" <%= serviceFilter === s ? 'selected' : '' %>><%= s %></option>
       <% }); %>
     </select>
-    <select name="assignee" class="filter-select" onchange="this.form.submit()">
+    <select name="assignee" class="filter-select" onchange="this.form.submit()" <%= unassignedOnly ? 'disabled' : '' %>>
       <option value="all" <%= assigneeFilter === 'all' ? 'selected' : '' %>>All Assignees</option>
       <% teamMembers.forEach(function(m) { %>
         <option value="<%= m._id %>" <%= assigneeFilter === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
@@ -68,8 +102,22 @@ function qs(extra) {
         <option value="<%= p %>" <%= priorityFilter === p ? 'selected' : '' %>><%= p %></option>
       <% }); %>
     </select>
+    <input type="date" name="createdFrom" class="filter-date" value="<%= createdFrom %>" title="Created from" onchange="this.form.submit()">
+    <input type="date" name="createdTo" class="filter-date" value="<%= createdTo %>" title="Created to" onchange="this.form.submit()">
+    <label class="filter-checkbox">
+      <input type="checkbox" name="unassigned" value="1" <%= unassignedOnly ? 'checked' : '' %> onchange="this.form.submit()"> Unassigned only
+    </label>
+    <label class="filter-checkbox">
+      <input type="checkbox" name="overdueTasks" value="1" <%= overdueOnly ? 'checked' : '' %> onchange="this.form.submit()"> Overdue tasks
+    </label>
+    <label class="filter-checkbox">
+      <input type="checkbox" name="dueSoon" value="1" <%= dueSoonOnly ? 'checked' : '' %> onchange="this.form.submit()"> Due soon
+    </label>
     <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
   </form>
+  <% if (activeFilterCount) { %>
+    <a href="/admin/leads" class="btn btn-ghost btn-sm"><i class="fas fa-times"></i> Reset filters (<%= activeFilterCount %> active)</a>
+  <% } %>
 </div>
 
 <!-- Leads Table -->
