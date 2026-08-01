@@ -36,4 +36,16 @@ const NotificationSchema = new mongoose.Schema(
 
 NotificationSchema.statics.TYPES = NOTIFICATION_TYPES;
 
+/**
+ * Every admin page load runs `countDocuments({ recipientName, read: false })`
+ * and `find({ recipientName }).sort({ createdAt: -1 }).limit(8)` for the
+ * topbar notification bell (see the shared admin middleware in
+ * routes/admin/index.js) — this is the hottest query in the whole app.
+ * `/admin/notifications` additionally filters by `read` and sorts the same
+ * way. A single compound index serves all of these: `recipientName` is
+ * always the equality prefix, `read` is either filtered on or safely
+ * skipped over, and `createdAt` satisfies the sort.
+ */
+NotificationSchema.index({ recipientName: 1, read: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Notification', NotificationSchema);

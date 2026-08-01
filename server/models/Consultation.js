@@ -104,4 +104,28 @@ ConsultationSchema.statics.STATUS_STAGES = [
   { value: 'closed', label: 'Closed' },
 ];
 
+/**
+ * Indexes matched to the actual query patterns in routes/admin/index.js and
+ * routes/admin/leadOps.js — see server/scripts/createIndexes.js for how
+ * these get created in production (not automatically on startup).
+ *
+ * The /admin/leads list and CSV export apply an ad-hoc combination of
+ * optional equality filters (status, service, leadSource, priority, owner/
+ * assignee) plus a 4-field regex OR-search, always sorted newest-first.
+ * MongoDB only uses one index per query, so rather than one index per
+ * filterable field (which mostly just adds write overhead without helping
+ * any single query), these cover the filters that are either the sole
+ * filter in the common case (status) or otherwise expensive to scan for
+ * (owner/assignee lookups, exact email lookups):
+ */
+ConsultationSchema.index({ status: 1, createdAt: -1 }); // status filter + default sort; also serves the notification-bell "new leads" count and dashboard status counts
+ConsultationSchema.index({ createdAt: -1 }); // unfiltered list/export default sort, and date-range filtering
+ConsultationSchema.index({ email: 1 }); // exact-match lookups / de-dup checks
+ConsultationSchema.index({ owner: 1 }); // owner filter, and the "unassigned" (owner: null) filter
+ConsultationSchema.index({ 'assignees.user': 1 }); // assignee filter (multikey on the assignees subdocument array)
+ConsultationSchema.index({ service: 1 }); // service filter + the leads-list service-count aggregation
+// leadSource and priority are filterable but lower-cardinality and not yet
+// observed as a primary filter in practice — deliberately left unindexed to
+// avoid write-side index bloat; add them if usage shows otherwise.
+
 module.exports = mongoose.model('Consultation', ConsultationSchema);

@@ -12,6 +12,15 @@ dns.setServers(['8.8.8.8', '1.1.1.1']);
 // with a clearer message instead of hanging the request for the full 10s.
 mongoose.set('bufferTimeoutMS', 8000);
 
+// Mongoose's default (autoIndex: true) silently builds every schema.index()
+// in the background on connect — including in production, on every restart,
+// with no backup/low-traffic/monitoring plan. Index creation belongs behind
+// the explicit `npm run db:indexes` step (see server/README.md "Database
+// indexes"), not an unobserved side effect of the app booting. Local dev
+// keeps the default (auto-building on every schema change is genuinely
+// convenient there and the data is disposable).
+mongoose.set('autoIndex', process.env.NODE_ENV !== 'production');
+
 async function connectDB() {
   const uri = process.env.MONGODB_URI;
 

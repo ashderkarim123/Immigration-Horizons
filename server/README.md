@@ -87,11 +87,28 @@ calls `dropDatabase()` on it after every run.
 
 ## Database indexes
 
-Indexes are declared in the Mongoose schemas (`models/Consultation.js`,
-`models/admin/Notification.js`) but are **not** created automatically on
-app startup — `scripts/createIndexes.js` is a separate, explicit step so a
-production rollout is a deliberate, observable action, not something that
-happens silently on the next deploy.
+Indexes are declared per-model via `schema.index(...)` (see
+`models/Consultation.js` and `models/admin/Notification.js` for the ones
+added to support real `/admin/leads` filtering and the notification-bell
+query, with the reasoning in comments next to each one).
+
+Mongoose's default (`autoIndex: true`) builds every declared index in the
+background the moment the app connects — including in production, on every
+restart, with no backup or low-traffic window. `config/db.js` now disables
+that in production (`mongoose.set('autoIndex', NODE_ENV !== 'production')`)
+so index creation is only ever `scripts/createIndexes.js` — a separate,
+explicit, observable step. (Local dev keeps the default: auto-building on
+every schema change while iterating is genuinely convenient there, and the
+data is disposable.)
+
+Because turning that default off applies to *every* model, not just the two
+this pass touched, `scripts/createIndexes.js` covers every model in the app
+— including indexes that already existed before this change (`AdminUser.email`,
+`BlogPost.slug`, `Setting.{group,key}`, etc.). Those already exist in the real
+production database from when `autoIndex` last ran there; nothing here drops
+or rebuilds them. The script is what guarantees a **new** database, or a
+model gaining a new index in the future, has an explicit creation path
+instead of quietly depending on the old default.
 
 ```bash
 npm run db:indexes:dry-run   # lists index specs that would be created — no writes
