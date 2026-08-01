@@ -26,6 +26,7 @@
   --gold-600: #a67c1e;
   --gold-500: #c9992e;
   --gold-400: #dcae4a;
+  --gold-300: #e8c374;
   --gold-100: #f7ecd3;
   --gold-50: #fbf6ea;
 
@@ -211,39 +212,11 @@ body.admin-body {
 }
 .sidebar-brand > a:hover { opacity: .88; }
 
-.sidebar-brand .brand-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--r-sm);
-  background: linear-gradient(135deg, var(--gold-500), var(--gold-600));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--navy-900);
-  font-size: 1.05rem;
-  flex-shrink: 0;
-  box-shadow: var(--shadow-sm);
-}
-
-.sidebar-brand .brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.sidebar-brand .brand-title {
-  font-size: .95rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: .01em;
-}
-
-.sidebar-brand .brand-subtitle {
-  font-size: .72rem;
-  font-weight: 600;
-  color: var(--gold-400);
-  letter-spacing: .08em;
-  text-transform: uppercase;
+.sidebar-brand .brand-logo {
+  height: 48px;
+  width: auto;
+  max-width: 100%;
+  display: block;
 }
 
 .sidebar-divider {
@@ -277,7 +250,7 @@ body.admin-body {
   border-radius: var(--r-sm);
   font-size: .875rem;
   font-weight: 500;
-  color: #b7c2d6;
+  color: var(--gold-400);
   text-decoration: none;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
