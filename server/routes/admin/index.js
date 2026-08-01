@@ -54,7 +54,11 @@ function safeEqual(a, b) {
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  // Configurable so integration tests (which legitimately log in via the
+  // real route many times per run, all from the same loopback IP) don't
+  // trip the same limiter a real credential-stuffing attempt would.
+  // Production is unaffected — this still defaults to 10.
+  limit: Number(process.env.LOGIN_RATE_LIMIT) || 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many login attempts. Please try again in 15 minutes.',
