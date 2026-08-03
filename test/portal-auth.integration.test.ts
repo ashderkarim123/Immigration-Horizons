@@ -99,6 +99,86 @@ test("activation: valid token creates an active ClientUser and a rotated session
   assert.equal(await ClientSession.countDocuments({ clientUser: client!._id }), 1);
 });
 
+test("activateInvitedMembershipsForClient: flips only this client's 'invited' case memberships to 'active', leaving other clients' and other statuses untouched", async () => {
+  // The activate route (src/app/api/portal/activate/route.ts) calls this
+  // exact function immediately after creating the ClientUser — see
+  // ADR-002 §1's one documented write exception. Tested directly rather
+  // than via a second real activation request, since a membership can only
+  // reference a clientUser id that doesn't exist until activation creates
+  // it, and activation tokens are single-use.
+  const { activateInvitedMembershipsForClient } = await import(
+    "../src/lib/auth/case-membership"
+  );
+  const { WorkspaceMember } = await import("../src/lib/models/WorkspaceMember");
+
+  const client = await ClientUser.create({
+    email: "invited-member@example.com",
+    normalizedEmail: "invited-member@example.com",
+    passwordHash: "irrelevant",
+    status: "active",
+  });
+  const otherClient = await ClientUser.create({
+    email: "other-client@example.com",
+    normalizedEmail: "other-client@example.com",
+    passwordHash: "irrelevant",
+    status: "active",
+  });
+
+  const invited = await WorkspaceMember.create({
+    workspace: new mongoose.Types.ObjectId(),
+    memberType: "client",
+    clientUser: client._id,
+    workspaceRole: "client",
+    status: "invited",
+  });
+  const alreadyActive = await WorkspaceMember.create({
+    workspace: new mongoose.Types.ObjectId(),
+    memberType: "client",
+    clientUser: client._id,
+    workspaceRole: "client",
+    status: "active",
+    joinedAt: new Date("2020-01-01"),
+  });
+  const someoneElsesInvited = await WorkspaceMember.create({
+    workspace: new mongoose.Types.ObjectId(),
+    memberType: "client",
+    clientUser: otherClient._id,
+    workspaceRole: "client",
+    status: "invited",
+  });
+
+  const flipped = await activateInvitedMembershipsForClient(String(client._id));
+  assert.equal(flipped, 1);
+
+  assert.equal((await WorkspaceMember.findById(invited._id))!.status, "active");
+  assert.ok((await WorkspaceMember.findById(invited._id))!.joinedAt);
+  assert.equal(
+    (await WorkspaceMember.findById(alreadyActive._id))!.joinedAt!.getFullYear(),
+    2020,
+    "an already-active membership must not be touched/re-dated",
+  );
+  assert.equal(
+    (await WorkspaceMember.findById(someoneElsesInvited._id))!.status,
+    "invited",
+    "a different client's invited membership must be untouched",
+  );
+});
+
+test("activation route: calls the membership-activation step as part of a successful activation", async () => {
+  const { token } = await createInvitation();
+  const res = await activatePOST(
+    jsonRequest("/api/portal/activate", {
+      token,
+      password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
+    }),
+  );
+  // No 'invited' memberships exist for this brand-new client, so this is a
+  // no-op call — the real assertion is that activation still succeeds
+  // cleanly with that step present (a throwing/miswired call would 500 this).
+  assert.equal(res.status, 200);
+});
+
 test("activation: password mismatch is rejected as 422 and creates no account", async () => {
   const { token, normalizedEmail } = await createInvitation();
 
