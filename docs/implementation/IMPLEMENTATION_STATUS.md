@@ -192,11 +192,12 @@ Verified via `npm run db:indexes:dry-run` (lists all declared indexes without co
 
 ## Testing
 
-**Command:** `npm test` → `node --conditions=react-server --import tsx --test "test/**/*.test.ts"`
+**Command:** `npm test` → `node --conditions=react-server --import tsx --test --test-concurrency=1 "test/**/*.test.ts"`
 
-Two flags are load-bearing, not incidental:
+Three flags are load-bearing, not incidental:
 - `--import tsx`: relative imports throughout this codebase omit file extensions (Next's bundler convention); plain Node's ESM resolver needs `tsx` for that.
 - `--conditions=react-server`: every model/lib file imports `"server-only"`, whose package uses a conditional export (`react-server` → no-op, `default` → throws). Next sets this condition internally for server bundles; passing it explicitly makes the same modules resolve correctly under plain Node.
+- `--test-concurrency=1`: Node's test runner otherwise runs separate test files in parallel processes, each spinning up its own `mongodb-memory-server` instance — observed flaking with "Instance failed to start within 10000ms" under that contention. Serializing the two files trades a little wall-clock time (~28s vs ~15s) for reliability; verified stable across repeated runs.
 
 **Results:** 29/29 passing (`test/portal-invitations.integration.test.ts`: 9, `test/portal-auth.integration.test.ts`: 20). Isolated `mongodb-memory-server` database per run; never reads the real `MONGODB_URI`.
 
