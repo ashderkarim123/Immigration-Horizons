@@ -42,13 +42,14 @@ export type LeadInput = {
   tracking?: Record<string, string>;
 };
 
-async function persistLead(lead: LeadInput): Promise<boolean> {
+/** Returns the created document's id, or null if persistence didn't happen/failed. */
+async function persistLead(lead: LeadInput): Promise<string | null> {
   const db = getDb();
-  if (!db) return false; // MONGODB_URI not set — already warned in getDb()
+  if (!db) return null; // MONGODB_URI not set — already warned in getDb()
 
   try {
     await db;
-    await Consultation.create({
+    const doc = await Consultation.create({
       name: lead.name,
       email: lead.email,
       phone: lead.phone || "",
@@ -63,12 +64,12 @@ async function persistLead(lead: LeadInput): Promise<boolean> {
       gclid: lead.tracking?.gclid || "",
       fbclid: lead.tracking?.fbclid || "",
     });
-    return true;
+    return String(doc._id);
   } catch (err) {
     // Persistence is additive to email delivery — log and move on rather
     // than failing the whole submission over a database problem.
     console.error("[leads] Failed to save lead to MongoDB:", err);
-    return false;
+    return null;
   }
 }
 
@@ -79,14 +80,21 @@ function escapeHtml(value = "") {
     .replace(/>/g, "&gt;");
 }
 
-/**
- * Returns true when the lead was captured by at least one channel (saved to
- * MongoDB and/or emailed) — false only when both failed, meaning nobody at
- * Immigration Horizons will see this submission.
- */
-export async function deliverLead(lead: LeadInput): Promise<boolean> {
+export type DeliverLeadResult = {
+  /**
+   * True when the lead was captured by at least one channel (saved to
+   * MongoDB and/or emailed) — false only when both failed, meaning nobody
+   * at Immigration Horizons will see this submission.
+   */
+  delivered: boolean;
+  /** The created Consultation document's id, or null if it wasn't persisted. */
+  consultationId: string | null;
+};
+
+export async function deliverLead(lead: LeadInput): Promise<DeliverLeadResult> {
   // Save first so the lead is captured even if the email step throws.
-  const saved = await persistLead(lead);
+  const consultationId = await persistLead(lead);
+  const saved = consultationId !== null;
 
   const apiKey = process.env.RESEND_API_KEY;
   const receiver = process.env.CONTACT_RECEIVER_EMAIL || contact.email;
@@ -97,7 +105,7 @@ export async function deliverLead(lead: LeadInput): Promise<boolean> {
     console.warn(
       `[leads] RESEND_API_KEY not set — ${lead.kind} lead from ${lead.email} was not emailed.`,
     );
-    return saved;
+    return { delivered: saved, consultationId };
   }
 
   const resend = new Resend(apiKey);
@@ -142,11 +150,11 @@ export async function deliverLead(lead: LeadInput): Promise<boolean> {
 
     if (error) {
       console.error("[leads] Resend send failed:", error);
-      return saved;
+      return { delivered: saved, consultationId };
     }
-    return true;
+    return { delivered: true, consultationId };
   } catch (err) {
     console.error("[leads] Resend send threw:", err);
-    return saved;
+    return { delivered: saved, consultationId };
   }
 }

@@ -1,8 +1,11 @@
 "use server";
 
+import { redirect } from "next/navigation";
+
 import { deliverLead } from "@/lib/leads";
 import { isRateLimited } from "@/lib/rate-limit";
 import { caseCategories, supportServices } from "@/lib/content/services";
+import { linkOrInviteAfterConsultation } from "@/lib/auth/invitations";
 
 export type FormState = {
   status: "idle" | "success" | "error";
@@ -74,7 +77,7 @@ export async function submitConsultation(
     };
   }
 
-  const delivered = await deliverLead({
+  const { delivered, consultationId } = await deliverLead({
     kind: "consultation",
     name,
     email,
@@ -92,9 +95,19 @@ export async function submitConsultation(
     };
   }
 
-  return {
-    status: "success",
-    message:
-      "Thank you — your consultation request has been received. We'll follow up by email or WhatsApp.",
-  };
+  // Portal onboarding is additive to a successful submission — a failure
+  // here (e.g. Mongo/Resend hiccup inside linkOrInviteAfterConsultation,
+  // which already catches its own errors) must never turn an already-saved
+  // lead into a visible failure. Only decides where the redirect below goes.
+  const outcome = consultationId
+    ? await linkOrInviteAfterConsultation({ email, name, consultationId })
+    : "skipped_no_db";
+
+  // Server Action redirects use next/navigation's redirect(), which throws
+  // a control-flow signal Next.js turns into a real client-side navigation
+  // — this function does not return past this point on the success path.
+  if (outcome === "linked_existing_client") {
+    redirect("/portal/login?next=/portal/consultations");
+  }
+  redirect("/portal/check-email");
 }

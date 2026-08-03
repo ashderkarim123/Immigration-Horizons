@@ -40,7 +40,7 @@ export async function submitContact(
     };
   }
 
-  const delivered = await deliverLead({ kind: "contact", name, email, message });
+  const { delivered } = await deliverLead({ kind: "contact", name, email, message });
 
   if (!delivered) {
     return {
