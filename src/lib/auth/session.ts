@@ -86,14 +86,14 @@ export async function createSession(
 }
 
 /**
- * Validates the session cookie on `request` and, if active, extends the
- * idle timeout. Returns null (never throws) for any invalid/expired/missing
- * session so callers can fail closed uniformly.
+ * Core lookup shared by both entry points below: given a raw session
+ * token, validate it and (if active) extend the idle timeout. Returns null
+ * (never throws) for any invalid/expired/missing session so callers can
+ * fail closed uniformly.
  */
-export async function getSessionActor(
-  request: Request,
+async function lookupSessionByToken(
+  token: string | null,
 ): Promise<SessionActor | null> {
-  const token = readSessionToken(request);
   if (!token) return null;
 
   const db = getDb();
@@ -123,6 +123,25 @@ export async function getSessionActor(
     clientUserId: String(session.clientUser),
     sessionId: String(session._id),
   };
+}
+
+/** For Route Handlers, which receive the raw `Request` and can be tested by constructing one directly. */
+export async function getSessionActor(
+  request: Request,
+): Promise<SessionActor | null> {
+  return lookupSessionByToken(readSessionToken(request));
+}
+
+/**
+ * For Server Components/pages, which have no `Request` to read and instead
+ * use `next/headers`'s request-scoped cookie store. Not usable outside a
+ * real Next.js request-handling context — Route Handlers and tests should
+ * use `getSessionActor(request)` above instead.
+ */
+export async function getSessionActorFromCookieStore(): Promise<SessionActor | null> {
+  const { cookies } = await import("next/headers");
+  const store = await cookies();
+  return lookupSessionByToken(store.get(SESSION_COOKIE_NAME)?.value ?? null);
 }
 
 /** Logout — deletes exactly the presented session so other sessions/devices are unaffected. */

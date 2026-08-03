@@ -25,8 +25,12 @@ const ClientUserSchema = new Schema(
     // "Name@Example.com" and "name@example.com" are the same account.
     normalizedEmail: { type: String, required: true, trim: true, lowercase: true },
     passwordHash: { type: String, default: "" },
-    firstName: { type: String, required: true, trim: true },
-    lastName: { type: String, required: true, trim: true },
+    // Not required: the only source at signup time is the consultation
+    // form's single free-text "name" field, best-effort split on first
+    // whitespace (see splitName() in src/lib/auth/invitations.ts) — not
+    // reliable enough to enforce as a hard requirement.
+    firstName: { type: String, default: "", trim: true },
+    lastName: { type: String, default: "", trim: true },
     phone: { type: String, default: "", trim: true },
     status: {
       type: String,

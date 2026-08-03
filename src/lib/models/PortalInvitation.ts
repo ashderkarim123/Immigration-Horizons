@@ -24,6 +24,12 @@ export type PortalInvitationPurpose =
 const PortalInvitationSchema = new Schema(
   {
     normalizedEmail: { type: String, required: true, trim: true, lowercase: true },
+    // Name snapshot from the triggering consultation, so activation can
+    // create the ClientUser without asking the submitter to type their name
+    // a second time. Best-effort — the consultation form collects one free
+    // text "name" field, not separate first/last name.
+    firstName: { type: String, default: "", trim: true },
+    lastName: { type: String, default: "", trim: true },
     clientUser: { type: Schema.Types.ObjectId, ref: "ClientUser", default: null },
     consultation: { type: Schema.Types.ObjectId, ref: "Consultation", default: null },
     tokenHash: { type: String, required: true },
