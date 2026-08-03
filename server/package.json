@@ -6,7 +6,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "seed": "node scripts/seed.js",
-    "test": "node --test",
+    "test": "node --test --test-concurrency=1",
     "test:integration": "node --test test/integration/auth.integration.test.js test/integration/security-regression.integration.test.js",
     "test:authorization": "node --test test/permissions-can.test.js test/route-guards.test.js test/integration/auth.integration.test.js",
     "db:indexes": "node scripts/createIndexes.js",
