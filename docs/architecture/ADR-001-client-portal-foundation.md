@@ -132,24 +132,40 @@ hot-reload re-registration (`mongoose.models.X || mongoose.model(...)`).
 
 ### 8. Test application bootstrapping
 
-Node 24's native TypeScript support (`node --test`, unflagged type
-stripping) runs `.ts` test files directly — no new test-runner dependency.
-Route handler modules are imported directly and invoked with a real
-`Request`; session cookies are threaded between calls by reading `Set-Cookie`
-from one `Response` and passing it as `Cookie` on the next request, the
-same "real handler, real HTTP shape" approach `server/`'s `supertest`-based
-tests use for the admin. Test database isolation reuses the same guarded
-pattern as `server/test/helpers/testDb.js` (refuse anything that looks like
-a managed/production URI; prefer `mongodb-memory-server`; never read
+`node --test` runs `.ts` test files directly via Node 24's native
+TypeScript support, but relative imports throughout this codebase omit file
+extensions (`from "../db"`, not `"../db.ts"`) — the convention Next.js's
+bundler resolves automatically. Plain Node's ESM resolver does not do
+extensionless resolution, so `tsx` (added as a devDependency) is used
+alongside native type-stripping specifically for that resolution behavior:
+`node --import tsx --test test/`. Route handler modules are imported
+directly and invoked with a real `Request`; session cookies are threaded
+between calls by reading `Set-Cookie` from one `Response` and passing it as
+`Cookie` on the next request — the same "real handler, real HTTP shape"
+approach `server/`'s `supertest`-based tests use for the admin. Test
+database isolation reuses the same guarded pattern as
+`server/test/helpers/testDb.js` (refuse anything that looks like a
+managed/production URI; prefer `mongodb-memory-server`; never read
 `MONGODB_URI`).
 
-One prerequisite fix: `src/lib/db.ts` and `src/lib/models/Consultation.ts`
-import the bare specifier `"server-only"`, which Next.js aliases internally
-during its own build/dev pipeline but which was never an explicit
-`package.json` dependency — so it did not resolve under plain Node (as used
-by tests, or any other tool outside Next's bundler). Added as a real,
-explicit dependency (Vercel's published `server-only` package) so these
-modules are importable both by Next.js and by the test runner.
+Two prerequisite fixes surfaced by making these modules importable outside
+Next's bundler:
+
+- `src/lib/db.ts` and every model file import the bare specifier
+  `"server-only"`, which Next.js resolves via the package's own conditional
+  export (`"react-server"` condition → a true no-op; `"default"` → a module
+  that unconditionally throws, as a safety net against accidental
+  client-bundle inclusion). It was never an explicit `package.json`
+  dependency, so it did not resolve under plain Node at all. Added as a
+  real, explicit dependency (Vercel's published `server-only` package), and
+  the test/script commands pass Node's built-in `--conditions=react-server`
+  flag — the same condition Next sets for server-side bundles — so these
+  modules resolve to the no-op export instead of throwing. This is Node's
+  standard mechanism for exactly this situation, not a workaround specific
+  to this repo.
+- `scripts/createIndexes.ts` needs `.env` loaded outside Next's own
+  automatic env loading, so `dotenv` (already a `server/` dependency) was
+  added to the root app as a devDependency for that one script.
 
 ### 9. Future private file access (forward-looking, not built yet)
 
