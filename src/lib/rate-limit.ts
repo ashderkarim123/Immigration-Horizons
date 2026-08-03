@@ -20,12 +20,26 @@ function pruneOld() {
   }
 }
 
-export async function isRateLimited(bucket: string): Promise<boolean> {
-  const h = await headers();
-  const ip =
+function extractIp(h: { get(name: string): string | null }): string {
+  return (
     h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     h.get("x-real-ip") ||
-    "unknown";
+    "unknown"
+  );
+}
+
+/**
+ * `request` is optional and exists for callers outside a Next.js
+ * request-handling context (e.g. Route Handlers invoked directly by
+ * integration tests, which never populate `next/headers`'s request-scoped
+ * storage) — pass the handler's own `Request` there. Server Actions keep
+ * calling this with no `request` argument and fall back to `next/headers`.
+ */
+export async function isRateLimited(
+  bucket: string,
+  request?: Request,
+): Promise<boolean> {
+  const ip = request ? extractIp(request.headers) : extractIp(await headers());
   const key = `${bucket}:${ip}`;
   const now = Date.now();
   const cutoff = now - WINDOW_MS;
