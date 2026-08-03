@@ -1,0 +1,52 @@
+{
+  "_comment": "Canonical cross-app contract for the Cycle 2 case/workspace/membership domain — see ADR-002 §4/§8. This file is a TEST-TIME-ONLY fixture (both server/test/case-schema-contract.test.js and test/case-schema-contract.test.ts load it and assert their own app's models/constants match it exactly). It is never imported by production code in either app, so it does not reintroduce the shared-runtime-code coupling ADR-001/ADR-002 deliberately avoided — it exists purely to catch schema drift between the two independently-maintained model files at test time.",
+  "collections": {
+    "ClientCase": "client_cases",
+    "CaseWorkspace": "case_workspaces",
+    "WorkspaceMember": "workspace_members",
+    "ClientUser": "clientusers"
+  },
+  "caseTypeValues": [
+    "eb2_niw",
+    "eb1a",
+    "eb1b",
+    "eb1c",
+    "o1",
+    "rfe_response",
+    "noid_response",
+    "recommendation_letters",
+    "expert_opinion_letters",
+    "business_plan",
+    "evidence_packaging",
+    "uscis_forms",
+    "other"
+  ],
+  "caseStageValues": [
+    "intake",
+    "strategy",
+    "document_collection",
+    "drafting",
+    "review",
+    "client_review",
+    "ready_to_file",
+    "filed",
+    "uscis_pending",
+    "approved",
+    "denied",
+    "closed",
+    "archived"
+  ],
+  "workspaceStatusValues": ["active", "suspended", "archived"],
+  "workspaceTypeValues": ["primary"],
+  "memberTypeValues": ["client", "employee"],
+  "workspaceRoleValues": [
+    "client",
+    "project_manager",
+    "case_manager",
+    "contributor",
+    "reviewer",
+    "observer"
+  ],
+  "membershipStatusValues": ["invited", "active", "removed", "suspended"],
+  "clientUserStatusValues": ["pending", "active", "locked", "disabled"]
+}
