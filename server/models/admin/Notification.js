@@ -13,6 +13,9 @@ const NOTIFICATION_TYPES = [
   'lead_delivered',
   'note_added',
   'client_response',
+  // Cycle 2.
+  'case_assigned_manager',
+  'case_member_added',
 ];
 
 const NotificationSchema = new mongoose.Schema(
@@ -28,6 +31,7 @@ const NotificationSchema = new mongoose.Schema(
 
     relatedLead: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultation', default: null },
     relatedTask: { type: mongoose.Schema.Types.ObjectId, ref: 'Task', default: null },
+    relatedCase: { type: mongoose.Schema.Types.ObjectId, ref: 'ClientCase', default: null },
 
     read: { type: Boolean, default: false },
   },

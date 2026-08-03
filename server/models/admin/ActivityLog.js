@@ -11,6 +11,10 @@ const ACTIVITY_TYPES = [
   'file_uploaded',
   'message_sent',
   'package_delivered',
+  // Cycle 2: the one lead-side event a case conversion generates, linking
+  // back to the new case via `meta` — everything after this point is
+  // recorded on the case itself (see models/CaseActivity.js), not here.
+  'case_converted',
 ];
 
 /**

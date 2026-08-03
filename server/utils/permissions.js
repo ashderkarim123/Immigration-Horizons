@@ -143,6 +143,21 @@ const CAPABILITIES = {
   // Reporting.
   'csv.export': MANAGER_ROLES,
   'reports.view': MANAGER_ROLES,
+
+  // Cases/workspaces (Cycle 2). Conservative default matrix — see
+  // 03_CLIENT_CASES_AND_WORKSPACES.md §12 and services/casePolicy.js for
+  // how `cases.view_all` is used as the org-wide, membership-bypass signal.
+  // Specialists/reviewer/editor/viewer intentionally excluded from every
+  // case capability: the module document requires justifying read-only
+  // access from actual product rules before granting it, and none exist
+  // yet for this cycle.
+  'cases.view': ['super_admin', 'admin', 'pm'],
+  'cases.view_all': ['super_admin', 'admin'],
+  'cases.create': ['super_admin', 'admin', 'pm'],
+  'cases.manage': ['super_admin', 'admin', 'pm'],
+  'cases.assign': ['super_admin', 'admin'], // reassigning the project manager is admin-tier, not self-service for a PM
+  'cases.archive': ['super_admin', 'admin'],
+  'workspace.members.manage': ['super_admin', 'admin', 'pm'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */

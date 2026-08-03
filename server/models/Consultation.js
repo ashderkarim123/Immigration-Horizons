@@ -80,6 +80,25 @@ const ConsultationSchema = new mongoose.Schema(
       ],
       default: 'new',
     },
+
+    // ---- Case conversion (Cycle 2). Additive/optional — existing
+    // consultations and public form submissions remain valid without these
+    // fields ever being set. A boolean `converted` flag was deliberately
+    // not used: `convertedCase` IS the authoritative "is this converted"
+    // signal (non-null = converted) and also lets every caller jump
+    // straight to the case without a second lookup. ----
+    convertedCase: { type: mongoose.Schema.Types.ObjectId, ref: 'ClientCase', default: null },
+    convertedAt: { type: Date, default: null },
+
+    // `clientUser` was added to the Next.js app's copy of this schema in
+    // Cycle 1 (see docs/architecture/ADR-001) but never mirrored here,
+    // since this app never needed to read it — Cycle 2's case-conversion
+    // service does (it's how a case's primary client is resolved from a
+    // consultation), so it's added here now too. Same field name, same
+    // meaning, same optional/nullable shape — this app still never *sets*
+    // it, only reads it (Next.js's own activation/login flow is the only
+    // writer).
+    clientUser: { type: mongoose.Schema.Types.ObjectId, ref: 'ClientUser', default: null },
   },
   { timestamps: true }
 );
