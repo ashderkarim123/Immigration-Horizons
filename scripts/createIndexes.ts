@@ -20,8 +20,26 @@ import { ClientUser } from "../src/lib/models/ClientUser";
 import { PortalInvitation } from "../src/lib/models/PortalInvitation";
 import { PasswordResetToken } from "../src/lib/models/PasswordResetToken";
 import { ClientSession } from "../src/lib/models/ClientSession";
+import { ClientCase } from "../src/lib/models/ClientCase";
+import { CaseWorkspace } from "../src/lib/models/CaseWorkspace";
+import { WorkspaceMember } from "../src/lib/models/WorkspaceMember";
 
-const MODELS = [Consultation, ClientUser, PortalInvitation, PasswordResetToken, ClientSession];
+// Cycle 2 case/workspace/membership models are also declared here even
+// though server/ is their primary writer (see
+// docs/architecture/ADR-002-case-workspace-domain.md) — createIndexes() is
+// additive/idempotent, so running it from either app is a safe no-op once
+// the indexes exist, and this keeps index provisioning documented and
+// runnable from whichever app's deployment pipeline gets there first.
+const MODELS = [
+  Consultation,
+  ClientUser,
+  PortalInvitation,
+  PasswordResetToken,
+  ClientSession,
+  ClientCase,
+  CaseWorkspace,
+  WorkspaceMember,
+];
 
 const isDryRun = process.argv.includes("--dry-run");
 

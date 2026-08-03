@@ -44,6 +44,15 @@ const MODELS = [
   require('../models/admin/Task'),
   require('../models/admin/Testimonial'),
   require('../models/admin/User'),
+  // Cycle 2 — case/workspace/membership. ClientUser is included even
+  // though this app never writes it, because Express does read it (case
+  // conversion) and its index (unique normalizedEmail) protects data this
+  // app also depends on being correct.
+  require('../models/ClientUser'),
+  require('../models/ClientCase'),
+  require('../models/CaseWorkspace'),
+  require('../models/WorkspaceMember'),
+  require('../models/CaseActivity'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');
