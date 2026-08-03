@@ -4,6 +4,7 @@ import { getDb } from "../../../../lib/db";
 import { ClientUser } from "../../../../lib/models/ClientUser";
 import { PortalInvitation } from "../../../../lib/models/PortalInvitation";
 import { Consultation } from "../../../../lib/models/Consultation";
+import { activateInvitedMembershipsForClient } from "../../../../lib/auth/case-membership";
 import { hashToken, hashPassword } from "../../../../lib/auth/crypto";
 import { createSession, serializeSessionCookie } from "../../../../lib/auth/session";
 import { verifyOrigin } from "../../../../lib/auth/csrf";
@@ -104,6 +105,14 @@ export async function POST(request: Request): Promise<Response> {
       { $set: { clientUser: client._id } },
     );
   }
+
+  // One narrow, documented exception to this app being read-only against
+  // Case/Workspace/Membership collections (ADR-002 §1): a manager may have
+  // already converted this client's consultation into a case while the
+  // client's account was still 'pending', creating an 'invited' membership
+  // (see server/services/caseConversion.js). The module doc requires that
+  // membership become active the moment the account itself does.
+  await activateInvitedMembershipsForClient(String(client._id));
 
   const sessionToken = await createSession(String(client._id), {
     ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "",

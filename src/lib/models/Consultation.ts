@@ -8,11 +8,14 @@ import mongoose, { Schema } from "mongoose";
  * the default pluralisation of 'Consultation') — so a lead submitted through
  * this Next.js app shows up in the admin CMS's Leads dashboard untouched.
  *
- * Keep this in sync if either of those two models change, with one
- * intentional exception: `clientUser` (added for the client portal, see
- * ADR-001) exists only in this app's schema. It's optional/nullable, so the
- * legacy site and server/ — which don't know about the field — keep working
- * against the same collection unaffected.
+ * Keep this in sync if either of those two models change. Three fields are
+ * additive/optional and intentionally absent from the separate legacy
+ * site's copy, which doesn't know about them and keeps working against the
+ * same collection unaffected: `clientUser` (Cycle 1, ADR-001) — this app is
+ * the sole writer (activation/login), `server/` only reads it (Cycle 2
+ * case conversion resolves a case's primary client from it) — and
+ * `convertedCase`/`convertedAt` (Cycle 2, ADR-002), the other direction:
+ * `server/` is the sole writer (case conversion), this app only reads them.
  */
 
 export const CONSULTATION_SERVICE_VALUES = [
@@ -65,6 +68,9 @@ const ConsultationSchema = new Schema(
     // for the many leads that never create a portal account, so this must
     // stay optional/nullable, not required.
     clientUser: { type: Schema.Types.ObjectId, ref: "ClientUser", default: null },
+    // Set by Express during case conversion — see server/services/caseConversion.js.
+    convertedCase: { type: Schema.Types.ObjectId, ref: "ClientCase", default: null },
+    convertedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
