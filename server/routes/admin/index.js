@@ -33,6 +33,9 @@ const { csvCell } = require('../../utils/csv');
 const { DUE_SOON_DAYS, overdueTaskMatch, dueSoonTaskMatch, isOverdue, isDueSoon } = require('../../utils/taskDeadlines');
 const attachLeadOps = require('./leadOps');
 const { ASSIGNMENT_SLOTS } = attachLeadOps;
+const attachCases = require('./cases');
+const casePolicy = require('../../services/casePolicy');
+const ClientCase = require('../../models/ClientCase');
 
 // ========================================================================
 // AUTHENTICATION
@@ -448,6 +451,13 @@ router.get('/admin/leads/:id', async (req, res) => {
       membersBySlotRole[slot.taskType] = teamMembers.filter((m) => m.role === slot.role);
     });
 
+    // Cycle 2 — case conversion. Server-side authorization is the real
+    // gate (see requireCapability('cases.create') on the convert route);
+    // `canConvert` here only controls whether the form is shown at all.
+    const convertedCase = lead.convertedCase ? await ClientCase.findById(lead.convertedCase).lean() : null;
+    const caseConversionErrors = req.session.caseConversionErrors || null;
+    delete req.session.caseConversionErrors;
+
     res.render('admin/leads/detail', {
       title: `Lead: ${lead.name} | Admin`,
       lead,
@@ -464,6 +474,10 @@ router.get('/admin/leads/:id', async (req, res) => {
       leadStatusStages: Consultation.STATUS_STAGES,
       dueSoonDays: DUE_SOON_DAYS,
       currentPage: 'leads',
+      canConvertToCase: can(req, 'cases.create'),
+      convertedCase,
+      caseTypes: attachCases.CASE_TYPES,
+      caseConversionErrors,
     });
   } catch (err) {
     console.error('[admin/leads/detail]', err.message);
@@ -1443,5 +1457,10 @@ router.get('/admin/search', async (req, res) => {
 // inherit the requireAdmin + session-locals middleware registered above.
 // ========================================================================
 attachLeadOps(router);
+
+// ========================================================================
+// CASES / WORKSPACES / MEMBERSHIP (Cycle 2)
+// ========================================================================
+attachCases(router);
 
 module.exports = router;

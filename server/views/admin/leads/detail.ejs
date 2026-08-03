@@ -61,6 +61,88 @@ function isDueSoon(t) {
       </div>
     </div>
 
+    <!-- Cycle 2: case conversion -->
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Case</h3></div>
+      <div class="admin-card-body">
+        <% if (convertedCase) { %>
+          <p>
+            This lead was converted to case
+            <a href="/admin/cases/<%= convertedCase._id %>"><strong><%= convertedCase.caseNumber %></strong> — <%= convertedCase.title %></a>.
+          </p>
+        <% } else if (!canConvertToCase) { %>
+          <p class="text-muted">You do not have permission to convert this lead to a case.</p>
+        <% } else { %>
+          <% if (caseConversionErrors) { %>
+            <div class="alert alert-danger">
+              <ul style="margin:0;padding-left:18px">
+                <% Object.keys(caseConversionErrors).forEach(function(field) { %>
+                  <li><%= caseConversionErrors[field] %></li>
+                <% }); %>
+              </ul>
+            </div>
+          <% } %>
+          <% if (!lead.clientUser) { %>
+            <div class="alert alert-warning">
+              This lead has no linked client portal account yet — the client must activate their
+              portal account (or be linked manually) before it can be converted to a case.
+            </div>
+          <% } %>
+          <form action="/admin/leads/<%= lead._id %>/convert-to-case" method="POST" class="form-grid">
+            <div class="form-group">
+              <label>Case Title</label>
+              <input type="text" name="title" class="form-control" value="<%= lead.name %> — <%= lead.service %>" required>
+            </div>
+            <div class="form-group">
+              <label>Case Type</label>
+              <select name="caseType" class="form-control" required>
+                <% caseTypes.forEach(function(t) { %>
+                  <option value="<%= t.value %>"><%= t.label %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Project Manager</label>
+              <select name="projectManagerId" class="form-control" required>
+                <option value="">Select…</option>
+                <% teamMembers.forEach(function(m) { %>
+                  <option value="<%= m._id %>"><%= m.name %> (<%= m.role %>)</option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Priority</label>
+              <select name="priority" class="form-control">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target Filing Date</label>
+              <input type="date" name="targetFilingDate" class="form-control">
+            </div>
+            <div class="form-group full-width">
+              <label>Additional Team Members</label>
+              <select name="employeeMemberIds" class="form-control" multiple size="4">
+                <% teamMembers.forEach(function(m) { %>
+                  <option value="<%= m._id %>"><%= m.name %> (<%= m.role %>)</option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label>Description (optional)</label>
+              <textarea name="description" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-group full-width">
+              <button type="submit" class="btn btn-primary"><i class="fas fa-briefcase"></i> Convert to Case</button>
+            </div>
+          </form>
+        <% } %>
+      </div>
+    </div>
+
     <div class="admin-card">
       <div class="admin-card-header"><h3>Message</h3></div>
       <div class="admin-card-body">

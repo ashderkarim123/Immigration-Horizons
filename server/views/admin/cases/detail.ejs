@@ -1,0 +1,172 @@
+<%
+const STAGE_LABEL = {};
+caseStages.forEach(function(s) { STAGE_LABEL[s.value] = s.label; });
+function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
+%>
+<a href="/admin/cases" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to Cases</a>
+
+<div class="page-header">
+  <div>
+    <h1><%= caseDoc.caseNumber %> — <%= caseDoc.title %></h1>
+    <p class="page-subtitle">
+      <%= caseDoc.caseType %>
+      · <span class="badge"><%= STAGE_LABEL[caseDoc.currentStage] || caseDoc.currentStage %></span>
+      · <span class="badge badge-priority-<%= caseDoc.priority %>"><%= caseDoc.priority %> priority</span>
+      <% if (caseDoc.archivedAt) { %> · <span class="badge badge-closed">Archived</span><% } %>
+    </p>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-primary">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Case Summary</h3></div>
+      <div class="admin-card-body">
+        <div class="detail-grid">
+          <div class="detail-field"><label>Primary Client</label><span><%= primaryClient ? (primaryClient.firstName ? (primaryClient.firstName + ' ' + primaryClient.lastName) : primaryClient.email) : '—' %></span></div>
+          <div class="detail-field"><label>Client Email</label><span><%= primaryClient ? primaryClient.email : '—' %></span></div>
+          <div class="detail-field"><label>Project Manager</label><span><%= projectManager ? projectManager.name : '—' %></span></div>
+          <div class="detail-field"><label>Opened</label><span><%= fmtDate(caseDoc.openedAt) %></span></div>
+          <div class="detail-field"><label>Target Filing</label><span><%= fmtDate(caseDoc.targetFilingDate) %></span></div>
+          <div class="detail-field"><label>Consultation</label><span><% if (consultation) { %><a href="/admin/leads/<%= consultation._id %>">View original lead</a><% } else { %>—<% } %></span></div>
+        </div>
+        <% if (caseDoc.description) { %>
+          <p style="margin-top:12px;white-space:pre-wrap"><%= caseDoc.description %></p>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (canManage) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Stage</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/cases/<%= caseDoc._id %>/stage" method="POST" class="form-inline">
+          <select name="stage" class="form-control">
+            <% caseStages.forEach(function(s) { %>
+              <option value="<%= s.value %>" <%= caseDoc.currentStage === s.value ? 'selected' : '' %>><%= s.label %></option>
+            <% }); %>
+          </select>
+          <button type="submit" class="btn btn-sm btn-primary">Update Stage</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Workspace Members</h3></div>
+      <div class="admin-card-body">
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Type</th><th>Role</th><th>Status</th><th>Client-visible</th><% if (canManageMembers) { %><th class="shrink">Actions</th><% } %></tr></thead>
+            <tbody>
+              <% members.forEach(function(m) { %>
+                <tr>
+                  <td><%= m.memberType === 'client' ? (m.clientUser ? (m.clientUser.firstName || m.clientUser.email) : '—') : (m.adminUser ? m.adminUser.name : '—') %></td>
+                  <td><%= m.memberType %></td>
+                  <td><%= m.displayRole || m.workspaceRole %></td>
+                  <td><span class="badge"><%= m.status %></span></td>
+                  <td><%= m.memberType === 'employee' ? (m.clientVisible ? 'Yes' : 'No') : '—' %></td>
+                  <% if (canManageMembers) { %>
+                    <td>
+                      <form action="/admin/cases/<%= caseDoc._id %>/members/<%= m._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Remove this member?');" style="display:inline">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Remove"><i class="fas fa-user-minus"></i></button>
+                      </form>
+                    </td>
+                  <% } %>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <% if (canManageMembers) { %>
+          <hr>
+          <form action="/admin/cases/<%= caseDoc._id %>/members" method="POST" class="form-inline">
+            <input type="hidden" name="memberType" value="employee">
+            <select name="adminUserId" class="form-control" required>
+              <option value="">Add team member…</option>
+              <% teamMembers.forEach(function(m) { %>
+                <option value="<%= m._id %>"><%= m.name %> (<%= m.role %>)</option>
+              <% }); %>
+            </select>
+            <select name="workspaceRole" class="form-control">
+              <% workspaceRoles.filter(function(r){ return r !== 'client'; }).forEach(function(r) { %>
+                <option value="<%= r %>"><%= r %></option>
+              <% }); %>
+            </select>
+            <label class="filter-checkbox"><input type="checkbox" name="clientVisible" checked> Visible to client</label>
+            <button type="submit" class="btn btn-sm btn-primary">Add</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (canAssign) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Project Manager</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/cases/<%= caseDoc._id %>/manager" method="POST" class="form-inline">
+          <select name="projectManagerId" class="form-control" required>
+            <% teamMembers.forEach(function(m) { %>
+              <option value="<%= m._id %>" <%= projectManager && String(projectManager._id) === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
+            <% }); %>
+          </select>
+          <button type="submit" class="btn btn-sm btn-primary">Change Manager</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (tasks.length) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Related Tasks (from originating lead)</h3></div>
+      <div class="admin-card-body">
+        <ul class="plain-list">
+          <% tasks.forEach(function(t) { %>
+            <li><%= t.title %> — <span class="badge"><%= t.status %></span> <% if (t.assignee) { %>(<%= t.assignee.name %>)<% } %></li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Documents</h3></div>
+      <div class="admin-card-body"><p class="text-muted"><i class="fas fa-tools"></i> Document management is not implemented yet — planned for a later cycle.</p></div>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Client Queries</h3></div>
+      <div class="admin-card-body"><p class="text-muted"><i class="fas fa-tools"></i> Consultation/query tracking is not implemented yet — planned for a later cycle.</p></div>
+    </div>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Channels</h3></div>
+      <div class="admin-card-body"><p class="text-muted"><i class="fas fa-tools"></i> Team/client channels are not implemented yet — planned for a later cycle.</p></div>
+    </div>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Recent Activity</h3></div>
+      <div class="admin-card-body">
+        <ul class="activity-feed">
+          <% activity.forEach(function(a) { %>
+            <li><span class="activity-time"><%= fmtDateTime(a.createdAt) %></span><p><%= a.message %></p></li>
+          <% }); %>
+          <% if (!activity.length) { %><p class="text-muted">No activity yet.</p><% } %>
+        </ul>
+      </div>
+    </div>
+
+    <% if (canArchive && !caseDoc.archivedAt) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Archive</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/cases/<%= caseDoc._id %>/archive" method="POST" onsubmit="return confirm('Archive this case? It will be removed from active queues but not deleted.');">
+          <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-box-archive"></i> Archive Case</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>

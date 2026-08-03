@@ -1,0 +1,106 @@
+<%
+const STAGE_LABEL = {};
+caseStages.forEach(function(s) { STAGE_LABEL[s.value] = s.label; });
+function qs(extra) {
+  var parts = [];
+  if (stageFilter !== 'all') parts.push('stage=' + stageFilter);
+  if (projectManagerFilter !== 'all') parts.push('projectManager=' + projectManagerFilter);
+  if (archivedOnly) parts.push('archived=1');
+  return parts.join('&');
+}
+%>
+<div class="page-header">
+  <div>
+    <h1>Cases</h1>
+    <p class="page-subtitle"><%= total %> <%= archivedOnly ? 'archived' : 'active' %> case<%= total === 1 ? '' : 's' %></p>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/admin/cases" class="filter-form">
+    <select name="stage" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= stageFilter === 'all' ? 'selected' : '' %>>All Stages</option>
+      <% caseStages.forEach(function(s) { %>
+        <option value="<%= s.value %>" <%= stageFilter === s.value ? 'selected' : '' %>><%= s.label %></option>
+      <% }); %>
+    </select>
+    <select name="projectManager" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= projectManagerFilter === 'all' ? 'selected' : '' %>>All Project Managers</option>
+      <% teamMembers.forEach(function(m) { %>
+        <option value="<%= m._id %>" <%= projectManagerFilter === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
+      <% }); %>
+    </select>
+    <label class="filter-checkbox">
+      <input type="checkbox" name="archived" value="1" <%= archivedOnly ? 'checked' : '' %> onchange="this.form.submit()"> Archived only
+    </label>
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
+  </form>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <% if (!cases.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-briefcase"></i>
+        <h3>No cases found</h3>
+        <p>Convert a lead from the Leads page to create the first case.</p>
+      </div>
+    <% } else { %>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Case #</th>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Primary Client</th>
+              <th>Project Manager</th>
+              <th>Stage</th>
+              <th>Opened</th>
+              <th>Target Filing</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% cases.forEach(function(c) { %>
+              <tr class="clickable-row" data-href="/admin/cases/<%= c._id %>">
+                <td><span class="cell-title"><%= c.caseNumber %></span></td>
+                <td><%= c.title %></td>
+                <td><%= c.caseType %></td>
+                <td><%= c.primaryClient ? (c.primaryClient.firstName || c.primaryClient.email) : '—' %></td>
+                <td><%= c.projectManager ? c.projectManager.name : '—' %></td>
+                <td><span class="badge"><%= STAGE_LABEL[c.currentStage] || c.currentStage %></span></td>
+                <td><%= new Date(c.openedAt || c.createdAt).toLocaleDateString() %></td>
+                <td><%= c.targetFilingDate ? new Date(c.targetFilingDate).toLocaleDateString() : '—' %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+  <% if (totalPages > 1) { %>
+    <div class="admin-card-footer">
+      <div class="admin-pagination">
+        <span class="page-info">Page <%= page %> of <%= totalPages %> (<%= total %> total)</span>
+        <div class="page-buttons">
+          <% if (page > 1) { %><a href="?page=<%= page - 1 %><%= qs() ? '&' + qs() : '' %>" class="page-link">&laquo; Prev</a><% } %>
+          <% for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) { %>
+            <a href="?page=<%= p %><%= qs() ? '&' + qs() : '' %>" class="page-link <%= p === page ? 'active' : '' %>"><%= p %></a>
+          <% } %>
+          <% if (page < totalPages) { %><a href="?page=<%= page + 1 %><%= qs() ? '&' + qs() : '' %>" class="page-link">Next &raquo;</a><% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.clickable-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('a, button, form')) return;
+      window.location.href = this.dataset.href;
+    });
+  });
+});
+</script>
