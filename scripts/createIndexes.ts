@@ -1,0 +1,93 @@
+/**
+ * Creates the indexes declared in this app's Mongoose schemas. Mirrors
+ * server/scripts/createIndexes.js exactly (dry-run flag, production-URI
+ * guard, createIndexes()-only — never syncIndexes(), which can drop
+ * indexes not present in the current schema).
+ *
+ *   npx tsx scripts/createIndexes.ts --dry-run   # lists what would be created, writes nothing
+ *   npx tsx scripts/createIndexes.ts             # creates them
+ *
+ * Deliberately NOT run automatically on app startup — see src/lib/db.ts's
+ * autoIndex guard for why. Before running in production: back up first, run
+ * during low traffic, review the dry-run output, then verify afterward with
+ * mongosh (db.<collection>.getIndexes()).
+ */
+import "dotenv/config";
+import mongoose from "mongoose";
+
+import { Consultation } from "../src/lib/models/Consultation";
+import { ClientUser } from "../src/lib/models/ClientUser";
+import { PortalInvitation } from "../src/lib/models/PortalInvitation";
+import { PasswordResetToken } from "../src/lib/models/PasswordResetToken";
+import { ClientSession } from "../src/lib/models/ClientSession";
+
+const MODELS = [Consultation, ClientUser, PortalInvitation, PasswordResetToken, ClientSession];
+
+const isDryRun = process.argv.includes("--dry-run");
+
+function redact(uri: string): string {
+  return uri.replace(/\/\/[^@/]+@/, "//<redacted>@");
+}
+
+async function run() {
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri || uri.includes("<") || uri.includes(">")) {
+    console.error(
+      "[db:indexes] MONGODB_URI is not set (or still has placeholder values). Refusing to run — " +
+        "this script must be pointed at a real database explicitly, never a guess.",
+    );
+    process.exit(1);
+  }
+
+  console.log(`[db:indexes] Target: ${redact(uri)}`);
+  console.log(`[db:indexes] Mode: ${isDryRun ? "DRY RUN (no writes)" : "CREATE"}`);
+
+  for (const model of MODELS) {
+    const specs = model.schema.indexes();
+    console.log(
+      `\n[db:indexes] ${model.modelName} (collection: ${model.collection.collectionName}) — ${specs.length} declared index(es):`,
+    );
+    for (const [fields, options] of specs) {
+      const flags = [
+        options?.unique ? "unique" : null,
+        options?.expireAfterSeconds !== undefined
+          ? `TTL ${options.expireAfterSeconds}s`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      console.log(`  - ${JSON.stringify(fields)}${flags ? ` (${flags})` : ""}`);
+    }
+  }
+
+  if (isDryRun) {
+    console.log("\n[db:indexes] Dry run only — no connection made, nothing created.");
+    return;
+  }
+
+  await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
+  console.log(
+    "\n[db:indexes] Connected. Creating indexes (createIndexes — additive only, never drops existing indexes)...",
+  );
+
+  for (const model of MODELS) {
+    const before = await model.collection.indexes().catch(() => []);
+    await model.createIndexes();
+    const after = await model.collection.indexes();
+    console.log(
+      `[db:indexes] ${model.modelName}: ${before.length} index(es) before -> ${after.length} after.`,
+    );
+  }
+
+  console.log(
+    "[db:indexes] Done. Verify with `mongosh` (db.<collection>.getIndexes()) and monitor query/application logs.",
+  );
+  await mongoose.connection.close();
+  process.exit(0);
+}
+
+run().catch((err) => {
+  console.error("[db:indexes] Failed:", err.message);
+  process.exit(1);
+});
