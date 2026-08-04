@@ -38,6 +38,24 @@ export function jsonRequest(
   });
 }
 
+/** Same shape as jsonRequest, for a multipart file upload (Cycle 5 document routes). */
+export function formDataRequest(
+  path: string,
+  formData: FormData,
+  init: { cookie?: string; origin?: string | null; ip?: string } = {},
+): Request {
+  const headers = new Headers();
+  if (init.origin !== null) headers.set("origin", init.origin ?? TEST_ORIGIN);
+  if (init.cookie) headers.set("cookie", init.cookie);
+  headers.set("x-forwarded-for", init.ip ?? nextTestIp());
+
+  return new Request(`${TEST_ORIGIN}${path}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+}
+
 /** Extracts `<name>=<value>` from a response's Set-Cookie header, ignoring attributes. */
 export function extractCookie(res: Response, name: string): string | null {
   const setCookie = res.headers.get("set-cookie");
