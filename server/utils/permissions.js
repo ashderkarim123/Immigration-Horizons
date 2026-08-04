@@ -158,6 +158,21 @@ const CAPABILITIES = {
   'cases.assign': ['super_admin', 'admin'], // reassigning the project manager is admin-tier, not self-service for a PM
   'cases.archive': ['super_admin', 'admin'],
   'workspace.members.manage': ['super_admin', 'admin', 'pm'],
+
+  // Consultation/query tracking (Cycle 3). Same conservative-matrix
+  // approach as cases.* above — see
+  // 04_CONSULTATION_AND_QUERY_TRACKING.md §16 and services/interactionPolicy.js.
+  // Specialists/reviewer/editor/viewer excluded: no product rule yet
+  // justifies granting them query access.
+  'queries.view': ['super_admin', 'admin', 'pm'],
+  'queries.view_all': ['super_admin', 'admin'],
+  'queries.create': ['super_admin', 'admin', 'pm'],
+  'queries.triage': ['super_admin', 'admin', 'pm'],
+  'queries.assign': ['super_admin', 'admin', 'pm'],
+  'queries.schedule': ['super_admin', 'admin', 'pm'],
+  'queries.answer': ['super_admin', 'admin', 'pm'],
+  'queries.manage': ['super_admin', 'admin', 'pm'],
+  'queries.close': ['super_admin', 'admin', 'pm'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */
