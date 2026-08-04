@@ -133,7 +133,7 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
 
     <div class="admin-card">
       <div class="admin-card-header"><h3>Documents</h3></div>
-      <div class="admin-card-body"><p class="text-muted"><i class="fas fa-tools"></i> Document management is not implemented yet — planned for a later cycle.</p></div>
+      <div class="admin-card-body"><a href="/admin/cases/<%= caseDoc._id %>/documents" class="btn btn-sm btn-primary">Open document center</a></div>
     </div>
     <div class="admin-card">
       <div class="admin-card-header"><h3>Client Queries</h3></div>

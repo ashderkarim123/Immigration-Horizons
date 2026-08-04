@@ -1,0 +1,116 @@
+<%
+function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
+%>
+<a href="/admin/cases/<%= document.case %>/documents" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to Documents</a>
+
+<div class="page-header">
+  <div>
+    <h1><%= document.displayName %></h1>
+    <p class="page-subtitle">
+      <span class="badge"><%= document.status %></span>
+      · <%= document.visibility === 'client_visible' ? 'Client-visible' : 'Employees only' %>
+      · scan: <%= document.scanStatus %>
+    </p>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-primary">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Details</h3></div>
+      <div class="admin-card-body">
+        <div class="detail-grid">
+          <div class="detail-field"><label>Original name</label><span><%= document.originalName %></span></div>
+          <div class="detail-field"><label>Type</label><span><%= document.detectedMimeType %></span></div>
+          <div class="detail-field"><label>Size</label><span><%= Math.round(document.size / 1024) %> KB</span></div>
+          <div class="detail-field"><label>Uploaded by</label><span><%= document.uploadedByType %></span></div>
+          <div class="detail-field"><label>Uploaded</label><span><%= fmtDateTime(document.createdAt) %></span></div>
+          <div class="detail-field"><label>Version</label><span><%= document.versionCount %></span></div>
+        </div>
+        <p style="margin-top:12px"><a href="/admin/documents/<%= document._id %>/download" class="btn btn-sm btn-primary">Download current version</a></p>
+      </div>
+    </div>
+
+    <% if (document.clientVisibleReviewComment || document.internalReviewComment) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Review Notes</h3></div>
+      <div class="admin-card-body">
+        <% if (document.clientVisibleReviewComment) { %><p><strong>Client-visible:</strong> <%= document.clientVisibleReviewComment %></p><% } %>
+        <% if (document.internalReviewComment) { %><p style="color:#946200"><strong>Internal (never shown to client):</strong> <%= document.internalReviewComment %></p><% } %>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (canReview) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Review</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/documents/<%= document._id %>/review" method="POST" class="form-grid">
+          <div class="form-group">
+            <label>Decision</label>
+            <select name="decision" class="form-control" required>
+              <option value="accepted">Accept</option>
+              <option value="needs_replacement">Needs Replacement</option>
+              <option value="rejected">Reject</option>
+            </select>
+          </div>
+          <div class="form-group full-width"><label>Client-visible comment (required for needs-replacement/rejected)</label><textarea name="clientVisibleReviewComment" class="form-control" rows="2"></textarea></div>
+          <div class="form-group full-width"><label>Internal comment (never shown to client)</label><textarea name="internalReviewComment" class="form-control" rows="2"></textarea></div>
+          <div class="form-group full-width"><button type="submit" class="btn btn-sm btn-primary">Submit Review</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Move Category</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/documents/<%= document._id %>/category" method="POST" class="form-inline">
+          <select name="categoryId" class="form-control" required>
+            <% categories.forEach(function(c) { %><option value="<%= c._id %>" <%= String(c._id) === String(document.category) ? 'selected' : '' %>><%= c.name %></option><% }); %>
+          </select>
+          <button type="submit" class="btn btn-sm btn-ghost">Move</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (canUpload) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Upload Replacement</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/documents/<%= document._id %>/version" method="POST" enctype="multipart/form-data" class="form-inline">
+          <input type="file" name="file" required>
+          <input type="text" name="changeNote" class="form-control" placeholder="What changed? (optional)">
+          <button type="submit" class="btn btn-sm btn-primary">Replace</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (canArchive && document.status !== 'archived') { %>
+    <form action="/admin/documents/<%= document._id %>/archive" method="POST" onsubmit="return confirm('Archive this document?');">
+      <button type="submit" class="btn btn-sm btn-danger">Archive</button>
+    </form>
+    <% } %>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Version History</h3></div>
+      <div class="admin-card-body">
+        <% if (versions.length) { %>
+        <ul class="activity-feed">
+          <% versions.forEach(function(v) { %>
+          <li>
+            <span class="activity-time">v<%= v.versionNumber %> — <%= fmtDateTime(v.createdAt) %></span>
+            <p><a href="/admin/documents/<%= document._id %>/versions/<%= v._id %>/download">Download</a><% if (v.changeNote) { %> — <%= v.changeNote %><% } %></p>
+          </li>
+          <% }); %>
+        </ul>
+        <% } else { %>
+        <p class="text-muted">Version history not visible with your current access.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
