@@ -1,0 +1,138 @@
+<%
+function qs() {
+  var parts = [];
+  if (statusFilter !== 'all') parts.push('status=' + statusFilter);
+  if (typeFilter !== 'all') parts.push('type=' + typeFilter);
+  if (priorityFilter !== 'all') parts.push('priority=' + priorityFilter);
+  if (scopeFilter !== 'all') parts.push('scope=' + scopeFilter);
+  if (assigneeFilter !== 'all') parts.push('assignee=' + assigneeFilter);
+  if (queueFilter) parts.push('queue=' + queueFilter);
+  if (search) parts.push('search=' + encodeURIComponent(search));
+  return parts.join('&');
+}
+const queueLinks = [
+  { key: 'unanswered', label: 'Unanswered' },
+  { key: 'unassigned', label: 'Unassigned' },
+  { key: 'awaitingScheduling', label: 'Awaiting Scheduling' },
+  { key: 'scheduledToday', label: 'Scheduled Today' },
+  { key: 'overdueResponse', label: 'Overdue Response' },
+  { key: 'awaitingClient', label: 'Awaiting Client' },
+  { key: 'noShowFollowUp', label: 'No-Show Follow-up' },
+  { key: 'recentlyAnswered', label: 'Recently Answered' },
+];
+%>
+<div class="page-header">
+  <div>
+    <h1>Queries</h1>
+    <p class="page-subtitle"><%= total %> matching request<%= total === 1 ? '' : 's' %></p>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <% queueLinks.forEach(function(q) { %>
+    <a href="/admin/queries?queue=<%= q.key %>" class="stat-card" style="text-decoration:none">
+      <div class="stat-card-value"><%= counts[q.key] %></div>
+      <div class="stat-card-label"><%= q.label %></div>
+    </a>
+  <% }); %>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/admin/queries" class="filter-form">
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All Statuses</option>
+      <% interactionStatuses.forEach(function(s) { %>
+        <option value="<%= s %>" <%= statusFilter === s ? 'selected' : '' %>><%= interactionStatusLabels[s] %></option>
+      <% }); %>
+    </select>
+    <select name="type" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= typeFilter === 'all' ? 'selected' : '' %>>All Types</option>
+      <% interactionTypes.forEach(function(t) { %>
+        <option value="<%= t %>" <%= typeFilter === t ? 'selected' : '' %>><%= interactionTypeLabels[t] %></option>
+      <% }); %>
+    </select>
+    <select name="priority" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= priorityFilter === 'all' ? 'selected' : '' %>>All Priorities</option>
+      <% interactionPriorities.forEach(function(p) { %>
+        <option value="<%= p %>" <%= priorityFilter === p ? 'selected' : '' %>><%= p %></option>
+      <% }); %>
+    </select>
+    <select name="scope" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= scopeFilter === 'all' ? 'selected' : '' %>>All Scopes</option>
+      <option value="consultation" <%= scopeFilter === 'consultation' ? 'selected' : '' %>>Consultation</option>
+      <option value="case" <%= scopeFilter === 'case' ? 'selected' : '' %>>Case</option>
+    </select>
+    <input type="text" name="search" class="search-input" placeholder="Search subject or #..." value="<%= search %>">
+    <noscript><button type="submit" class="btn btn-sm btn-primary">Filter</button></noscript>
+  </form>
+  <% if (queueFilter) { %>
+    <a href="/admin/queries" class="btn btn-ghost btn-sm"><i class="fas fa-times"></i> Clear queue filter</a>
+  <% } %>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <% if (!interactions.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-comment-dots"></i>
+        <h3>No queries found</h3>
+      </div>
+    <% } else { %>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Query #</th>
+              <th>Subject</th>
+              <th>Client</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Assignee</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% interactions.forEach(function(i) { %>
+              <tr class="clickable-row" data-href="/admin/queries/<%= i._id %>">
+                <td><span class="cell-title"><%= i.interactionNumber %></span></td>
+                <td><%= i.subject %></td>
+                <td><%= i.clientUser ? (i.clientUser.firstName || i.clientUser.email) : '—' %></td>
+                <td><%= interactionTypeLabels[i.type] || i.type %></td>
+                <td><span class="badge"><%= interactionStatusLabels[i.status] || i.status %></span></td>
+                <td><span class="badge badge-priority-<%= i.priority %>"><%= i.priority %></span></td>
+                <td><%= i.assignedTo ? i.assignedTo.name : '—' %></td>
+                <td><%= new Date(i.createdAt).toLocaleDateString() %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+  <% if (totalPages > 1) { %>
+    <div class="admin-card-footer">
+      <div class="admin-pagination">
+        <span class="page-info">Page <%= page %> of <%= totalPages %> (<%= total %> total)</span>
+        <div class="page-buttons">
+          <% if (page > 1) { %><a href="?page=<%= page - 1 %><%= qs() ? '&' + qs() : '' %>" class="page-link">&laquo; Prev</a><% } %>
+          <% for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) { %>
+            <a href="?page=<%= p %><%= qs() ? '&' + qs() : '' %>" class="page-link <%= p === page ? 'active' : '' %>"><%= p %></a>
+          <% } %>
+          <% if (page < totalPages) { %><a href="?page=<%= page + 1 %><%= qs() ? '&' + qs() : '' %>" class="page-link">Next &raquo;</a><% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.clickable-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('a, button, form')) return;
+      window.location.href = this.dataset.href;
+    });
+  });
+});
+</script>

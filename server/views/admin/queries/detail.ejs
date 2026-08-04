@@ -1,0 +1,160 @@
+<%
+function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
+%>
+<a href="/admin/queries" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to Queries</a>
+
+<div class="page-header">
+  <div>
+    <h1><%= interaction.interactionNumber %> — <%= interaction.subject %></h1>
+    <p class="page-subtitle">
+      <%= interactionTypeLabels[interaction.type] || interaction.type %>
+      · <span class="badge"><%= interactionStatusLabels[interaction.status] || interaction.status %></span>
+      · <span class="badge badge-priority-<%= interaction.priority %>"><%= interaction.priority %></span>
+      · <%= interaction.scopeType %> scope
+    </p>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-primary">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Details</h3></div>
+      <div class="admin-card-body">
+        <div class="detail-grid">
+          <div class="detail-field"><label>Client</label><span><%= clientUser ? (clientUser.firstName ? clientUser.firstName + ' ' + clientUser.lastName : clientUser.email) : '—' %></span></div>
+          <div class="detail-field"><label>Consultation</label><span><% if (consultation) { %><a href="/admin/leads/<%= consultation._id %>">View lead</a><% } else { %>—<% } %></span></div>
+          <div class="detail-field"><label>Case</label><span><% if (caseDoc) { %><a href="/admin/cases/<%= caseDoc._id %>"><%= caseDoc.caseNumber %></a><% } else { %>—<% } %></span></div>
+          <div class="detail-field"><label>Assignee</label><span><%= assignedTo ? assignedTo.name : 'Unassigned' %></span></div>
+          <div class="detail-field"><label>Scheduled</label><span><% if (interaction.scheduledFor) { %><%= fmtDateTime(interaction.scheduledFor) %> (<%= interaction.timezone %>)<% } else { %>—<% } %></span></div>
+          <div class="detail-field"><label>Submitted</label><span><%= fmtDateTime(interaction.createdAt) %></span></div>
+        </div>
+        <p style="margin-top:12px;white-space:pre-wrap"><%= interaction.description %></p>
+      </div>
+    </div>
+
+    <% if (interaction.status === 'answered' || interaction.clientVisibleResponse) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Answer</h3></div>
+      <div class="admin-card-body">
+        <p><strong>Client-visible response:</strong></p>
+        <p style="white-space:pre-wrap"><%= interaction.clientVisibleResponse || '—' %></p>
+        <% if (interaction.internalResponse) { %>
+          <p style="margin-top:10px"><strong>Internal response (never shown to client):</strong></p>
+          <p style="white-space:pre-wrap;color:#946200"><%= interaction.internalResponse %></p>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Actions</h3></div>
+      <div class="admin-card-body" style="display:flex;flex-direction:column;gap:16px">
+        <% if (canTriage && interaction.status === 'submitted') { %>
+          <form action="/admin/queries/<%= interaction._id %>/acknowledge" method="POST">
+            <button type="submit" class="btn btn-sm btn-primary">Acknowledge</button>
+          </form>
+        <% } %>
+
+        <% if (canAssign) { %>
+          <form action="/admin/queries/<%= interaction._id %>/assign" method="POST" class="form-inline">
+            <select name="assignedTo" class="form-control" required>
+              <option value="">Assign to…</option>
+              <% teamMembers.forEach(function(m) { %>
+                <option value="<%= m._id %>" <%= assignedTo && String(assignedTo._id) === String(m._id) ? 'selected' : '' %>><%= m.name %></option>
+              <% }); %>
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">Assign</button>
+          </form>
+        <% } %>
+
+        <% if (canSchedule) { %>
+          <form action="/admin/queries/<%= interaction._id %>/schedule" method="POST" class="form-inline">
+            <input type="datetime-local" name="scheduledFor" class="form-control" required>
+            <input type="text" name="timezone" class="form-control" placeholder="Asia/Karachi" value="<%= interaction.timezone || '' %>" required>
+            <button type="submit" class="btn btn-sm btn-primary"><%= interaction.scheduledFor ? 'Reschedule' : 'Schedule' %></button>
+          </form>
+        <% } %>
+
+        <% if (canTriage && interaction.status !== 'in_progress') { %>
+          <form action="/admin/queries/<%= interaction._id %>/status" method="POST">
+            <input type="hidden" name="status" value="in_progress">
+            <button type="submit" class="btn btn-sm btn-ghost">Start Work</button>
+          </form>
+        <% } %>
+
+        <% if (canAnswer) { %>
+          <form action="/admin/queries/<%= interaction._id %>/answer" method="POST" class="form-grid">
+            <div class="form-group full-width">
+              <label>Client-visible answer</label>
+              <textarea name="clientVisibleResponse" class="form-control" rows="3" required></textarea>
+            </div>
+            <div class="form-group full-width">
+              <label>Internal response (optional, never shown to client)</label>
+              <textarea name="internalResponse" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-group full-width">
+              <button type="submit" class="btn btn-sm btn-primary">Submit Answer</button>
+            </div>
+          </form>
+
+          <form action="/admin/queries/<%= interaction._id %>/request-clarification" method="POST" class="form-inline">
+            <input type="text" name="clientVisibleQuestion" class="form-control" placeholder="What do you need from the client?" required style="flex:1">
+            <button type="submit" class="btn btn-sm btn-ghost">Request Clarification</button>
+          </form>
+        <% } %>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <% if (canTriage) { %>
+            <form action="/admin/queries/<%= interaction._id %>/no-show" method="POST">
+              <button type="submit" class="btn btn-sm btn-ghost">Mark No-Show</button>
+            </form>
+            <form action="/admin/queries/<%= interaction._id %>/cancel" method="POST" onsubmit="return confirm('Cancel this query?');">
+              <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+            </form>
+          <% } %>
+          <% if (canClose) { %>
+            <form action="/admin/queries/<%= interaction._id %>/close" method="POST">
+              <button type="submit" class="btn btn-sm btn-ghost">Close</button>
+            </form>
+          <% } %>
+        </div>
+
+        <form action="/admin/queries/<%= interaction._id %>/notes" method="POST" class="form-inline">
+          <input type="text" name="note" class="form-control" placeholder="Add an internal note…" style="flex:1">
+          <button type="submit" class="btn btn-sm btn-ghost">Add Note</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Updates</h3></div>
+      <div class="admin-card-body">
+        <ul class="activity-feed">
+          <% updates.forEach(function(u) { %>
+            <li>
+              <span class="activity-time"><%= fmtDateTime(u.createdAt) %> — <%= u.authorName %> (<%= u.visibility === 'internal' ? 'internal' : 'client-visible' %>)</span>
+              <p><%= u.body %></p>
+            </li>
+          <% }); %>
+          <% if (!updates.length) { %><p class="text-muted">No updates yet.</p><% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>History</h3></div>
+      <div class="admin-card-body">
+        <ul class="activity-feed">
+          <% history.forEach(function(h) { %>
+            <li>
+              <span class="activity-time"><%= fmtDateTime(h.createdAt) %> — <%= h.actorName %></span>
+              <p><%= h.eventType.replace(/_/g, ' ') %><% if (h.newStatus) { %>: <%= h.newStatus %><% } %></p>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

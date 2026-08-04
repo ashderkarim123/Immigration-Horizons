@@ -36,6 +36,7 @@ const { ASSIGNMENT_SLOTS } = attachLeadOps;
 const attachCases = require('./cases');
 const casePolicy = require('../../services/casePolicy');
 const ClientCase = require('../../models/ClientCase');
+const attachQueries = require('./queries');
 
 // ========================================================================
 // AUTHENTICATION
@@ -1462,5 +1463,10 @@ attachLeadOps(router);
 // CASES / WORKSPACES / MEMBERSHIP (Cycle 2)
 // ========================================================================
 attachCases(router);
+
+// ========================================================================
+// CONSULTATION/QUERY TRACKING (Cycle 3)
+// ========================================================================
+attachQueries(router);
 
 module.exports = router;
