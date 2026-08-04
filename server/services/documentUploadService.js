@@ -14,6 +14,7 @@ const { LocalPrivateStorageProvider } = require('./storage/localPrivateStoragePr
 const scanner = require('./storage/scanner');
 const { validateFileSignature, sanitizeDisplayName, maxFileSizeBytes } = require('./documentValidation');
 const { notify } = require('../utils/notify');
+const { emitDocumentUploadedMessage } = require('./systemMessageService');
 
 /**
  * Best-effort — an audit/notification failure must never turn an
@@ -27,6 +28,14 @@ async function auditAndNotifyUpload({ document, caseId, workspaceId, actorName, 
       workspaceId,
       type: isReplacement ? 'document_replacement_uploaded' : 'document_uploaded',
       message: `"${document.displayName}" ${isReplacement ? 'replaced' : 'uploaded'} by ${actorName}.`,
+    });
+
+    await emitDocumentUploadedMessage({
+      workspaceId,
+      documentId: document._id,
+      versionNumber: document.versionCount,
+      displayName: document.displayName,
+      clientVisible: document.visibility === 'client_visible',
     });
 
     if (document.uploadedByType !== 'client') return; // only client uploads need to reach an employee's inbox

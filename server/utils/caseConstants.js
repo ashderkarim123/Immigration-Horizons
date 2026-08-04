@@ -77,6 +77,28 @@ const CASE_STAGES = [
 ];
 const CASE_STAGE_VALUES = CASE_STAGES.map((s) => s.value);
 
+// Client-facing stage labels — deliberately friendlier/vaguer than the
+// internal operational labels above for a few stages. Mirrors
+// src/lib/content/case-constants.ts's CLIENT_STAGE_LABELS exactly. Needed
+// server-side (not just in the portal) as of Cycle 6, since this app
+// composes client-visible system-message text (systemMessageService.js)
+// before that text ever reaches the client's read path.
+const CLIENT_STAGE_LABELS = {
+  intake: 'Getting started',
+  strategy: 'Building your strategy',
+  document_collection: 'Collecting documents',
+  drafting: 'Preparing your case',
+  review: 'Preparing your case',
+  client_review: 'Awaiting your review',
+  ready_to_file: 'Ready to file',
+  filed: 'Filed with USCIS',
+  uscis_pending: 'Pending with USCIS',
+  approved: 'Approved',
+  denied: 'Denied',
+  closed: 'Closed',
+  archived: 'Archived',
+};
+
 // No restrictive transition graph exists in product/repository documentation
 // today (see 03_CLIENT_CASES_AND_WORKSPACES.md: "Do not invent a
 // restrictive transition graph unless ... already defines one"). This cycle
@@ -131,6 +153,7 @@ module.exports = {
   mapServiceToCaseType,
   CASE_STAGES,
   CASE_STAGE_VALUES,
+  CLIENT_STAGE_LABELS,
   WORKSPACE_STATUSES,
   WORKSPACE_TYPES,
   MEMBER_TYPES,

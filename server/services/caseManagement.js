@@ -7,8 +7,12 @@ const WorkspaceMember = require('../models/WorkspaceMember');
 const AdminUser = require('../models/admin/User');
 const ClientUser = require('../models/ClientUser');
 const { notify } = require('../utils/notify');
-const { CASE_STAGE_VALUES } = require('../utils/caseConstants');
+const { CASE_STAGE_VALUES, CLIENT_STAGE_LABELS } = require('../utils/caseConstants');
 const { addOrReactivateMember, removeMember } = require('./workspaceMembership');
+const {
+  emitMemberAddedMessage,
+  emitCaseStageChangedMessage,
+} = require('./systemMessageService');
 
 /** Loads a case + its primary workspace together, or null if either is missing. */
 async function loadCaseAndWorkspace(caseId) {
@@ -40,6 +44,13 @@ async function updateStage({ caseDoc, workspace, newStage, actor }) {
     message: `Stage changed from "${previousStage}" to "${newStage}" by ${actor.name}.`,
     actor,
     meta: { previousStage, newStage },
+  });
+
+  await emitCaseStageChangedMessage({
+    workspaceId: workspace._id,
+    caseId: caseDoc._id,
+    clientStageLabel: CLIENT_STAGE_LABELS[newStage] || newStage,
+    changedAtIso: caseDoc.updatedAt ? caseDoc.updatedAt.toISOString() : new Date().toISOString(),
   });
 
   return { outcome: 'updated', case: caseDoc };
@@ -176,6 +187,10 @@ async function addEmployeeMember({ caseDoc, workspace, adminUserId, workspaceRol
     relatedCase: caseDoc._id,
   });
 
+  if (!wasRemoved) {
+    await emitMemberAddedMessage({ workspaceId: workspace._id, workspaceMemberId: member._id, memberDisplayName: adminUser.name });
+  }
+
   return { outcome: 'added', member };
 }
 
@@ -211,6 +226,14 @@ async function addClientMember({ caseDoc, workspace, clientUserId, actor }) {
     actor,
     targetMember: member._id,
   });
+
+  if (!wasRemoved) {
+    await emitMemberAddedMessage({
+      workspaceId: workspace._id,
+      workspaceMemberId: member._id,
+      memberDisplayName: clientUser.firstName || clientUser.email,
+    });
+  }
 
   return { outcome: 'added', member };
 }

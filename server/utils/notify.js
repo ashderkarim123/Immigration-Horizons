@@ -21,6 +21,8 @@ async function notify({
   relatedInteraction,
   relatedDocument,
   relatedDocumentRequest,
+  relatedChannel,
+  relatedMessage,
 }) {
   if (!recipientName) return null;
   try {
@@ -35,6 +37,8 @@ async function notify({
       relatedInteraction: relatedInteraction || null,
       relatedDocument: relatedDocument || null,
       relatedDocumentRequest: relatedDocumentRequest || null,
+      relatedChannel: relatedChannel || null,
+      relatedMessage: relatedMessage || null,
     });
   } catch (err) {
     // Notifications are a convenience layer — a failure here must never

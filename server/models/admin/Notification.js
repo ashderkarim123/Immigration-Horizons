@@ -24,6 +24,9 @@ const NOTIFICATION_TYPES = [
   'document_uploaded',
   'document_replacement_uploaded',
   'document_request_overdue',
+  // Cycle 6.
+  'message_mention',
+  'message_reply',
 ];
 
 const NotificationSchema = new mongoose.Schema(
@@ -43,6 +46,8 @@ const NotificationSchema = new mongoose.Schema(
     relatedInteraction: { type: mongoose.Schema.Types.ObjectId, ref: 'ConsultationInteraction', default: null },
     relatedDocument: { type: mongoose.Schema.Types.ObjectId, ref: 'CaseDocument', default: null },
     relatedDocumentRequest: { type: mongoose.Schema.Types.ObjectId, ref: 'DocumentRequest', default: null },
+    relatedChannel: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkspaceChannel', default: null },
+    relatedMessage: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkspaceMessage', default: null },
 
     read: { type: Boolean, default: false },
   },

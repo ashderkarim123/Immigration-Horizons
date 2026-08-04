@@ -11,6 +11,7 @@ const {
   sendReplacementRequestedEmail,
   sendDocumentRejectedEmail,
 } = require('./documentEmail');
+const { emitDocumentReviewedMessage } = require('./systemMessageService');
 
 /** Best-effort client email — never rolls back the review mutation that triggered it. */
 async function notifyClientEmail(document, sendFn, extra = {}) {
@@ -84,6 +85,16 @@ async function reviewDocument({ documentId, decision, clientVisibleReviewComment
     });
   } catch (err) {
     console.error('[documents] audit failed after a successful review:', err.message);
+  }
+
+  if (decision === 'accepted' || decision === 'needs_replacement') {
+    await emitDocumentReviewedMessage({
+      workspaceId: document.workspace,
+      documentId: document._id,
+      displayName: document.displayName,
+      decision,
+      reviewedAtIso: document.reviewedAt.toISOString(),
+    });
   }
 
   if (decision === 'accepted') {
