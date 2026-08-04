@@ -10,7 +10,10 @@
     "test:integration": "node --test test/integration/auth.integration.test.js test/integration/security-regression.integration.test.js",
     "test:authorization": "node --test test/permissions-can.test.js test/route-guards.test.js test/integration/auth.integration.test.js",
     "db:indexes": "node scripts/createIndexes.js",
-    "db:indexes:dry-run": "node scripts/createIndexes.js --dry-run"
+    "db:indexes:dry-run": "node scripts/createIndexes.js --dry-run",
+    "documents:provision-categories": "node scripts/provisionDocumentCategories.js",
+    "documents:provision-categories:apply": "node scripts/provisionDocumentCategories.js --apply",
+    "documents:reconcile-storage": "node scripts/reconcileDocumentStorage.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -21,6 +24,7 @@
     "express-ejs-layouts": "^2.5.1",
     "express-rate-limit": "^8.6.0",
     "express-session": "^1.18.1",
+    "file-type": "^22.0.1",
     "helmet": "^8.3.0",
     "i": "^0.3.7",
     "method-override": "^3.0.0",
