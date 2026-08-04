@@ -1,0 +1,39 @@
+{
+  "_comment": "Canonical cross-app contract for the Cycle 6 team-collaboration domain — see ADR-005 §3. Test-time-only fixture, loaded by server/test/collaboration-schema-contract.test.js and test/collaboration-schema-contract.test.ts. Never imported by production code in either app.",
+  "collections": {
+    "WorkspaceChannel": "workspace_channels",
+    "ChannelMember": "channel_members",
+    "WorkspaceMessage": "workspace_messages",
+    "MessageRevision": "message_revisions",
+    "ChannelReadState": "channel_read_states"
+  },
+  "channelTypeValues": ["standard", "documents", "updates", "private", "internal"],
+  "channelVisibilityValues": ["all_members", "clients_and_team", "employees_only", "restricted_members"],
+  "clientAccessibleVisibilityValues": ["all_members", "clients_and_team"],
+  "channelMemberStatusValues": ["active", "removed", "suspended"],
+  "senderTypeValues": ["client", "employee", "system"],
+  "messageTypeValues": [
+    "text",
+    "system_update",
+    "document_update",
+    "task_update",
+    "consultation_update",
+    "case_update"
+  ],
+  "clientCreatableMessageTypeValues": ["text"],
+  "mentionMemberTypeValues": ["client", "employee"],
+  "deleteActorTypeValues": ["client", "employee", "system"],
+  "messageRevisionActionValues": ["edited", "soft_deleted", "restored", "moderated"],
+  "maxMessageBodyLength": 8000,
+  "maxMentionsPerMessage": 20,
+  "maxAttachmentsPerMessage": 10,
+  "maxMessagePageSize": 50,
+  "defaultChannelTemplateKeys": [
+    "general",
+    "case_updates",
+    "documents",
+    "petition_strategy",
+    "recommendation_letters",
+    "uscis_forms"
+  ]
+}
