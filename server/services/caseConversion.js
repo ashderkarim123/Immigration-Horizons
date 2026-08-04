@@ -15,6 +15,7 @@ const { generateCaseNumber } = require('../utils/caseNumber');
 const { withOptionalTransaction } = require('../utils/transaction');
 const { addOrReactivateMember } = require('./workspaceMembership');
 const { provisionDefaultCategories } = require('./documentCategoryService');
+const { provisionDefaultChannels } = require('./channelService');
 
 const PRIORITY_VALUES = ['low', 'medium', 'high', 'urgent'];
 const MAX_CASE_NUMBER_ATTEMPTS = 5;
@@ -150,6 +151,7 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
   let workspace;
   let transactional;
   let categoriesCreatedCount;
+  let channelsCreatedCount;
 
   try {
     const { result, transactional: usedTransaction } = await withOptionalTransaction(async (session) => {
@@ -194,6 +196,15 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
       // — see documentCategoryService.js — so this is safe even if this
       // whole closure is ever retried.
       const categoryProvisioning = await provisionDefaultCategories({
+        caseId: createdCase._id,
+        workspaceId: createdWorkspace._id,
+        session,
+      });
+
+      // Cycle 6: default collaboration channels, same transaction, same
+      // idempotent-insert pattern (ADR-005 §20). Does not re-provision
+      // document categories — a separate, already-idempotent step above.
+      const channelProvisioning = await provisionDefaultChannels({
         caseId: createdCase._id,
         workspaceId: createdWorkspace._id,
         session,
@@ -251,13 +262,14 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
         { session: session || undefined },
       );
 
-      return { createdCase, createdWorkspace, categoryProvisioning };
+      return { createdCase, createdWorkspace, categoryProvisioning, channelProvisioning };
     });
 
     caseDoc = result.createdCase;
     workspace = result.createdWorkspace;
     transactional = usedTransaction;
     categoriesCreatedCount = result.categoryProvisioning.created.length;
+    channelsCreatedCount = result.channelProvisioning.created.length;
     if (!transactional) {
       // Expected on a non-replica-set deployment (e.g. some local dev
       // setups) — the unique indexes above are what kept this safe, not
@@ -300,6 +312,15 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
         workspaceId: workspace._id,
         type: 'category_provisioned',
         message: `${categoriesCreatedCount} default document ${categoriesCreatedCount === 1 ? 'category' : 'categories'} provisioned.`,
+        actor,
+      });
+    }
+    if (channelsCreatedCount > 0) {
+      await CaseActivity.record({
+        caseId: caseDoc._id,
+        workspaceId: workspace._id,
+        type: 'channel_provisioned',
+        message: `${channelsCreatedCount} default ${channelsCreatedCount === 1 ? 'channel' : 'channels'} provisioned.`,
         actor,
       });
     }

@@ -39,6 +39,19 @@ const ACTIVITY_TYPES = [
   'document_category_changed',
   'document_version_created',
   'document_archived',
+  // Cycle 6 — team collaboration (ADR-005 §30). Message create/edit/reply
+  // are intentionally NOT here — module doc §30: "avoid flooding
+  // CaseActivity with every read event," and per-message events are
+  // covered by MessageRevision (edits/deletions) and the messages
+  // themselves (creation) rather than duplicated into the case timeline.
+  'channel_provisioned',
+  'channel_created',
+  'channel_renamed',
+  'channel_visibility_changed',
+  'channel_archived',
+  'channel_reordered',
+  'channel_member_added',
+  'channel_member_removed',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(
