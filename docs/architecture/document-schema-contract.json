@@ -1,0 +1,67 @@
+{
+  "_comment": "Canonical cross-app contract for the Cycle 5 document-management domain — see ADR-004 §5. Test-time-only fixture, loaded by server/test/document-schema-contract.test.js and test/document-schema-contract.test.ts. Never imported by production code in either app. Unlike prior cycles' contracts, this one also asserts the storage-key format both apps' LocalPrivateStorageProvider must agree on (ADR-004 §3/§7) — a mismatch here is a functional cross-app bug, not just a rendering inconsistency.",
+  "collections": {
+    "DocumentCategory": "document_categories",
+    "CaseDocument": "case_documents",
+    "DocumentVersion": "document_versions",
+    "DocumentRequest": "document_requests",
+    "DocumentAccessLog": "document_access_logs"
+  },
+  "categoryVisibilityValues": ["client_visible", "employees_only"],
+  "categoryAllowedUploaderTypeValues": ["client", "employee", "both"],
+  "uploadedByTypeValues": ["client", "employee"],
+  "documentVisibilityValues": ["client_visible", "employees_only"],
+  "documentStatusValues": [
+    "uploaded",
+    "quarantined",
+    "pending_review",
+    "accepted",
+    "needs_replacement",
+    "rejected",
+    "superseded",
+    "archived"
+  ],
+  "scanStatusValues": ["clean", "infected", "error", "not_configured", "pending"],
+  "documentRequestStatusValues": [
+    "open",
+    "uploaded",
+    "under_review",
+    "fulfilled",
+    "replacement_required",
+    "cancelled"
+  ],
+  "activeRequestStatusValues": ["open", "uploaded", "under_review", "replacement_required"],
+  "allowedMimeTypes": [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "image/jpeg",
+    "image/png",
+    "image/tiff"
+  ],
+  "allowedExtensions": [".pdf", ".docx", ".xlsx", ".jpg", ".jpeg", ".png", ".tif", ".tiff"],
+  "defaultMaxFileSizeBytes": 26214400,
+  "defaultMaxFilesPerRequest": 5,
+  "storageKeyPattern": "^[a-f0-9]{48}$",
+  "defaultCategoryTemplateKeys": [
+    "identity_civil_documents",
+    "immigration_history",
+    "education_academic_records",
+    "employment_professional_experience",
+    "proposed_endeavor_case_strategy",
+    "awards_memberships_recognition",
+    "publications_citations_judging_media",
+    "reference_materials",
+    "recommendation_letters",
+    "expert_opinion_letters",
+    "business_professional_plan",
+    "uscis_forms",
+    "petition_letter",
+    "exhibits_supporting_evidence",
+    "rfe_noid_materials",
+    "filing_package",
+    "uscis_receipts_notices",
+    "final_decisions",
+    "other"
+  ]
+}
