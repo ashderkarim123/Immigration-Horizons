@@ -30,6 +30,22 @@
 > this cycle touched it. It remains deliberately uncommitted, unstaged, and
 > unreverted — treated as the user's own in-progress work, not code to fix,
 > revert, or silently absorb into a Cycle 3 commit.
+>
+> **Between Cycle 3 and Cycle 5:** an ad-hoc manual-QA session against the
+> real `.env`-configured database (user-directed portal/admin testing, not a
+> numbered cycle) found and fixed a real bug — the env-credential fallback
+> admin login could reach "answer query"/"request clarification" and
+> silently fail model validation instead of being cleanly rejected (see
+> commit `6d13cfc`). All QA-created test data was deleted and re-verified
+> clean; 190/190 server tests still passed with the fix. Recorded here for
+> continuity since it landed as a real commit between Cycle 3 and Cycle 5.
+>
+> **Cycle 5 anomaly check:** re-verified again at the start of Cycle 5 —
+> same ancestry/reflog checks, HEAD confirmed at `6d13cfc` (Cycle 3's ending
+> commit plus the one interim bugfix above), no new git anomaly. The
+> `server/public/css/admin.css` anomaly was re-captured via `git diff` at
+> the start of Cycle 5 and re-diffed at the end — still byte-identical,
+> still deliberately untouched.
 
 ---
 
@@ -38,10 +54,12 @@
 - Branch: `main`
 - Cycle 1 starting HEAD: `9de340c`. Cycle 1 ending HEAD: `12ae4a4`.
 - Cycle 2 starting HEAD: `12ae4a4`. Cycle 2 ending HEAD: `a423a47`.
-- Cycle 3 starting HEAD: `a423a47`. Cycle 3 ending HEAD: see final report / `git log`.
+- Cycle 3 starting HEAD: `a423a47`. Cycle 3 ending HEAD: `befacbc`.
+- Interim bugfix commit (between Cycle 3 and Cycle 5): `6d13cfc`.
+- Cycle 5 starting HEAD: `6d13cfc`. Cycle 5 ending HEAD: see final report / `git log`.
 - Nothing has been pushed at any point. `origin/main` is unchanged (still `7ef56da`).
 - No production data or indexes were read, written, or modified at any point.
-- Worktree at the end of Cycle 3 is **not** fully clean: `server/public/css/admin.css` remains modified (pre-existing, unrelated, deliberately left as-is — see anomaly note above). This is expected and correct, not an oversight.
+- Worktree at the end of Cycle 5 is **not** fully clean: `server/public/css/admin.css` remains modified (pre-existing, unrelated, deliberately left as-is — see anomaly note above). This is expected and correct, not an oversight.
 
 ---
 
@@ -557,3 +575,244 @@ Employee notifications (assignment, client follow-up, client needs-more-help) re
 ## Recommended next module
 
 `05_DOCUMENT_MANAGEMENT.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first, per the plan's own handoff procedure.
+
+---
+
+# Cycle 5 — Secure Document Management
+
+Module implemented: `05_DOCUMENT_MANAGEMENT.md`.
+
+## Pre-implementation verification
+
+Re-ran the full git-anomaly check (ancestry, reflog, HEAD match) and captured the pre-existing `admin.css` diff before any edits (see the note at the top of this file). Confirmed Cycles 1–3's artifacts were all present and their test suites passing before starting. Surveyed existing upload infrastructure (`server/models/admin/Media.js`, `server/middleware/upload.js`, `server/models/admin/DeliveryRecord.js`) and confirmed none of it is reusable for private case documents — `Media` is flat/unversioned/images-only and, critically, `server/app.js`'s `express.static(path.join(__dirname, 'public'))` serves its storage directory (`server/public/uploads/`) with no authentication at all, which is exactly the anti-pattern this module forbids.
+
+## Architecture decision: ADR-004
+
+`docs/architecture/ADR-004-secure-document-storage.md`. Summary:
+
+1. **Storage abstraction — mirrored, not shared, with a real filesystem contract on top of the usual schema contract:** each app gets its own `LocalPrivateStorageProvider` (`server/services/storage/localPrivateStorageProvider.js`, `src/lib/documents/local-private-storage-provider.ts`) implementing the same six-plus-method interface. Unlike every prior cycle's mirrored models, these two must also agree on a physical on-disk layout (storage-key format, `temp/active/quarantine` sharding) — asserted by `document-schema-contract.json`'s `storageKeyPattern`, not just enum/collection-name equality.
+2. **Dev storage root — `os.tmpdir()`-based, not repo-relative:** `PRIVATE_DOCUMENT_ROOT` defaults (dev only) to `path.join(os.tmpdir(), 'immigration-horizons-private-documents')` — a host-wide, `cwd`-independent path both apps compute identically despite running from different working directories. Production requires the env var explicitly and rejects a path inside either app's publicly-served directory.
+3. **Model ownership — dual writer, same shape as ADR-003:** clients upload from the portal, employees upload/review/version/archive from the admin, never the same fields. `documentUploadService.js`/`document-upload-service.ts` are independently-written mirrors of the same pipeline.
+4. **Concurrency:** `optimisticConcurrency: true` on `CaseDocumentSchema` in both apps (the real mechanism established in ADR-003 §2, not the non-functional default `__v`) — protects two concurrent reviews or replacements of the same document.
+5. **Signature detection — a real dependency, deliberately:** `file-type` v22 added to both apps (first signature-detection library in either). `server/`'s CommonJS code consumes it via dynamic `import()` (standard Node interop for a pure-ESM package); Next.js imports it natively.
+6. **Scanner — stubbed, explicitly not "clean":** `not_configured` is the honest status this cycle ships with; it does not block a document from proceeding to `uploaded`/`pending_review` (the allowlist/signature check is this cycle's actual defense layer) but is never reported as `clean`.
+7. **Audit — `CaseActivity` extended for lifecycle events, a new `DocumentAccessLog` for downloads:** downloads are high-volume/mechanical and would flood `CaseActivity`'s case-timeline query pattern — same reasoning `CaseActivity.js`'s own file comment already gives for why it was split out of the lead-scoped `ActivityLog`.
+8. **Category provisioning — transactional for new cases, idempotent backfill for existing ones:** hooked into `caseConversion.js` immediately after `CaseWorkspace` creation, inside the same transaction; existing cases get an idempotent admin action plus a dry-run-by-default script.
+
+## Product/policy decisions made without stopping for confirmation
+
+- **Rejection reason must be client-visible**, same requirement as `needs_replacement` — module doc explicitly left this open ("decide and document"); chose transparency over the alternative (an internal-only rejection reason a client never sees).
+- **Duplicate detection is `case + checksum + category`**, not case-wide — uploading the same bytes into a *different* category or against a different request is deliberate reuse, not an accidental double-submit, and is allowed to create a new record.
+- **No `under_review` intermediate request status this cycle** — a request goes `open → uploaded → fulfilled/replacement_required`, skipping the module's optional `under_review` state; an employee starting to review is not a separately tracked event this cycle. Documented as a scope reduction.
+- **Employee-initiated uploads never notify an employee** (`auditAndNotifyUpload` only reaches an employee's inbox when `uploadedByType === 'client'`) — an employee uploading a document for a case they're already on doesn't need to be told about their own action.
+- **Client document-detail page shows only the current version**, not a full version history — the module doc doesn't require a client-facing version-history UI, and building one wasn't justified by an actual product requirement this cycle (YAGNI).
+- **A real bug found and fixed mid-cycle:** the storage-provider singleton in `document-upload-service.ts` was originally constructed eagerly at module-evaluation time (`export const provider = new LocalPrivateStorageProvider()`), which made `npm run build` fail outright — Next.js's build step statically evaluates every route module to collect page data, including with `NODE_ENV=production` implicitly set, which tripped the "must be set explicitly in production" guard before the app ever served a request. Fixed by converting to a lazy singleton (`getStorageProvider()`), constructed on first real use rather than at import time. Caught by `npm run build`, not by the test suite (tests always set `PRIVATE_DOCUMENT_ROOT` before importing) — a real gap in what the test suite alone would have caught, worth remembering for future cycles: **always run the actual build**, not just `tsc --noEmit`.
+
+## Files created (Cycle 5)
+
+**Docs:**
+- `docs/architecture/ADR-004-secure-document-storage.md`
+- `docs/architecture/document-schema-contract.json`
+
+**Server — storage:**
+- `server/services/storage/{localPrivateStorageProvider,scanner,storageErrors}.js`
+
+**Server — models:**
+- `server/models/{DocumentCategory,CaseDocument,DocumentVersion,DocumentRequest,DocumentAccessLog}.js`
+
+**Server — utils/services:**
+- `server/utils/documentConstants.js`
+- `server/services/{documentValidation,documentUploadService,documentReviewService,documentCategoryService,documentRequestService,documentDownloadService,documentPolicy,documentEmail}.js`
+
+**Server — routes/views:**
+- `server/routes/admin/documents.js`
+- `server/views/admin/documents/{index,detail}.ejs`
+
+**Server — scripts:**
+- `server/scripts/{provisionDocumentCategories,reconcileDocumentStorage}.js`
+
+**Server — tests:**
+- `server/test/{document-storage-provider,document-validation,document-models,document-policy,document-schema-contract}.test.js`
+- `server/test/integration/document-lifecycle.integration.test.js`
+
+**Root — storage:**
+- `src/lib/documents/{local-private-storage-provider,scanner,storage-errors,document-validation,document-upload-service,document-download-service}.ts`
+
+**Root — lib:**
+- `src/lib/content/document-constants.ts`
+- `src/lib/auth/document-policy.ts`
+- `src/lib/transaction.ts` (new — root's first Mongoose transaction wrapper, ported from `server/utils/transaction.js`, needed because document upload/replacement genuinely requires multi-document atomicity)
+
+**Root — API routes:**
+- `src/app/api/portal/cases/[caseId]/documents/route.ts`
+- `src/app/api/portal/document-requests/[requestId]/upload/route.ts`
+
+**Root — portal pages/components:**
+- `src/app/portal/documents/[documentId]/download/route.ts`
+- `src/app/portal/cases/[caseId]/documents/{page.tsx,[documentId]/page.tsx}`
+- `src/components/portal/document-upload-form.tsx`
+
+**Root — tests:**
+- `test/document-schema-contract.test.ts`
+- `test/document-authorization.integration.test.ts`
+- `test/document-routes.integration.test.ts`
+
+## Files modified (Cycle 5)
+
+- `server/services/caseConversion.js` — provisions default document categories inside the existing case-creation transaction, right after `CaseWorkspace` creation; logs `category_provisioned` alongside the existing `case_created`/`workspace_created` activity entries.
+- `server/models/CaseActivity.js` — `ACTIVITY_TYPES` gains nine document-lifecycle event types.
+- `server/models/admin/Notification.js` — gains `relatedDocument`/`relatedDocumentRequest` (optional) and three new types (`document_uploaded`, `document_replacement_uploaded`, `document_request_overdue`).
+- `server/utils/notify.js` — `notify()` accepts optional `relatedDocument`/`relatedDocumentRequest`.
+- `server/utils/permissions.js` — added `documents.view`, `documents.view_all`, `documents.upload`, `documents.review`, `documents.archive`, `document_categories.manage`, `document_requests.manage`, `document_versions.view`.
+- `server/routes/admin/index.js` — mounts `attachDocuments(router)`.
+- `server/views/admin/cases/detail.ejs` — the "Documents" placeholder card ("not implemented yet") now links to the real document center; the "Client Queries"/"Channels" placeholders are untouched (out of this cycle's scope).
+- `server/scripts/createIndexes.js`, `scripts/createIndexes.ts` — added the five new document models (both apps).
+- `server/package.json`, `package.json` — added `file-type` as a real dependency (both apps); server also gained three new npm scripts (`documents:provision-categories[:apply]`, `documents:reconcile-storage`).
+- `src/app/portal/cases/[caseId]/page.tsx` — the "Coming soon" card's document-related copy replaced with a real link to `/portal/cases/[caseId]/documents`; messages/scheduled-consultations copy is unchanged (still future work).
+- `test/helpers/http.ts` — added `formDataRequest()`, a multipart-upload sibling to the existing `jsonRequest()`.
+
+## Models and fields (Cycle 5)
+
+**`DocumentCategory`** (`document_categories`): `case`, `workspace`, `templateKey`, `name`, `slug`, `description`, `order`, `visibility`, `allowedUploaderTypes`, `required`, `active`, `createdBy`, timestamps.
+
+**`CaseDocument`** (`case_documents`): `case`, `workspace`, `category`, `uploadedByType`/`uploadedByClient`/`uploadedByAdmin`, `originalName`, `displayName`, `storageKey`, `mimeType`/`detectedMimeType`/`extension`/`size`/`checksum`, `status`, `visibility`, `scanStatus`/`scanProvider`/`scanCompletedAt`/`scanMessage`, `currentVersion`/`versionCount`, `reviewedBy`/`reviewedAt`/`clientVisibleReviewComment`/`internalReviewComment`, `documentRequest`, `uploadedAt`/`archivedAt`, timestamps. `optimisticConcurrency: true`.
+
+**`DocumentVersion`** (`document_versions`): `document`, `versionNumber`, `storageKey`, `originalName`/`displayName`/`mimeType`/`detectedMimeType`/`extension`/`size`/`checksum`, `uploadedByType`/`uploadedByClient`/`uploadedByAdmin`, `changeNote`, `scanStatus`, `createdAt` only (immutable, no `updatedAt`).
+
+**`DocumentRequest`** (`document_requests`): `case`, `workspace`, `category`, `title`, `instructions`, `requestedFrom` (a `WorkspaceMember`, never a bare `ClientUser`), `requestedBy`, `dueDate`, `status`, `fulfilledByDocument`/`fulfilledAt`, `clientVisibleComment`/`internalComment`, `cancelledAt`, timestamps.
+
+**`DocumentAccessLog`** (`document_access_logs`, new — not in either prior cycle): `document`, `version`, `case`, `actorType`/`actorClient`/`actorAdmin`/`actorName`, `result`, `createdAt` only.
+
+## Indexes (Cycle 5)
+
+| Model | Indexes |
+|---|---|
+| `DocumentCategory` | `case+slug` (unique); `case+order` (unique, partial on `active:true`); `case+templateKey`; `case+active+order`; `workspace+active+order` |
+| `CaseDocument` | `case+category+status+createdAt`; `workspace+status+createdAt`; `category+status+createdAt`; `case+checksum`; `documentRequest`; `uploadedByClient+createdAt`; `uploadedByAdmin+createdAt`; `status+reviewedAt`; `archivedAt` |
+| `DocumentVersion` | `document+versionNumber` (unique); `document+createdAt`; `checksum` (deliberately not unique) |
+| `DocumentRequest` | `case+status+dueDate`; `workspace+status+dueDate`; `requestedFrom+status+dueDate`; `category+status`; `fulfilledByDocument` |
+| `DocumentAccessLog` | `document+createdAt`; `case+createdAt`; `actorAdmin+createdAt`; `actorClient+createdAt` |
+
+Verified via both apps' `--dry-run` index scripts — collection names match exactly between the two independent declarations (confirmed by `document-schema-contract.test.{js,ts}` too).
+
+## Statuses, visibility, and the default category template (Cycle 5)
+
+Document statuses: `uploaded`, `quarantined`, `pending_review`, `accepted`, `needs_replacement`, `rejected`, `superseded`, `archived`. Scan statuses: `clean`, `infected`, `error`, `not_configured`, `pending`. Request statuses: `open`, `uploaded`, `under_review` (reserved, unused this cycle), `fulfilled`, `replacement_required`, `cancelled`. Visibility (category and document): `client_visible`, `employees_only`. Uploader types: `client`, `employee`, `both` (category-level "who may upload").
+
+The 19-entry default category template (`identity_civil_documents` through `other`) lives in `server/utils/documentConstants.js`/`src/lib/content/document-constants.ts`, ordered 1–19, with visibility/uploader defaults chosen per ADR-004's own guidance (internal strategy/drafting categories — `proposed_endeavor_case_strategy`, `petition_letter`, `filing_package` — are `employees_only`; everything the client would naturally supply, review, or receive is `client_visible`).
+
+## Capability matrix (Cycle 5)
+
+| Capability | Roles |
+|---|---|
+| `documents.view` | `super_admin`, `admin`, `pm` |
+| `documents.view_all` | `super_admin`, `admin` |
+| `documents.upload` | `super_admin`, `admin`, `pm` |
+| `documents.review` | `super_admin`, `admin`, `pm` |
+| `documents.archive` | `super_admin`, `admin`, `pm` |
+| `document_categories.manage` | `super_admin`, `admin`, `pm` |
+| `document_requests.manage` | `super_admin`, `admin`, `pm` |
+| `document_versions.view` | `super_admin`, `admin`, `pm` |
+
+Same conservative-matrix philosophy as `cases.*`/`queries.*` — specialists/reviewer/editor/viewer hold none of these; no product rule yet justifies it.
+
+## Row-level policy (Cycle 5)
+
+**Employee side** (`server/services/documentPolicy.js`): capability **and** active employee `WorkspaceMember` on the document's workspace, with `documents.view_all` as the membership bypass — identical shape to `casePolicy.js`/`interactionPolicy.js`, and reuses `casePolicy.js`'s `hasActiveEmployeeMembership()` directly rather than duplicating it.
+
+**Client side** (`src/lib/auth/document-policy.ts`): active client `WorkspaceMember`, re-checked on every read, **plus** the document/category must be `client_visible` **and** not `quarantined`. A different client's document, a nonexistent one, and an `employees_only` document all return the identical `null`.
+
+## Upload validation pipeline (Cycle 5)
+
+Auth → CSRF → rate-limit → resolve case/workspace/category/request → membership+capability → category active and uploader-type-allowed → file-count/size limits (hard-capped at 100MB/20 files regardless of env config) → filename sanitized for display only (never used as a storage key) → stream to `temp/<storageKey>` while computing SHA-256 → read the (already size-bounded) temp file into memory for signature detection (`file-type` needs more than a byte prefix to reliably distinguish zip-based Office formats) → cross-check extension/declared-MIME/detected-MIME → reject on any mismatch or unrecognized signature → duplicate check (`case+checksum+category`) → scan (stub, `not_configured`) → move to `active/` or `quarantine/` → create `CaseDocument`+`DocumentVersion`(+update `DocumentRequest`) in one transaction → audit + best-effort notify → clean up temp on any rejection, clean up the committed storage object on a post-storage-write DB failure.
+
+Allowed types: PDF, DOCX, XLSX, JPEG, PNG, TIFF. HTML/SVG/script-capable/renamed-executable content is rejected by signature mismatch regardless of claimed extension/MIME — verified by tests including a real `<script>`-bearing HTML file and a `MZ`-header (PE/DOS executable) file renamed `.pdf`.
+
+## Review, replacement, and versioning behavior (Cycle 5)
+
+Accept/needs-replacement/reject all go through `reviewDocument()`, idempotent for an identical repeat (no duplicate audit/email/timestamp churn). Rejection and needs-replacement both require a client-visible reason (product decision, above). Replacement (`replaceDocumentVersion()`) always creates a new `DocumentVersion` — never mutates an existing one — resets review metadata to force re-review, and is protected by `optimisticConcurrency` against two concurrent replacement attempts. Category moves re-evaluate `visibility` from the destination category, so a document can never silently retain client-visibility after being moved into an `employees_only` category (or vice versa).
+
+## Download behavior (Cycle 5)
+
+Every download (`GET /admin/documents/:id/download`, `GET /admin/documents/:id/versions/:versionId/download`, `GET /portal/documents/:id/download`) re-derives authorization from scratch — no caching, no ID-alone shortcuts. Headers: `Content-Disposition: attachment`, `Content-Type` from the *detected* (verified) MIME type, `X-Content-Type-Options: nosniff`, `Cache-Control: private, no-store`, `Content-Security-Policy: sandbox`. No inline rendering, no range requests (both deliberately out of scope per the module doc). Quarantined documents are never downloadable through the normal route, by anyone, in either app.
+
+## Audit and notification behavior (Cycle 5)
+
+`CaseActivity` gains category/document/request lifecycle events (provisioned, created, renamed, reordered, disabled, reactivated, requested, request updated/cancelled, uploaded, reviewed, replacement uploaded, category changed, version created, archived). `DocumentAccessLog` (new, separate collection) records every download attempt (success/denied/not_found) with actor identity — never file content or filesystem paths. Employee in-app notifications (`notify()`/`Notification`) fire only for client-initiated uploads, addressed to the case's project manager. Client emails (`server/services/documentEmail.js`, mirroring `interactionEmail.js`'s Resend/test-double pattern exactly) fire for request created/due-date-changed/cancelled and document accepted/needs-replacement/rejected — logs and degrades gracefully when `RESEND_API_KEY` is unset, never rolls back the mutation that triggered it.
+
+## Admin routes/pages (Cycle 5)
+
+`GET /admin/cases/:caseId/documents`, `GET /admin/documents/:id`, `POST /admin/cases/:caseId/{categories,categories/reorder,document-requests,documents,initialize-document-categories}`, `POST /admin/categories/:id/{update,disable,reactivate}`, `POST /admin/document-requests/:id/{update,cancel}`, `POST /admin/documents/:id/{review,category,version,archive}`, `GET /admin/documents/:id/download`, `GET /admin/documents/:id/versions/:versionId/download`. Document center groups documents by category with inline upload forms; document detail shows version history, review form, category-move form, and replacement upload.
+
+## Portal routes/pages (Cycle 5)
+
+`GET /portal/cases/:caseId/documents`, `GET /portal/cases/:caseId/documents/:documentId`, `GET /portal/documents/:documentId/download`, `POST /api/portal/cases/:caseId/documents` (handles both new uploads and replacements via an optional `replaceDocumentId` field — kept as one endpoint since it's the same underlying storage/versioning operation with a different target), `POST /api/portal/document-requests/:requestId/upload`. Document center shows only `client_visible` categories/documents, open requests with inline fulfillment forms and overdue indicators, never internal categories/comments/storage keys.
+
+## Testing (Cycle 5)
+
+**Results (confirmed, full suite run at the final commit):**
+- Server: **249/249 passing** (Cycle 5 added 59: 11 in `document-storage-provider.test.js`, 13 in `document-validation.test.js`, 13 in `document-models.test.js`, 6 in `document-schema-contract.test.js`, 7 in `document-policy.test.js`, 9 in `document-lifecycle.integration.test.js`; plus the existing 190 from Cycles 1–3).
+- Root: **100/100 passing** (Cycle 5 added 24: 6 in `document-schema-contract.test.ts`, 8 in `document-authorization.integration.test.ts`, 10 in `document-routes.integration.test.ts`; plus the existing 76 from Cycles 1–3).
+
+**A real bug was caught by `npm run build`, not by the test suite** (see "Product/policy decisions" above) — the eager storage-provider singleton broke Next.js's build-time page-data collection. Fixed by converting to a lazy singleton; re-verified with both a full test re-run (100/100, unchanged) and a successful `npm run build`.
+
+**Explicitly not covered** (honest gaps, in the same spirit as prior cycles' testing sections):
+- DOCX/XLSX signature detection is not tested directly — `file-type` needs a materially more complex, correctly-structured zip fixture (internal `[Content_Types].xml`) to distinguish a real Office file from a generic zip, which wasn't worth constructing by hand this cycle; PDF/JPEG/PNG detection (magic-byte-based, simpler to fixture) *are* tested, including the negative cases (mismatch, renamed executable, HTML/script content, empty buffer).
+- SVG rejection specifically isn't tested (would follow the identical "no detected signature → reject" path already proven by the HTML test).
+- Macro-enabled Office document rejection isn't tested (same zip-fixture-complexity reason as DOCX/XLSX above).
+- Too-many-files and document-specific rate-limiting aren't tested in isolation — the underlying mechanisms (existing rate limiter, `maxFilesPerRequest()`) are exercised/proven elsewhere but not with a document-route-specific test.
+- Real Resend delivery of the six new document emails is unverified beyond the existing test-double injection pattern (same posture as every prior cycle's email testing).
+- The orphan-storage reconciliation script (`reconcileDocumentStorage.js`) has no automated test — it's a manual/operational tool, verified by code review and by manually reasoning through its logic, not by an integration test against a real filesystem-vs-DB mismatch scenario.
+
+**Quality commands, all confirmed:**
+- `npx tsc --noEmit` (root) — clean.
+- `npm run lint` (root) — clean.
+- `npm run build` (root, Turbopack) — succeeds after the lazy-singleton fix; all new routes (`/api/portal/cases/[caseId]/documents`, `/api/portal/document-requests/[requestId]/upload`, `/portal/cases/[caseId]/documents`, `/portal/cases/[caseId]/documents/[documentId]`, `/portal/documents/[documentId]/download`) appear correctly classified as dynamic (ƒ). One benign Turbopack warning remains ("Encountered unexpected file in NFT list", pointing at `local-private-storage-provider.ts`'s filesystem-path construction) — cosmetic, does not fail the build, left as a known, documented, non-blocking warning rather than risking a rushed `turbopackIgnore` fix under time pressure.
+- `npm run db:indexes:dry-run` (root) and `node scripts/createIndexes.js --dry-run` (server) — both list every new index without connecting; collection names match exactly between the two scripts.
+- `cd server && npm test` — 249/249.
+
+**Manual smoke tests performed** (GET-only, no mutations, against the real running dev servers on the real `.env` target):
+- `GET /portal/cases/507f.../documents` unauthenticated → `307` redirect to login.
+- `GET /portal/documents/507f.../download` unauthenticated → `401`.
+- `GET /admin/cases/507f.../documents` unauthenticated → `302` redirect to login.
+- `GET /admin/documents/507f.../download` unauthenticated → `302` redirect to login.
+- No documents, categories, or requests were created against the real database — authenticated upload/review/download flows were verified instead via the 83 new database-backed integration tests across both apps (real routes, real temp storage roots, real Mongo, real rendered EJS output).
+
+## Environment variables (Cycle 5)
+
+**New:** `PRIVATE_DOCUMENT_ROOT` — absolute path to the private document storage root. Optional in development (defaults to a path under `os.tmpdir()`); **required** in production, and production startup rejects a value that resolves inside either app's publicly-served directory. `DOCUMENT_MAX_FILE_SIZE_BYTES`/`DOCUMENT_MAX_FILES_PER_REQUEST` — optional, fall back to sane defaults (25MB/5 files), hard-capped at 100MB/20 files regardless of what's configured.
+
+**Not introduced this cycle:** `DOCUMENT_ALLOWED_MIME_TYPES`, `DOCUMENT_STORAGE_PROVIDER`, `DOCUMENT_SCANNER_MODE` — the allowlist and scanner are code-level (not env-configurable) this cycle since there's only one provider/scanner implementation each; introducing env-driven selection now would be speculative ahead of an actual second provider/scanner existing (YAGNI).
+
+## Deployment blockers carried forward (verified still open, not silently marked resolved)
+
+1. `SITE_URL` must be set in production for CSRF `Origin` verification (Cycle 1) — **still open**.
+2. Real Resend activation/reset delivery (Cycle 1) — **still unverified**; Cycle 5 adds six more Resend usages (client document emails) on the same unverified footing.
+3. Root index rollout has not been run against production (Cycle 1/2/3/5) — **still open**; Cycle 5 adds five more collections to the same deferred rollout.
+4. Rate limiting remains process-local (Cycle 1) — **still open**.
+5. `/portal/profile`, `/portal/security` (Cycle 1) — **still deferred**.
+6. Client-facing case-created email (Cycle 2) — **still deferred**.
+7. Non-transactional-fallback partial-provisioning recovery (Cycle 2) — **still open**, unchanged; Cycle 5's category provisioning has the identical non-transactional-fallback exposure on a non-replica-set deployment (mitigated the same way — idempotent re-run, not atomicity).
+8. Cases notification-failure fault-injection test (Cycle 2) — **still not written**.
+9. Additional-client-on-a-case membership UI (Cycle 2) — **still not built**.
+10. No dedicated admin UI button for `initialize-interaction` (Cycle 3) — **still open**.
+11. "Notify triage users on submission" not implemented as a broadcast (Cycle 3) — **still deliberate, unchanged**.
+
+## New Cycle 5 open items
+
+- **Production object storage is not selected or built** (ADR-004 §21/§25) — deliberately deferred pending real deployment requirements (volume, retention, budget) from the practice owner. `PRIVATE_DOCUMENT_ROOT`/`LocalPrivateStorageProvider` works for a single-VPS deployment (the current documented topology) but breaks silently under any future multi-instance deployment — flagged explicitly, not a surprise for a future cycle.
+- **No real malware scanner integrated** — `scanStatus: 'not_configured'` ships to production as-is; the conservative extension/MIME/signature allowlist is the actual defense this cycle, documented as an accepted risk, not silently presented as "files are scanned."
+- **The orphan-storage reconciliation script is report-only** — no deletion capability exists yet (module doc's own instruction: deletion is explicitly future work, requiring human review of the report first).
+- **`PRIVATE_DOCUMENT_ROOT` is not yet part of any backup strategy** — a second thing (beyond the database) that needs backing up in production; not resolved this cycle since no production storage root exists yet.
+- **No dedicated admin UI button for `initialize-document-categories`** on the case detail page — the route exists, capability-gated, callable directly; not wired into `cases/detail.ejs`'s Documents card this cycle (same shape as the still-open Cycle 3 `initialize-interaction` gap).
+- **Real Resend delivery of the six new document emails is unverified** beyond the test-double injection point (same posture as every prior cycle).
+
+## Known limitations (Cycle 5)
+
+- Client document-detail page shows only the current version, not a full version history (product decision, above) — the data (`DocumentVersion` rows) is fully there for a future cycle to expose if ever required.
+- `under_review` is a declared, valid `DocumentRequest` status but no code path sets it this cycle (requests go straight from `open`/`uploaded` to `fulfilled`/`replacement_required`) — reserved for a future cycle that wants a distinct "an employee is actively reviewing this" signal.
+- DOCX/XLSX uploads are supported by the allowlist and validated by `file-type`'s real zip-aware detection in production code, but that specific detection path has no automated test fixture this cycle (see Testing, above) — a real risk if `file-type`'s docx/xlsx detection ever regresses silently between dependency upgrades, worth adding a proper fixture in a future cycle.
+
+## Recommended next module
+
+`06_TEAM_COLLABORATION_AND_CHAT.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first, per the plan's own handoff procedure. `CaseDocument`'s shape is already compatible with being referenced as a future chat-message attachment without modification (ADR-004 §24) — that integration decision is explicitly deferred to Cycle 6's own ADR.
