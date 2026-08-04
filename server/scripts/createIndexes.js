@@ -58,6 +58,13 @@ const MODELS = [
   require('../models/ConsultationInteraction'),
   require('../models/InteractionHistory'),
   require('../models/InteractionUpdate'),
+  // Cycle 5 — document management. Dual-writer with the Next.js app
+  // (ADR-004 §1) — both apps declare and provision these indexes.
+  require('../models/DocumentCategory'),
+  require('../models/CaseDocument'),
+  require('../models/DocumentVersion'),
+  require('../models/DocumentRequest'),
+  require('../models/DocumentAccessLog'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');

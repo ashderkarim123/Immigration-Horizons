@@ -26,6 +26,11 @@ import { WorkspaceMember } from "../src/lib/models/WorkspaceMember";
 import { ConsultationInteraction } from "../src/lib/models/ConsultationInteraction";
 import { InteractionHistory } from "../src/lib/models/InteractionHistory";
 import { InteractionUpdate } from "../src/lib/models/InteractionUpdate";
+import { DocumentCategory } from "../src/lib/models/DocumentCategory";
+import { CaseDocument } from "../src/lib/models/CaseDocument";
+import { DocumentVersion } from "../src/lib/models/DocumentVersion";
+import { DocumentRequest } from "../src/lib/models/DocumentRequest";
+import { DocumentAccessLog } from "../src/lib/models/DocumentAccessLog";
 
 // Cycle 2 case/workspace/membership models are also declared here even
 // though server/ is their primary writer (see
@@ -46,6 +51,12 @@ const MODELS = [
   ConsultationInteraction,
   InteractionHistory,
   InteractionUpdate,
+  // Cycle 5 — this app is a real writer for these (ADR-004 §1), not just a reader.
+  DocumentCategory,
+  CaseDocument,
+  DocumentVersion,
+  DocumentRequest,
+  DocumentAccessLog,
 ];
 
 const isDryRun = process.argv.includes("--dry-run");
