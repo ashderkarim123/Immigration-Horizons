@@ -22,6 +22,23 @@ const ACTIVITY_TYPES = [
   'project_manager_changed',
   'stage_changed',
   'case_archived',
+  // Cycle 5 — document management (ADR-004 §16). Downloads are
+  // deliberately NOT here — see DocumentAccessLog.js.
+  'category_provisioned',
+  'category_created',
+  'category_renamed',
+  'category_reordered',
+  'category_disabled',
+  'category_reactivated',
+  'document_requested',
+  'document_request_updated',
+  'document_request_cancelled',
+  'document_uploaded',
+  'document_reviewed',
+  'document_replacement_uploaded',
+  'document_category_changed',
+  'document_version_created',
+  'document_archived',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(
