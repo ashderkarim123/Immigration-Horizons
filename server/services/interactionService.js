@@ -313,14 +313,24 @@ async function answerInteraction(interaction, { clientVisibleResponse, internalR
   if (!clientVisibleResponse || !clientVisibleResponse.trim()) {
     return { outcome: 'validation_error', errors: { clientVisibleResponse: 'A client-visible answer is required.' } };
   }
-  if (actor.type !== 'admin_user' && actor.type !== 'env_fallback') {
-    return { outcome: 'validation_error', errors: { answeredBy: 'Only an employee can answer.' } };
+  // answeredBy is a required AdminUser reference once status is "answered"
+  // (ConsultationInteraction's own pre-validate hook enforces this) — the
+  // env-credential fallback admin has no persistent AdminUser id (see
+  // server/utils/actorSnapshot.js), so it can never satisfy that field.
+  // Excluding it here (rather than silently writing null) matches the same
+  // "never insertable as an assignee" rule already applied to case/interaction
+  // assignment elsewhere.
+  if (actor.type !== 'admin_user') {
+    return {
+      outcome: 'validation_error',
+      errors: { answeredBy: 'Only a registered team member (Users) can answer a query — the shared admin login cannot.' },
+    };
   }
 
   const previousStatus = interaction.status;
   interaction.status = 'answered';
   interaction.answeredAt = new Date();
-  interaction.answeredBy = actor.id || null;
+  interaction.answeredBy = actor.id;
   interaction.clientVisibleResponse = clientVisibleResponse.trim();
   interaction.internalResponse = (internalResponse || '').trim();
   interaction.resolutionSummary = (resolutionSummary || '').trim();
@@ -341,6 +351,18 @@ async function requestClarification(interaction, { clientVisibleQuestion }, acto
   if (!clientVisibleQuestion || !clientVisibleQuestion.trim()) {
     return { outcome: 'validation_error', errors: { clientVisibleQuestion: 'Clarification text is required.' } };
   }
+  // authorAdmin is a required AdminUser reference for an "admin"-authored
+  // InteractionUpdate (InteractionUpdate's own pre-validate hook enforces
+  // this) — checked before any write below so the env-credential fallback
+  // admin (no persistent AdminUser id, see server/utils/actorSnapshot.js)
+  // can never leave the interaction's status changed with no corresponding
+  // update/history record. Same rule as answerInteraction() above.
+  if (actor.type !== 'admin_user') {
+    return {
+      outcome: 'validation_error',
+      errors: { clientVisibleQuestion: 'Only a registered team member (Users) can request clarification — the shared admin login cannot.' },
+    };
+  }
 
   const previousStatus = interaction.status;
   if (previousStatus === 'awaiting_client') {
@@ -353,7 +375,7 @@ async function requestClarification(interaction, { clientVisibleQuestion }, acto
   await InteractionUpdate.create({
     interaction: interaction._id,
     authorType: 'admin',
-    authorAdmin: actor.id || null,
+    authorAdmin: actor.id,
     authorName: actor.name,
     updateType: 'employee_clarification',
     body: clientVisibleQuestion.trim(),
