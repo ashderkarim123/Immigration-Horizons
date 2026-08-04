@@ -98,10 +98,24 @@ export default async function PortalCaseDetailPage({
           </Link>
         </div>
 
+        <div className="rounded-panel border-ink-200 flex flex-col gap-2 border bg-white p-6 shadow-subtle text-sm">
+          <h2 className="font-display text-navy-800 text-base font-semibold">Messages</h2>
+          <p className="text-ink-500">
+            Message your team, ask questions, and keep track of case updates.
+          </p>
+          <Link
+            href={`/portal/cases/${caseId}/messages`}
+            className="text-navy-700 mt-2 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+          >
+            View messages
+            <ArrowRight size={14} aria-hidden />
+          </Link>
+        </div>
+
         <div className="rounded-panel border-ink-200 flex flex-col gap-2 border border-dashed bg-white p-6 text-sm">
           <h2 className="font-display text-navy-800 text-base font-semibold">Coming soon</h2>
           <p className="text-ink-500">
-            Messages and scheduled consultations for this case will appear here in a future update.
+            Scheduled consultations for this case will appear here in a future update.
           </p>
         </div>
       </div>
