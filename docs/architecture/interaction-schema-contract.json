@@ -1,0 +1,55 @@
+{
+  "_comment": "Canonical cross-app contract for the Cycle 3 consultation-interaction domain — see ADR-003 §5. Test-time-only fixture, loaded by server/test/interaction-schema-contract.test.js and test/interaction-schema-contract.test.ts. Never imported by production code in either app.",
+  "collections": {
+    "ConsultationInteraction": "consultation_interactions",
+    "InteractionHistory": "interaction_history",
+    "InteractionUpdate": "interaction_updates"
+  },
+  "scopeTypeValues": ["consultation", "case"],
+  "interactionTypeValues": [
+    "initial_consultation",
+    "follow_up_query",
+    "scheduled_consultation",
+    "client_question",
+    "document_question",
+    "case_update_request"
+  ],
+  "interactionStatusValues": [
+    "submitted",
+    "acknowledged",
+    "scheduled",
+    "in_progress",
+    "answered",
+    "awaiting_client",
+    "rescheduled",
+    "cancelled",
+    "no_show",
+    "closed"
+  ],
+  "interactionPriorityValues": ["low", "normal", "high", "urgent"],
+  "clientResolutionStatusValues": ["unresolved", "resolved", "needs_more_help"],
+  "historyEventTypeValues": [
+    "created",
+    "acknowledged",
+    "assigned",
+    "scheduled",
+    "rescheduled",
+    "status_changed",
+    "answered",
+    "clarification_requested",
+    "client_follow_up",
+    "resolution_confirmed",
+    "resolution_reopened",
+    "cancelled",
+    "no_show",
+    "closed"
+  ],
+  "updateTypeValues": [
+    "client_follow_up",
+    "employee_clarification",
+    "employee_note",
+    "resolution_confirmation",
+    "system"
+  ],
+  "updateVisibilityValues": ["client_visible", "internal"]
+}
