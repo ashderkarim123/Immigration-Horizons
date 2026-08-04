@@ -6,6 +6,7 @@ import { PortalInvitation } from "../models/PortalInvitation";
 import { Consultation } from "../models/Consultation";
 import { generateToken, hashToken, normalizeEmail } from "./crypto";
 import { sendActivationEmail } from "./email";
+import { createInitialConsultationInteraction } from "./interactions";
 
 const INVITATION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
@@ -54,6 +55,16 @@ export async function linkOrInviteAfterConsultation(params: {
         { _id: params.consultationId, clientUser: null },
         { $set: { clientUser: existingClient._id } },
       );
+
+      // Cycle 3: track this as an initial_consultation interaction now that
+      // a client account is already resolvable. createInitialConsultationInteraction()
+      // never throws (failures are caught and logged internally), so this
+      // can never turn a successful onboarding link into a reported error.
+      await createInitialConsultationInteraction({
+        consultationId: params.consultationId,
+        clientUserId: String(existingClient._id),
+      });
+
       return "linked_existing_client";
     }
 

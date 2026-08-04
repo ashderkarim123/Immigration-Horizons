@@ -5,6 +5,7 @@ import { ClientUser } from "../../../../lib/models/ClientUser";
 import { PortalInvitation } from "../../../../lib/models/PortalInvitation";
 import { Consultation } from "../../../../lib/models/Consultation";
 import { activateInvitedMembershipsForClient } from "../../../../lib/auth/case-membership";
+import { createInitialConsultationInteraction } from "../../../../lib/auth/interactions";
 import { hashToken, hashPassword } from "../../../../lib/auth/crypto";
 import { createSession, serializeSessionCookie } from "../../../../lib/auth/session";
 import { verifyOrigin } from "../../../../lib/auth/csrf";
@@ -104,6 +105,15 @@ export async function POST(request: Request): Promise<Response> {
       { _id: invitation.consultation, clientUser: null },
       { $set: { clientUser: client._id } },
     );
+
+    // Cycle 3: the initial_consultation interaction was deferred at
+    // submission time because no client account existed yet (module doc
+    // §14: "the interaction remains valid and is linked when the client
+    // relationship becomes available") — create it now.
+    await createInitialConsultationInteraction({
+      consultationId: String(invitation.consultation),
+      clientUserId: String(client._id),
+    });
   }
 
   // One narrow, documented exception to this app being read-only against
