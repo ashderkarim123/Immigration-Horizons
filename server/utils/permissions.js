@@ -187,6 +187,23 @@ const CAPABILITIES = {
   'document_categories.manage': ['super_admin', 'admin', 'pm'],
   'document_requests.manage': ['super_admin', 'admin', 'pm'],
   'document_versions.view': ['super_admin', 'admin', 'pm'],
+
+  // Team collaboration (Cycle 6). Same conservative-matrix approach as
+  // cases.*/queries.*/documents.* above — see
+  // 06_TEAM_COLLABORATION_AND_CHAT.md §22 and services/collaborationPolicy.js.
+  // Case specialists/reviewer get view+send+edit_own only (module doc's own
+  // suggested narrower grant for that tier) — moderation and channel
+  // management stay manager-tier.
+  'channels.view': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'channels.view_all': ['super_admin', 'admin'],
+  'channels.create': ['super_admin', 'admin', 'pm'],
+  'channels.manage': ['super_admin', 'admin', 'pm'],
+  'channels.archive': ['super_admin', 'admin', 'pm'],
+  'channel_members.manage': ['super_admin', 'admin', 'pm'],
+  'messages.send': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'messages.edit_own': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'messages.moderate': ['super_admin', 'admin', 'pm'],
+  'messages.view_revisions': ['super_admin', 'admin', 'pm'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */

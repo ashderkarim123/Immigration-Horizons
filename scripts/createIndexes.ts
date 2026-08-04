@@ -31,6 +31,11 @@ import { CaseDocument } from "../src/lib/models/CaseDocument";
 import { DocumentVersion } from "../src/lib/models/DocumentVersion";
 import { DocumentRequest } from "../src/lib/models/DocumentRequest";
 import { DocumentAccessLog } from "../src/lib/models/DocumentAccessLog";
+import { WorkspaceChannel } from "../src/lib/models/WorkspaceChannel";
+import { ChannelMember } from "../src/lib/models/ChannelMember";
+import { WorkspaceMessage } from "../src/lib/models/WorkspaceMessage";
+import { MessageRevision } from "../src/lib/models/MessageRevision";
+import { ChannelReadState } from "../src/lib/models/ChannelReadState";
 
 // Cycle 2 case/workspace/membership models are also declared here even
 // though server/ is their primary writer (see
@@ -57,6 +62,12 @@ const MODELS = [
   DocumentVersion,
   DocumentRequest,
   DocumentAccessLog,
+  // Cycle 6 — this app is a real writer for these (ADR-005 §1), not just a reader.
+  WorkspaceChannel,
+  ChannelMember,
+  WorkspaceMessage,
+  MessageRevision,
+  ChannelReadState,
 ];
 
 const isDryRun = process.argv.includes("--dry-run");

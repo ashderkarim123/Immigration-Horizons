@@ -1,0 +1,50 @@
+<a href="/admin/cases/<%= caseDoc._id %>" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to Case</a>
+
+<div class="page-header">
+  <div>
+    <h1>Collaboration — <%= caseDoc.caseNumber %></h1>
+    <p class="page-subtitle"><%= caseDoc.title %></p>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>Channels</h3></div>
+  <div class="admin-card-body">
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Type</th><th>Visibility</th><th>Unread</th><th></th></tr></thead>
+      <tbody>
+        <% channels.forEach(function(channel) { %>
+        <tr>
+          <td><a href="/admin/channels/<%= channel._id %>"><%= channel.name %></a></td>
+          <td><span class="badge"><%= channel.channelType %></span></td>
+          <td><span class="badge"><%= channel.visibility %></span></td>
+          <td><% var unread = unreadCounts[String(channel._id)] || 0; %><% if (unread > 0) { %><span class="badge badge-priority-high"><%= unread %></span><% } else { %>—<% } %></td>
+          <td>
+            <form action="/admin/channels/<%= channel._id %>/archive" method="POST" style="display:inline" onsubmit="return confirm('Archive this channel?');">
+              <button type="submit" class="btn btn-sm btn-ghost">Archive</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if (canCreateChannel) { %>
+<div class="admin-card">
+  <div class="admin-card-header"><h3>Add Channel</h3></div>
+  <div class="admin-card-body">
+    <form action="/admin/cases/<%= caseDoc._id %>/channels" method="POST" class="form-inline">
+      <input type="text" name="name" class="form-control" placeholder="Channel name" required>
+      <select name="channelType" class="form-control">
+        <% channelTypes.forEach(function(t) { %><option value="<%= t %>"><%= t %></option><% }); %>
+      </select>
+      <select name="visibility" class="form-control">
+        <% channelVisibility.forEach(function(v) { %><option value="<%= v %>"><%= v %></option><% }); %>
+      </select>
+      <button type="submit" class="btn btn-sm btn-primary">Create</button>
+    </form>
+  </div>
+</div>
+<% } %>

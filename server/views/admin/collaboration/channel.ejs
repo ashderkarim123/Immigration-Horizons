@@ -1,0 +1,98 @@
+<%
+function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
+%>
+<a href="/admin/cases/<%= channel.case %>/collaboration" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to Channels</a>
+
+<div class="page-header">
+  <div>
+    <h1><%= channel.name %></h1>
+    <p class="page-subtitle"><span class="badge"><%= channel.visibility %></span> <%= channel.description %></p>
+  </div>
+</div>
+
+<div class="detail-layout">
+  <div class="detail-primary">
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Messages</h3></div>
+      <div class="admin-card-body">
+        <ul class="activity-feed">
+          <% messages.forEach(function(m) { %>
+          <li>
+            <span class="activity-time"><%= m.senderDisplayName %> (<%= m.senderType %>) — <%= fmtDateTime(m.createdAt) %><% if (m.editedAt) { %> (edited)<% } %></span>
+            <p><%= m.body %></p>
+            <% if (m.attachments.length) { %>
+              <p>
+                <% m.attachments.forEach(function(a) { %>
+                  <a href="/admin/documents/<%= a.documentId %>/versions/<%= a.versionId %>/download">📎 <%= a.displayName %></a>
+                <% }); %>
+              </p>
+            <% } %>
+            <p>
+              <a href="/admin/channels/<%= channel._id %>/thread/<%= m.threadRoot || m.id %>">Thread<% if (m.replyCount > 0) { %> (<%= m.replyCount %>)<% } %></a>
+              <% if (canModerate && !m.deletedAt) { %>
+                · <form action="/admin/messages/<%= m.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('Delete this message?');">
+                    <button type="submit" class="btn btn-sm btn-ghost">Delete</button>
+                  </form>
+              <% } %>
+              <% if (canModerate && m.deletedAt) { %>
+                · <form action="/admin/messages/<%= m.id %>/restore" method="POST" style="display:inline">
+                    <button type="submit" class="btn btn-sm btn-ghost">Restore</button>
+                  </form>
+              <% } %>
+            </p>
+          </li>
+          <% }); %>
+          <% if (!messages.length) { %><p class="text-muted">No messages yet.</p><% } %>
+        </ul>
+        <% if (nextCursor) { %>
+          <a href="/admin/channels/<%= channel._id %>?before=<%= encodeURIComponent(nextCursor) %>" class="btn btn-sm btn-ghost">Load older</a>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (canSend) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Send a Message</h3></div>
+      <div class="admin-card-body">
+        <form action="/admin/channels/<%= channel._id %>/messages" method="POST" class="form-grid">
+          <input type="hidden" name="idempotencyKey" value="<%= Math.random().toString(36).slice(2) + Date.now() %>">
+          <div class="form-group full-width"><textarea name="body" class="form-control" rows="3" required maxlength="8000"></textarea></div>
+          <div class="form-group full-width"><button type="submit" class="btn btn-sm btn-primary">Send</button></div>
+        </form>
+      </div>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="detail-sidebar">
+    <% if (channel.visibility === 'restricted_members') { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Restricted Members</h3></div>
+      <div class="admin-card-body">
+        <ul class="plain-list">
+          <% restrictedMembers.forEach(function(rm) { %>
+            <li>
+              <%= rm.workspaceMember.clientUser ? (rm.workspaceMember.clientUser.firstName || rm.workspaceMember.clientUser.email) : (rm.workspaceMember.adminUser ? rm.workspaceMember.adminUser.name : 'Member') %>
+              <% if (canManageMembers) { %>
+                <form action="/admin/channels/<%= channel._id %>/members/<%= rm._id %>/remove" method="POST" style="display:inline">
+                  <button type="submit" class="btn btn-sm btn-ghost">Remove</button>
+                </form>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
+        <% if (canManageMembers) { %>
+        <form action="/admin/channels/<%= channel._id %>/members" method="POST" class="form-inline">
+          <select name="workspaceMemberId" class="form-control" required>
+            <% workspaceMembers.forEach(function(wm) { %>
+              <option value="<%= wm._id %>"><%= wm.clientUser ? (wm.clientUser.firstName || wm.clientUser.email) : (wm.adminUser ? wm.adminUser.name : 'Member') %></option>
+            <% }); %>
+          </select>
+          <button type="submit" class="btn btn-sm btn-ghost">Add</button>
+        </form>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>

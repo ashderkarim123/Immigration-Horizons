@@ -1,0 +1,39 @@
+<%
+function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
+%>
+<a href="/admin/channels/<%= channel._id %>" class="btn btn-ghost btn-sm" style="margin-bottom:12px;display:inline-block"><i class="fas fa-arrow-left"></i> Back to <%= channel.name %></a>
+
+<div class="page-header"><div><h1>Thread</h1></div></div>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3><%= rootMessage.senderDisplayName %> — <%= fmtDateTime(rootMessage.createdAt) %></h3></div>
+  <div class="admin-card-body"><p><%= rootMessage.body %></p></div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>Replies</h3></div>
+  <div class="admin-card-body">
+    <ul class="activity-feed">
+      <% replies.forEach(function(m) { %>
+      <li>
+        <span class="activity-time"><%= m.senderDisplayName %> — <%= fmtDateTime(m.createdAt) %></span>
+        <p><%= m.body %></p>
+      </li>
+      <% }); %>
+      <% if (!replies.length) { %><p class="text-muted">No replies yet.</p><% } %>
+    </ul>
+  </div>
+</div>
+
+<% if (canSend) { %>
+<div class="admin-card">
+  <div class="admin-card-header"><h3>Reply</h3></div>
+  <div class="admin-card-body">
+    <form action="/admin/messages/<%= rootMessage.id %>/replies" method="POST" class="form-grid">
+      <input type="hidden" name="idempotencyKey" value="<%= Math.random().toString(36).slice(2) + Date.now() %>">
+      <div class="form-group full-width"><textarea name="body" class="form-control" rows="2" required maxlength="8000"></textarea></div>
+      <div class="form-group full-width"><button type="submit" class="btn btn-sm btn-primary">Reply</button></div>
+    </form>
+  </div>
+</div>
+<% } %>

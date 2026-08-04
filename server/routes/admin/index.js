@@ -38,6 +38,7 @@ const casePolicy = require('../../services/casePolicy');
 const ClientCase = require('../../models/ClientCase');
 const attachQueries = require('./queries');
 const attachDocuments = require('./documents');
+const attachCollaboration = require('./collaboration');
 
 // ========================================================================
 // AUTHENTICATION
@@ -1474,5 +1475,10 @@ attachQueries(router);
 // DOCUMENT MANAGEMENT (Cycle 5)
 // ========================================================================
 attachDocuments(router);
+
+// ========================================================================
+// TEAM COLLABORATION (Cycle 6)
+// ========================================================================
+attachCollaboration(router);
 
 module.exports = router;

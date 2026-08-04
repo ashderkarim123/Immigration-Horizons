@@ -13,7 +13,9 @@
     "db:indexes:dry-run": "node scripts/createIndexes.js --dry-run",
     "documents:provision-categories": "node scripts/provisionDocumentCategories.js",
     "documents:provision-categories:apply": "node scripts/provisionDocumentCategories.js --apply",
-    "documents:reconcile-storage": "node scripts/reconcileDocumentStorage.js"
+    "documents:reconcile-storage": "node scripts/reconcileDocumentStorage.js",
+    "collaboration:provision-channels": "node scripts/provisionChannels.js",
+    "collaboration:provision-channels:apply": "node scripts/provisionChannels.js --apply"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

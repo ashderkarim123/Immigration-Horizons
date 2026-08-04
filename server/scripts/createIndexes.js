@@ -65,6 +65,13 @@ const MODELS = [
   require('../models/DocumentVersion'),
   require('../models/DocumentRequest'),
   require('../models/DocumentAccessLog'),
+  // Cycle 6 — team collaboration. Dual-writer with the Next.js app
+  // (ADR-005 §1) — both apps declare and provision these indexes.
+  require('../models/WorkspaceChannel'),
+  require('../models/ChannelMember'),
+  require('../models/WorkspaceMessage'),
+  require('../models/MessageRevision'),
+  require('../models/ChannelReadState'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');
