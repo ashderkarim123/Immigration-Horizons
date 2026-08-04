@@ -18,6 +18,18 @@
 > ancestry, `git diff`/`git diff --cached` were empty before any Cycle 2
 > edits, and `git reflog` showed no resets/checkouts/merges since Cycle 1's
 > last commit (`12ae4a4`). No new anomaly occurred during Cycle 2.
+>
+> **Cycle 3 anomaly check:** re-verified again at the start of Cycle 3 —
+> same ancestry/reflog checks, HEAD confirmed at Cycle 2's reported ending
+> commit (`a423a47`), no new git anomaly. A **separate, pre-existing**
+> anomaly was also carried forward and re-verified this cycle:
+> `server/public/css/admin.css` has two uncommitted color-value edits
+> (visible in `git status` since before Cycle 2) that this session did not
+> make and does not recognize. Captured via `git diff` at the start of
+> Cycle 3 and re-diffed at the end — byte-identical, confirming nothing in
+> this cycle touched it. It remains deliberately uncommitted, unstaged, and
+> unreverted — treated as the user's own in-progress work, not code to fix,
+> revert, or silently absorb into a Cycle 3 commit.
 
 ---
 
@@ -25,9 +37,11 @@
 
 - Branch: `main`
 - Cycle 1 starting HEAD: `9de340c`. Cycle 1 ending HEAD: `12ae4a4`.
-- Cycle 2 starting HEAD: `12ae4a4`. Cycle 2 ending HEAD: see final report / `git log`.
+- Cycle 2 starting HEAD: `12ae4a4`. Cycle 2 ending HEAD: `a423a47`.
+- Cycle 3 starting HEAD: `a423a47`. Cycle 3 ending HEAD: see final report / `git log`.
 - Nothing has been pushed at any point. `origin/main` is unchanged (still `7ef56da`).
 - No production data or indexes were read, written, or modified at any point.
+- Worktree at the end of Cycle 3 is **not** fully clean: `server/public/css/admin.css` remains modified (pre-existing, unrelated, deliberately left as-is — see anomaly note above). This is expected and correct, not an oversight.
 
 ---
 
@@ -329,6 +343,217 @@ None new. `MONGODB_URI` and `SITE_URL` remain load-bearing exactly as Cycle 1 do
 - Additional-client-on-a-case UI exists at the service layer (`addClientMember`) but has no dedicated admin form yet (only employee-member-add has a form in `server/views/admin/cases/detail.ejs`) — the route (`POST /admin/cases/:id/members` with `memberType=client`) works, just isn't exposed in the UI this cycle. Noted rather than silently incomplete.
 - `Task` records remain attached to `Consultation` only, per the module document's explicit instruction not to migrate them — the case detail page shows them read-only via the originating consultation.
 
+---
+
+# Cycle 3 — Consultation, Query, and Scheduling Tracking
+
+Module implemented: `04_CONSULTATION_AND_QUERY_TRACKING.md`.
+
+## Pre-implementation verification
+
+Re-ran the full git-anomaly check (ancestry, reflog, HEAD match) and
+captured the pre-existing `admin.css` diff before any edits (see the note
+at the top of this file). Confirmed via grep that no scheduling/timezone
+concept (`scheduledFor`, `timezone`, `appointment`, `responseDueAt`,
+`answeredAt`, `noShow`, `rescheduled`) existed anywhere in either app
+before this cycle — genuinely new domain, nothing to reconcile with.
+
+## Architecture decision: ADR-003
+
+`docs/architecture/ADR-003-consultation-interactions.md`. Summary:
+
+1. **Model ownership — the one real departure from ADR-002's pattern:** unlike Cases (Express-only writer), **both apps write** `ConsultationInteraction`/`InteractionHistory`/`InteractionUpdate` — clients create queries/follow-ups from Next.js, employees run the operational lifecycle from Express. Resolved via a **field-ownership boundary** (client-writable vs. employee-writable fields are disjoint, enforced by code review + the schema-contract test) rather than forcing one app to proxy through the other.
+2. **Concurrency — a real bug caught and fixed during this cycle:** the plan assumed Mongoose's default `__v` protects every `.save()` from a lost concurrent update. Verified empirically that it does **not** — a bare schema's `__v` only guards array-subdocument modifications; a second concurrent `.save()` on a plain field change silently overwrote the first with no error. Fixed by adding `optimisticConcurrency: true` to `ConsultationInteractionSchema` in **both** apps, which makes every `.save()` actually include `__v` in its update filter. Caught by the suite's own concurrency test (`interaction-lifecycle.integration.test.js`) failing exactly as it should have before the fix — the test did its job.
+3. **Interaction number:** `IQ-<year>-<6 random chars>` — same collision-resistant, non-sequential design as `caseNumber`, different prefix.
+4. **Explicit collection names:** `consultation_interactions`, `interaction_history`, `interaction_updates` — verified identical between both apps' independently-run index scripts.
+5. **Cross-app schema-contract:** `docs/architecture/interaction-schema-contract.json`, same JSON-fixture mechanism as ADR-002, extended with this domain's enums.
+6. **Timezone:** `scheduledFor` stored as absolute UTC; `timezone` validated as a real IANA `Area/Location` identifier (`Intl.DateTimeFormat` construction, plus a `/`-presence check to reject fixed-offset legacy abbreviations like `EST`/`PST`, which `Intl` itself actually accepts but the module doc explicitly calls out as unacceptable). New `APP_TIMEZONE` env var (default `UTC`) is the organization-timezone source for the "scheduled today" queue boundary.
+7. **Consultation-scoped authorization:** capability alone (`queries.view` etc.) is sufficient for any consultation-scoped interaction — matching this app's existing, established "leads have no per-lead row restriction" convention exactly, rather than inventing a stricter rule the codebase doesn't otherwise have. Case-scoped interactions use the identical membership-based rule as `casePolicy.js`.
+8. **Route naming:** `/portal/consultations` and `/portal/consultations/[id]` are untouched (still `Consultation` records); new interaction routes live at `/portal/queries`, `/portal/queries/new`, `/portal/queries/[interactionId]` — the plan's own suggested naming, adopted as-is.
+9. **Priority is server-controlled:** client-created interactions always get `priority: "normal"`; only employees can change it — prevents client self-escalation.
+
+## Product/policy decisions made without stopping for confirmation
+
+- **"Notify appropriate triage users on submission"** (module doc §23) was deliberately **not** implemented as a broadcast-on-every-submission notification. There is no natural single/small recipient for a brand-new, unassigned query (unlike leads, which have `ASSIGNMENT_SLOTS` mapping task types to roles), and the same module doc explicitly warns against "broadcast to all admins for every routine event." Notifications instead fire at points with a clear, specific recipient: assignment (the assignee), client follow-up (the assignee), client needs-more-help (the assignee). Documented here as an intentional scope reduction, not a silent omission.
+- **Historical-consultation backfill:** implemented the smallest safe option from the module's own menu — a lazy, idempotent admin action (`POST /admin/leads/:id/initialize-interaction`) rather than a bulk script. No dedicated UI button was added for it this cycle (known limitation, below) — the route exists and is capability-gated, callable directly.
+- **`overdueResponse` queue:** the module doc explicitly forbids hardcoding an SLA without a configured business rule, and none exists. `responseDueAt` is a real, indexed schema field with a fully correct, tested queue definition — it will simply stay empty in practice until a future cycle defines and sets that field. Not a bug; documented and tested as designed (`interaction-queues.test.js` covers both the empty-by-default case and the once-set-and-passed case).
+- **`server/` gains a real `resend` dependency this cycle** — its first actual email-sending capability — specifically to send the five client-facing interaction emails the module doc requires (scheduled/rescheduled, clarification requested, answered, cancelled). Built with the same test-double injection pattern (`_setMailerForTests`) Cycle 1's Next.js email code established, so failure-mode behavior is testable without a real Resend account (module doc's own explicit requirement).
+
+## Files created (Cycle 3)
+
+**Docs:**
+- `docs/architecture/ADR-003-consultation-interactions.md`
+- `docs/architecture/interaction-schema-contract.json`
+
+**Server — models:**
+- `server/models/{ConsultationInteraction,InteractionHistory,InteractionUpdate}.js`
+
+**Server — utils/services:**
+- `server/utils/{interactionConstants,interactionNumber,timezone}.js`
+- `server/services/{interactionPolicy,interactionService,interactionQueues,interactionEmail}.js`
+
+**Server — routes/views:**
+- `server/routes/admin/queries.js`
+- `server/views/admin/queries/{index,detail}.ejs`
+
+**Server — tests:**
+- `server/test/{interaction-models,interaction-policy,interaction-queues,timezone,interaction-schema-contract}.test.js`
+- `server/test/integration/interaction-lifecycle.integration.test.js`
+
+**Root — models:**
+- `src/lib/models/{ConsultationInteraction,InteractionHistory,InteractionUpdate}.ts`
+
+**Root — lib:**
+- `src/lib/content/interaction-constants.ts`
+- `src/lib/auth/{interactions,interaction-policy,interaction-number}.ts`
+
+**Root — API routes:**
+- `src/app/api/portal/interactions/route.ts`
+- `src/app/api/portal/interactions/[id]/follow-up/route.ts`
+- `src/app/api/portal/interactions/[id]/resolution/route.ts`
+
+**Root — portal pages/components:**
+- `src/app/portal/queries/{page.tsx,new/page.tsx,[interactionId]/page.tsx}`
+- `src/components/portal/{new-query-form,query-actions}.tsx`
+
+**Root — tests:**
+- `test/interaction-schema-contract.test.ts`
+- `test/interaction-authorization.integration.test.ts`
+- `test/interaction-routes.integration.test.ts`
+
+## Files modified (Cycle 3)
+
+- `server/models/admin/Notification.js` — gains `relatedInteraction` (optional) and three new types (`query_assigned`, `query_client_follow_up`, `query_needs_more_help`). `ActivityLog.js` is unchanged this cycle (Cycle 3 events are case/interaction-scoped, not lead-scoped).
+- `server/utils/notify.js` — `notify()` accepts an optional `relatedInteraction`.
+- `server/utils/permissions.js` — added `queries.view`, `queries.view_all`, `queries.create`, `queries.triage`, `queries.assign`, `queries.schedule`, `queries.answer`, `queries.manage`, `queries.close`.
+- `server/routes/admin/index.js` — mounts `attachQueries(router)`.
+- `server/views/admin/partials/sidebar.ejs` — added "Queries" nav item.
+- `server/scripts/createIndexes.js`, `scripts/createIndexes.ts` — added the three new interaction models (both apps).
+- `server/package.json` — added `resend` as a real dependency (see above).
+- `src/lib/auth/invitations.ts` — `linkOrInviteAfterConsultation()` now also calls `createInitialConsultationInteraction()` when linking to an already-active client.
+- `src/app/api/portal/activate/route.ts` — calls `createInitialConsultationInteraction()` for the deferred case (consultation submitted before the client had an account) right after linking the consultation.
+- `src/app/portal/page.tsx` — (unchanged this cycle — dashboard still shows cases + consultations; queries were deliberately given their own top-level nav entry point at `/portal/queries` rather than a third dashboard section, to keep the dashboard from growing unbounded every cycle).
+
+## Models and fields (Cycle 3)
+
+**`ConsultationInteraction`** (`consultation_interactions`): `interactionNumber`, `scopeType`, `clientUser`, `consultation`, `case`, `workspace`, `subject`, `description`, `type`, `status`, `priority`, `scheduledFor`, `timezone`, `responseDueAt`, `assignedTo`, `answeredBy`/`answeredAt`, `resolutionSummary`, `clientVisibleResponse`, `internalResponse`, `clientResolutionStatus`/`clientResolvedAt`/`clientResolutionNote`, `cancelledAt`, `closedAt`, `createdByType`/`createdByClient`/`createdByAdmin`, timestamps. `optimisticConcurrency: true`.
+
+**`InteractionHistory`** (`interaction_history`): `interaction`, `eventType` (14-value enum), previous/new status/scheduledFor/timezone/assignee pairs, actor snapshot (`actorType`/`actorClient`/`actorAdmin`/`actorName`), `reason`, `clientVisibleSummary`, `internalMetadata`. Append-only — no update/delete route exists in either app.
+
+**`InteractionUpdate`** (`interaction_updates`): `interaction`, `authorType`/`authorClient`/`authorAdmin`/`authorName` (polymorphic, enforced by a `pre('validate')` hook), `updateType`, `body`, `visibility`, `editedAt`, `deletedAt`.
+
+## Indexes (Cycle 3)
+
+| Model | Indexes |
+|---|---|
+| `ConsultationInteraction` | `interactionNumber` (unique); `consultation+type` (unique, partial on `type: 'initial_consultation'`); `clientUser+createdAt`; `case+createdAt`; `workspace+createdAt`; `assignedTo+status+scheduledFor`; `status+responseDueAt`; `status+scheduledFor`; `status+answeredAt`; `type+status+createdAt`; `scopeType+status+createdAt` |
+| `InteractionHistory` | `interaction+createdAt` |
+| `InteractionUpdate` | `interaction+createdAt`; `interaction+visibility+createdAt` |
+
+Verified via both apps' `--dry-run` index scripts — collection names match exactly between the two independent declarations.
+
+## Interaction types, statuses, priorities (Cycle 3)
+
+Types: `initial_consultation`, `follow_up_query`, `scheduled_consultation`, `client_question`, `document_question`, `case_update_request`.
+Statuses: `submitted`, `acknowledged`, `scheduled`, `in_progress`, `answered`, `awaiting_client`, `rescheduled`, `cancelled`, `no_show`, `closed`.
+Priorities: `low`, `normal`, `high`, `urgent` (server-controlled only, see above).
+
+## Scope rules (Cycle 3)
+
+`scopeType: "consultation" | "case"` is an explicit, required, validated field — never inferred from which optional refs happen to be set. Enforced identically in both apps' `pre('validate')` hooks: consultation scope requires `consultation`, forbids `case`/`workspace`; case scope requires both `case` and `workspace`.
+
+## Capability matrix (Cycle 3)
+
+| Capability | Roles |
+|---|---|
+| `queries.view` | `super_admin`, `admin`, `pm` |
+| `queries.view_all` | `super_admin`, `admin` |
+| `queries.create` | `super_admin`, `admin`, `pm` |
+| `queries.triage` | `super_admin`, `admin`, `pm` |
+| `queries.assign` | `super_admin`, `admin`, `pm` |
+| `queries.schedule` | `super_admin`, `admin`, `pm` |
+| `queries.answer` | `super_admin`, `admin`, `pm` |
+| `queries.manage` | `super_admin`, `admin`, `pm` |
+| `queries.close` | `super_admin`, `admin`, `pm` |
+
+Same conservative-matrix philosophy as `cases.*` — specialists/reviewer/editor/viewer hold none of these; no product rule yet justifies it.
+
+## Row-level policy (Cycle 3)
+
+**Employee side** (`server/services/interactionPolicy.js`): consultation-scoped interactions require only the relevant `queries.*` capability (matching the existing, established "leads have no row-level restriction" convention). Case-scoped interactions require capability **and** active employee `WorkspaceMember` on the interaction's workspace, with `queries.view_all` as the membership bypass — identical shape to `casePolicy.js`.
+
+**Client side** (`src/lib/auth/interaction-policy.ts`): consultation-scoped access requires the interaction's `clientUser` to match (set at creation from the linked `Consultation.clientUser`, never trusted from client input). Case-scoped access requires an active client `WorkspaceMember`, re-checked on every read (defense in depth beyond the `clientUser` filter already on the query) so a removed member loses access immediately. A different client's interaction and a nonexistent one return the identical `null`.
+
+## Concurrency and idempotency (Cycle 3)
+
+`optimisticConcurrency: true` (see "Product/policy decisions" above) is the real mechanism — not the assumed-but-nonfunctional default `__v` behavior. Idempotency: the unique-partial index on `(consultation, type: 'initial_consultation')` guards initial-tracking duplicates (a lost race returns `already_exists`, never errors); every lifecycle mutation checks "is this actually a change" before writing, so re-submitting the same acknowledge/cancel/schedule/etc. creates no duplicate history or notification (tested explicitly for acknowledge and cancel).
+
+## Notification behavior (Cycle 3)
+
+Employee notifications (assignment, client follow-up, client needs-more-help) reuse the existing `Notification` model/`notify()` utility exactly as Cycle 2 did for cases — no new notification system. Client emails (scheduled/rescheduled/clarification/answered/cancelled) go through the new `server/services/interactionEmail.js` adapter — logs and degrades gracefully when `RESEND_API_KEY` is unset (matching the Next.js app's established pattern exactly), and never rolls back the interaction mutation that triggered it (verified: every `notifyClientEmail()` call site is wrapped so an email failure is caught and logged, not propagated).
+
+## Admin routes/pages (Cycle 3)
+
+`GET /admin/queries`, `GET /admin/queries/:id`, `POST /admin/queries/:id/{acknowledge,assign,schedule,status,answer,request-clarification,no-show,cancel,close,notes}`, `POST /admin/leads/:id/initialize-interaction`. List page: 8 indexed operational queues (unanswered, unassigned, awaiting scheduling, scheduled today, overdue response, awaiting client, no-show follow-up, recently answered) as clickable filter shortcuts with live counts, plus status/type/priority/scope/search filters, bounded pagination. Detail page: full operational history, all lifecycle actions gated by both capability and row policy, internal response visibly marked as never-shown-to-client.
+
+## Portal routes/pages (Cycle 3)
+
+`GET /portal/queries`, `GET /portal/queries/new`, `GET /portal/queries/[interactionId]`. New-query form lets a client choose between their consultations and active cases (only shown when both exist). Detail page shows a simplified client-visible timeline (never internal reasons/metadata), client-visible updates only, follow-up form (hidden once closed/cancelled), and resolution confirmation (shown only when `status === "answered"`).
+
+## Testing (Cycle 3)
+
+**Results (confirmed, full suite run at the final commit):**
+- Root: **76/76 passing** (Cycle 3 added 31: 4 in `interaction-schema-contract.test.ts`, 19 in `interaction-authorization.integration.test.ts`, 8 in `interaction-routes.integration.test.ts`; plus the existing 45 from Cycles 1-2).
+- Server: **190/190 passing** (Cycle 3 added 66: 12 in `interaction-models.test.js`, 9 in `interaction-policy.test.js`, 11 in `interaction-queues.test.js`, 9 in `timezone.test.js`, 5 in `interaction-schema-contract.test.js`, 20 in `interaction-lifecycle.integration.test.js`; plus the existing 124 from Cycles 1-2).
+
+**A real bug was caught by this cycle's own test suite before being shipped:** the concurrency test failed on first run (`Missing expected rejection` — a second concurrent `.save()` was *not* throwing `VersionError`), which is exactly what led to discovering and fixing the `optimisticConcurrency` gap described above. The test suite worked as intended.
+
+**Two test-authoring bugs were also caught and fixed** (not code bugs): two `resolution confirmation` tests set `status: "answered"` without the required `answeredAt`/`answeredBy`, correctly tripping the model's own validation — fixed by completing the test fixtures, not by loosening validation.
+
+**Explicitly not covered** (honest gaps): a live end-to-end test of real Resend email delivery (verified only via the test-double injection point and the "missing key → warning, no throw" code path, same posture as Cycle 1's Next.js email code). Concurrent-write testing covers the direct-model-`.save()` path deterministically rather than racing two real concurrent HTTP requests (the deterministic version is what actually proves the mechanism; a real race would be flaky by construction and prove the same thing less reliably).
+
+**Quality commands, all confirmed:**
+- `npx tsc --noEmit` (root) — clean.
+- `npm run lint` (root) — clean.
+- `npm run build` (root, Turbopack) — succeeds; all new portal routes (`/portal/queries`, `/portal/queries/new`, `/portal/queries/[interactionId]`, plus the three new `/api/portal/interactions*` routes) appear correctly classified as dynamic (ƒ).
+- `npm run db:indexes:dry-run` (root) and `node scripts/createIndexes.js --dry-run` (server) — both list every new index without connecting; collection names match exactly between the two scripts.
+- `cd server && npm test` — 190/190.
+
+**Manual smoke tests performed** (GET-only, no mutations, against the real `.env` target — safe since nothing was written):
+- Built Next.js app on a spare port (3413): `GET /portal/queries` and `GET /portal/queries/new` unauthenticated → `307` to `/portal/login?next=...`.
+- Express admin app on a spare port (4012): `GET /admin/queries` unauthenticated → `302` to `/admin/login`.
+- Both servers stopped immediately after (verified via `netstat`).
+- Authenticated admin query operations and full client lifecycle (submit → schedule → answer → confirm resolution) were **not** smoke-tested live for the same reason as Cycle 2 (would require writing to the real Atlas database) — verified instead via the 97 new database-backed integration tests across both apps, which exercise the real routes, real rendered EJS output, and real row-level policy functions.
+
+## Environment variables (Cycle 3)
+
+**New:** `APP_TIMEZONE` — organization timezone for the "scheduled today" queue boundary, IANA identifier, defaults to `UTC` if unset or invalid (validated at first use, warning logged on an invalid value). Not required for correctness (falls back safely), but should be set in production to the practice's actual operating timezone for the queue to be meaningful.
+
+**Newly load-bearing:** `RESEND_API_KEY`/`EMAIL_FROM` are now also read by `server/` (previously Next.js-only) for the five client interaction emails — same fail-closed-to-logging behavior as everywhere else; missing key never blocks a lifecycle mutation, just skips the email with a logged warning.
+
+## Deployment blockers carried forward (verified still open, not silently marked resolved)
+
+1. `SITE_URL` must be set in production for CSRF `Origin` verification (Cycle 1) — **still open**.
+2. Real Resend activation/reset delivery (Cycle 1) — **still unverified**; Cycle 3 adds more Resend usage (server-side) on the same unverified footing.
+3. Root index rollout has not been run against production (Cycle 1/2/3) — **still open**; Cycle 3 adds three more collections to the same deferred rollout.
+4. Rate limiting remains process-local (Cycle 1) — **still open**.
+5. `/portal/profile`, `/portal/security` (Cycle 1) — **still deferred**.
+6. Client-facing case-created email (Cycle 2) — **still deferred** (same `server/` email-infrastructure gap Cycle 3 partially closes for interactions specifically, not cases).
+7. Non-transactional-fallback partial-provisioning recovery (Cycle 2) — **still open**, unchanged.
+8. Cases notification-failure fault-injection test (Cycle 2) — **still not written**; Cycle 3's interaction email failure path *is* now testable via the injected mailer double, which could be reused to finally close this gap in a future cycle.
+9. Additional-client-on-a-case membership UI (Cycle 2) — **still not built**.
+
+## New Cycle 3 open items
+
+- No dedicated admin UI button for `POST /admin/leads/:id/initialize-interaction` (the historical-consultation lazy-init route) — route exists, capability-gated, callable directly; not wired into `leads/detail.ejs` this cycle.
+- "Notify triage users on submission" not implemented as a broadcast (deliberate — see "Product/policy decisions" above); no per-queue "watcher" mechanism exists yet for a future cycle to build on.
+- Real Resend delivery of the five new client interaction emails is unverified beyond the test-double injection point.
+
+## Known limitations (Cycle 3)
+
+- The admin query detail page's "Start Work" action is exposed as a generic `/status` route currently handling only the `in_progress` transition — intentionally narrow (module doc's other transitions all have their own dedicated routes); documented rather than building a more general status-transition endpoint speculatively.
+- `getClientVisibleHistory()`/history's `clientVisibleSummary` strings are currently static, hardcoded per event type in the service layer — not configurable copy. Fine for this cycle's scope; would need externalizing if per-service-type custom messaging is ever required.
+
 ## Recommended next module
 
-`04_CONSULTATION_AND_QUERY_TRACKING.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first, per the plan's own handoff procedure.
+`05_DOCUMENT_MANAGEMENT.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first, per the plan's own handoff procedure.
