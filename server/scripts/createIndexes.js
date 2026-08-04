@@ -53,6 +53,11 @@ const MODELS = [
   require('../models/CaseWorkspace'),
   require('../models/WorkspaceMember'),
   require('../models/CaseActivity'),
+  // Cycle 3 — consultation/query tracking. Dual-writer with the Next.js
+  // app (ADR-003 §1) — both apps declare and provision these indexes.
+  require('../models/ConsultationInteraction'),
+  require('../models/InteractionHistory'),
+  require('../models/InteractionUpdate'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');
