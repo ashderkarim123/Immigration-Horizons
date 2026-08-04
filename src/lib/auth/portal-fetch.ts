@@ -40,3 +40,37 @@ export async function postPortalJson(
 
   return { ok: true, redirectTo: data?.redirectTo, message: data?.message };
 }
+
+/**
+ * Same response normalization as postPortalJson, for a multipart file
+ * upload — deliberately no Content-Type header set, so the browser fills
+ * in the multipart boundary itself.
+ */
+export async function postPortalFormData(
+  path: string,
+  formData: FormData,
+): Promise<PortalApiResult & { documentId?: string }> {
+  let res: Response;
+  try {
+    res = await fetch(path, { method: "POST", body: formData });
+  } catch {
+    return {
+      ok: false,
+      error: { code: "network_error", message: "Network error. Please try again." },
+    };
+  }
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: data?.error ?? {
+        code: "server_error",
+        message: "Something went wrong. Please try again.",
+      },
+    };
+  }
+
+  return { ok: true, redirectTo: data?.redirectTo, message: data?.message, documentId: data?.documentId };
+}
