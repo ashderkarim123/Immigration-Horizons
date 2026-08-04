@@ -46,6 +46,13 @@
 > `server/public/css/admin.css` anomaly was re-captured via `git diff` at
 > the start of Cycle 5 and re-diffed at the end — still byte-identical,
 > still deliberately untouched.
+>
+> **Cycle 6 anomaly check:** re-verified again at the start of Cycle 6 —
+> same ancestry/reflog checks, HEAD confirmed at Cycle 5's reported ending
+> commit (`2041950`), no new git anomaly, no concurrent repository
+> mutation. The `server/public/css/admin.css` anomaly was re-captured via
+> `git diff` at the start of Cycle 6 and re-diffed at the end — still
+> byte-identical, still deliberately untouched.
 
 ---
 
@@ -56,10 +63,11 @@
 - Cycle 2 starting HEAD: `12ae4a4`. Cycle 2 ending HEAD: `a423a47`.
 - Cycle 3 starting HEAD: `a423a47`. Cycle 3 ending HEAD: `befacbc`.
 - Interim bugfix commit (between Cycle 3 and Cycle 5): `6d13cfc`.
-- Cycle 5 starting HEAD: `6d13cfc`. Cycle 5 ending HEAD: see final report / `git log`.
+- Cycle 5 starting HEAD: `6d13cfc`. Cycle 5 ending HEAD: `2041950`.
+- Cycle 6 starting HEAD: `2041950`. Cycle 6 ending HEAD: see final report / `git log`.
 - Nothing has been pushed at any point. `origin/main` is unchanged (still `7ef56da`).
 - No production data or indexes were read, written, or modified at any point.
-- Worktree at the end of Cycle 5 is **not** fully clean: `server/public/css/admin.css` remains modified (pre-existing, unrelated, deliberately left as-is — see anomaly note above). This is expected and correct, not an oversight.
+- Worktree at the end of Cycle 6 is **not** fully clean: `server/public/css/admin.css` remains modified (pre-existing, unrelated, deliberately left as-is — see anomaly note above). This is expected and correct, not an oversight.
 
 ---
 
@@ -816,3 +824,255 @@ Every download (`GET /admin/documents/:id/download`, `GET /admin/documents/:id/v
 ## Recommended next module
 
 `06_TEAM_COLLABORATION_AND_CHAT.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first, per the plan's own handoff procedure. `CaseDocument`'s shape is already compatible with being referenced as a future chat-message attachment without modification (ADR-004 §24) — that integration decision is explicitly deferred to Cycle 6's own ADR.
+
+---
+
+# Cycle 6 — Team Collaboration and Chat
+
+Module implemented: `06_TEAM_COLLABORATION_AND_CHAT.md`.
+
+## Pre-implementation verification
+
+Re-ran the full git-anomaly check (ancestry, reflog, HEAD match) and captured the pre-existing `admin.css` diff before any edits (see the note at the top of this file). Confirmed HEAD matched Cycle 5's reported ending commit (`2041950`) exactly. Re-ran both apps' full test suites before starting any edits: server 249/249 (one file hit the project's known `mongodb-memory-server` cold-start flakiness on the first run — 10/10 clean on an isolated retry, confirmed transient, not a regression), root 100/100 clean.
+
+## Architecture decision: ADR-005
+
+`docs/architecture/ADR-005-team-collaboration.md`. Summary:
+
+1. **Model ownership — dual writer, same shape as ADR-003/ADR-004:** clients send/edit/delete their own messages and mark channels read from the portal; employees do the same plus create/manage/archive channels, manage restricted membership, and moderate from the admin.
+2. **Channel visibility — two composed authorization layers:** active `WorkspaceMember` is required for every channel regardless of type; an active `ChannelMember` is *additionally* required only for `restricted_members` channels. `all_members`/`clients_and_team` are functionally identical this cycle but kept as distinct enum values for a future workspace-member-type split.
+3. **Mentions — explicit selection, not free-text `@name` parsing:** the composer submits resolved `workspaceMember` IDs; the server independently re-validates every one against current active membership/channel-access. Chosen specifically so "a client cannot discover a hidden employee's name by guessing it in `@` syntax" is true by construction, not by a parser getting every edge case right.
+4. **Message body — plain text only this release:** normalized line endings, length-capped, escaped by each framework's existing default render behavior (JSX/EJS auto-escaping) — no markdown, no autolinking, no sanitizer dependency added, since there's no formatting layer to sanitize. Documented as a deliberate first-release scope choice, not an oversight.
+5. **Threading — one level only:** a reply-to-a-reply is normalized to the original thread root before persisting (the service layer rewrites `parentMessage`, not the client).
+6. **Attachments — zero new storage code:** a message attachment snapshots a document's *current version at send time* (`{document, documentVersion, displayNameSnapshot}`); downloads reuse Cycle 5's already-authorized routes unchanged, which independently re-check live authorization on every request.
+7. **Read state — `lastReadAt` stores the read message's own `createdAt`**, not "now," so unread-count queries are a single indexed range scan. A two-step upsert-then-conditionally-advance update makes the "never move backward" guarantee atomic under concurrent requests, without risking a duplicate-key race on the unique `(channel, workspaceMember)` index a single conditional-filter upsert would have.
+8. **Idempotency/concurrency — the same proven mechanisms as Cycles 3–5, not new ones:** client-generated `idempotencyKey` (unique partial index per channel), `optimisticConcurrency: true` for edit conflicts, atomic `$inc` for thread reply counters, the two-phase negative-then-positive order update for channel reorder (same technique ADR-004 established for `DocumentCategory`).
+9. **System messages — a small, explicit set of real integration points, not a generic event bus:** member added, document uploaded/accepted/replacement-requested, case stage changed. The module doc's other listed examples (consultation scheduled/answered, deadline changed, filing completed, etc.) are deliberately not wired this cycle.
+10. **Recommendation Letters channel is `employees_only`**, not `clients_and_team` — the module doc left this open. Internal drafting discussion stays internal; the finished letters themselves are already client-visible through Cycle 5's `recommendation_letters` document category, so no client-facing capability is lost.
+11. **Notifications reuse the existing `Notification` model exactly** — new types `message_mention`/`message_reply`, new `relatedChannel`/`relatedMessage` fields. No migration to immutable recipient identities (explicitly Cycle 7's job).
+
+## Product/policy decisions made without stopping for confirmation
+
+- **A genuinely new root-app write path:** `Notification` is mirrored into this app for the first time (`src/lib/models/Notification.ts`, same implicit collection-name pluralization as the existing server model — not a new naming convention) — required because a client-authored message that mentions or replies to an employee must be able to notify that employee in-app, and only the server-side `Notification` collection exists for that. Documented explicitly as a deliberate architectural extension, not an accidental scope creep.
+- **Reply notifications stay in-app/employee-only** — mentions get the (optional, Resend-gated) email treatment per the module's own conservative policy ("Do not send routine channel-message emails"); a reply is judged more routine than a direct `@mention` and is not emailed to a client-authored recipient either way this cycle.
+- **`CLIENT_STAGE_LABELS` added to `server/utils/caseConstants.js`** — previously portal-only (TS side), now needed server-side too since `systemMessageService.js` composes client-facing system-message text before it ever reaches the client's read path. Mirrors the existing TS mapping exactly; not added to `case-schema-contract.json` (a label-mapping is not a security/authorization-relevant enum, and expanding a Cycle 2 contract test was judged out of this cycle's scope).
+- **A real bug found and fixed in the SAME session, carried forward from before Cycle 6 started:** the interim `6d13cfc` fix (env-fallback admin rejected from answering interactions) is unrelated to this cycle but recorded here for continuity since it's the commit Cycle 6 actually started from.
+- **A genuine test-design flaw found and fixed during this cycle's own test-writing (not a code bug):** an initial concurrency test for `editMessage()` asserted a version conflict using a sequential "save copy A, then edit via the service" pattern — but `editMessage()` always performs its own fresh `findById`, so by the time it runs, copy A's save has already committed and the service's own read is never actually stale. Fixed by rewriting the test to use `Promise.allSettled` with two genuinely concurrent `editMessage()` calls, which correctly exercises the real race the service needs to survive. The underlying `optimisticConcurrency` mechanism itself was already correctly proven at the model layer (`collaboration-models.test.js`).
+
+## Files created (Cycle 6)
+
+**Docs:**
+- `docs/architecture/ADR-005-team-collaboration.md`
+- `docs/architecture/collaboration-schema-contract.json`
+
+**Server — models:**
+- `server/models/{WorkspaceChannel,ChannelMember,WorkspaceMessage,MessageRevision,ChannelReadState}.js`
+
+**Server — utils/services:**
+- `server/utils/{collaborationConstants,messageCursor}.js`
+- `server/services/{collaborationPolicy,channelService,messageService,readStateService,systemMessageService,collaborationEmail}.js`
+
+**Server — routes/views:**
+- `server/routes/admin/collaboration.js`
+- `server/views/admin/collaboration/{index,channel,thread}.ejs`
+
+**Server — scripts:**
+- `server/scripts/provisionChannels.js`
+
+**Server — tests:**
+- `server/test/{collaboration-schema-contract,collaboration-models,collaboration-policy}.test.js`
+- `server/test/integration/collaboration-lifecycle.integration.test.js`
+
+**Root — lib:**
+- `src/lib/content/{collaboration-constants,message-cursor}.ts`
+- `src/lib/models/{WorkspaceChannel,ChannelMember,WorkspaceMessage,MessageRevision,ChannelReadState,Notification}.ts`
+- `src/lib/auth/collaboration-policy.ts`
+- `src/lib/collaboration/{message-service,read-state-service}.ts`
+
+**Root — API routes:**
+- `src/app/api/portal/channels/[channelId]/messages/route.ts`
+- `src/app/api/portal/channels/[channelId]/read/route.ts`
+- `src/app/api/portal/messages/[messageId]/{replies,edit,delete}/route.ts`
+
+**Root — portal pages/components:**
+- `src/app/portal/cases/[caseId]/messages/page.tsx`
+- `src/app/portal/cases/[caseId]/messages/[channelId]/page.tsx`
+- `src/app/portal/cases/[caseId]/messages/[channelId]/threads/[messageId]/page.tsx`
+- `src/components/portal/{message-composer,message-actions}.tsx`
+
+**Root — tests:**
+- `test/collaboration-schema-contract.test.ts`
+- `test/collaboration-authorization.integration.test.ts`
+- `test/collaboration-routes.integration.test.ts`
+
+## Files modified (Cycle 6)
+
+- `server/services/caseConversion.js` — provisions default channels inside the existing case-creation transaction, right after document-category provisioning; logs `channel_provisioned` alongside the existing activity entries.
+- `server/services/caseManagement.js` — `updateStage`/`addEmployeeMember`/`addClientMember` now emit the corresponding system messages (case stage changed / member added).
+- `server/services/documentUploadService.js`, `server/services/documentReviewService.js` — emit `document_uploaded`/`document_reviewed` system messages; fixed a bug found while wiring this in (see below).
+- `server/models/CaseActivity.js` — `ACTIVITY_TYPES` gains channel-provisioning/lifecycle event types (message create/edit/reply are deliberately NOT here — see Audit behavior, below).
+- `server/models/admin/Notification.js`, `server/utils/notify.js` — gain `message_mention`/`message_reply` types and `relatedChannel`/`relatedMessage` fields.
+- `server/utils/caseConstants.js` — gains `CLIENT_STAGE_LABELS` (see Product/policy decisions, above).
+- `server/utils/permissions.js` — added `channels.view`, `channels.view_all`, `channels.create`, `channels.manage`, `channels.archive`, `channel_members.manage`, `messages.send`, `messages.edit_own`, `messages.moderate`, `messages.view_revisions`.
+- `server/routes/admin/index.js` — mounts `attachCollaboration(router)`.
+- `server/views/admin/cases/detail.ejs` — the "Channels" placeholder card ("not implemented yet") now links to the real collaboration center. The still-separate "Client Queries" placeholder is untouched (a pre-existing Cycle 3 gap, out of this cycle's scope).
+- `server/scripts/createIndexes.js`, `scripts/createIndexes.ts` — added the five new collaboration models (both apps).
+- `server/package.json` — added `collaboration:provision-channels[:apply]` npm scripts.
+- `src/app/portal/cases/[caseId]/page.tsx` — the "Coming soon" card's messages-related copy replaced with a real link to `/portal/cases/[caseId]/messages`; scheduled-consultations copy is unchanged (still future work).
+
+**A real bug was found and fixed while wiring `document_uploaded` system-message emission into `documentUploadService.js`:** `auditAndNotifyUpload()` had an early `return` (skip employee notification for a client's own upload) positioned *before* the system-message emission would have run for employee-uploaded documents — meaning an employee's own document upload would never generate a `documents` channel system message at all. Fixed by moving the system-message emission ahead of that early return, so it fires regardless of uploader type (only the *employee in-app notification* is correctly uploader-type-conditional, matching its original intent).
+
+## Models and fields (Cycle 6)
+
+**`WorkspaceChannel`** (`workspace_channels`): `workspace`, `case`, `templateKey`, `name`, `slug`, `description`, `channelType`, `visibility`, `order`, `createdByType`/`createdByAdmin`, `archivedAt`, timestamps.
+
+**`ChannelMember`** (`channel_members`): `channel`, `workspaceMember`, `status`, `addedBy`/`addedByType`, `joinedAt`/`removedAt`, timestamps.
+
+**`WorkspaceMessage`** (`workspace_messages`): `workspace`, `case`, `channel`, `senderType`/`senderClient`/`senderAdmin`/`senderDisplayName`, `body`/`bodyFormat`/`messageType`, `parentMessage`/`threadRoot`/`replyCount`/`lastReplyAt`, `mentions[]`/`attachments[]`, `editedAt`, `deletedAt`/`deletedByType`/`deletedByClient`/`deletedByAdmin`/`deletionReason`, `clientVisible`, `idempotencyKey`, timestamps. `optimisticConcurrency: true`.
+
+**`MessageRevision`** (`message_revisions`): `message`, `revisionNumber`, `action`, `previousBody`/`newBody`, `previousAttachments`/`newAttachments`, `previousMentions`/`newMentions`, `actorType`/`actorClient`/`actorAdmin`, `reason`, `createdAt` only (immutable, no `updatedAt`).
+
+**`ChannelReadState`** (`channel_read_states`): `workspace`, `channel`, `workspaceMember`, `lastReadMessage`, `lastReadAt`, timestamps.
+
+## Indexes (Cycle 6)
+
+| Model | Indexes |
+|---|---|
+| `WorkspaceChannel` | `workspace+slug` (unique, active-only); `workspace+order` (unique, active-only); `workspace+archivedAt+order`; `case+archivedAt`; `workspace+templateKey` |
+| `ChannelMember` | `channel+workspaceMember` (unique); `workspaceMember+status`; `channel+status` |
+| `WorkspaceMessage` | `channel+createdAt+_id`; `channel+parentMessage+createdAt+_id`; `threadRoot+createdAt+_id`; `workspace+createdAt`; `senderClient+createdAt`; `senderAdmin+createdAt`; `deletedAt`; `channel+idempotencyKey` (unique, wherever set) |
+| `MessageRevision` | `message+revisionNumber` (unique); `message+createdAt` |
+| `ChannelReadState` | `channel+workspaceMember` (unique); `workspaceMember+updatedAt` |
+
+Verified via both apps' `--dry-run` index scripts — collection names match exactly between the two independent declarations (confirmed by `collaboration-schema-contract.test.{js,ts}` too).
+
+## Channel types, visibility, and default channels (Cycle 6)
+
+Channel types: `standard`, `documents`, `updates`, `private`, `internal`. Visibility: `all_members`, `clients_and_team`, `employees_only`, `restricted_members`. Sender types: `client`, `employee`, `system`. Message types: `text`, `system_update`, `document_update`, `task_update`, `consultation_update`, `case_update` (clients may only ever create `text`).
+
+The 6-entry default channel template (General, Case Updates, Documents, Petition Strategy, Recommendation Letters, USCIS Forms) lives in `server/utils/collaborationConstants.js`/`src/lib/content/collaboration-constants.ts`. Visibility defaults: General/Case Updates/Documents/USCIS Forms are `clients_and_team`; Petition Strategy/Recommendation Letters are `employees_only` (see ADR-005 §20 for the Recommendation Letters reasoning).
+
+## Message, thread, and mention behavior (Cycle 6)
+
+Plain-text only, length-capped at 8000 characters, normalized line endings, escaped at render time by each framework's default. Threading is one level: a reply's `parentMessage`/`threadRoot` are always the true top-level message, even if the user clicked "reply" on another reply (normalized server-side). Mentions are explicit `workspaceMember` selections re-validated server-side against current active membership (and, for restricted channels, current `ChannelMember` status) — never parsed from `@name` text. Editing recalculates mentions and only notifies newly-added ones; a removed mention never generates a notification.
+
+## Attachment behavior (Cycle 6)
+
+A message attachment references `{document, documentVersion, displayNameSnapshot}` — the document's current version *at send time*, snapshotted, not re-resolved later. `canAttachDocument()` (server) enforces: same case as the channel, not quarantined, and — for a client-accessible channel — the document itself must be `client_visible`. No new upload pipeline, no new download route: attachments are downloaded through Cycle 5's existing, independently-re-authorized-per-request routes.
+
+## Edit, deletion, and revision behavior (Cycle 6)
+
+Edits are protected by `optimisticConcurrency` — two genuinely concurrent edits on the same message result in exactly one success and one controlled `409`-equivalent conflict, never a silent overwrite (verified with real concurrent `Promise.allSettled` requests, not a sequential simulation). An edit that changes nothing creates no `MessageRevision`. Deletion is soft-only: the original body remains in storage (and in the revision it creates) but every render path substitutes a fixed placeholder — clients editing/deleting are restricted to their own messages via `messages.edit_own`; moderating someone else's message requires `messages.moderate`.
+
+## Read-state and unread-count behavior (Cycle 6)
+
+`lastReadAt` is the read message's own `createdAt`, not "now." Marking read is a two-step upsert-then-conditionally-advance operation, atomic against concurrent requests, and provably monotonic (tested: marking read with an older message after a newer one is a no-op). Unread counts exclude the reader's own messages by default, exclude soft-deleted messages, and are computed only over the caller's already-visibility-filtered channel list — an `employees_only` or unauthorized `restricted_members` channel can never contribute to a client's unread total because it's never in that list to begin with.
+
+## Capability matrix (Cycle 6)
+
+| Capability | Roles |
+|---|---|
+| `channels.view` | `super_admin`, `admin`, `pm`, case specialists, `reviewer` |
+| `channels.view_all` | `super_admin`, `admin` |
+| `channels.create` | `super_admin`, `admin`, `pm` |
+| `channels.manage` | `super_admin`, `admin`, `pm` |
+| `channels.archive` | `super_admin`, `admin`, `pm` |
+| `channel_members.manage` | `super_admin`, `admin`, `pm` |
+| `messages.send` | `super_admin`, `admin`, `pm`, case specialists, `reviewer` |
+| `messages.edit_own` | `super_admin`, `admin`, `pm`, case specialists, `reviewer` |
+| `messages.moderate` | `super_admin`, `admin`, `pm` |
+| `messages.view_revisions` | `super_admin`, `admin`, `pm` |
+
+Case specialists/reviewer get view+send+edit_own only (the module's own suggested narrower grant for that tier) — moderation and channel management stay manager-tier. CMS editor/viewer hold none of these capabilities.
+
+## Row-level policy (Cycle 6)
+
+**Employee side** (`server/services/collaborationPolicy.js`): a shared `hasChannelAccess()` composes both authorization layers — active `WorkspaceMember` (or the `channels.view_all` org-wide bypass) plus, for `restricted_members` channels only, an active `ChannelMember`. Every specific action (`canViewChannel`, `canSendMessage`, `canEditMessage`, etc.) layers its own capability check on top of this shared base — reused directly from `casePolicy.js`'s `hasActiveEmployeeMembership()` rather than duplicated.
+
+**Client side** (`src/lib/auth/collaboration-policy.ts`): identical two-layer shape. A different client's channel, an `employees_only` channel, and a nonexistent channel all return the identical `null`. A removed `WorkspaceMember` or a removed `ChannelMember` (on an otherwise-still-active membership) both immediately deny access on the next request — no caching.
+
+## Admin routes/pages (Cycle 6)
+
+`GET /admin/cases/:caseId/collaboration`, `GET /admin/channels/:id`, `GET /admin/channels/:id/thread/:messageId`, `POST /admin/cases/:caseId/{channels,channels/reorder,initialize-channels}`, `POST /admin/channels/:id/{update,archive,members,members/:memberId/remove}`, `POST /admin/channels/:id/messages`, `POST /admin/messages/:id/{replies,edit,delete,restore}`, `POST /admin/channels/:id/read`. Collaboration center lists visible channels with unread counts; channel view shows paginated messages (cursor-based, "load older"), send/moderate controls; thread view shows a root message and its replies.
+
+## Portal routes/pages (Cycle 6)
+
+`GET /portal/cases/:caseId/messages`, `GET /portal/cases/:caseId/messages/:channelId`, `GET /portal/cases/:caseId/messages/:channelId/threads/:messageId`, `POST /api/portal/channels/:channelId/{messages,read}`, `POST /api/portal/messages/:messageId/{replies,edit,delete}`. Message center shows only accessible channels with unread badges; channel view auto-marks-read on load and shows a composer; thread view shows the root message, replies, and a reply composer. Never renders employees_only channels, internal role codes, revision history, or storage keys.
+
+## System-message integration (Cycle 6)
+
+Four real integration points wired this cycle (not the module's full example list — see Product/policy decisions): workspace member added, case stage changed, document uploaded, document reviewed (accepted/needs-replacement). Each call site decides `clientVisible` explicitly and passes an idempotency key derived from real event identity (e.g. `member_added:<workspaceMemberId>`, `document_uploaded:<documentId>:v<versionNumber>`) so a retried mutation never double-posts the same system message.
+
+## Notification behavior (Cycle 6)
+
+Employee recipients get an in-app `Notification` (mention or reply) via the existing `notify()`/`Notification` model — this is also the **first write the Next.js app has ever made against that collection** (a new, deliberate architectural extension — see Product/policy decisions). Client recipients of a direct mention get an email via the new `server/services/collaborationEmail.js` (mirroring `documentEmail.js`'s Resend/test-double pattern exactly); replies are not emailed to anyone this cycle (conservative default). Notification/email failures never roll back the already-durable message.
+
+## Testing (Cycle 6)
+
+**Results (confirmed, full suite run at the final commit):**
+- Server: **300/300 passing** (Cycle 6 added 51: 5 in `collaboration-schema-contract.test.js`, 16 in `collaboration-models.test.js`, 13 in `collaboration-policy.test.js`, 17 in `collaboration-lifecycle.integration.test.js`; plus the existing 249 from Cycles 1–5).
+- Root: **122/122 passing** (Cycle 6 added 22: 5 in `collaboration-schema-contract.test.ts`, 7 in `collaboration-authorization.integration.test.ts`, 10 in `collaboration-routes.integration.test.ts`; plus the existing 100 from Cycles 1–5).
+
+**A real test-design flaw was caught and fixed while writing these tests** (see Product/policy decisions, above) — not a code bug, but worth noting since it's the same category of lesson as Cycle 3's concurrency finding: a sequential "load, save, then call the service" test cannot observe a service function's own internal fresh-read as stale. Fixed with genuine `Promise.allSettled`-based concurrent calls, which correctly exercises the real race.
+
+**Explicitly not covered** (honest gaps, same spirit as every prior cycle):
+- No dedicated test for the *admin-side* message/reply/edit/delete/moderate routes as real HTTP requests (server-side collaboration is covered thoroughly at the service+policy layer via `collaboration-lifecycle.integration.test.js` and `collaboration-policy.test.js`, but not via `supertest`-driven route requests the way `server/test/integration/*.js` covers other domains) — a real gap, not silently claimed as covered.
+- No automated test for the admin EJS views actually rendering (`collaboration/{index,channel,thread}.ejs`) — verified by code review and the live GET-only smoke test only.
+- Pagination cursor correctness (`messageCursor.js`/`message-cursor.ts`) is exercised indirectly through the channel/thread view routes but has no dedicated unit test of its own encode/decode/filter logic.
+- Real Resend delivery of the mention email is unverified beyond the existing test-double injection pattern (same posture as every prior cycle's email testing).
+- Rate-limit behavior for message send/edit/channel-creation specifically is not tested in isolation (the underlying mechanism is exercised/proven elsewhere).
+
+**Quality commands, all confirmed:**
+- `npx tsc --noEmit` (root) — clean.
+- `npm run lint` (root) — clean.
+- `npm run build` (root, Turbopack) — succeeds; all new routes (`/api/portal/channels/[channelId]/{messages,read}`, `/api/portal/messages/[messageId]/{replies,edit,delete}`, `/portal/cases/[caseId]/messages*`) appear correctly classified as dynamic (ƒ). No new build-time issues (the Cycle 5 lazy-singleton lesson was checked for and not repeated — no eager `new X()` construction was introduced at module scope in any Cycle 6 file).
+- `npm run db:indexes:dry-run` (root) and `node scripts/createIndexes.js --dry-run` (server) — both list every new index without connecting; collection names match exactly between the two scripts.
+- `cd server && npm test` — 300/300.
+
+**Manual smoke tests performed** (GET-only, no mutations, against the real running dev servers on the real `.env` target):
+- `GET /portal/cases/507f.../messages` unauthenticated → `307` redirect to login.
+- `GET /portal/cases/507f.../messages/507f...` unauthenticated → `307` redirect to login.
+- `GET /admin/cases/507f.../collaboration` unauthenticated → `302` redirect to login.
+- `GET /admin/channels/507f...` unauthenticated → `302` redirect to login.
+- No channels, messages, or memberships were created against the real database — authenticated send/reply/edit/delete/read flows were verified instead via the 73 new database-backed integration tests across both apps (real routes, real Mongo, real rendered EJS/JSON output).
+
+## Environment variables (Cycle 6)
+
+No new environment variables this cycle. `RESEND_API_KEY`/`EMAIL_FROM`/`SITE_URL` (already load-bearing from prior cycles) are now also used for the new mention email.
+
+## Deployment blockers carried forward (verified still open, not silently marked resolved)
+
+1. `SITE_URL` must be set in production for CSRF `Origin` verification (Cycle 1) — **still open**.
+2. Real Resend activation/reset delivery (Cycle 1) — **still unverified**; Cycle 6 adds one more Resend usage (mention email) on the same unverified footing.
+3. Root index rollout has not been run against production (Cycle 1/2/3/5/6) — **still open**; Cycle 6 adds five more collections to the same deferred rollout.
+4. Rate limiting remains process-local (Cycle 1) — **still open**.
+5. `/portal/profile`, `/portal/security` (Cycle 1) — **still deferred**.
+6. Client-facing case-created email (Cycle 2) — **still deferred**.
+7. Non-transactional-fallback partial-provisioning recovery (Cycle 2) — **still open**; Cycle 6's channel provisioning has the identical exposure on a non-replica-set deployment (same mitigation: idempotent re-run, not atomicity).
+8. Cases notification-failure fault-injection test (Cycle 2) — **still not written**.
+9. Additional-client-on-a-case membership UI (Cycle 2) — **still not built**.
+10. No dedicated admin UI button for `initialize-interaction` (Cycle 3) — **still open**.
+11. No real malware scanner (Cycle 5) — **still open**, unaffected by this cycle (attachments reuse Cycle 5's existing scan-status handling as-is).
+12. No production object-storage provider selected (Cycle 5) — **still open**, unaffected by this cycle.
+13. DOCX/XLSX signature detection not fully tested (Cycle 5) — **still open**, unaffected by this cycle.
+14. No admin UI button for historical document-category backfill (Cycle 5) — **still open**, unaffected by this cycle.
+
+## New Cycle 6 open items
+
+- **No dedicated admin UI button for `initialize-channels`** on the case detail page — the route exists, capability-gated, callable directly; not wired into `cases/detail.ejs`'s Channels card this cycle (same shape as the still-open Cycle 3/5 backfill-button gaps).
+- **System-message coverage is intentionally partial** (4 of the module's ~12 listed example events) — documented in ADR-005 §18 as a deliberate scope reduction; extending it is real, scoped work for a future cycle, reusing the same `emitSystemMessage()`/`systemMessageService.js` entry point.
+- **No admin-side HTTP-level route tests** for collaboration (see Testing, above) — service+policy layer is thoroughly covered; a future cycle could add `supertest`-driven route tests to close this specific gap.
+- **Real Resend delivery of the mention email is unverified** beyond the test-double injection point (same posture as every prior cycle).
+- **The "Client Queries" placeholder on the admin case detail page still says "not implemented yet"** even though Cycle 3 built it — a pre-existing gap from before this cycle, noticed but deliberately left untouched (out of Cycle 6's scope; only the "Channels" placeholder was this cycle's job to fix).
+
+## Known limitations (Cycle 6)
+
+- `all_members` and `clients_and_team` visibility are functionally identical this cycle (both apps' policy code treats them the same) — kept as distinct values per the module's own instruction, for a future workspace-member-type split that doesn't exist yet.
+- No rich text/markdown formatting — plain text only, by deliberate design (ADR-005 §7/§8), not a missing feature.
+- No `@everyone`/mass mentions (explicitly out of scope per the module doc).
+- Message pinning was not implemented (module doc: "unless explicitly required" — no such requirement surfaced this cycle).
+- The portal's message composer does not support inline attachment selection or edit-in-place UI this cycle — sending/replying/deleting are fully wired; editing is available via the API (`editMessage()`/`POST /api/portal/messages/:id/edit`) but has no dedicated UI form yet, matching the same "API complete, UI intentionally minimal for a first release" pattern as other recent cycles' composer components.
+
+## Recommended next module
+
+`07_NOTIFICATIONS_AND_REALTIME.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first, per the plan's own handoff procedure. Every message this cycle is already durable in MongoDB before any notification fires (ADR-005 §22), so a future Socket.IO layer can emit purely from what's already persisted, re-deriving room authorization from the same `collaborationPolicy.js`/`collaboration-policy.ts` checks this cycle's HTTP routes already use — no redesign of the access model should be needed, only a transport layer on top of it.
