@@ -14,6 +14,7 @@ const { CASE_TYPE_VALUES } = require('../utils/caseConstants');
 const { generateCaseNumber } = require('../utils/caseNumber');
 const { withOptionalTransaction } = require('../utils/transaction');
 const { addOrReactivateMember } = require('./workspaceMembership');
+const { provisionDefaultCategories } = require('./documentCategoryService');
 
 const PRIORITY_VALUES = ['low', 'medium', 'high', 'urgent'];
 const MAX_CASE_NUMBER_ATTEMPTS = 5;
@@ -148,6 +149,7 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
   let caseDoc;
   let workspace;
   let transactional;
+  let categoriesCreatedCount;
 
   try {
     const { result, transactional: usedTransaction } = await withOptionalTransaction(async (session) => {
@@ -186,6 +188,16 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
         },
         { upsert: true, new: true, setDefaultsOnInsert: true, session: session || undefined },
       );
+
+      // Cycle 5: default document categories, provisioned in the same
+      // transaction as the case/workspace itself (ADR-004 §18). Idempotent
+      // — see documentCategoryService.js — so this is safe even if this
+      // whole closure is ever retried.
+      const categoryProvisioning = await provisionDefaultCategories({
+        caseId: createdCase._id,
+        workspaceId: createdWorkspace._id,
+        session,
+      });
 
       await addOrReactivateMember(
         {
@@ -239,12 +251,13 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
         { session: session || undefined },
       );
 
-      return { createdCase, createdWorkspace };
+      return { createdCase, createdWorkspace, categoryProvisioning };
     });
 
     caseDoc = result.createdCase;
     workspace = result.createdWorkspace;
     transactional = usedTransaction;
+    categoriesCreatedCount = result.categoryProvisioning.created.length;
     if (!transactional) {
       // Expected on a non-replica-set deployment (e.g. some local dev
       // setups) — the unique indexes above are what kept this safe, not
@@ -281,6 +294,15 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
       message: `Primary workspace created for case ${caseDoc.caseNumber}.`,
       actor,
     });
+    if (categoriesCreatedCount > 0) {
+      await CaseActivity.record({
+        caseId: caseDoc._id,
+        workspaceId: workspace._id,
+        type: 'category_provisioned',
+        message: `${categoriesCreatedCount} default document ${categoriesCreatedCount === 1 ? 'category' : 'categories'} provisioned.`,
+        actor,
+      });
+    }
     await CaseActivity.record({
       caseId: caseDoc._id,
       workspaceId: workspace._id,

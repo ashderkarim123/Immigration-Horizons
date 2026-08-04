@@ -173,6 +173,20 @@ const CAPABILITIES = {
   'queries.answer': ['super_admin', 'admin', 'pm'],
   'queries.manage': ['super_admin', 'admin', 'pm'],
   'queries.close': ['super_admin', 'admin', 'pm'],
+
+  // Document management (Cycle 5). Same conservative-matrix approach as
+  // cases.*/queries.* above — see 05_DOCUMENT_MANAGEMENT.md §19 and
+  // services/documentPolicy.js. Specialists/reviewer/editor/viewer
+  // excluded: no product rule yet justifies granting them document access,
+  // same reasoning already applied to cases.*/queries.* in prior cycles.
+  'documents.view': ['super_admin', 'admin', 'pm'],
+  'documents.view_all': ['super_admin', 'admin'],
+  'documents.upload': ['super_admin', 'admin', 'pm'],
+  'documents.review': ['super_admin', 'admin', 'pm'],
+  'documents.archive': ['super_admin', 'admin', 'pm'],
+  'document_categories.manage': ['super_admin', 'admin', 'pm'],
+  'document_requests.manage': ['super_admin', 'admin', 'pm'],
+  'document_versions.view': ['super_admin', 'admin', 'pm'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */

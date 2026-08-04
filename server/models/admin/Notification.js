@@ -20,6 +20,10 @@ const NOTIFICATION_TYPES = [
   'query_assigned',
   'query_client_follow_up',
   'query_needs_more_help',
+  // Cycle 5.
+  'document_uploaded',
+  'document_replacement_uploaded',
+  'document_request_overdue',
 ];
 
 const NotificationSchema = new mongoose.Schema(
@@ -37,6 +41,8 @@ const NotificationSchema = new mongoose.Schema(
     relatedTask: { type: mongoose.Schema.Types.ObjectId, ref: 'Task', default: null },
     relatedCase: { type: mongoose.Schema.Types.ObjectId, ref: 'ClientCase', default: null },
     relatedInteraction: { type: mongoose.Schema.Types.ObjectId, ref: 'ConsultationInteraction', default: null },
+    relatedDocument: { type: mongoose.Schema.Types.ObjectId, ref: 'CaseDocument', default: null },
+    relatedDocumentRequest: { type: mongoose.Schema.Types.ObjectId, ref: 'DocumentRequest', default: null },
 
     read: { type: Boolean, default: false },
   },

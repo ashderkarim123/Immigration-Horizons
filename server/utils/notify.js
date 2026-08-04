@@ -10,7 +10,18 @@ const Notification = require('../models/admin/Notification');
  * identically whether the recipient is a DB AdminUser or the env-credential
  * fallback admin, which has no user document at all.
  */
-async function notify({ recipientName, title, message, type, relatedLead, relatedTask, relatedCase, relatedInteraction }) {
+async function notify({
+  recipientName,
+  title,
+  message,
+  type,
+  relatedLead,
+  relatedTask,
+  relatedCase,
+  relatedInteraction,
+  relatedDocument,
+  relatedDocumentRequest,
+}) {
   if (!recipientName) return null;
   try {
     return await Notification.create({
@@ -22,6 +33,8 @@ async function notify({ recipientName, title, message, type, relatedLead, relate
       relatedTask: relatedTask || null,
       relatedCase: relatedCase || null,
       relatedInteraction: relatedInteraction || null,
+      relatedDocument: relatedDocument || null,
+      relatedDocumentRequest: relatedDocumentRequest || null,
     });
   } catch (err) {
     // Notifications are a convenience layer — a failure here must never
