@@ -49,7 +49,7 @@ export async function markChannelRead(params: {
       $or: [{ lastReadAt: null }, { lastReadAt: { $lt: lastReadAt } }],
     },
     { $set: { lastReadMessage, lastReadAt } },
-    { new: true },
+    { returnDocument: "after" },
   );
 
   if (!advanced) {
