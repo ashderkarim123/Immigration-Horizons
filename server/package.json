@@ -15,7 +15,9 @@
     "documents:provision-categories:apply": "node scripts/provisionDocumentCategories.js --apply",
     "documents:reconcile-storage": "node scripts/reconcileDocumentStorage.js",
     "collaboration:provision-channels": "node scripts/provisionChannels.js",
-    "collaboration:provision-channels:apply": "node scripts/provisionChannels.js --apply"
+    "collaboration:provision-channels:apply": "node scripts/provisionChannels.js --apply",
+    "notifications:send-digests": "node scripts/sendNotificationDigests.js",
+    "notifications:send-digests:apply": "node scripts/sendNotificationDigests.js --apply"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
