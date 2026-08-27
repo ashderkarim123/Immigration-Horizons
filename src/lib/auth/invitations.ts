@@ -8,7 +8,12 @@ import { generateToken, hashToken, normalizeEmail } from "./crypto";
 import { sendActivationEmail } from "./email";
 import { createInitialConsultationInteraction } from "./interactions";
 
-const INVITATION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+/**
+ * Exported so the cross-app contract test can assert the admin app's
+ * mirrored copy (server/utils/clientAccountConstants.js) hasn't drifted —
+ * an invitation issued by one app is consumed by the other (ADR-007 §2).
+ */
+export const INVITATION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 export type OnboardingOutcome =
   | "linked_existing_client"

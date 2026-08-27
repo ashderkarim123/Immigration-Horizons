@@ -77,6 +77,11 @@ const MODELS = [
   // with the Next.js app (ADR-006 §1) — both apps declare and provision
   // these indexes.
   require('../models/admin/NotificationPreference'),
+  // Cycle 8 — client account operations. Both are portal-owned collections
+  // this app now reads (invitation status, security summary) and narrowly
+  // writes (revoke/re-issue, session revocation) — ADR-007 §1.
+  require('../models/PortalInvitation'),
+  require('../models/ClientSession'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');
