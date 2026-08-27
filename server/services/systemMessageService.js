@@ -83,10 +83,29 @@ async function emitDocumentReviewedMessage({ workspaceId, documentId, displayNam
   });
 }
 
+/**
+ * A staff-authored, deliberately published client-visible update (Cycle 8 —
+ * ADR-007 §6). Unlike every emitter above, this one carries operator-typed
+ * text rather than a generated sentence, so the idempotency key is derived
+ * from the publish timestamp: two identical updates published minutes apart
+ * are two legitimately distinct updates, not a retry to collapse.
+ */
+async function emitClientUpdateMessage({ workspaceId, caseId, body, publishedAtIso }) {
+  return emitSystemMessage({
+    workspaceId,
+    channelTemplateKey: 'case_updates',
+    messageType: 'case_update',
+    body,
+    clientVisible: true,
+    idempotencyKey: `client_update:${caseId}:${publishedAtIso}`,
+  });
+}
+
 module.exports = {
   emitSystemMessage,
   emitMemberAddedMessage,
   emitCaseStageChangedMessage,
   emitDocumentUploadedMessage,
   emitDocumentReviewedMessage,
+  emitClientUpdateMessage,
 };

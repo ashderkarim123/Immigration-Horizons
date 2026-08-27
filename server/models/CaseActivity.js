@@ -52,6 +52,9 @@ const ACTIVITY_TYPES = [
   'channel_reordered',
   'channel_member_added',
   'channel_member_removed',
+  // Cycle 8 — a deliberately published, client-visible case update
+  // (ADR-007 §6). Distinct from the automatic system messages above.
+  'client_update_published',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(

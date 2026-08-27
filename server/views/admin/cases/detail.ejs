@@ -18,6 +18,12 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
   </div>
 </div>
 
+<% if (typeof flash !== 'undefined' && flash) { %>
+  <div class="alert alert-<%= flash.type === 'error' ? 'danger' : flash.type === 'info' ? 'info' : 'success' %>" style="margin-bottom:18px">
+    <%= flash.message %>
+  </div>
+<% } %>
+
 <div class="detail-layout">
   <div class="detail-primary">
     <div class="admin-card">
@@ -137,8 +143,21 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
     </div>
     <div class="admin-card">
       <div class="admin-card-header"><h3>Client Queries</h3></div>
-      <div class="admin-card-body"><p class="text-muted"><i class="fas fa-tools"></i> Consultation/query tracking is not implemented yet — planned for a later cycle.</p></div>
+      <div class="admin-card-body"><a href="/admin/queries" class="btn btn-sm btn-primary">Open query queues</a></div>
     </div>
+    <% if (typeof canPublishUpdate !== 'undefined' && canPublishUpdate) { %>
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Publish Client Update</h3></div>
+      <div class="admin-card-body">
+        <p class="page-subtitle" style="margin-top:0">Posts a visible update into this case's Case Updates channel. The client sees it in their portal message centre.</p>
+        <form action="/admin/cases/<%= caseDoc._id %>/client-update" method="POST">
+          <textarea name="body" class="form-control" rows="3" maxlength="8000" required placeholder="e.g. We've completed the first draft of your petition and begun internal review."></textarea>
+          <button type="submit" class="btn btn-sm btn-primary" style="margin-top:10px">Publish to client</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
     <div class="admin-card">
       <div class="admin-card-header"><h3>Channels</h3></div>
       <div class="admin-card-body"><a href="/admin/cases/<%= caseDoc._id %>/collaboration" class="btn btn-sm btn-primary">Open collaboration center</a></div>

@@ -21,6 +21,8 @@ const {
 const casePolicy = require('../../services/casePolicy');
 const { convertConsultationToCase } = require('../../services/caseConversion');
 const caseManagement = require('../../services/caseManagement');
+const { emitClientUpdateMessage } = require('../../services/systemMessageService');
+const { MAX_MESSAGE_BODY_LENGTH } = require('../../utils/collaborationConstants');
 
 const MAX_PAGE_LIMIT = 100;
 const DEFAULT_PAGE_LIMIT = 20;
@@ -164,9 +166,12 @@ module.exports = function attachCases(router) {
         canAssign,
         canArchive,
         canManageMembers,
+        canPublishUpdate: can(req, 'client_updates.publish'),
+        flash: req.session.caseFlash || null,
         workspaceRoles: WORKSPACE_ROLES,
         currentPage: 'cases',
       });
+      delete req.session.caseFlash;
     } catch (err) {
       console.error('[admin/cases/detail]', err.message);
       res.redirect('/admin/cases');
@@ -354,6 +359,62 @@ module.exports = function attachCases(router) {
       res.redirect(`/admin/cases/${req.params.id}`);
     } catch (err) {
       console.error('[admin/cases/archive]', err.message);
+      res.redirect(`/admin/cases/${req.params.id}`);
+    }
+  });
+
+  // ======================================================================
+  // PUBLISH CLIENT-VISIBLE UPDATE (Cycle 8 — ADR-007 §6)
+  // ======================================================================
+
+  router.post('/admin/cases/:id/client-update', requireCapability('client_updates.publish'), async (req, res) => {
+    try {
+      const loaded = await caseManagement.loadCaseAndWorkspace(req.params.id);
+      if (!loaded) return res.status(404).send('Case not found.');
+      const { caseDoc, workspace } = loaded;
+
+      // Record-level check on top of the capability — a PM may only publish
+      // to a case they're actually a member of.
+      if (!(await casePolicy.canViewCase(req, workspace._id))) {
+        return res.status(403).send('Forbidden.');
+      }
+
+      const body = String(req.body.body || '').trim().slice(0, MAX_MESSAGE_BODY_LENGTH);
+      if (!body) return res.redirect(`/admin/cases/${req.params.id}`);
+
+      const actor = actorFromSession(req);
+      const publishedAtIso = new Date().toISOString();
+
+      const message = await emitClientUpdateMessage({
+        workspaceId: workspace._id,
+        caseId: caseDoc._id,
+        body,
+        publishedAtIso,
+      });
+
+      // emitSystemMessage no-ops when the case_updates channel was never
+      // provisioned (a pre-Cycle-6 case) — surface that rather than
+      // silently reporting success.
+      if (!message) {
+        req.session.caseFlash = {
+          type: 'error',
+          message: 'This case has no Case Updates channel yet. Initialize its channels first.',
+        };
+        return res.redirect(`/admin/cases/${req.params.id}`);
+      }
+
+      await CaseActivity.record({
+        caseId: caseDoc._id,
+        workspaceId: workspace._id,
+        type: 'client_update_published',
+        message: `${actor.name} published a client-visible update.`,
+        actor,
+      });
+
+      req.session.caseFlash = { type: 'success', message: 'Update published to the client.' };
+      res.redirect(`/admin/cases/${req.params.id}`);
+    } catch (err) {
+      console.error('[admin/cases/client-update]', err.message);
       res.redirect(`/admin/cases/${req.params.id}`);
     }
   });
