@@ -72,6 +72,11 @@ const MODELS = [
   require('../models/WorkspaceMessage'),
   require('../models/MessageRevision'),
   require('../models/ChannelReadState'),
+  // Cycle 7 — notifications. Notification (above) gained new identity-
+  // keyed indexes this cycle; NotificationPreference is new. Dual-writer
+  // with the Next.js app (ADR-006 §1) — both apps declare and provision
+  // these indexes.
+  require('../models/admin/NotificationPreference'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');

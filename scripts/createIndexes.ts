@@ -36,6 +36,8 @@ import { ChannelMember } from "../src/lib/models/ChannelMember";
 import { WorkspaceMessage } from "../src/lib/models/WorkspaceMessage";
 import { MessageRevision } from "../src/lib/models/MessageRevision";
 import { ChannelReadState } from "../src/lib/models/ChannelReadState";
+import { Notification } from "../src/lib/models/Notification";
+import { NotificationPreference } from "../src/lib/models/NotificationPreference";
 
 // Cycle 2 case/workspace/membership models are also declared here even
 // though server/ is their primary writer (see
@@ -68,6 +70,11 @@ const MODELS = [
   WorkspaceMessage,
   MessageRevision,
   ChannelReadState,
+  // Cycle 7 — this app is a real writer for these (ADR-006 §1), not just a
+  // reader. Notification's identity-keyed indexes are new this cycle;
+  // NotificationPreference is a brand new model.
+  Notification,
+  NotificationPreference,
 ];
 
 const isDryRun = process.argv.includes("--dry-run");

@@ -3,17 +3,12 @@ import "server-only";
 import mongoose, { Schema } from "mongoose";
 
 /**
- * Mirrors server/models/admin/Notification.js — first write from this app
- * against this collection (Cycle 6): a client-authored message that
- * mentions or replies to an employee must be able to notify that employee
- * in-app, and only the server-side Notification model/collection exists
- * for that (ADR-005 §17). Uses the SAME implicit Mongoose pluralization
- * ("notifications") the server's own model already relies on — not an
- * explicit collection name — to stay consistent with the existing,
- * already-shipped collection rather than introducing a second naming
- * convention for one model.
+ * Mirrors server/models/admin/Notification.js exactly, including the
+ * Cycle 7 immutable-recipient-identity fields (ADR-006 §1). Uses the SAME
+ * implicit Mongoose pluralization ("notifications") the server's own model
+ * already relies on — not an explicit collection name (Cycle 6 precedent).
  */
-const NOTIFICATION_TYPES = [
+export const NOTIFICATION_TYPES = [
   "new_lead",
   "lead_assigned",
   "task_assigned",
@@ -36,12 +31,31 @@ const NOTIFICATION_TYPES = [
   "document_request_overdue",
   "message_mention",
   "message_reply",
+  "query_scheduled",
+  "query_answered",
+  "query_clarification_requested",
+  "query_cancelled",
+  "document_requested",
+  "document_request_updated",
+  "document_request_cancelled",
+  "document_accepted",
+  "document_replacement_requested",
 ] as const;
+
+export const RECIPIENT_TYPES = ["employee", "client"] as const;
+export const EMAIL_STATES = ["not_applicable", "pending", "sent", "skipped_no_key", "skipped_preference", "failed"] as const;
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+export type NotificationRecipientType = (typeof RECIPIENT_TYPES)[number];
 
 const NotificationSchema = new Schema(
   {
     recipientId: { type: Schema.Types.ObjectId, default: null },
     recipientName: { type: String, default: "" },
+
+    recipientType: { type: String, enum: RECIPIENT_TYPES, default: null },
+    recipientAdmin: { type: Schema.Types.ObjectId, default: null },
+    recipientClient: { type: Schema.Types.ObjectId, ref: "ClientUser", default: null },
 
     title: { type: String, required: true },
     message: { type: String, required: true },
@@ -57,8 +71,20 @@ const NotificationSchema = new Schema(
     relatedMessage: { type: Schema.Types.ObjectId, ref: "WorkspaceMessage", default: null },
 
     read: { type: Boolean, default: false },
+    readAt: { type: Date, default: null },
+
+    emailState: { type: String, enum: EMAIL_STATES, default: "not_applicable" },
+    dedupeKey: { type: String, default: null },
   },
   { timestamps: true },
+);
+
+NotificationSchema.index({ recipientName: 1, read: 1, createdAt: -1 });
+NotificationSchema.index({ recipientType: 1, recipientAdmin: 1, read: 1, createdAt: -1 });
+NotificationSchema.index({ recipientType: 1, recipientClient: 1, read: 1, createdAt: -1 });
+NotificationSchema.index(
+  { dedupeKey: 1 },
+  { unique: true, partialFilterExpression: { dedupeKey: { $type: "string" } } },
 );
 
 export const Notification = mongoose.models.Notification || mongoose.model("Notification", NotificationSchema);
