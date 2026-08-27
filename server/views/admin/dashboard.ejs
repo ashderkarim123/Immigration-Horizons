@@ -1,3 +1,38 @@
+<%
+// Cycle 8 — operational queues (ADR-007 §4). Rendered above the content
+// counts because this is what the team acts on day to day. Each tile links
+// to the queue that resolves it; a zero tile is deliberately still shown so
+// "nothing waiting" is a visible, trustworthy state rather than an absence.
+const OPERATIONS_TILES = operations ? [
+  { label: 'Cases without a PM',    n: operations.casesWithoutManager,      url: '/admin/cases',                        icon: 'user-slash',        tone: 'rose' },
+  { label: 'Unanswered queries',    n: operations.unansweredQueries,        url: '/admin/queries',                      icon: 'comment-dots',      tone: 'orange' },
+  { label: 'Awaiting scheduling',   n: operations.queriesAwaitingScheduling, url: '/admin/queries',                     icon: 'calendar-plus',     tone: 'blue' },
+  { label: 'Documents to review',   n: operations.documentsAwaitingReview,  url: '/admin/documents',                    icon: 'file-signature',    tone: 'purple' },
+  { label: 'Overdue doc requests',  n: operations.overdueDocumentRequests,  url: '/admin/documents',                    icon: 'exclamation-triangle', tone: 'rose' },
+  { label: 'Unread client messages', n: operations.unreadClientMessages,    url: '/admin/cases',                        icon: 'envelope-open-text', tone: 'cyan' },
+  { label: 'Filing within 30 days', n: operations.upcomingFilingDeadlines,  url: '/admin/cases',                        icon: 'calendar-check',    tone: 'gold' },
+  { label: 'Stalled cases',         n: operations.stalledCases,             url: '/admin/cases',                        icon: 'hourglass-half',    tone: 'orange' },
+  { label: 'Quarantined files',     n: operations.quarantinedDocuments,     url: '/admin/documents',                    icon: 'shield-alt',        tone: 'rose' },
+] : [];
+%>
+<% if (operations) { %>
+  <div class="page-header" style="margin-bottom:14px">
+    <div>
+      <h1>Operations</h1>
+      <p class="page-subtitle">What needs attention right now</p>
+    </div>
+  </div>
+  <div class="stats-grid" style="margin-bottom:28px">
+    <% OPERATIONS_TILES.forEach(function(t) { %>
+      <a class="stat-card" href="<%= t.url %>" style="text-decoration:none;color:inherit">
+        <div class="stat-card-icon <%= t.tone %>"><i class="fas fa-<%= t.icon %>"></i></div>
+        <div class="stat-card-value"><%= t.n %></div>
+        <div class="stat-card-label"><%= t.label %></div>
+      </a>
+    <% }); %>
+  </div>
+<% } %>
+
 <!-- Stats Grid -->
 <div class="stats-grid">
   <div class="stat-card">

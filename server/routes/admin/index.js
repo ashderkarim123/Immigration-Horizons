@@ -39,6 +39,8 @@ const ClientCase = require('../../models/ClientCase');
 const attachQueries = require('./queries');
 const attachDocuments = require('./documents');
 const attachCollaboration = require('./collaboration');
+const attachClients = require('./clients');
+const { getOperationalCounts } = require('../../services/operationsQueues');
 
 // ========================================================================
 // AUTHENTICATION
@@ -221,6 +223,11 @@ router.get('/admin', async (req, res) => {
       BlogPost.find().sort({ createdAt: -1 }).limit(5),
     ]);
 
+    // Cycle 8 — operational queue counts (ADR-007 §4). Computed in one
+    // aggregation module; never throws (returns zeros on failure), so the
+    // dashboard renders even if a queue query has a problem.
+    const operations = can(req, 'cases.view') ? await getOperationalCounts() : null;
+
     res.render('admin/dashboard', {
       title: 'Dashboard | Admin',
       stats: {
@@ -233,6 +240,7 @@ router.get('/admin', async (req, res) => {
         testimonials,
         faqs,
       },
+      operations,
       recentLeads,
       recentPosts,
       currentPage: 'dashboard',
@@ -242,6 +250,7 @@ router.get('/admin', async (req, res) => {
     res.render('admin/dashboard', {
       title: 'Dashboard | Admin',
       stats: {},
+      operations: null,
       recentLeads: [],
       recentPosts: [],
       currentPage: 'dashboard',
@@ -1483,5 +1492,10 @@ attachDocuments(router);
 // TEAM COLLABORATION (Cycle 6)
 // ========================================================================
 attachCollaboration(router);
+
+// ========================================================================
+// CLIENT ACCOUNT OPERATIONS (Cycle 8)
+// ========================================================================
+attachClients(router);
 
 module.exports = router;
