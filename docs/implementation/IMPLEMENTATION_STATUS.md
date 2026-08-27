@@ -1076,3 +1076,173 @@ No new environment variables this cycle. `RESEND_API_KEY`/`EMAIL_FROM`/`SITE_URL
 ## Recommended next module
 
 `07_NOTIFICATIONS_AND_REALTIME.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first, per the plan's own handoff procedure. Every message this cycle is already durable in MongoDB before any notification fires (ADR-005 §22), so a future Socket.IO layer can emit purely from what's already persisted, re-deriving room authorization from the same `collaborationPolicy.js`/`collaboration-policy.ts` checks this cycle's HTTP routes already use — no redesign of the access model should be needed, only a transport layer on top of it.
+
+---
+
+# Cycle 7 — Notifications and Preferences (Real-Time Deferred)
+
+Module implemented: `07_NOTIFICATIONS_AND_REALTIME.md` (durable-notification half only — see Real-time section below for why Socket.IO is explicitly out of scope this cycle, matching the module's own handoff sequencing).
+
+## Pre-cycle anomaly finding — an external commit landed between Cycle 6 and Cycle 7
+
+Before writing any Cycle 7 code, the routine git-anomaly check found something genuinely new (not a repeat of a previously-known item): commit `301ac03` — authored by the repo's own git user (`ashderkarim123`), **not** by me — sits directly on top of Cycle 6's ending commit (`e065725`), with clean linear ancestry (`git merge-base --is-ancestor e065725 HEAD` confirms it). It touches exactly the three files that had been carried across Cycles 5/6 as "pre-existing, uncommitted, never-stage" anomalies:
+
+- `src/components/seo/json-ld.tsx` — the "Not a law firm." sentence removal I flagged in the Cycle 6 report.
+- `server/public/css/admin.css` — the two color-value edits.
+- `docs/architecture/ADR-003-consultation-interactions.md` — a header-formatting correction.
+
+This resolves the open flag from the Cycle 6 report: the repo owner reviewed it and committed the change themselves, through their own tooling (the commit message is three unrelated one-liners concatenated with no separating blank lines — consistent with a multi-file IDE commit, not a CLI `git commit -m`). Since it's now real, intentional, committed history — not a stray working-tree modification — there is nothing left to "protect" going forward: this cycle's commits needed no anomaly-file exclusions at all (confirmed: `git status` at the start of Cycle 7 showed a clean tree aside from this one already-landed commit). Recorded here rather than silently dropped, since the Current/Target split in `.claude/CLAUDE.md`'s business-positioning rule (`site.disclaimer` must never be softened) is still worth the repo owner's own awareness — `disambiguatingDescription`/`site.disclaimer` itself is untouched, only the separate `description` field's trailing sentence was removed, so the disclaimer still ships in the JSON-LD.
+
+## Architecture decision: ADR-006
+
+`docs/architecture/ADR-006-notifications-and-preferences.md`. Summary:
+
+1. **Migrate in place, don't replace.** `recipientId`/`recipientName` (the pre-Cycle-7 display-name targeting the admin bell's hot query already depends on) stay exactly as they were; `recipientType`/`recipientAdmin`/`recipientClient` are added alongside. Every notification created from this cycle forward populates both; rows from before this cycle simply have no identity fields, which every new query treats as "not addressable by identity," never as an error.
+2. **`type`, not `eventType`** — the module doc's suggested field name is a purely cosmetic rename with zero behavioral gain over the existing, already-indexed, 20-value-strong `type` field; kept as-is, documented as a deliberate deviation.
+3. **No `relatedWorkspace` field** — every `CaseWorkspace` is 1:1 with its case (unique index since Cycle 2), so `relatedCase` already resolves the workspace in one lookup everywhere it's needed.
+4. **`dedupeKey`** — a real, unique, sparse-indexed mechanism, applied only where a genuine double-fire is realistic (the digest job's per-recipient-per-day guard was reconsidered mid-implementation — see decision 9 below — and the overdue-reminder job's per-request-per-day guard).
+5. **`emailState`** tracks what happened to a notification's email side-effect (observability, not a gate) — `not_applicable | pending | sent | skipped_no_key | skipped_preference | failed`.
+6. **Nine new client-facing notification types**, every one paralleling an email that already existed from an earlier cycle (Cycles 2/3/5/6) — this is "give the client an in-app view of something we already tell them by email," not new business logic. Full trigger table in the ADR. Two existing message types (`message_mention`, `message_reply`) gained a client-eligible recipient path rather than new enum values — closing a real Cycle 6 gap where a client whose message got replied to was notified of nothing at all.
+7. **Email policy unchanged for the four "immediate" tiers** (invitations, schedule changes, replacement requests) — those adapters are untouched. The only new preference surface is `mentionEmails` and `digestEmails`; reply-to-your-message gets no email either direction, matching "do not send an email for every message by default."
+8. **`NotificationPreference` is minimal** — three fields (`mentionEmails`, `digestEmails`, `digestFrequency`), not a full per-event-type matrix, since only two things are ever conditionally sent by policy. Lazily created on first read.
+9. **Digest and overdue-reminder — two independent passes in one dry-run-by-default script**, `server/scripts/sendNotificationDigests.js`. Mid-implementation, the ADR's first draft ("stamp the same dedupeKey on every covered notification") turned out to violate the dedupeKey's own unique index (many sibling documents can't share one unique value) — corrected to use each notification's own `emailState` transition (`not_applicable` → `sent`) as the digest pass's real idempotency mechanism, reserving `dedupeKey` for the overdue-reminder pass's genuine one-notification-per-request-per-day case. No OS-level scheduler is installed or assumed.
+10. **Portal notification bell/list is new UI**, not a global nav addition — the portal has no shared shell/layout the way the admin's EJS layout gives every page a topbar bell for free (confirmed by inspection: no `layout.tsx`, no shared header component exists under `src/app/portal/` today). Scoped instead to a dedicated `/portal/notifications` page plus an unread-count link on the dashboard (`/portal`) — the "same shape as admin" framing in the ADR's original draft was corrected to reflect this real constraint rather than overclaim; a persistent nav bell is real work for whenever Cycle 9 (Client Portal Experience) builds an actual portal shell.
+11. **Real-time architecture is documented, not built** — Socket.IO rooms/auth/adapter/reconnect strategy recorded in the ADR as Target, matching `00_MASTER_ROADMAP.md`'s own phase split (Phase 7 = durable notifications; Release 5 = real-time, after "full security and deployment review"). The current single-VPS/single-PM2-instance topology (`DEPLOYMENT.md` Part 1) has not had that review — building sockets now would repeat exactly the premature-scope mistake Cycle 6 avoided for chat.
+
+## Product/policy decisions made without stopping for confirmation
+
+- **A genuine symmetric gap found and closed while implementing, not initially planned:** `src/lib/collaboration/message-service.ts` (client-authored messages) only ever notified an *employee* mentioned or replied to — a client mentioning or replying to a *different* client (a real, if rare, multi-client-workspace case) notified nobody. Closed via the new shared `src/lib/notifications/notification-service.ts` (`notifyOtherClient`), reusing the exact same active-workspace-membership guard as every other client notification this cycle.
+- **A second genuine gap found and closed:** the portal's own client-initiated interaction actions (`addClientFollowUp`, `confirmClientResolution` in `src/lib/auth/interactions.ts`) never notified the assigned employee at all — the server-side equivalents (`interactionService.js`) already did this from Cycle 3, but the Cycle 3 dual-writer build never added the TS-side counterpart since `Notification` didn't exist in this app until Cycle 6. Closed by wiring the same `notifyEmployee` call into both root functions.
+- **`document_request_overdue`'s first real caller.** The enum value existed since Cycle 5 but nothing ever created one. The overdue-reminder pass of `sendNotificationDigests.js` is its first real trigger.
+- **The env-credential fallback admin (`admin`/break-glass login) cannot send channel messages** (established Cycle 6 rule: `WorkspaceMessage` requires a real `senderAdmin`) — this was re-confirmed, not re-litigated, while building the admin notification-preferences page, which is gated the same way (`req.session.adminUser?.id` must be a real AdminUser id) for the identical reason: preferences need a stable identity to key off of, and the fallback login has none.
+
+## Files created (Cycle 7)
+
+**Docs:**
+- `docs/architecture/ADR-006-notifications-and-preferences.md`
+- `docs/architecture/notification-schema-contract.json`
+
+**Server:**
+- `server/models/admin/NotificationPreference.js`
+- `server/services/notificationService.js`
+- `server/services/notificationDigestEmail.js`
+- `server/scripts/sendNotificationDigests.js`
+- `server/views/admin/notifications/preferences.ejs`
+- `server/test/{notification-schema-contract,notification-models,notification-service}.test.js`
+- `server/test/integration/notification-triggers.integration.test.js`
+
+**Root:**
+- `src/lib/models/NotificationPreference.ts`
+- `src/lib/notifications/notification-service.ts`
+- `src/app/api/portal/notifications/[id]/read/route.ts`
+- `src/app/api/portal/notifications/read-all/route.ts`
+- `src/app/api/portal/notifications/preferences/route.ts`
+- `src/app/portal/notifications/page.tsx`
+- `src/app/portal/notifications/preferences/page.tsx`
+- `src/components/portal/notification-actions.tsx`
+- `src/components/portal/notification-preferences-form.tsx`
+- `test/notification-schema-contract.test.ts`
+- `test/notification-service.integration.test.ts`
+- `test/notification-routes.integration.test.ts`
+
+## Files modified (Cycle 7)
+
+- `server/models/admin/Notification.js` / `src/lib/models/Notification.ts` — identity fields, `emailState`, `dedupeKey`, new indexes, 9 new client-facing types.
+- `server/utils/notify.js` — thin backward-compatible wrapper over `notificationService.notifyEmployee`; `notifyMany` now accepts `{ name, adminId }` pairs alongside plain strings.
+- `server/routes/admin/leadOps.js` — all `notify()`/`notifyMany()` call sites (task assignment, lead assignment, package delivery) now pass a real `recipientAdminId`; new `/admin/notifications/preferences` GET+POST routes.
+- `server/routes/admin/index.js` — the lead-status-change `notifyMany()` call site now resolves and passes real admin ids (select projection extended to include `owner`).
+- `server/views/admin/notifications/index.ejs` — added a "Preferences" link.
+- `server/services/{caseManagement,caseConversion,documentUploadService}.js` — existing `notify()` calls now pass `recipientAdminId`.
+- `server/services/interactionService.js` — 3 existing employee `notify()` calls gained `recipientAdminId`; 4 new client in-app notification hooks added alongside the pre-existing client emails (`scheduleInteraction`, `answerInteraction`, `requestClarification`, `cancelInteraction`).
+- `server/services/documentRequestService.js` — 3 new client in-app notification hooks alongside the pre-existing emails (create/due-date-change/cancel).
+- `server/services/documentReviewService.js` — 2 new client in-app notification hooks alongside the pre-existing emails (accepted/needs-replacement-or-rejected).
+- `server/services/messageService.js` — mention/reply notify calls gained `recipientAdminId`; client-mentioned and reply-to-client-message now create a real in-app `Notification` row (previously email-only or nothing at all).
+- `src/lib/collaboration/message-service.ts` — refactored to use the shared `notification-service.ts` instead of an inline duplicate; added the client-mentions-client and client-replies-to-client paths.
+- `src/lib/auth/interactions.ts` — `addClientFollowUp`/`confirmClientResolution` now notify the assigned employee.
+- `src/app/portal/page.tsx` — unread-notification-count link added next to the logout button.
+- `scripts/createIndexes.ts` / `server/scripts/createIndexes.js` — registered `NotificationPreference` (both apps) and `Notification`'s new indexes (root — server already had `Notification` registered).
+- `server/package.json` — added `notifications:send-digests[:apply]` scripts.
+
+## Models and fields (Cycle 7)
+
+**`Notification`** (`notifications`, pre-existing collection) — new fields: `recipientType` (`employee`/`client`), `recipientAdmin`, `recipientClient`, `readAt`, `emailState`, `dedupeKey`. `recipientId`/`recipientName`/`read` unchanged. 9 new `type` enum values (see ADR-006 §6 table).
+
+**`NotificationPreference`** (`notification_preferences`, new): `recipientType`, `recipientAdmin`/`recipientClient` (exactly one set, enforced by a pre-validate hook mirroring `WorkspaceMessage`'s sender-identity pattern), `mentionEmails` (default `true`), `digestEmails` (default `true`), `digestFrequency` (`daily`/`weekly`/`off`, default `daily`).
+
+## Indexes (Cycle 7)
+
+| Model | Indexes |
+|---|---|
+| `Notification` | `recipientName+read+createdAt` (unchanged, still the admin bell's hot path); `recipientType+recipientAdmin+read+createdAt` (new); `recipientType+recipientClient+read+createdAt` (new); `dedupeKey` (unique, sparse — new) |
+| `NotificationPreference` | `recipientAdmin` (unique, sparse); `recipientClient` (unique, sparse) |
+
+Verified via both apps' `--dry-run` index scripts — collection names (`notifications`, `notification_preferences`) and index counts match exactly between the two independent declarations.
+
+## Client-facing notification events (Cycle 7)
+
+9 new types, each with a real, pre-existing email trigger point (full table in ADR-006 §6): `query_scheduled`, `query_answered`, `query_clarification_requested`, `query_cancelled`, `document_requested`, `document_request_updated`, `document_request_cancelled`, `document_accepted`, `document_replacement_requested`. Plus 2 existing types (`message_mention`, `message_reply`) gaining a client-eligible recipient path. Every client notification that's case-scoped is guarded by `notifyClient({ requireActiveWorkspace })` — a client removed from a case's workspace receives no further notifications about it, verified by dedicated tests in both apps.
+
+## Email policy (Cycle 7)
+
+Unchanged for the four "immediate" tiers (invitations, schedule changes, replacement requests — untouched adapters from Cycles 2/3/5). New preference-gated tiers: mention emails (`mentionEmails`, both directions, pre-existing Cycle 6 behavior now preference-gated for the first time) and the digest (`digestEmails`/`digestFrequency`). Reply-to-your-message is in-app only, no email, either direction — a deliberate policy choice (ADR-006 §7), not a gap.
+
+## Digest and overdue-reminder script (Cycle 7)
+
+`server/scripts/sendNotificationDigests.js` — dry-run by default (`--apply` to actually send/write), two independent passes (`--digest-only`/`--overdue-only` to run just one):
+
+- **Digest**: batches every unread, not-yet-emailed notification per recipient (employee or client) with `digestEmails !== false`, sends one summary email, flips those specific notifications' `emailState` to `sent`. Only notifications older than 1 hour are eligible, avoiding double-covering something an immediate-tier email just sent.
+- **Overdue reminder**: every open `DocumentRequest` past its `dueDate` gets exactly one `document_request_overdue` notification + email per calendar day, guarded by a real, unique `dedupeKey`. First real trigger for an enum value that existed since Cycle 5.
+
+No scheduler is installed or assumed — wiring this to cron/PM2 is a deployment decision (see Deployment blockers, below).
+
+## Capability/access notes (Cycle 7)
+
+No new admin capabilities were needed — `/admin/notifications/preferences` reuses the existing "must be a real, logged-in DB AdminUser" gate (the env-fallback admin is excluded, same posture as every identity-scoped feature since Cycle 3). Portal notification routes reuse the existing `getSessionActor`/`ClientUser` active-status check every other `/api/portal/*` route already applies — no new authorization primitive was introduced.
+
+## Testing (Cycle 7)
+
+**Results (confirmed, full suite run at the final commit):**
+- Server: **333/333 passing** (Cycle 7 added 33: 5 schema-contract, 9 models, 9 service, 10 integration; plus the existing 300 from Cycles 1–6).
+- Root: **137/137 passing** (Cycle 7 added 15: 4 schema-contract, 5 service, 6 routes; plus the existing 122 from Cycles 1–6).
+
+**Explicitly not covered** (honest gaps):
+- No automated test for the digest/overdue-reminder script itself (`sendNotificationDigests.js`) — verified by code review and the same dry-run-by-default posture as every other provisioning script this project has shipped, but not exercised by `node --test`. A real gap; the underlying `notifyClient`/dedupeKey/`emailState`-transition mechanisms it relies on are each independently tested.
+- No test for the admin `/admin/notifications/preferences` route as a real HTTP request (server-side collaboration/notification routes generally lack this — see Cycle 6's identical honest gap).
+- No test for the portal notification pages rendering (`/portal/notifications`, `/portal/notifications/preferences`) as real page requests — the underlying `listForClient`/`getOrCreatePreferences` functions they call are tested directly instead.
+- Real Resend delivery of the new digest/overdue-reminder emails is unverified beyond the test-double injection pattern (same posture as every prior cycle's email testing).
+
+**Quality commands, all confirmed:**
+- `npx tsc --noEmit` (root) — clean.
+- `npm run lint` (root) — clean.
+- `npm run build` (root, Turbopack) — succeeds; all new routes (`/api/portal/notifications/*`, `/portal/notifications*`) correctly classified as dynamic (ƒ).
+- `npm run db:indexes:dry-run` (root) and `node scripts/createIndexes.js --dry-run` (server) — both list every new index without connecting; collection names match exactly between the two scripts.
+- `cd server && npm test` — 333/333.
+
+## Environment variables (Cycle 7)
+
+No new environment variables. `RESEND_API_KEY`/`EMAIL_FROM`/`SITE_URL` (already load-bearing) are now also used by `notificationDigestEmail.js`.
+
+## Deployment blockers carried forward (verified still open, not silently marked resolved)
+
+Every item from the Cycle 6 list remains open and unaffected by this cycle's work, plus:
+
+15. **No scheduler wired for `sendNotificationDigests.js`** — the script is real, tested indirectly (its underlying service functions are directly tested), dry-run-by-default, and safe to run repeatedly (idempotent both passes) — but nothing invokes it automatically. Needs a cron entry or PM2 cron restart config as part of a future deployment cycle.
+16. **Real-time delivery (Socket.IO) is entirely undone** — durable notifications exist, but there is no live push; the portal/admin only see new notifications on their next page load. Documented as Target in ADR-006 §11, matching the module's and master roadmap's own Phase 7 vs Release 5 split.
+
+## New Cycle 7 open items
+
+- **No global portal nav/bell** — see ADR-006 §10. `/portal/notifications` and the dashboard's unread-count link exist; a persistent bell visible from every portal page needs an actual portal shell, which doesn't exist yet (real work for Cycle 9, Client Portal Experience).
+- **Client-authored mention-of-employee email remains one-directional** — `collaborationEmail.js` (server) sends a mention email for employee → client; the symmetric client → employee path only gets the new in-app notification, no email. A second Resend adapter living in the Next.js app for purely-internal recipients is real, separable work, deliberately deferred (ADR-006 §9).
+- **`document_request_overdue`'s in-app notification only reaches the client**, not the case's project manager — the module doc's own event list doesn't specify a PM-facing overdue signal distinct from the client-facing one, and adding one wasn't a clearly-real gap the way the other 9 new types were (each paralleling a pre-existing email). Worth a product decision in a future cycle, not invented here.
+- **`git log`/commit-hygiene note**: commit `301ac03` (see the Pre-cycle anomaly finding, above) has a malformed multi-message commit body (three one-liners concatenated with no blank-line separation) — cosmetic, not a data-integrity issue, but worth a heads-up for whoever authored it about `git commit -m` vs a real multi-line message the next time three unrelated fixes get committed together.
+
+## Known limitations (Cycle 7)
+
+- `NotificationPreference` is a 3-field model, not a full per-event-type matrix — by design (ADR-006 §8), since only two things are ever conditionally sent by policy.
+- The digest's "older than 1 hour" cutoff is a fixed constant, not configurable — reasonable for a first release, would need to become a real setting if operational experience shows it's wrong.
+- The portal notification list has no filtering/pagination UI (unlike the admin's type/lead/unread filter bar) — it lists the 50 most recent, matching the "API complete, UI intentionally minimal for a first release" pattern from Cycle 6's message composer.
+- No notification ever gets deleted or archived — matches the project's "prefer archive over delete" business rule by construction (there's no delete path at all, not even an admin one), but also means the collection only grows; a future retention cycle (Phase 10 in the master roadmap) should address this deliberately rather than leaving it as an accident.
+
+## Recommended next module
+
+`08_ADMIN_CASE_OPERATIONS.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first. Every notification this cycle is keyed by real recipient identity and every client-facing trigger point already respects active workspace membership, so Cycle 8's case-queue/assignment/review workflows can call straight into `notificationService.js`/`notification-service.ts` without any further plumbing — the identity migration this cycle's title promised is actually finished, not just started.
