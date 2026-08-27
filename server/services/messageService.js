@@ -12,6 +12,7 @@ const ClientCase = require('../models/ClientCase');
 
 const { canAttachDocument } = require('./collaborationPolicy');
 const { notify } = require('../utils/notify');
+const { notifyClient } = require('./notificationService');
 const { sendMentionEmail } = require('./collaborationEmail');
 const { MAX_MENTIONS_PER_MESSAGE, MAX_ATTACHMENTS_PER_MESSAGE, MAX_MESSAGE_BODY_LENGTH } = require('../utils/collaborationConstants');
 
@@ -137,6 +138,7 @@ async function notifyMentionedMember(mention, { channel, senderDisplayName, mess
       if (!adminUser) return;
       await notify({
         recipientName: adminUser.name,
+        recipientAdminId: adminUser._id,
         title: `${senderDisplayName} mentioned you`,
         message: `In "${channel.name}": ${messageExcerpt}`,
         type: 'message_mention',
@@ -148,6 +150,16 @@ async function notifyMentionedMember(mention, { channel, senderDisplayName, mess
       if (!clientUser) return;
       const caseDoc = await ClientCase.findById(channel.case).select('caseNumber').lean();
       if (!caseDoc) return;
+      // In-app row (Cycle 7 — ADR-006 §6) alongside the pre-existing email.
+      await notifyClient({
+        clientUserId: mention.clientUser,
+        requireActiveWorkspace: channel.workspace,
+        title: `${senderDisplayName} mentioned you`,
+        message: `In "${channel.name}": ${messageExcerpt}`,
+        type: 'message_mention',
+        relatedCase: channel.case,
+        relatedChannel: channel._id,
+      });
       await sendMentionEmail({
         to: clientUser.email,
         firstName: clientUser.firstName,
@@ -164,25 +176,41 @@ async function notifyMentionedMember(mention, { channel, senderDisplayName, mess
 }
 
 /**
- * Notifies the parent message's author about a reply — employees only,
- * in-app (module doc's conservative email policy reserves email for
- * direct mentions specifically, not the more routine "someone replied").
- * Never notifies the replier about their own reply.
+ * Notifies the parent message's author about a reply — in-app only, no
+ * email either direction (module doc's conservative email policy reserves
+ * email for direct mentions specifically, not the more routine "someone
+ * replied" — ADR-006 §7). Never notifies the replier about their own
+ * reply. Cycle 6 (ADR-005 §22) only handled an employee-authored parent;
+ * Cycle 7 closes the gap for a client-authored one (ADR-006 §6) — a
+ * client's own message getting replied to previously notified nobody.
  */
-async function notifyReplyToAuthor(parentMessage, { channel, senderDisplayName, messageExcerpt, replierType, replierAdminId }) {
+async function notifyReplyToAuthor(parentMessage, { channel, senderDisplayName, messageExcerpt, replierType, replierAdminId, replierClientId }) {
   try {
-    if (parentMessage.senderType !== 'employee') return;
-    if (replierType === 'employee' && String(parentMessage.senderAdmin) === String(replierAdminId)) return;
-    const adminUser = await AdminUser.findById(parentMessage.senderAdmin).select('name').lean();
-    if (!adminUser) return;
-    await notify({
-      recipientName: adminUser.name,
-      title: `${senderDisplayName} replied to your message`,
-      message: `In "${channel.name}": ${messageExcerpt}`,
-      type: 'message_reply',
-      relatedCase: channel.case,
-      relatedChannel: channel._id,
-    });
+    if (parentMessage.senderType === 'employee') {
+      if (replierType === 'employee' && String(parentMessage.senderAdmin) === String(replierAdminId)) return;
+      const adminUser = await AdminUser.findById(parentMessage.senderAdmin).select('name').lean();
+      if (!adminUser) return;
+      await notify({
+        recipientName: adminUser.name,
+        recipientAdminId: adminUser._id,
+        title: `${senderDisplayName} replied to your message`,
+        message: `In "${channel.name}": ${messageExcerpt}`,
+        type: 'message_reply',
+        relatedCase: channel.case,
+        relatedChannel: channel._id,
+      });
+    } else if (parentMessage.senderType === 'client') {
+      if (replierType === 'client' && String(parentMessage.senderClient) === String(replierClientId)) return;
+      await notifyClient({
+        clientUserId: parentMessage.senderClient,
+        requireActiveWorkspace: channel.workspace,
+        title: `${senderDisplayName} replied to your message`,
+        message: `In "${channel.name}": ${messageExcerpt}`,
+        type: 'message_reply',
+        relatedCase: channel.case,
+        relatedChannel: channel._id,
+      });
+    }
   } catch (err) {
     console.error('[collaboration] reply notification failed:', err.message);
   }
@@ -291,6 +319,7 @@ async function createMessage({
       messageExcerpt,
       replierType: senderType,
       replierAdminId: senderAdminId,
+      replierClientId: senderClientId,
     });
   }
 

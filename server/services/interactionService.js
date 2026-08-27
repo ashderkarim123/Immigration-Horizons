@@ -7,6 +7,7 @@ const AdminUser = require('../models/admin/User');
 const ClientUser = require('../models/ClientUser');
 const WorkspaceMember = require('../models/WorkspaceMember');
 const { notify } = require('../utils/notify');
+const { notifyClient } = require('./notificationService');
 const { isValidTimezone } = require('../utils/timezone');
 const { generateInteractionNumber } = require('../utils/interactionNumber');
 const { ACTIVE_UNANSWERED_STATUSES } = require('../utils/interactionConstants');
@@ -52,6 +53,30 @@ async function notifyClientEmail(interaction, sendFn) {
     });
   } catch (err) {
     console.error('[interactions] client email failed:', err.message);
+  }
+}
+
+/**
+ * The in-app counterpart to notifyClientEmail (Cycle 7 — ADR-006 §6): the
+ * client gets a real notification row alongside the email that already
+ * existed. Guarded by active workspace membership when the interaction is
+ * case-scoped (`requireActiveWorkspace`); consultation-scoped interactions
+ * have no workspace yet, so the guard is a no-op for them (notifyClient
+ * treats a null workspace id as "don't check").
+ */
+async function notifyClientInApp(interaction, { type, title, message }) {
+  try {
+    await notifyClient({
+      clientUserId: interaction.clientUser,
+      requireActiveWorkspace: interaction.workspace || null,
+      title,
+      message,
+      type,
+      relatedInteraction: interaction._id,
+      relatedCase: interaction.case || null,
+    });
+  } catch (err) {
+    console.error('[interactions] client in-app notification failed:', err.message);
   }
 }
 
@@ -243,6 +268,7 @@ async function assignInteraction(interaction, adminUserId, actor) {
 
   await notify({
     recipientName: adminUser.name,
+    recipientAdminId: adminUser._id,
     title: `Assigned: ${interaction.interactionNumber}`,
     message: `You were assigned to "${interaction.subject}".`,
     type: 'query_assigned',
@@ -292,6 +318,11 @@ async function scheduleInteraction(interaction, { scheduledFor, timezone }, acto
   });
 
   await notifyClientEmail(interaction, (p) => sendScheduledEmail({ ...p, rescheduled: wasScheduled }));
+  await notifyClientInApp(interaction, {
+    type: 'query_scheduled',
+    title: wasScheduled ? 'Consultation rescheduled' : 'Consultation scheduled',
+    message: `Your request "${interaction.subject}" has been ${wasScheduled ? 'rescheduled' : 'scheduled'}.`,
+  });
 
   return { outcome: 'updated', interaction, wasScheduled };
 }
@@ -343,6 +374,11 @@ async function answerInteraction(interaction, { clientVisibleResponse, internalR
   });
 
   await notifyClientEmail(interaction, sendAnsweredEmail);
+  await notifyClientInApp(interaction, {
+    type: 'query_answered',
+    title: 'Your question was answered',
+    message: `We answered your request "${interaction.subject}".`,
+  });
 
   return { outcome: 'updated', interaction };
 }
@@ -389,6 +425,11 @@ async function requestClarification(interaction, { clientVisibleQuestion }, acto
   });
 
   await notifyClientEmail(interaction, sendClarificationEmail);
+  await notifyClientInApp(interaction, {
+    type: 'query_clarification_requested',
+    title: 'We need more information',
+    message: `We need more information about your request "${interaction.subject}".`,
+  });
 
   return { outcome: 'updated', interaction };
 }
@@ -423,6 +464,11 @@ async function cancelInteraction(interaction, { reason }, actor) {
     clientVisibleSummary: 'This request has been cancelled.',
   });
   await notifyClientEmail(interaction, sendCancelledEmail);
+  await notifyClientInApp(interaction, {
+    type: 'query_cancelled',
+    title: 'Request cancelled',
+    message: `Your request "${interaction.subject}" was cancelled.`,
+  });
   return { outcome: 'updated', interaction };
 }
 
@@ -477,6 +523,7 @@ async function addClientFollowUp(interaction, body, actor) {
     if (assignee) {
       await notify({
         recipientName: assignee.name,
+        recipientAdminId: assignee._id,
         title: `Client follow-up: ${interaction.interactionNumber}`,
         message: `${actor.name} added a follow-up to "${interaction.subject}".`,
         type: 'query_client_follow_up',
@@ -528,6 +575,7 @@ async function confirmResolution(interaction, { resolved, note }, actor) {
       if (assignee) {
         await notify({
           recipientName: assignee.name,
+          recipientAdminId: assignee._id,
           title: `Client needs more help: ${interaction.interactionNumber}`,
           message: `${actor.name} indicated they still need help with "${interaction.subject}".`,
           type: 'query_needs_more_help',

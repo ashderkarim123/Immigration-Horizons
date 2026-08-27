@@ -3,6 +3,7 @@ const DocumentCategory = require('../models/DocumentCategory');
 const WorkspaceMember = require('../models/WorkspaceMember');
 const CaseActivity = require('../models/CaseActivity');
 const ClientCase = require('../models/ClientCase');
+const { notifyClient } = require('./notificationService');
 
 const {
   sendDocumentRequestCreatedEmail,
@@ -24,6 +25,25 @@ async function notifyRequestClientEmail(request, sendFn, extra = {}) {
     });
   } catch (err) {
     console.error('[documents] request client email failed:', err.message);
+  }
+}
+
+/** The in-app counterpart to notifyRequestClientEmail (Cycle 7 — ADR-006 §6). */
+async function notifyRequestClientInApp(request, { type, title, message }) {
+  try {
+    const member = await WorkspaceMember.findById(request.requestedFrom).select('clientUser workspace').lean();
+    if (!member || !member.clientUser) return;
+    await notifyClient({
+      clientUserId: member.clientUser,
+      requireActiveWorkspace: request.workspace,
+      title,
+      message,
+      type,
+      relatedCase: request.case,
+      relatedDocumentRequest: request._id,
+    });
+  } catch (err) {
+    console.error('[documents] request client in-app notification failed:', err.message);
   }
 }
 
@@ -84,6 +104,11 @@ async function createDocumentRequest({
   }
 
   await notifyRequestClientEmail(request, sendDocumentRequestCreatedEmail, { dueDate: request.dueDate });
+  await notifyRequestClientInApp(request, {
+    type: 'document_requested',
+    title: 'Document requested',
+    message: `We requested "${request.title}" for your case.`,
+  });
 
   return { outcome: 'created', request };
 }
@@ -114,6 +139,11 @@ async function updateDocumentRequest({ requestId, dueDate, instructions, clientV
 
   if (dueDateChanged) {
     await notifyRequestClientEmail(request, sendDocumentRequestDueDateChangedEmail, { dueDate: request.dueDate });
+    await notifyRequestClientInApp(request, {
+      type: 'document_request_updated',
+      title: 'Document request updated',
+      message: `The due date for "${request.title}" changed.`,
+    });
   }
 
   return { outcome: 'updated', request };
@@ -141,6 +171,11 @@ async function cancelDocumentRequest({ requestId, actor }) {
   }
 
   await notifyRequestClientEmail(request, sendDocumentRequestCancelledEmail);
+  await notifyRequestClientInApp(request, {
+    type: 'document_request_cancelled',
+    title: 'Document request cancelled',
+    message: `The request "${request.title}" was cancelled.`,
+  });
 
   return { outcome: 'updated', request };
 }

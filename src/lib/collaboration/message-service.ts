@@ -9,7 +9,7 @@ import { WorkspaceMember } from "../models/WorkspaceMember";
 import { ChannelMember } from "../models/ChannelMember";
 import { ClientUser } from "../models/ClientUser";
 import { CaseDocument } from "../models/CaseDocument";
-import { Notification } from "../models/Notification";
+import { notifyEmployee as notifyEmployeeShared, notifyClient } from "../notifications/notification-service";
 import { MAX_MENTIONS_PER_MESSAGE, MAX_ATTACHMENTS_PER_MESSAGE, MAX_MESSAGE_BODY_LENGTH } from "../content/collaboration-constants";
 
 /**
@@ -158,7 +158,15 @@ function excerpt(body: string): string {
   return trimmed.length > 140 ? `${trimmed.slice(0, 140)}…` : trimmed;
 }
 
-/** Employee mention/reply notifications from a client-authored message — in-app Notification, mirroring server's notify() shape (ADR-005 §17). */
+/**
+ * Employee mention/reply notifications from a client-authored message —
+ * in-app only (mirrors server's notify() shape, ADR-005 §17). Cycle 7
+ * (ADR-006 §1) moved the actual write into the shared notification-service
+ * so this app's `recipientAdmin`/`recipientType` identity fields are
+ * populated exactly like the server side's — recipientName stays empty
+ * from this app (AdminUser isn't mirrored here), matching the pre-Cycle-7
+ * behavior; the admin UI resolves it by `recipientAdmin` id instead.
+ */
 async function notifyEmployee(params: {
   recipientAdminUserId: unknown;
   title: string;
@@ -168,17 +176,8 @@ async function notifyEmployee(params: {
   channelId: unknown;
 }): Promise<void> {
   try {
-    // recipientName is unknown from this app (AdminUser isn't mirrored
-    // here) — Notification is keyed by recipientName server-side, so a
-    // client-authored mention/reply notification is recorded with the
-    // recipient id only; the admin UI's existing recipientName-based
-    // lookup still works once resolved. Left for the admin's own
-    // recipientId-aware rendering path (Notification.recipientId is
-    // already a real field, unused by the current admin queries but
-    // present for exactly this case).
-    await Notification.create({
-      recipientId: params.recipientAdminUserId,
-      recipientName: "",
+    await notifyEmployeeShared({
+      adminUserId: params.recipientAdminUserId,
       title: params.title,
       message: params.message,
       type: params.type,
@@ -187,6 +186,37 @@ async function notifyEmployee(params: {
     });
   } catch (err) {
     console.error("[collaboration] employee notification failed:", (err as Error).message);
+  }
+}
+
+/**
+ * Client mention/reply notifications from ANOTHER client's message — the
+ * symmetric case to notifyEmployee above, for a multi-client workspace
+ * (Cycle 7 — closes a gap notifyEmployee's employee-only check silently
+ * left open since Cycle 6: a client mentioning or replying to a different
+ * client previously notified nobody at all).
+ */
+async function notifyOtherClient(params: {
+  recipientClientId: unknown;
+  workspaceId: unknown;
+  title: string;
+  message: string;
+  type: "message_mention" | "message_reply";
+  caseId: unknown;
+  channelId: unknown;
+}): Promise<void> {
+  try {
+    await notifyClient({
+      clientUserId: params.recipientClientId,
+      requireActiveWorkspace: params.workspaceId,
+      title: params.title,
+      message: params.message,
+      type: params.type,
+      relatedCase: params.caseId,
+      relatedChannel: params.channelId,
+    });
+  } catch (err) {
+    console.error("[collaboration] client notification failed:", (err as Error).message);
   }
 }
 
@@ -284,17 +314,39 @@ export async function createMessage(params: CreateMessageParams) {
         caseId: channel.case,
         channelId: channel._id,
       });
+    } else if (mention.memberType === "client" && mention.clientUser && String(mention.clientUser) !== String(senderClientId)) {
+      await notifyOtherClient({
+        recipientClientId: mention.clientUser,
+        workspaceId: channel.workspace,
+        title: `${senderDisplayName} mentioned you`,
+        message: `In "${channel.name}": ${messageExcerpt}`,
+        type: "message_mention",
+        caseId: channel.case,
+        channelId: channel._id,
+      });
     }
   }
-  if (replyTarget && replyTarget.senderType === "employee" && replyTarget.senderAdmin) {
-    await notifyEmployee({
-      recipientAdminUserId: replyTarget.senderAdmin,
-      title: `${senderDisplayName} replied to your message`,
-      message: `In "${channel.name}": ${messageExcerpt}`,
-      type: "message_reply",
-      caseId: channel.case,
-      channelId: channel._id,
-    });
+  if (replyTarget && String(replyTarget.senderClient || "") !== String(senderClientId)) {
+    if (replyTarget.senderType === "employee" && replyTarget.senderAdmin) {
+      await notifyEmployee({
+        recipientAdminUserId: replyTarget.senderAdmin,
+        title: `${senderDisplayName} replied to your message`,
+        message: `In "${channel.name}": ${messageExcerpt}`,
+        type: "message_reply",
+        caseId: channel.case,
+        channelId: channel._id,
+      });
+    } else if (replyTarget.senderType === "client" && replyTarget.senderClient) {
+      await notifyOtherClient({
+        recipientClientId: replyTarget.senderClient,
+        workspaceId: channel.workspace,
+        title: `${senderDisplayName} replied to your message`,
+        message: `In "${channel.name}": ${messageExcerpt}`,
+        type: "message_reply",
+        caseId: channel.case,
+        channelId: channel._id,
+      });
+    }
   }
 
   return { outcome: "created" as const, message, mentions: mentionsResult.value };

@@ -8,6 +8,7 @@ import { InteractionHistory } from "../models/InteractionHistory";
 import { InteractionUpdate } from "../models/InteractionUpdate";
 import { WorkspaceMember } from "../models/WorkspaceMember";
 import { generateInteractionNumber } from "./interaction-number";
+import { notifyEmployee } from "../notifications/notification-service";
 import type { InteractionType } from "../content/interaction-constants";
 
 const MAX_ATTEMPTS = 5;
@@ -232,6 +233,20 @@ export async function addClientFollowUp(
       clientVisibleSummary: "You added a follow-up.",
     });
 
+    // Cycle 7 (ADR-006 §6) — mirrors server/services/interactionService.js's
+    // identical notify() call for the employee-initiated path. recipientName
+    // stays empty (AdminUser isn't mirrored in this app), same posture as
+    // message-service.ts's client-authored employee notifications.
+    if (interaction.assignedTo) {
+      await notifyEmployee({
+        adminUserId: interaction.assignedTo,
+        title: `Client follow-up: ${interaction.interactionNumber}`,
+        message: `${clientName} added a follow-up to "${interaction.subject}".`,
+        type: "query_client_follow_up",
+        relatedInteraction: interaction._id,
+      });
+    }
+
     return { outcome: "added" };
   } catch (err) {
     console.error("[interactions] Failed to add client follow-up:", err);
@@ -303,6 +318,15 @@ export async function confirmClientResolution(
         newStatus: "in_progress",
         clientVisibleSummary: "You indicated you need more help.",
       });
+      if (interaction.assignedTo) {
+        await notifyEmployee({
+          adminUserId: interaction.assignedTo,
+          title: `Client needs more help: ${interaction.interactionNumber}`,
+          message: `${clientName} indicated they still need help with "${interaction.subject}".`,
+          type: "query_needs_more_help",
+          relatedInteraction: interaction._id,
+        });
+      }
     }
     return { outcome: "updated" };
   } catch (err) {

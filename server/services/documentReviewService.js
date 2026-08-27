@@ -12,6 +12,25 @@ const {
   sendDocumentRejectedEmail,
 } = require('./documentEmail');
 const { emitDocumentReviewedMessage } = require('./systemMessageService');
+const { notifyClient } = require('./notificationService');
+
+/** The in-app counterpart to notifyClientEmail below (Cycle 7 — ADR-006 §6). */
+async function notifyClientInApp(document, { type, title, message }) {
+  try {
+    if (!document.uploadedByClient) return;
+    await notifyClient({
+      clientUserId: document.uploadedByClient,
+      requireActiveWorkspace: document.workspace,
+      title,
+      message,
+      type,
+      relatedCase: document.case,
+      relatedDocument: document._id,
+    });
+  } catch (err) {
+    console.error('[documents] client in-app notification failed:', err.message);
+  }
+}
 
 /** Best-effort client email — never rolls back the review mutation that triggered it. */
 async function notifyClientEmail(document, sendFn, extra = {}) {
@@ -99,10 +118,25 @@ async function reviewDocument({ documentId, decision, clientVisibleReviewComment
 
   if (decision === 'accepted') {
     await notifyClientEmail(document, sendDocumentAcceptedEmail);
+    await notifyClientInApp(document, {
+      type: 'document_accepted',
+      title: 'Document accepted',
+      message: `"${document.displayName}" was accepted.`,
+    });
   } else if (decision === 'needs_replacement') {
     await notifyClientEmail(document, sendReplacementRequestedEmail, { reason: document.clientVisibleReviewComment });
+    await notifyClientInApp(document, {
+      type: 'document_replacement_requested',
+      title: 'Document replacement needed',
+      message: `"${document.displayName}" needs to be replaced.`,
+    });
   } else if (decision === 'rejected') {
     await notifyClientEmail(document, sendDocumentRejectedEmail, { reason: document.clientVisibleReviewComment });
+    await notifyClientInApp(document, {
+      type: 'document_replacement_requested',
+      title: 'Document not accepted',
+      message: `"${document.displayName}" was not accepted.`,
+    });
   }
 
   return { outcome: 'updated', document };
