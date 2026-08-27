@@ -1,4 +1,4 @@
-# ADR-003 — Consultation Interaction Domain
+0# ADR-003 — Consultation Interaction Domain
 
 **Status:** Accepted
 **Date:** 2026-08-04

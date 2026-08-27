@@ -26,7 +26,7 @@ export const organizationSchema = {
   image: `${site.url}/images/logo-header.png`,
   slogan: site.tagline,
   description:
-    "Immigration consulting and paralegal services practice preparing EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions, RFE responses, recommendation letters and business plans. Not a law firm.",
+    "Immigration consulting and paralegal services practice preparing EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions, RFE responses, recommendation letters and business plans.",
   // Stated explicitly so the disclaimer travels with the structured data.
   disambiguatingDescription: site.disclaimer,
   email: contact.email,
