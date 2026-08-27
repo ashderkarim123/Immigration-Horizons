@@ -1,0 +1,18 @@
+{
+  "_comment": "Canonical cross-app contract for portal invitations and client sessions — see ADR-007 §1/§2. The admin app re-implements the root app's token mechanism rather than importing it (separate deployables), so these values MUST match on both sides: an invitation issued by one app is consumed by the other. Test-time-only fixture, loaded by server/test/client-account-contract.test.js and test/client-account-contract.test.ts. Never imported by production code.",
+  "collections": {
+    "PortalInvitation": "portalinvitations",
+    "ClientSession": "clientsessions"
+  },
+  "invitationTtlMs": 604800000,
+  "tokenHashAlgorithm": "sha256",
+  "tokenBytes": 32,
+  "invitationPurposeValues": [
+    "consultation_activation",
+    "case_invitation",
+    "additional_client_invitation"
+  ],
+  "adminInvitationPurpose": "consultation_activation",
+  "clientUserStatusValues": ["pending", "active", "locked", "disabled"],
+  "activationPath": "/portal/activate"
+}
