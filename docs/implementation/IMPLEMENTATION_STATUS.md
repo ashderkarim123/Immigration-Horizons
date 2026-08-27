@@ -1243,6 +1243,98 @@ Every item from the Cycle 6 list remains open and unaffected by this cycle's wor
 - The portal notification list has no filtering/pagination UI (unlike the admin's type/lead/unread filter bar) — it lists the 50 most recent, matching the "API complete, UI intentionally minimal for a first release" pattern from Cycle 6's message composer.
 - No notification ever gets deleted or archived — matches the project's "prefer archive over delete" business rule by construction (there's no delete path at all, not even an admin one), but also means the collection only grows; a future retention cycle (Phase 10 in the master roadmap) should address this deliberately rather than leaving it as an accident.
 
-## Recommended next module
+## Recommended next module (superseded — Cycle 8 shipped, see below)
 
 `08_ADMIN_CASE_OPERATIONS.md` — read alongside `00_MASTER_ROADMAP.md` and this status file first. Every notification this cycle is keyed by real recipient identity and every client-facing trigger point already respects active workspace membership, so Cycle 8's case-queue/assignment/review workflows can call straight into `notificationService.js`/`notification-service.ts` without any further plumbing — the identity migration this cycle's title promised is actually finished, not just started.
+
+---
+
+# Cycle 8 — Admin Case Operations
+
+Module implemented: `08_ADMIN_CASE_OPERATIONS.md`.
+
+## Scope finding before implementing
+
+An inspection pass found most of what module 08 describes had already shipped: case list/detail/convert/stage/assign/members/archive/activity in Cycle 3, query queues in Cycle 4, document queues in Cycle 5, collaboration in Cycle 6. Three real gaps remained, and those are exactly what this cycle built:
+
+1. **Client management did not exist at all** — no `/admin/clients` surface, and neither `clients.view` nor `clients.manage` was a defined capability.
+2. **The dashboard had no operational counts** — `/admin` still counted leads, blog posts, testimonials, and FAQs exactly as it did before Cycle 1.
+3. **`client_updates.publish` was undefined**, with no way for staff to deliberately publish a client-visible case update.
+
+Rebuilding the surfaces that already worked would have been churn. See ADR-007 for the full reasoning.
+
+## Architecture decision: ADR-007
+
+`docs/architecture/ADR-007-admin-case-operations.md`. Key decisions:
+
+1. **Read-only server mirrors** for `PortalInvitation` and `ClientSession` (previously portal-only). The admin's write surface on them is narrow: revoke/re-issue an invitation, revoke sessions. It never mints a session, never reads a raw token, never sets a password.
+2. **Invitation re-issue duplicates the root's token logic** rather than importing it (separate deployables) — same 32-byte base64url token, SHA-256 hash, 7-day TTL, revoke-then-issue. Mitigated by a new cross-app contract fixture asserted from *both* sides.
+3. **Disabling a client revokes every live session immediately**, so "disable" means what an operator expects. Re-activation deliberately does not restore sessions.
+4. **Eight operational queues in one aggregation module** — `Promise.all` of `countDocuments` calls, each on an index that already existed. No `$lookup`, no N+1.
+5. **"Unread client messages" is counted per-workspace, not per-employee** — the dashboard answers "how many client messages has nobody picked up", which deliberately does not match any single employee's own unread view.
+6. **Client-visible updates reuse the collaboration layer** — a `case_update` system message into the case's `case_updates` channel, so it lands in the client's existing message centre and is covered by Cycle 6's serializers and access tests.
+7. **New capabilities granted conservatively** — `clients.view` to PM-tier, `clients.manage` to admin-tier only (disabling accounts is higher-consequence than case work), `client_updates.publish` to PM-tier.
+8. **Client management is deliberately org-wide, not membership-scoped** — a client exists before any case and may have several. The record-level check lives where it belongs: the *cases* on a client's page are filtered by the same `cases.view_all`-or-membership rule the case list uses.
+9. **Never name an EJS render local `client`** — see below.
+
+## A real bug found while building (ADR-007 §9)
+
+The client detail page returned a 500 from inside `layout.ejs` with `include is not a function`. Cause: Express passes `res.render()` locals straight through to the view engine as its *options* object, and EJS reads `options.client` as "compile to a standalone client-side function" (`ejs.js`: `options.client = opts.client || false`) — a mode in which the `include()` helper is not injected. A perfectly ordinary `res.render('...', { client: someDocument })` therefore breaks the shared layout, with a stack trace pointing nowhere near the cause.
+
+`getClientOverview()` now returns the record as `clientUser`. The same trap exists for `filename`, `cache`, `compileDebug`, `delimiter`, `root`, `strict`, `rmWhitespace`, and `async` — none are used as locals anywhere in this app, and none should be.
+
+## A stale placeholder corrected
+
+`server/views/admin/cases/detail.ejs` still said "Consultation/query tracking is not implemented yet — planned for a later cycle" on its Client Queries card. Query tracking shipped in Cycle 4 (13 admin routes, `/admin/queries`). Flagged in the Cycle 6 report as out of scope then; in scope now, and replaced with a real link to the query queues.
+
+## Files created (Cycle 8)
+
+**Docs:** `docs/architecture/ADR-007-admin-case-operations.md`, `docs/architecture/client-account-contract.json`
+
+**Server:** `models/PortalInvitation.js`, `models/ClientSession.js`, `utils/clientAccountConstants.js`, `services/clientAccountService.js`, `services/clientPortalEmail.js`, `services/operationsQueues.js`, `routes/admin/clients.js`, `views/admin/clients/{index,detail}.ejs`, `test/client-account-contract.test.js`, `test/integration/{client-operations,operations-queues}.integration.test.js`
+
+**Root:** `test/client-account-contract.test.ts`
+
+## Files modified (Cycle 8)
+
+- `server/utils/permissions.js` — `clients.view`, `clients.manage`, `client_updates.publish`.
+- `server/models/CaseActivity.js` — `client_update_published` type.
+- `server/services/systemMessageService.js` — `emitClientUpdateMessage`.
+- `server/routes/admin/cases.js` — `POST /admin/cases/:id/client-update`, plus flash and `canPublishUpdate` on the detail render.
+- `server/routes/admin/index.js` — mounts `attachClients`, computes operational counts for the dashboard.
+- `server/views/admin/dashboard.ejs` — Operations tile grid.
+- `server/views/admin/cases/detail.ejs` — publish-update card, flash banner, corrected Client Queries placeholder.
+- `server/views/admin/partials/sidebar.ejs` — Clients nav entry.
+- `server/scripts/createIndexes.js` — registers the two new models.
+- `src/lib/auth/invitations.ts` — exports `INVITATION_TTL_MS` so the contract test can assert cross-app agreement.
+
+## Routes added (Cycle 8)
+
+`GET /admin/clients`, `GET /admin/clients/:id`, `POST /admin/clients/:id/{resend-invitation,revoke-invitation,disable,reactivate}`, `POST /admin/cases/:id/client-update`.
+
+## Operational queues (Cycle 8)
+
+Cases without a PM · unanswered queries · queries awaiting scheduling · documents awaiting review · overdue document requests · unread client messages · filings within 30 days · stalled cases · quarantined files.
+
+`STALLED_CASE_DAYS = 21` and `UPCOMING_DEADLINE_DAYS = 30` are named constants — the module doc defines neither, so these are deliberate first-pass heuristics that are one edit to tune.
+
+## Testing (Cycle 8)
+
+- Server: **368/368 passing** (Cycle 8 added 35: 7 contract, 17 client operations, 11 operations queues).
+- Root: **142/142 passing** (Cycle 8 added 5 contract tests).
+- `tsc --noEmit` clean · `npm run lint` clean · `npm run build` succeeds · both index dry-runs agree (`portalinvitations`, `clientsessions`, 3 indexes each).
+
+Covered: capability enforcement per role, PM-can-view-but-not-manage, regex-injection in the client search box, password hashes and token hashes never reaching a rendered page, per-membership case visibility on the client page, invitation revoke-then-issue invariants, disable revoking sessions, reactivation not restoring them, every queue boundary condition, and publish-update authorization plus its no-channel failure path.
+
+**Not covered (honest gaps):** no test that the *portal* accepts an admin-issued invitation end to end (the contract fixture asserts the mechanism matches on both sides, but no test drives an admin-issued token through `/portal/activate`); real Resend delivery of the re-issued activation email is unverified beyond the test double.
+
+## Known limitations (Cycle 8)
+
+- The client list is org-wide by design (ADR-007 §8); there is no "my clients" filter.
+- Unread-client-message counting is per-workspace, not per-employee (ADR-007 §5) — deliberately not what any one employee sees.
+- No bulk actions on the client list (disable/invite are per-client).
+- "Stalled" keys off `updatedAt` on the case document, so a case whose only recent activity was a message or document — neither of which touches `ClientCase` — can read as stalled. Worth revisiting with a real last-activity timestamp if operators find it noisy.
+
+## Recommended next module
+
+`09_CLIENT_PORTAL_EXPERIENCE.md` — the two missing screens (`/portal/profile`, `/portal/security`) and, more importantly, the shared portal shell that would give the portal persistent navigation and a notification bell. Cycle 7 deferred the bell for exactly that reason (ADR-006 §10), and the security screen now has a natural counterpart in the admin's client security summary built this cycle.
