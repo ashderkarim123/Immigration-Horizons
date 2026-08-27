@@ -1,0 +1,107 @@
+<%
+const STATUS_BADGE = { active: 'badge-success', pending: 'badge-warning', locked: 'badge-warning', disabled: 'badge-closed' };
+function qs() {
+  var parts = [];
+  if (filters.status !== 'all') parts.push('status=' + encodeURIComponent(filters.status));
+  if (filters.search) parts.push('search=' + encodeURIComponent(filters.search));
+  return parts.join('&');
+}
+%>
+<div class="page-header">
+  <div>
+    <h1>Clients</h1>
+    <p class="page-subtitle"><%= total %> client account<%= total === 1 ? '' : 's' %></p>
+  </div>
+</div>
+
+<div class="stats-grid" style="margin-bottom:18px">
+  <div class="stat-card"><div class="stat-card-value"><%= counts.active %></div><div class="stat-card-label">Active</div></div>
+  <div class="stat-card"><div class="stat-card-value"><%= counts.pending %></div><div class="stat-card-label">Pending activation</div></div>
+  <div class="stat-card"><div class="stat-card-value"><%= counts.locked %></div><div class="stat-card-label">Locked</div></div>
+  <div class="stat-card"><div class="stat-card-value"><%= counts.disabled %></div><div class="stat-card-label">Disabled</div></div>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/admin/clients" class="filter-form">
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+      <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>All statuses</option>
+      <% statuses.forEach(function(s) { %>
+        <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
+      <% }); %>
+    </select>
+    <input type="search" name="search" class="filter-select" placeholder="Search name or email" value="<%= filters.search %>">
+    <button type="submit" class="btn btn-sm btn-primary">Search</button>
+    <% if (filters.search || filters.status !== 'all') { %>
+      <a href="/admin/clients" class="btn btn-sm btn-ghost">Clear</a>
+    <% } %>
+  </form>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-body no-padding">
+    <% if (!clients.length) { %>
+      <div class="empty-state">
+        <i class="fas fa-user-circle"></i>
+        <h3>No clients found</h3>
+        <p>Client accounts are created when a consultation submitter activates their portal invitation.</p>
+      </div>
+    <% } else { %>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Password set</th>
+              <th>Last login</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% clients.forEach(function(c) { %>
+              <tr class="clickable-row" data-href="/admin/clients/<%= c._id %>">
+                <td><span class="cell-title"><%= [c.firstName, c.lastName].filter(Boolean).join(' ') || '—' %></span></td>
+                <td><%= c.email %></td>
+                <td>
+                  <span class="badge <%= STATUS_BADGE[c.status] || '' %>"><%= c.status %></span>
+                  <% if (c.lockedUntil && new Date(c.lockedUntil) > new Date()) { %>
+                    <span class="badge badge-warning">locked out</span>
+                  <% } %>
+                </td>
+                <td><%= c.hasPassword ? 'Yes' : 'No' %></td>
+                <td><%= c.lastLoginAt ? new Date(c.lastLoginAt).toLocaleDateString() : '—' %></td>
+                <td><%= new Date(c.createdAt).toLocaleDateString() %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+  <% if (totalPages > 1) { %>
+    <div class="admin-card-footer">
+      <div class="admin-pagination">
+        <span class="page-info">Page <%= page %> of <%= totalPages %> (<%= total %> total)</span>
+        <div class="page-buttons">
+          <% if (page > 1) { %><a href="?page=<%= page - 1 %><%= qs() ? '&' + qs() : '' %>" class="page-link">&laquo; Prev</a><% } %>
+          <% for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) { %>
+            <a href="?page=<%= p %><%= qs() ? '&' + qs() : '' %>" class="page-link <%= p === page ? 'active' : '' %>"><%= p %></a>
+          <% } %>
+          <% if (page < totalPages) { %><a href="?page=<%= page + 1 %><%= qs() ? '&' + qs() : '' %>" class="page-link">Next &raquo;</a><% } %>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.clickable-row').forEach(function(row) {
+    row.addEventListener('click', function(e) {
+      if (e.target.closest('a, button, form, input')) return;
+      window.location.href = this.dataset.href;
+    });
+  });
+});
+</script>

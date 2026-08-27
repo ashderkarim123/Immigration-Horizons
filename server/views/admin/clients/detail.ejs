@@ -1,0 +1,191 @@
+<%
+const STATUS_BADGE = { active: 'badge-success', pending: 'badge-warning', locked: 'badge-warning', disabled: 'badge-closed' };
+const fullName = [clientUser.firstName, clientUser.lastName].filter(Boolean).join(' ');
+function fmt(d) { return d ? new Date(d).toLocaleString() : '—'; }
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—'; }
+const lockedNow = security.lockedUntil && new Date(security.lockedUntil) > new Date();
+%>
+<div class="page-header">
+  <div>
+    <h1><%= fullName || clientUser.email %></h1>
+    <p class="page-subtitle">
+      <%= clientUser.email %> ·
+      <span class="badge <%= STATUS_BADGE[clientUser.status] || '' %>"><%= clientUser.status %></span>
+      <% if (lockedNow) { %><span class="badge badge-warning">locked until <%= fmt(security.lockedUntil) %></span><% } %>
+    </p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/clients" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> All clients</a>
+  </div>
+</div>
+
+<% if (flash) { %>
+  <div class="alert alert-<%= flash.type === 'error' ? 'danger' : flash.type === 'info' ? 'info' : 'success' %>" style="margin-bottom:18px">
+    <%= flash.message %>
+  </div>
+<% } %>
+
+<div class="detail-layout">
+  <div class="detail-primary">
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Account</h3></div>
+      <div class="admin-card-body">
+        <div class="detail-grid">
+          <div class="detail-field"><label>Status</label><span><span class="badge <%= STATUS_BADGE[clientUser.status] || '' %>"><%= clientUser.status %></span></span></div>
+          <div class="detail-field"><label>Password set</label><span><%= security.hasPassword ? 'Yes' : 'No — account not activated yet' %></span></div>
+          <div class="detail-field"><label>Email verified</label><span><%= fmt(security.emailVerifiedAt) %></span></div>
+          <div class="detail-field"><label>Last login</label><span><%= fmt(security.lastLoginAt) %></span></div>
+          <div class="detail-field"><label>Password changed</label><span><%= fmt(security.passwordChangedAt) %></span></div>
+          <div class="detail-field"><label>Created</label><span><%= fmt(clientUser.createdAt) %></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Cases</h3></div>
+      <div class="admin-card-body no-padding">
+        <% if (!cases.length) { %>
+          <div class="empty-state"><i class="fas fa-briefcase"></i><h3>No cases</h3><p>No cases you can access are linked to this clientUser.</p></div>
+        <% } else { %>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Case #</th><th>Title</th><th>Stage</th><th>Target filing</th><th></th></tr></thead>
+              <tbody>
+                <% cases.forEach(function(c) { %>
+                  <tr>
+                    <td><span class="cell-title"><%= c.caseNumber %></span></td>
+                    <td><%= c.title %></td>
+                    <td><span class="badge"><%= c.currentStage %></span><% if (c.archivedAt) { %> <span class="badge badge-closed">archived</span><% } %></td>
+                    <td><%= fmtDate(c.targetFilingDate) %></td>
+                    <td><a href="/admin/cases/<%= c._id %>" class="btn btn-sm btn-ghost">Open</a></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Consultations</h3></div>
+      <div class="admin-card-body no-padding">
+        <% if (!consultations.length) { %>
+          <div class="empty-state"><i class="fas fa-inbox"></i><h3>No consultations</h3><p>No consultation records are linked to this account.</p></div>
+        <% } else { %>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>Service</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+              <tbody>
+                <% consultations.forEach(function(c) { %>
+                  <tr>
+                    <td><span class="cell-title"><%= c.service %></span></td>
+                    <td><span class="badge"><%= c.status %></span><% if (c.convertedCase) { %> <span class="badge badge-success">converted</span><% } %></td>
+                    <td><%= fmtDate(c.createdAt) %></td>
+                    <td><a href="/admin/leads/<%= c._id %>" class="btn btn-sm btn-ghost">Open</a></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="detail-sidebar">
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Portal invitation</h3></div>
+      <div class="admin-card-body">
+        <% if (activeInvitation) { %>
+          <p class="page-subtitle" style="margin-top:0">
+            Active invitation, expires <strong><%= fmt(activeInvitation.expiresAt) %></strong>
+            (issued <%= activeInvitation.createdByType === 'admin' ? 'by an administrator' : 'automatically' %>).
+          </p>
+        <% } else { %>
+          <p class="page-subtitle" style="margin-top:0">No active invitation.</p>
+        <% } %>
+
+        <% if (canManage) { %>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+            <form method="POST" action="/admin/clients/<%= clientUser._id %>/resend-invitation">
+              <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-paper-plane"></i> Send new invitation</button>
+            </form>
+            <% if (activeInvitation) { %>
+              <form method="POST" action="/admin/clients/<%= clientUser._id %>/revoke-invitation">
+                <button type="submit" class="btn btn-sm btn-ghost">Revoke</button>
+              </form>
+            <% } %>
+          </div>
+        <% } %>
+
+        <% if (recentInvitations.length) { %>
+          <div class="admin-table-wrap" style="margin-top:16px">
+            <table class="admin-table">
+              <thead><tr><th>Issued</th><th>Outcome</th></tr></thead>
+              <tbody>
+                <% recentInvitations.forEach(function(i) { %>
+                  <tr>
+                    <td><%= fmtDate(i.createdAt) %></td>
+                    <td>
+                      <% if (i.usedAt) { %><span class="badge badge-success">used</span>
+                      <% } else if (i.revokedAt) { %><span class="badge badge-closed">revoked</span>
+                      <% } else if (new Date(i.expiresAt) < new Date()) { %><span class="badge badge-closed">expired</span>
+                      <% } else { %><span class="badge badge-warning">pending</span><% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header"><h3>Security</h3></div>
+      <div class="admin-card-body">
+        <div class="detail-grid">
+          <div class="detail-field"><label>Failed logins</label><span><%= security.failedLoginCount %></span></div>
+          <div class="detail-field"><label>Locked until</label><span><%= lockedNow ? fmt(security.lockedUntil) : 'Not locked' %></span></div>
+          <div class="detail-field"><label>Active sessions</label><span><%= security.activeSessions.length %></span></div>
+        </div>
+        <% if (security.activeSessions.length) { %>
+          <div class="admin-table-wrap" style="margin-top:12px">
+            <table class="admin-table">
+              <thead><tr><th>Last seen</th><th>IP</th></tr></thead>
+              <tbody>
+                <% security.activeSessions.forEach(function(s) { %>
+                  <tr><td><%= fmt(s.lastSeenAt) %></td><td><%= s.createdIp || '—' %></td></tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (canManage) { %>
+      <div class="admin-card">
+        <div class="admin-card-header"><h3>Account access</h3></div>
+        <div class="admin-card-body">
+          <% if (clientUser.status === 'disabled') { %>
+            <p class="page-subtitle" style="margin-top:0">This account is disabled. The client cannot log in.</p>
+            <form method="POST" action="/admin/clients/<%= clientUser._id %>/reactivate">
+              <button type="submit" class="btn btn-sm btn-primary">Reactivate account</button>
+            </form>
+          <% } else { %>
+            <p class="page-subtitle" style="margin-top:0">Disabling signs the client out of every device immediately and blocks future logins.</p>
+            <form method="POST" action="/admin/clients/<%= clientUser._id %>/disable" onsubmit="return confirm('Disable this client account and revoke all active sessions?')">
+              <button type="submit" class="btn btn-sm btn-danger">Disable account</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+
+  </div>
+</div>

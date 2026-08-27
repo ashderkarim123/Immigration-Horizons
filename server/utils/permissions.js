@@ -159,6 +159,18 @@ const CAPABILITIES = {
   'cases.archive': ['super_admin', 'admin'],
   'workspace.members.manage': ['super_admin', 'admin', 'pm'],
 
+  // Client account operations (Cycle 8 — ADR-007 §7). `clients.manage` is
+  // admin-tier rather than PM-tier deliberately: disabling an account and
+  // re-issuing an activation invitation are higher-consequence than case
+  // work, matching how cases.assign/cases.archive are already scoped.
+  'clients.view': ['super_admin', 'admin', 'pm'],
+  'clients.manage': ['super_admin', 'admin'],
+
+  // Publishing a client-visible case update (Cycle 8). Emits a
+  // client-visible system message into the case's updates channel — see
+  // ADR-007 §6.
+  'client_updates.publish': ['super_admin', 'admin', 'pm'],
+
   // Consultation/query tracking (Cycle 3). Same conservative-matrix
   // approach as cases.* above — see
   // 04_CONSULTATION_AND_QUERY_TRACKING.md §16 and services/interactionPolicy.js.
