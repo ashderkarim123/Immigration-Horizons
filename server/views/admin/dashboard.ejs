@@ -3,19 +3,20 @@
 // counts because this is what the team acts on day to day. Each tile links
 // to the queue that resolves it; a zero tile is deliberately still shown so
 // "nothing waiting" is a visible, trustworthy state rather than an absence.
-const OPERATIONS_TILES = operations ? [
-  { label: 'Cases without a PM',    n: operations.casesWithoutManager,      url: '/admin/cases',                        icon: 'user-slash',        tone: 'rose' },
-  { label: 'Unanswered queries',    n: operations.unansweredQueries,        url: '/admin/queries',                      icon: 'comment-dots',      tone: 'orange' },
-  { label: 'Awaiting scheduling',   n: operations.queriesAwaitingScheduling, url: '/admin/queries',                     icon: 'calendar-plus',     tone: 'blue' },
-  { label: 'Documents to review',   n: operations.documentsAwaitingReview,  url: '/admin/documents',                    icon: 'file-signature',    tone: 'purple' },
-  { label: 'Overdue doc requests',  n: operations.overdueDocumentRequests,  url: '/admin/documents',                    icon: 'exclamation-triangle', tone: 'rose' },
-  { label: 'Unread client messages', n: operations.unreadClientMessages,    url: '/admin/cases',                        icon: 'envelope-open-text', tone: 'cyan' },
-  { label: 'Filing within 30 days', n: operations.upcomingFilingDeadlines,  url: '/admin/cases',                        icon: 'calendar-check',    tone: 'gold' },
-  { label: 'Stalled cases',         n: operations.stalledCases,             url: '/admin/cases',                        icon: 'hourglass-half',    tone: 'orange' },
-  { label: 'Quarantined files',     n: operations.quarantinedDocuments,     url: '/admin/documents',                    icon: 'shield-alt',        tone: 'rose' },
+const ops = (typeof operations !== 'undefined') ? operations : null;
+const OPERATIONS_TILES = ops ? [
+  { label: 'Cases without a PM',    n: ops.casesWithoutManager,      url: '/admin/cases',                        icon: 'user-slash',        tone: 'rose' },
+  { label: 'Unanswered queries',    n: ops.unansweredQueries,        url: '/admin/queries',                      icon: 'comment-dots',      tone: 'orange' },
+  { label: 'Awaiting scheduling',   n: ops.queriesAwaitingScheduling, url: '/admin/queries',                     icon: 'calendar-plus',     tone: 'blue' },
+  { label: 'Documents to review',   n: ops.documentsAwaitingReview,  url: '/admin/documents',                    icon: 'file-signature',    tone: 'purple' },
+  { label: 'Overdue doc requests',  n: ops.overdueDocumentRequests,  url: '/admin/documents',                    icon: 'exclamation-triangle', tone: 'rose' },
+  { label: 'Unread client messages', n: ops.unreadClientMessages,    url: '/admin/cases',                        icon: 'envelope-open-text', tone: 'cyan' },
+  { label: 'Filing within 30 days', n: ops.upcomingFilingDeadlines,  url: '/admin/cases',                        icon: 'calendar-check',    tone: 'gold' },
+  { label: 'Stalled cases',         n: ops.stalledCases,             url: '/admin/cases',                        icon: 'hourglass-half',    tone: 'orange' },
+  { label: 'Quarantined files',     n: ops.quarantinedDocuments,     url: '/admin/documents',                    icon: 'shield-alt',        tone: 'rose' },
 ] : [];
 %>
-<% if (operations) { %>
+<% if (ops) { %>
   <div class="page-header" style="margin-bottom:14px">
     <div>
       <h1>Operations</h1>
