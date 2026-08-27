@@ -1,0 +1,42 @@
+<div class="page-header">
+  <div>
+    <h1>Notification Preferences</h1>
+    <p class="page-subtitle">Choose what emails you receive alongside your in-app notifications</p>
+  </div>
+  <div class="page-actions">
+    <a href="/admin/notifications" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> Back to notifications</a>
+  </div>
+</div>
+
+<div class="admin-card" style="max-width:560px">
+  <div class="admin-card-body">
+    <form method="POST" action="/admin/notifications/preferences">
+      <label class="toggle-switch" style="margin-bottom:16px">
+        <input type="checkbox" name="mentionEmails" <%= preferences.mentionEmails ? 'checked' : '' %>>
+        <span class="toggle-slider"></span>
+        <span>Email me when someone mentions me in a case channel</span>
+      </label>
+
+      <label class="toggle-switch" style="margin-bottom:16px">
+        <input type="checkbox" name="digestEmails" <%= preferences.digestEmails ? 'checked' : '' %>>
+        <span class="toggle-slider"></span>
+        <span>Send me a digest of unread notifications</span>
+      </label>
+
+      <div class="form-group">
+        <label for="digestFrequency">Digest frequency</label>
+        <select name="digestFrequency" id="digestFrequency" class="form-control">
+          <option value="daily" <%= preferences.digestFrequency === 'daily' ? 'selected' : '' %>>Daily</option>
+          <option value="weekly" <%= preferences.digestFrequency === 'weekly' ? 'selected' : '' %>>Weekly</option>
+          <option value="off" <%= preferences.digestFrequency === 'off' ? 'selected' : '' %>>Off</option>
+        </select>
+      </div>
+
+      <p class="page-subtitle" style="margin-top:8px">
+        Invitations, schedule changes, and replacement requests are always sent immediately regardless of these settings.
+      </p>
+
+      <button type="submit" class="btn btn-primary" style="margin-top:12px">Save preferences</button>
+    </form>
+  </div>
+</div>

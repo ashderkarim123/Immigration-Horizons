@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Briefcase, Inbox } from "lucide-react";
+import { ArrowRight, Bell, Briefcase, Inbox } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { getDb } from "@/lib/db";
 import { Consultation } from "@/lib/models/Consultation";
 import { STATUS_LABELS } from "@/lib/content/portal";
 import { listAccessibleCases } from "@/lib/auth/case-policy";
+import { getUnreadCountForClient } from "@/lib/notifications/notification-service";
 import { CASE_TYPES, CLIENT_STAGE_LABELS, type CaseStage } from "@/lib/content/case-constants";
 
 export const metadata: Metadata = {
@@ -25,11 +26,12 @@ export default async function PortalDashboardPage() {
   const db = getDb();
   if (db) await db;
 
-  const [consultations, cases] = await Promise.all([
+  const [consultations, cases, unreadNotificationCount] = await Promise.all([
     db
       ? Consultation.find({ clientUser: client._id }).sort({ createdAt: -1 }).limit(5).lean()
       : Promise.resolve([]),
     listAccessibleCases(String(client._id)),
+    db ? getUnreadCountForClient(client._id) : Promise.resolve(0),
   ]);
 
   const displayName = client.firstName || client.email;
@@ -45,7 +47,21 @@ export default async function PortalDashboardPage() {
             Here&apos;s a summary of your cases and consultations.
           </p>
         </div>
-        <LogoutButton />
+        <div className="flex items-center gap-4">
+          <Link
+            href="/portal/notifications"
+            className="text-navy-700 relative inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+          >
+            <Bell size={16} strokeWidth={1.75} aria-hidden />
+            Notifications
+            {unreadNotificationCount > 0 ? (
+              <span className="bg-gold-500 text-navy-900 ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold">
+                {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+              </span>
+            ) : null}
+          </Link>
+          <LogoutButton />
+        </div>
       </div>
 
       {cases.length > 0 ? (
