@@ -116,6 +116,7 @@ async function changeProjectManager({ caseDoc, workspace, newManagerId, actor })
 
   await notify({
     recipientName: newManager.name,
+    recipientAdminId: newManager._id,
     title: `Assigned as project manager: ${caseDoc.caseNumber}`,
     message: `You were assigned as project manager for "${caseDoc.title}".`,
     type: 'case_assigned_manager',
@@ -181,6 +182,7 @@ async function addEmployeeMember({ caseDoc, workspace, adminUserId, workspaceRol
 
   await notify({
     recipientName: adminUser.name,
+    recipientAdminId: adminUser._id,
     title: `Added to case ${caseDoc.caseNumber}`,
     message: `You were added to the workspace for "${caseDoc.title}".`,
     type: 'case_member_added',

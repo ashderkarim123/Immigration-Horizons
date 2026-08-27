@@ -492,7 +492,7 @@ router.post('/admin/leads/:id/status', requireCapability('leads.edit'), async (r
   try {
     const { status } = req.body;
     if (LEAD_STATUSES.includes(status)) {
-      const previous = await Consultation.findById(req.params.id).select('status name ownerName assignees').lean();
+      const previous = await Consultation.findById(req.params.id).select('status name owner ownerName assignees').lean();
       await Consultation.findByIdAndUpdate(req.params.id, { status });
 
       if (previous && previous.status !== status) {
@@ -507,7 +507,10 @@ router.post('/admin/leads/:id/status', requireCapability('leads.edit'), async (r
           { previousStatus: previous.status, newStatus: status }
         );
 
-        const recipients = [previous.ownerName, ...(previous.assignees || []).map((a) => a.name)];
+        const recipients = [
+          previous.ownerName ? { name: previous.ownerName, adminId: previous.owner || null } : null,
+          ...(previous.assignees || []).map((a) => ({ name: a.name, adminId: a.user || null })),
+        ].filter(Boolean);
         const eventByStatus = {
           waiting_on_client: 'lead_waiting_on_client',
           internal_review: 'lead_in_review',

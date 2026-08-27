@@ -8,6 +8,7 @@ const DeliveryRecord = require('../../models/admin/DeliveryRecord');
 const ActivityLog = require('../../models/admin/ActivityLog');
 
 const { notify, notifyMany } = require('../../utils/notify');
+const { getOrCreatePreferences, updatePreferences } = require('../../services/notificationService');
 const { logActivity } = require('../../utils/activity');
 const {
   requireCapability,
@@ -122,6 +123,7 @@ module.exports = function attachLeadOps(router) {
       if (assigneeName) {
         await notify({
           recipientName: assigneeName,
+          recipientAdminId: assignee || null,
           title: 'New task assigned',
           message: `You were assigned "${task.title}".`,
           type: 'task_assigned',
@@ -175,6 +177,7 @@ module.exports = function attachLeadOps(router) {
       if (assigneeChanged && assigneeName) {
         await notify({
           recipientName: assigneeName,
+          recipientAdminId: assignee || null,
           title: 'Task assigned to you',
           message: `You were assigned "${task.title}".`,
           type: 'task_assigned',
@@ -377,6 +380,46 @@ module.exports = function attachLeadOps(router) {
     }
   });
 
+  // Cycle 7 (ADR-006 §8) — the env-credential fallback admin has no
+  // persistent AdminUser id, so it has nothing to key preferences off of;
+  // it simply doesn't get this page (same "never insertable as a required
+  // AdminUser reference" posture as every other identity-scoped feature).
+  router.get('/admin/notifications/preferences', async (req, res) => {
+    try {
+      const adminId = req.session.adminUser?.id;
+      if (!adminId) return res.redirect('/admin/notifications');
+      const preferences = await getOrCreatePreferences({ recipientType: 'employee', recipientAdminId: adminId });
+      res.render('admin/notifications/preferences', {
+        title: 'Notification Preferences | Admin',
+        preferences,
+        currentPage: 'notifications',
+      });
+    } catch (err) {
+      console.error('[admin/notifications/preferences]', err.message);
+      res.redirect('/admin/notifications');
+    }
+  });
+
+  router.post('/admin/notifications/preferences', async (req, res) => {
+    try {
+      const adminId = req.session.adminUser?.id;
+      if (!adminId) return res.redirect('/admin/notifications');
+      await updatePreferences({
+        recipientType: 'employee',
+        recipientAdminId: adminId,
+        updates: {
+          mentionEmails: req.body.mentionEmails === 'on',
+          digestEmails: req.body.digestEmails === 'on',
+          digestFrequency: ['daily', 'weekly', 'off'].includes(req.body.digestFrequency) ? req.body.digestFrequency : 'daily',
+        },
+      });
+      res.redirect('/admin/notifications/preferences');
+    } catch (err) {
+      console.error('[admin/notifications/preferences/update]', err.message);
+      res.redirect('/admin/notifications/preferences');
+    }
+  });
+
   // ======================================================================
   // LEAD ASSIGNMENT
   // ======================================================================
@@ -412,6 +455,7 @@ module.exports = function attachLeadOps(router) {
 
       const assignees = [];
       const newlyAssignedNames = [];
+      const newlyAssignedRecipients = [];
       for (const slot of ASSIGNMENT_SLOTS) {
         const fieldName = `assignee_${slugifySlot(slot.taskType)}`;
         const userId = req.body[fieldName];
@@ -423,7 +467,10 @@ module.exports = function attachLeadOps(router) {
         const alreadyAssigned = previousAssignees.some(
           (a) => a.userId === String(user._id) && a.taskType === slot.taskType
         );
-        if (!alreadyAssigned) newlyAssignedNames.push(user.name);
+        if (!alreadyAssigned) {
+          newlyAssignedNames.push(user.name);
+          newlyAssignedRecipients.push({ name: user.name, adminId: user._id });
+        }
       }
       const removedAssignees = previousAssignees.filter(
         (prev) => !assignees.some((a) => String(a.user) === prev.userId && a.taskType === prev.taskType)
@@ -463,9 +510,9 @@ module.exports = function attachLeadOps(router) {
 
       // Only notify people whose assignment actually changed — re-saving
       // the same assignment must not re-notify the owner every time.
-      const namesToNotify = [...newlyAssignedNames];
-      if (ownerChanged && ownerName) namesToNotify.push(ownerName);
-      await notifyMany(namesToNotify, {
+      const recipientsToNotify = [...newlyAssignedRecipients];
+      if (ownerChanged && ownerName) recipientsToNotify.push({ name: ownerName, adminId: resolvedOwnerId });
+      await notifyMany(recipientsToNotify, {
         title: 'Lead assigned',
         message: `You were assigned to "${lead.name}"'s case.`,
         type: 'lead_assigned',
@@ -525,8 +572,12 @@ module.exports = function attachLeadOps(router) {
       }
       if (state === 'delivered' && !wasDelivered) {
         await logActivity(req.params.id, 'package_delivered', `Package delivered by ${actor}.`, actor);
-        const lead = await Consultation.findByIdAndUpdate(req.params.id, { status: 'delivered' }, { new: true });
-        await notifyMany([lead?.ownerName, ...(lead?.assignees || []).map((a) => a.name)], {
+        const lead = await Consultation.findByIdAndUpdate(req.params.id, { status: 'delivered' }, { returnDocument: 'after' });
+        const deliveryRecipients = [
+          lead?.ownerName ? { name: lead.ownerName, adminId: lead.owner || null } : null,
+          ...(lead?.assignees || []).map((a) => ({ name: a.name, adminId: a.user || null })),
+        ].filter(Boolean);
+        await notifyMany(deliveryRecipients, {
           title: 'Package delivered',
           message: `The petition package for "${lead?.name}" was delivered.`,
           type: 'lead_delivered',

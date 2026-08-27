@@ -362,6 +362,7 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
   try {
     await notify({
       recipientName: projectManager.name,
+      recipientAdminId: projectManager._id,
       title: `Assigned as project manager: ${caseDoc.caseNumber}`,
       message: `You were assigned as project manager for "${caseDoc.title}".`,
       type: 'case_assigned_manager',
@@ -369,7 +370,7 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
     });
     if (employees.length) {
       await notifyMany(
-        employees.map((e) => e.name),
+        employees.map((e) => ({ name: e.name, adminId: e._id })),
         {
           title: `Added to case ${caseDoc.caseNumber}`,
           message: `You were added to the workspace for "${caseDoc.title}".`,

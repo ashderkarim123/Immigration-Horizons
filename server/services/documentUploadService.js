@@ -47,6 +47,7 @@ async function auditAndNotifyUpload({ document, caseId, workspaceId, actorName, 
 
     await notify({
       recipientName: manager.name,
+      recipientAdminId: manager._id,
       title: isReplacement ? 'Document replacement uploaded' : 'Document uploaded',
       message: `A client uploaded "${document.displayName}" on case ${caseDoc.caseNumber}.`,
       type: isReplacement ? 'document_replacement_uploaded' : 'document_uploaded',
