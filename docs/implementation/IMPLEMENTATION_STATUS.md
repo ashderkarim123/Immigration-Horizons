@@ -1338,3 +1338,95 @@ Covered: capability enforcement per role, PM-can-view-but-not-manage, regex-inje
 ## Recommended next module
 
 `09_CLIENT_PORTAL_EXPERIENCE.md` — the two missing screens (`/portal/profile`, `/portal/security`) and, more importantly, the shared portal shell that would give the portal persistent navigation and a notification bell. Cycle 7 deferred the bell for exactly that reason (ADR-006 §10), and the security screen now has a natural counterpart in the admin's client security summary built this cycle.
+
+---
+
+# Cycles 8A & 8B — Application Separation and the Employee SaaS
+
+**Status: complete, verified, UNCOMMITTED.** See `AGENTS.md` → "Read this
+before touching git" for the working-tree state and the `cc43363` problem.
+
+## Cycle 8A — three-application separation (ADR-008)
+
+Audited full extraction into a second Next.js runtime and rejected it as a
+high-risk rewrite: the repo is not a monorepo, and marketing shares the
+onboarding domain with the portal (the consultation form reaches `leads.ts`
+→ `db`/`Consultation`, and `auth/invitations.ts` → `ClientUser`/
+`PortalInvitation`/`crypto`/`email`). Extraction would need a shared
+package or duplicating that domain.
+
+Chose host-based separation in one runtime:
+
+- `src/proxy.ts` — **Next 16 renamed Middleware to Proxy.** Routes by
+  `x-forwarded-host`/`host`; keeps `/portal` + `/api/portal` (and, after
+  8B, `/staff` + `/api/staff`) on `app.*`, marketing on the public host,
+  and stamps `X-Robots-Tag: noindex` on everything `app.*` serves.
+- Route groups `(site)` / `(app)`, each with its own layout — the portal
+  previously rendered the marketing header, footer, and WhatsApp button
+  because they lived in the root layout. **No URL changed** (route groups
+  are URL-transparent; verified against the build's route table).
+- Host-aware `robots.ts`: `app.*`/`admin.*` get `Disallow: /`.
+
+**Two bugs found and fixed during the cycle:**
+1. `/robots.txt` on `app.*` was being redirected to the *public* robots
+   (`Allow: /`), silently undoing the indexing isolation. Every unit test
+   passed while this was broken — only a live smoke test caught it.
+   Regression test added.
+2. Unmatched `/portal/**` URLs rendered the marketing 404, because a
+   route-group `not-found.tsx` only catches `notFound()` raised *inside*
+   the group. Fixed with a `/portal/[...notFound]` catch-all.
+
+## Cycle 8B — employee SaaS shell (ADR-009)
+
+Three blockers found by audit, all real: no employee authentication
+(`EmployeeActor` was typed in ADR-001 but never constructed), no capability
+system in the Next app, and an `AdminUser` mirror that deliberately
+excluded `role`.
+
+- `src/lib/auth/capabilities.ts` mirrors the CMS's 54-capability map. The
+  contract fixture is **generated** from the live server map — the first
+  hand-written mirror drifted on four capabilities and the contract test
+  caught every one.
+- `EmployeeSession` + `ih_staff_session`, deliberately separate from
+  `ClientSession`. Authorization re-reads the live `AdminUser` every
+  request, so deactivation/role change takes effect on the next request.
+  The two session types are **not** unified behind one abstraction.
+- One `AppShell` for both actor types; navigation is capability-filtered
+  for usability only — every page calls `requireEmployee`/
+  `requireCapability` and every case-scoped resource keeps its row-level
+  check. `requireCapability` returns 404, not 403.
+- One dashboard query module, capability-gated, with per-role presets.
+  A widget the role cannot hold returns `null`, not `0`, so the UI can
+  distinguish "nothing waiting" from "not your remit".
+
+**Owner-approved permission change:** specialists + reviewer gained
+`cases.view`/`documents.view`/`document_versions.view`, view-only. Safe
+because they lack `*.view_all`, so row-level membership still applies —
+tested, including that removing membership revokes access immediately.
+
+**A regression I caused and fixed:** marking `email`/`password` `required`
+on the `AdminUser` mirror broke 11 pre-existing case-policy tests. This app
+never *writes* AdminUsers; the CMS owns that validation.
+
+## Verification (both cycles)
+
+Root **186/186** · server **371/371** · tsc clean · lint clean · build
+clean · index dry-run lists `employee_sessions`. Live host-boundary smoke
+tests passed against a real production build with `Host` headers.
+
+## Not built
+
+- The staff area is **read-only** — document review, messaging, and query
+  answering still happen in the admin CMS.
+- `/staff/queries` and `/staff/clients` appear in nav for roles holding
+  those capabilities but are not built yet.
+- Tasks remain lead-scoped (`Task.lead` → `Consultation`), not case-scoped.
+- No SSO between `app.*` and `admin.*` — employees sign in to each
+  separately.
+- Real-time (Socket.IO) remains deferred; architecture is in ADR-006 §11.
+
+## Recommended next module
+
+`09_CLIENT_PORTAL_EXPERIENCE.md` — `/portal/profile` and `/portal/security`
+are still missing, and the shared shell those needed now exists (8B built
+it). ADR-006 §10 deferred the notification bell for exactly that reason.

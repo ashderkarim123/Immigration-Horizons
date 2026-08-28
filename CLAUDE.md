@@ -69,17 +69,44 @@ Reusable, typed, accessible, responsive. Never duplicate UI — see `src/compone
 
 ## Architecture
 
+Three applications, two runtimes (see `AGENTS.md` for the host table and
+the conventions that will bite you):
+
+| Host | Application | Where |
+|---|---|---|
+| `immigrationhorizons.com` | Public marketing site — **the only indexed one** | `src/app/(site)/**` |
+| `app.immigrationhorizons.com` | SaaS: client portal + staff app | `src/app/(app)/**` |
+| `admin.immigrationhorizons.com` | Express/EJS admin CMS | `server/` |
+
 ```
 src/
-  app/                    routes; page.tsx = homepage, not-found.tsx = custom 404
+  proxy.ts                host-based application boundary (Next 16: NOT middleware.ts)
+  app/
+    (site)/               public marketing site — its own layout, header, footer
+      page.tsx            homepage
+    (app)/                SaaS — its own shell; noindex subtree
+      portal/**           client surfaces
+      staff/**            employee surfaces
+    api/portal/**         client APIs
+    api/staff/**          employee auth APIs
+    robots.ts             host-aware: app.*/admin.* get Disallow: /
+    sitemap.ts            marketing URLs only
   components/
-    layout/               header (only client component), footer, whatsapp-fab
+    layout/               marketing header/footer/whatsapp-fab
+    app/                  SaaS shell, account menu, dashboard primitives
+    portal/               client-side interactive components
     sections/             composable homepage/page sections
     seo/json-ld.tsx       Organization, WebSite, FAQPage, Breadcrumb schema
     ui/                   design-system primitives
-  lib/content/            ALL copy lives here as typed data, never inline in JSX
+  lib/
+    auth/                 sessions, policies, capabilities (client AND employee)
+    content/              ALL copy lives here as typed data, never inline in JSX
+    dashboard/            capability-gated staff dashboard queries
 server/                   standalone Express + EJS admin CMS (see server/README.md)
 ```
+
+**Route groups are URL-transparent** — `(site)`/`(app)` change the layout a
+page inherits, never its URL.
 
 ### Information architecture
 The legacy site conflated two different things into one flat service list. They are now separate:
@@ -89,14 +116,15 @@ The legacy site conflated two different things into one flat service list. They 
 Nav derives from the service catalogue in `src/lib/content/services.ts`, so adding a service updates header, mega menu, and footer automatically. `enumValue` on each case category must stay in sync with the legacy `Consultation` model enum.
 
 ### Service-page architecture
-- **EB-2 NIW is bespoke:** `src/app/services/eb2-niw/page.tsx` + `src/lib/content/eb2-niw.ts`. Static route wins over dynamic by Next resolution order.
-- **All other service pages are data-driven:** one renderer at `src/app/services/[slug]/page.tsx` consumes typed content from `src/lib/content/service-pages/*.ts` (registry in `index.ts`). Adding a page = write a content file + register it. Do NOT build new page components.
+- **EB-2 NIW is bespoke:** `src/app/(site)/services/eb2-niw/page.tsx` + `src/lib/content/eb2-niw.ts`. Static route wins over dynamic by Next resolution order.
+- **All other service pages are data-driven:** one renderer at `src/app/(site)/services/[slug]/page.tsx` consumes typed content from `src/lib/content/service-pages/*.ts` (registry in `index.ts`). Adding a page = write a content file + register it. Do NOT build new page components.
 - Every service page cites primary sources (INA/CFR/USCIS) via `OfficialSources` — EEAT + honesty. The O-1 page states plainly it is a NONIMMIGRANT classification (temporary), not a green card.
 - Next 16: `params` is a Promise — `const { slug } = await params`.
 
 ### Admin CMS (`server/`)
 Manages leads, blogs, SEO, services, FAQs, testimonials, media, settings, notifications, users, task management, sprint tracking. Think Linear / Notion / Stripe Dashboard / Vercel Dashboard, not a bare CRUD admin.
-- Session-based auth: env credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) as a break-glass fallback, DB-backed users under **Users** as the real long-term path (`super_admin`, `admin`, `editor` roles, bcrypt-hashed).
+- Session-based auth: env credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) as a break-glass fallback, DB-backed users under **Users** as the real long-term path (11 roles, bcrypt-hashed). The break-glass login has no persistent AdminUser id, so it can browse but cannot perform anything requiring a real identity (answering a query, sending a channel message, holding notification preferences).
+- **The admin CMS is no longer the only staff surface.** Case-working roles also sign in at `app.*` (`/staff`), which shares the same `AdminUser` records and the same capability map. Employees sign in to each separately — different applications, different session stores; SSO across them is future work.
 - This admin only reads/manages stored data. Lead email and DB writes happen in the site's own form handlers, not here — see `/admin/contact-form` for integration status.
 - Uploaded files are stored locally in `server/public/uploads/` — local-disk only; a future move to a multi-instance/ephemeral host needs S3/Cloudinary first (see `DEPLOYMENT.md`).
 
@@ -157,21 +185,45 @@ Before completing any task, also check: desktop/tablet/mobile rendering, forms, 
 
 ---
 
-## Phase status
+## Build status
 
-- ✅ 1 Audit · 2 Design system · 3 Nav/layout · 4 Homepage · 4B content spec · 4C optimization pass
-- ✅ 5A `/services` index + service template + definitive EB-2 NIW page
-- ✅ 5B EB-1A/EB-1B/EB-1C/O-1
-- ✅ 5C 5 support-service pages (rfe-response, recommendation-letters, expert-opinion-letters, business-plans, evidence-packaging)
-- ✅ P1 routing: all core pages built — /consultation, /contact, /about, /reviews, /faqs, /privacy, /terms, /resources, /blog. Zero 404s.
-- ✅ P3 visual system (all inline SVG/CSS, zero added JS): hero globe, process timeline, DocumentStack illustration, CategoryComparison table, profession icons, PhotoSlot.
-- 🔨 6 Blog data layer (real posts) · ⬜ 7 SEO (sitemap/canonical dedupe) · 8 Optimization
+The marketing site is done. The platform is being built in numbered
+**cycles** from `.claude/immigration_horizons_implementation_plan/immigration_horizons_implementation_plan/NN_*.md`,
+one cycle per session. `docs/implementation/IMPLEMENTATION_STATUS.md` is the
+authoritative per-cycle record — **read it before starting anything.**
 
-**Deferred to Phase 6:** homepage "Latest Articles" section (needs the blog data layer — do not stub with fake posts).
+| Cycle | Module | State |
+|---|---|---|
+| 1–2 | Architecture · client auth & onboarding | ✅ ADR-001 |
+| 3 | Cases, workspaces, membership | ✅ ADR-002 |
+| 4 | Consultation & query tracking | ✅ ADR-003 |
+| 5 | Secure document management | ✅ ADR-004 |
+| 6 | Team collaboration & chat | ✅ ADR-005 |
+| 7 | Notifications & preferences (real-time deferred) | ✅ ADR-006 |
+| 8 | Admin case operations | ✅ ADR-007 |
+| 8A | Three-application host separation | ✅ ADR-008 |
+| 8B | Employee SaaS shell & role-aware dashboards | ✅ ADR-009 |
+| **9** | **Client portal experience — next** | ⬜ |
+| 10–14 | Security/audit · migrations · testing · deployment · analytics | 🔨 partial |
 
-**Deferred to Phase 7:** `/eb2-niw` and `/services/eb2-niw` are duplicate content on the legacy site. Needs canonicalisation to one URL, not two competing pages.
+Marketing-site work that was never finished (low priority, unrelated to the
+platform cycles): blog data layer for real posts, and canonicalising the
+duplicate `/eb2-niw` vs `/services/eb2-niw` pages inherited from the legacy
+site.
 
----
+### Deployment blockers (verified open — do not mark done without checking)
+
+1. **Database indexes have never been run in production.** Both apps have
+   dry-run-verified scripts covering every collection; nobody has executed
+   them against the live database.
+2. **Documents write to local disk.** Breaks on any multi-instance or
+   ephemeral host — needs S3/Cloudinary before scaling.
+3. **The admin CMS has no CSRF tokens** (`sameSite: lax` only). The portal
+   and SaaS app do have Origin verification.
+4. **No email has been verified against real Resend** — every adapter
+   across seven cycles is tested with doubles only.
+5. `SITE_URL` must be set in production (portal CSRF depends on it).
+6. No malware scanning on uploads; no scheduler wired for the digest job.
 
 ## Git
 
