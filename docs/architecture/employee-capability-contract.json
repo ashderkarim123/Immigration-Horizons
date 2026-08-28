@@ -1,0 +1,360 @@
+{
+  "_comment": "Canonical cross-app contract for the employee role/capability system (ADR-009). The Express admin CMS owns permissions.js; the Next.js SaaS app mirrors it in src/lib/auth/capabilities.ts. Both assert against this file so a grant added on one side and not the other fails tests. Test-time-only fixture; never imported by production code.",
+  "roles": [
+    "super_admin",
+    "admin",
+    "pm",
+    "petition_writer",
+    "business_plan_specialist",
+    "recommendation_letter_specialist",
+    "uscis_forms_specialist",
+    "evidence_collector",
+    "reviewer",
+    "editor",
+    "viewer"
+  ],
+  "roleLabels": {
+    "super_admin": "Super Admin",
+    "admin": "Admin",
+    "pm": "PM / Project Manager",
+    "petition_writer": "Petition Writer",
+    "business_plan_specialist": "Business Plan Specialist",
+    "recommendation_letter_specialist": "Recommendation Letter Specialist",
+    "uscis_forms_specialist": "USCIS Forms Specialist",
+    "evidence_collector": "Evidence Collector",
+    "reviewer": "Reviewer / QA",
+    "editor": "Editor",
+    "viewer": "Viewer"
+  },
+  "managerRoles": [
+    "super_admin",
+    "admin",
+    "pm"
+  ],
+  "specialistRoles": [
+    "petition_writer",
+    "business_plan_specialist",
+    "recommendation_letter_specialist",
+    "uscis_forms_specialist",
+    "evidence_collector"
+  ],
+  "readOnlyRoles": [
+    "viewer"
+  ],
+  "capabilities": {
+    "users.manage": [
+      "super_admin",
+      "admin"
+    ],
+    "users.delete": [
+      "super_admin"
+    ],
+    "settings.manage": [
+      "super_admin",
+      "admin"
+    ],
+    "leads.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer",
+      "editor",
+      "viewer"
+    ],
+    "leads.assign": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "leads.edit": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "leads.delete": [
+      "super_admin",
+      "admin"
+    ],
+    "notes.create": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "tasks.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "sprints.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "deliveries.manage": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "blog.manage": [
+      "super_admin",
+      "admin",
+      "editor"
+    ],
+    "faqs.manage": [
+      "super_admin",
+      "admin",
+      "editor"
+    ],
+    "testimonials.manage": [
+      "super_admin",
+      "admin",
+      "editor"
+    ],
+    "media.manage": [
+      "super_admin",
+      "admin",
+      "editor"
+    ],
+    "csv.export": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "reports.view": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "cases.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "cases.view_all": [
+      "super_admin",
+      "admin"
+    ],
+    "cases.create": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "cases.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "cases.assign": [
+      "super_admin",
+      "admin"
+    ],
+    "cases.archive": [
+      "super_admin",
+      "admin"
+    ],
+    "workspace.members.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "clients.view": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "clients.manage": [
+      "super_admin",
+      "admin"
+    ],
+    "client_updates.publish": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "queries.view": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "queries.view_all": [
+      "super_admin",
+      "admin"
+    ],
+    "queries.create": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "queries.triage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "queries.assign": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "queries.schedule": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "queries.answer": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "queries.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "queries.close": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "documents.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "documents.view_all": [
+      "super_admin",
+      "admin"
+    ],
+    "documents.upload": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "documents.review": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "documents.archive": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "document_categories.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "document_requests.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "document_versions.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "channels.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "channels.view_all": [
+      "super_admin",
+      "admin"
+    ],
+    "channels.create": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "channels.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "channels.archive": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "channel_members.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "messages.send": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "messages.edit_own": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "messages.moderate": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "messages.view_revisions": [
+      "super_admin",
+      "admin",
+      "pm"
+    ]
+  }
+}

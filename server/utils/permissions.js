@@ -147,11 +147,17 @@ const CAPABILITIES = {
   // Cases/workspaces (Cycle 2). Conservative default matrix — see
   // 03_CLIENT_CASES_AND_WORKSPACES.md §12 and services/casePolicy.js for
   // how `cases.view_all` is used as the org-wide, membership-bypass signal.
-  // Specialists/reviewer/editor/viewer intentionally excluded from every
-  // case capability: the module document requires justifying read-only
-  // access from actual product rules before granting it, and none exist
-  // yet for this cycle.
-  'cases.view': ['super_admin', 'admin', 'pm'],
+  // Cycle 8B: specialists and reviewer gained READ-ONLY case access. The
+  // exclusion note that stood here since Cycle 2 said the grant needed "a
+  // product rule that justifies it" — the employee SaaS shell is that
+  // rule: petition writers and USCIS forms fillers work assigned cases in
+  // app.*, so they must be able to open them.
+  //
+  // This stays safe because it is view-only AND membership-scoped: none of
+  // these roles hold `cases.view_all`, so casePolicy's row-level check
+  // still limits them to workspaces they are an active member of. Nothing
+  // here grants create/manage/assign/archive.
+  'cases.view': [...MANAGER_ROLES, ...TASK_OWNERSHIP_ROLES],
   'cases.view_all': ['super_admin', 'admin'],
   'cases.create': ['super_admin', 'admin', 'pm'],
   'cases.manage': ['super_admin', 'admin', 'pm'],
@@ -188,17 +194,22 @@ const CAPABILITIES = {
 
   // Document management (Cycle 5). Same conservative-matrix approach as
   // cases.*/queries.* above — see 05_DOCUMENT_MANAGEMENT.md §19 and
-  // services/documentPolicy.js. Specialists/reviewer/editor/viewer
-  // excluded: no product rule yet justifies granting them document access,
-  // same reasoning already applied to cases.*/queries.* in prior cycles.
-  'documents.view': ['super_admin', 'admin', 'pm'],
+  // services/documentPolicy.js.
+  //
+  // Cycle 8B: specialists and reviewer gained READ-ONLY document access
+  // for the same reason, and with the same membership scoping, as
+  // cases.view above — a petition writer cannot draft against evidence
+  // they cannot open. Upload/review/archive/manage remain manager-tier:
+  // reading a case's evidence and changing its review state are different
+  // levels of consequence.
+  'documents.view': [...MANAGER_ROLES, ...TASK_OWNERSHIP_ROLES],
   'documents.view_all': ['super_admin', 'admin'],
   'documents.upload': ['super_admin', 'admin', 'pm'],
   'documents.review': ['super_admin', 'admin', 'pm'],
   'documents.archive': ['super_admin', 'admin', 'pm'],
   'document_categories.manage': ['super_admin', 'admin', 'pm'],
   'document_requests.manage': ['super_admin', 'admin', 'pm'],
-  'document_versions.view': ['super_admin', 'admin', 'pm'],
+  'document_versions.view': [...MANAGER_ROLES, ...TASK_OWNERSHIP_ROLES],
 
   // Team collaboration (Cycle 6). Same conservative-matrix approach as
   // cases.*/queries.*/documents.* above — see
