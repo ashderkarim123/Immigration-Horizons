@@ -36,13 +36,13 @@ import { POST as loginPOST } from "../src/app/api/portal/login/route";
 // Dynamic imports (after PRIVATE_DOCUMENT_ROOT is set above) — see comment.
 let uploadRoute: typeof import("../src/app/api/portal/cases/[caseId]/documents/route");
 let requestUploadRoute: typeof import("../src/app/api/portal/document-requests/[requestId]/upload/route");
-let downloadRoute: typeof import("../src/app/portal/documents/[documentId]/download/route");
+let downloadRoute: typeof import("../src/app/(app)/portal/documents/[documentId]/download/route");
 
 before(async () => {
   await startTestDb();
   uploadRoute = await import("../src/app/api/portal/cases/[caseId]/documents/route");
   requestUploadRoute = await import("../src/app/api/portal/document-requests/[requestId]/upload/route");
-  downloadRoute = await import("../src/app/portal/documents/[documentId]/download/route");
+  downloadRoute = await import("../src/app/(app)/portal/documents/[documentId]/download/route");
 });
 after(async () => {
   await stopTestDb();

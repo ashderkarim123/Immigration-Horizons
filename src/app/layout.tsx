@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
 
-import { Footer } from "@/components/layout/footer";
-import { Header } from "@/components/layout/header";
-import { WhatsAppFab } from "@/components/layout/whatsapp-fab";
 import { site } from "@/lib/content/site";
 import "./globals.css";
+
+/**
+ * Document shell only (ADR-008 §3).
+ *
+ * Everything below this file is split into two applications by route
+ * group: `(site)` is the public marketing website, `(app)` is the SaaS
+ * case-management application. Each owns its own chrome and its own
+ * metadata, so the portal no longer renders the marketing header, footer,
+ * and WhatsApp button — which it did before this cycle, because they lived
+ * here in the root layout.
+ *
+ * Route groups are URL-transparent: no public URL changed.
+ */
 
 // UI and body copy: modern, neutral, excellent at small sizes.
 const inter = Inter({
@@ -53,14 +63,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${sourceSerif.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-white">
-        <Header />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <Footer />
-        <WhatsAppFab />
-      </body>
+      <body className="flex min-h-full flex-col bg-white">{children}</body>
     </html>
   );
 }

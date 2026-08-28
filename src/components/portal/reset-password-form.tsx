@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Field, TextInput } from "@/components/forms/fields";
 import { Button } from "@/components/ui/button";
 import { postPortalJson } from "@/lib/auth/portal-fetch";
+import Link from "next/link";
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -31,9 +32,9 @@ export function ResetPasswordForm() {
     return (
       <p className="rounded-xl border border-navy-200 bg-navy-50 px-4 py-3 text-sm text-navy-800">
         Your password has been reset. You can now{" "}
-        <a href="/portal/login" className="font-semibold hover:underline">
+        <Link href="/portal/login" className="font-semibold hover:underline">
           sign in
-        </a>{" "}
+        </Link>{" "}
         with your new password.
       </p>
     );

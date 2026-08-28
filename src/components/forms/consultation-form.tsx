@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 
-import { submitConsultation, type FormState } from "@/app/consultation/actions";
+import { submitConsultation, type FormState } from "@/app/(site)/consultation/actions";
 import { Button } from "@/components/ui/button";
 import { caseCategories, supportServices } from "@/lib/content/services";
 import { contact, whatsappLink } from "@/lib/content/site";

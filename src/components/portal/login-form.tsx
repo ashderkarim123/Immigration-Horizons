@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Field, TextInput } from "@/components/forms/fields";
 import { Button } from "@/components/ui/button";
 import { postPortalJson } from "@/lib/auth/portal-fetch";
+import Link from "next/link";
 
 export function LoginForm() {
   const router = useRouter();
@@ -69,12 +70,12 @@ export function LoginForm() {
       </Field>
 
       <div className="flex justify-end">
-        <a
+        <Link
           href="/portal/forgot-password"
           className="text-navy-700 font-sans text-sm hover:underline"
         >
           Forgot password?
-        </a>
+        </Link>
       </div>
 
       <Button

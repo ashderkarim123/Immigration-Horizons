@@ -2,11 +2,11 @@ import "server-only";
 
 import { Readable } from "stream";
 
-import { getDb } from "../../../../../lib/db";
-import { ClientUser } from "../../../../../lib/models/ClientUser";
-import { getSessionActor } from "../../../../../lib/auth/session";
-import { getAccessibleDocument } from "../../../../../lib/auth/document-policy";
-import { resolveDownload } from "../../../../../lib/documents/document-download-service";
+import { getDb } from "@/lib/db";
+import { ClientUser } from "@/lib/models/ClientUser";
+import { getSessionActor } from "@/lib/auth/session";
+import { getAccessibleDocument } from "@/lib/auth/document-policy";
+import { resolveDownload } from "@/lib/documents/document-download-service";
 
 /**
  * Client document download — every request re-derives authorization from

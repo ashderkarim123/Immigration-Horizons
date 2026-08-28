@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Container } from "@/components/ui/container";
 import { ForgotPasswordForm } from "@/components/portal/forgot-password-form";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Reset Your Password",
@@ -25,9 +26,9 @@ export default function PortalForgotPasswordPage() {
         </div>
 
         <p className="text-ink-500 mt-6 text-sm">
-          <a href="/portal/login" className="text-navy-700 font-semibold hover:underline">
+          <Link href="/portal/login" className="text-navy-700 font-semibold hover:underline">
             Back to sign in
-          </a>
+          </Link>
         </p>
       </div>
     </Container>

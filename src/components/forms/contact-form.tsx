@@ -4,8 +4,8 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 
-import { submitContact } from "@/app/contact/actions";
-import type { FormState } from "@/app/consultation/actions";
+import { submitContact } from "@/app/(site)/contact/actions";
+import type { FormState } from "@/app/(site)/consultation/actions";
 import { Button } from "@/components/ui/button";
 import { contact, whatsappLink } from "@/lib/content/site";
 

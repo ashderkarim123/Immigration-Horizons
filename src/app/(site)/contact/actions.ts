@@ -2,7 +2,7 @@
 
 import { deliverLead } from "@/lib/leads";
 import { isRateLimited } from "@/lib/rate-limit";
-import type { FormState } from "@/app/consultation/actions";
+import type { FormState } from "@/app/(site)/consultation/actions";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
