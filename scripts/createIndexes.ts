@@ -38,6 +38,7 @@ import { MessageRevision } from "../src/lib/models/MessageRevision";
 import { ChannelReadState } from "../src/lib/models/ChannelReadState";
 import { Notification } from "../src/lib/models/Notification";
 import { NotificationPreference } from "../src/lib/models/NotificationPreference";
+import { EmployeeSession } from "../src/lib/models/EmployeeSession";
 
 // Cycle 2 case/workspace/membership models are also declared here even
 // though server/ is their primary writer (see
@@ -75,6 +76,10 @@ const MODELS = [
   // NotificationPreference is a brand new model.
   Notification,
   NotificationPreference,
+  // Cycle 8B — employee sessions for the SaaS app. Owned solely by this
+  // app (the admin CMS keeps its own express-session store), so it is the
+  // only place these indexes are declared.
+  EmployeeSession,
 ];
 
 const isDryRun = process.argv.includes("--dry-run");
