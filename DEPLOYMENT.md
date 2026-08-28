@@ -196,6 +196,37 @@ server {
 }
 ```
 
+`/etc/nginx/sites-available/app.immigrationhorizons.com`:
+
+```nginx
+server {
+    listen 80;
+    server_name app.immigrationhorizons.com;
+
+    # Same Next.js process as the public site (port 3000). The application
+    # boundary is enforced inside it by src/proxy.ts, which routes on the
+    # Host header — see docs/architecture/ADR-008-application-separation.md.
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+`proxy_set_header Host $host` is **required** on both Next.js server
+blocks: `src/proxy.ts` classifies the request by `x-forwarded-host` or
+`host`, and if nginx rewrote `Host` to the upstream address every request
+would classify as `unknown` and fall back to single-host mode — serving the
+marketing site and the SaaS app from both domains. The blocks above already
+set it correctly; do not change it to `$proxy_host`.
+
 `/etc/nginx/sites-available/admin.immigrationhorizons.com`:
 
 ```nginx
@@ -217,6 +248,7 @@ The `X-Forwarded-Proto` header is **required** for the admin CMS: `server/server
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/immigrationhorizons.com /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/app.immigrationhorizons.com /etc/nginx/sites-enabled/
 sudo ln -s /etc/nginx/sites-available/admin.immigrationhorizons.com /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
@@ -227,6 +259,7 @@ sudo systemctl reload nginx
 ```bash
 sudo apt-get install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d immigrationhorizons.com -d www.immigrationhorizons.com
+sudo certbot --nginx -d app.immigrationhorizons.com
 sudo certbot --nginx -d admin.immigrationhorizons.com
 ```
 
