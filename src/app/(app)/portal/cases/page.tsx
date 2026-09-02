@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Briefcase } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/app/page-header";
+import { EmptyState } from "@/components/app/panel";
 import { requireClient } from "@/lib/auth/current-client";
 import { listAccessibleCases } from "@/lib/auth/case-policy";
 import { CASE_TYPES, CLIENT_STAGE_LABELS, type CaseStage } from "@/lib/content/case-constants";
@@ -19,17 +21,23 @@ export default async function PortalCasesPage() {
   const cases = await listAccessibleCases(String(client._id));
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-        Your cases
-      </h1>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title="Your cases"
+        description="Every case we are working on for you, and where each one currently stands."
+        breadcrumbs={[
+          { name: "Portal", href: "/portal" },
+          { name: "Cases", href: "/portal/cases" },
+        ]}
+      />
 
-      <div className="rounded-panel border-ink-200 mt-8 border bg-white shadow-subtle">
+      <div className="rounded-panel border-ink-200 border bg-white shadow-subtle">
         {cases.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-            <Briefcase className="text-ink-400" size={32} aria-hidden />
-            <p className="text-ink-600 text-sm">No active cases yet.</p>
-          </div>
+          <EmptyState
+            icon={<Briefcase size={28} aria-hidden />}
+            title="No active cases yet"
+            body="Once we begin work on your petition, your case appears here with its current status."
+          />
         ) : (
           <ul className="divide-ink-200 divide-y">
             {cases.map((c) => (

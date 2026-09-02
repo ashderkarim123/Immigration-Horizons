@@ -9,6 +9,7 @@ import { ClientCase } from "../src/lib/models/ClientCase";
 import { CaseWorkspace } from "../src/lib/models/CaseWorkspace";
 import { WorkspaceMember } from "../src/lib/models/WorkspaceMember";
 import { ClientUser } from "../src/lib/models/ClientUser";
+import { CaseActivity, CASE_ACTIVITY_TYPES } from "../src/lib/models/CaseActivity";
 import {
   CASE_TYPE_VALUES,
   CASE_STAGE_VALUES,
@@ -30,6 +31,20 @@ test("collection names match the contract", () => {
   assert.equal(CaseWorkspace.collection.collectionName, contract.collections.CaseWorkspace);
   assert.equal(WorkspaceMember.collection.collectionName, contract.collections.WorkspaceMember);
   assert.equal(ClientUser.collection.collectionName, contract.collections.ClientUser);
+  assert.equal(CaseActivity.collection.collectionName, contract.collections.CaseActivity);
+});
+
+// Cycle 8C made this app a writer to case_activities (ADR-010 §3), so the
+// type enum is now a real cross-app contract rather than a server detail.
+test("case activity type enum matches the contract", () => {
+  assert.deepEqual([...CASE_ACTIVITY_TYPES], contract.caseActivityTypes);
+});
+
+test("case activity actor-type enum matches the contract", () => {
+  assert.deepEqual(
+    CaseActivity.schema.path("actorType").options.enum,
+    contract.caseActivityActorTypes,
+  );
 });
 
 test("case type enum matches the contract", () => {

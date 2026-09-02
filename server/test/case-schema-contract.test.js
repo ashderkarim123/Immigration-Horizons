@@ -20,6 +20,7 @@ const ClientCase = require('../models/ClientCase');
 const CaseWorkspace = require('../models/CaseWorkspace');
 const WorkspaceMember = require('../models/WorkspaceMember');
 const ClientUser = require('../models/ClientUser');
+const CaseActivity = require('../models/CaseActivity');
 const {
   CASE_TYPE_VALUES,
   CASE_STAGE_VALUES,
@@ -35,6 +36,21 @@ test('collection names match the contract', () => {
   assert.equal(CaseWorkspace.collection.collectionName, contract.collections.CaseWorkspace);
   assert.equal(WorkspaceMember.collection.collectionName, contract.collections.WorkspaceMember);
   assert.equal(ClientUser.collection.collectionName, contract.collections.ClientUser);
+  assert.equal(CaseActivity.collection.collectionName, contract.collections.CaseActivity);
+});
+
+// Cycle 8C made the SaaS app a second writer to case_activities
+// (ADR-010 3), so the type enum is now a cross-app contract rather than
+// a detail owned by this app alone.
+test('case activity type enum matches the contract', () => {
+  assert.deepEqual(CaseActivity.TYPES, contract.caseActivityTypes);
+});
+
+test('case activity actor-type enum matches the contract', () => {
+  assert.deepEqual(
+    CaseActivity.schema.path('actorType').options.enum,
+    contract.caseActivityActorTypes,
+  );
 });
 
 test('case type enum matches the contract', () => {

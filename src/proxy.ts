@@ -20,7 +20,8 @@ const EMPLOYEE_SESSION_COOKIE = "ih_staff_session";
  * What this does:
  *   - keeps the SaaS surface (/portal, /api/portal) on app.* only
  *   - keeps the marketing surface on the public host only
- *   - stamps `X-Robots-Tag: noindex, nofollow` on everything app.* serves
+ *   - stamps `X-Robots-Tag: noindex, nofollow` and a private no-store
+ *     Cache-Control on everything app.* serves
  *
  * What this deliberately does NOT do: authenticate or authorize. The Next
  * docs are explicit that proxy "should not be used as a full session
@@ -31,6 +32,24 @@ const EMPLOYEE_SESSION_COOKIE = "ih_staff_session";
  * If this file were deleted, the app would leak *URLs across hosts*, not
  * data.
  */
+/**
+ * Marks a response as private to one signed-in person (ADR-011 §6).
+ *
+ * `no-store` rather than `private, max-age=0`: a client's case data must
+ * not be written to disk by a shared-machine browser, and must never be
+ * held by an intermediary. Applied at the boundary so it covers pages,
+ * RSC payloads, and API responses alike, instead of depending on every
+ * route remembering.
+ *
+ * The matcher already excludes `_next/static`, images, and fonts, so this
+ * never reaches a cacheable asset.
+ */
+function markPrivate(response: NextResponse): NextResponse {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  response.headers.set("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  return response;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   // Behind nginx the real host arrives as x-forwarded-host; `host` is the
@@ -43,7 +62,7 @@ export function proxy(request: NextRequest) {
   // make the whole thing untestable locally. Still mark app paths noindex.
   if (kind === "unknown") {
     const response = NextResponse.next();
-    if (appPath) response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    if (appPath) markPrivate(response);
     return response;
   }
 
@@ -57,9 +76,7 @@ export function proxy(request: NextRequest) {
     // unauthenticated request (ADR-009 §3).
     if (pathname === "/") {
       const target = request.cookies.has(EMPLOYEE_SESSION_COOKIE) ? "/staff" : "/portal";
-      const response = NextResponse.rewrite(new URL(target, request.url));
-      response.headers.set("X-Robots-Tag", "noindex, nofollow");
-      return response;
+      return markPrivate(NextResponse.rewrite(new URL(target, request.url)));
     }
 
     // /robots.txt must be answered by THIS host, not forwarded. robots.ts
@@ -73,12 +90,10 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(`https://${PUBLIC_HOST}${pathname}${search}`), 308);
     }
 
-    const response = NextResponse.next();
     // Belt and braces: every portal page already sets `robots: noindex` in
     // its own metadata, but a header covers API responses and anything
     // rendered outside the metadata system too.
-    response.headers.set("X-Robots-Tag", "noindex, nofollow");
-    return response;
+    return markPrivate(NextResponse.next());
   }
 
   // Public marketing host: the SaaS surface does not exist here. Redirect

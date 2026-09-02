@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Container } from "@/components/ui/container";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHeader } from "@/components/app/page-header";
 import { DocumentUploadForm } from "@/components/portal/document-upload-form";
 import { requireClient } from "@/lib/auth/current-client";
 import { getAccessibleDocument } from "@/lib/auth/document-policy";
@@ -39,21 +39,22 @@ export default async function PortalDocumentDetailPage({
   if (!caseDoc) notFound();
 
   const trail = [
-    { name: "Portal", path: "/portal" },
-    { name: "Cases", path: "/portal/cases" },
-    { name: caseDoc.caseNumber, path: `/portal/cases/${caseId}` },
-    { name: "Documents", path: `/portal/cases/${caseId}/documents` },
-    { name: document.displayName, path: `/portal/cases/${caseId}/documents/${documentId}` },
+    { name: "Portal", href: "/portal" },
+    { name: "Cases", href: "/portal/cases" },
+    { name: caseDoc.caseNumber, href: `/portal/cases/${caseId}` },
+    { name: "Documents", href: `/portal/cases/${caseId}/documents` },
+    { name: document.displayName, href: `/portal/cases/${caseId}/documents/${documentId}` },
   ];
 
   const needsReplacement = document.status === "needs_replacement";
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <Breadcrumbs trail={trail} className="mb-8" />
-
-      <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">{document.displayName}</h1>
-      <p className="text-ink-500 mt-1 text-sm">{STATUS_LABELS[document.status] ?? document.status}</p>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title={document.displayName}
+        description={STATUS_LABELS[document.status] ?? document.status}
+        breadcrumbs={trail}
+      />
 
       {document.clientVisibleReviewComment ? (
         <div className="rounded-panel border-ink-200 mt-6 border bg-white p-6 shadow-subtle">

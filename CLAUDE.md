@@ -93,8 +93,11 @@ src/
     sitemap.ts            marketing URLs only
   components/
     layout/               marketing header/footer/whatsapp-fab
-    app/                  SaaS shell, account menu, dashboard primitives
+    app/                  SaaS shell, account menu, page header, and the
+                          panel/badge primitives BOTH halves share
     portal/               client-side interactive components
+    staff/                employee-only components (RestrictedState lives
+                          here because its copy names internal roles)
     sections/             composable homepage/page sections
     seo/json-ld.tsx       Organization, WebSite, FAQPage, Breadcrumb schema
     ui/                   design-system primitives
@@ -125,6 +128,7 @@ Nav derives from the service catalogue in `src/lib/content/services.ts`, so addi
 Manages leads, blogs, SEO, services, FAQs, testimonials, media, settings, notifications, users, task management, sprint tracking. Think Linear / Notion / Stripe Dashboard / Vercel Dashboard, not a bare CRUD admin.
 - Session-based auth: env credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) as a break-glass fallback, DB-backed users under **Users** as the real long-term path (11 roles, bcrypt-hashed). The break-glass login has no persistent AdminUser id, so it can browse but cannot perform anything requiring a real identity (answering a query, sending a channel message, holding notification preferences).
 - **The admin CMS is no longer the only staff surface.** Case-working roles also sign in at `app.*` (`/staff`), which shares the same `AdminUser` records and the same capability map. Employees sign in to each separately — different applications, different session stores; SSO across them is future work.
+- **Both apps now write the case domain** (ADR-010 §1, reversing ADR-002 §1): `client_cases`, `workspace_members`, and `case_activities` are written by the SaaS staff console as well as here. The two must agree on what each action *means*, not only on field shapes — `src/lib/staff/case-operations.ts` mirrors `server/services/caseManagement.js` decision for decision. Document review, query answering, message sending, case archiving, `clients.manage`, and `client_updates.publish` are still CMS-only.
 - This admin only reads/manages stored data. Lead email and DB writes happen in the site's own form handlers, not here — see `/admin/contact-form` for integration status.
 - Uploaded files are stored locally in `server/public/uploads/` — local-disk only; a future move to a multi-instance/ephemeral host needs S3/Cloudinary first (see `DEPLOYMENT.md`).
 
@@ -203,8 +207,10 @@ authoritative per-cycle record — **read it before starting anything.**
 | 8 | Admin case operations | ✅ ADR-007 |
 | 8A | Three-application host separation | ✅ ADR-008 |
 | 8B | Employee SaaS shell & role-aware dashboards | ✅ ADR-009 |
-| **9** | **Client portal experience — next** | ⬜ |
-| 10–14 | Security/audit · migrations · testing · deployment · analytics | 🔨 partial |
+| 8C | Staff case & client operations console | ✅ ADR-010 |
+| 9 | Client portal experience layer | ✅ ADR-011 |
+| **10** | **Security, privacy & audit — next** | ⬜ |
+| 11–14 | Migrations · testing · deployment · analytics | 🔨 partial |
 
 Marketing-site work that was never finished (low priority, unrelated to the
 platform cycles): blog data layer for real posts, and canonicalising the
@@ -222,7 +228,7 @@ site.
    and SaaS app do have Origin verification.
 4. **No email has been verified against real Resend** — every adapter
    across seven cycles is tested with doubles only.
-5. `SITE_URL` must be set in production (portal CSRF depends on it).
+5. `SITE_URL` must be set in production, to `https://app.immigrationhorizons.com` — the CSRF Origin check for every mutating portal **and staff** route reads it, and so do the activation/reset email links. A wrong value 403s every write. Documented in `DEPLOYMENT.md`; still unset in the checked-in `.env`.
 6. No malware scanning on uploads; no scheduler wired for the digest job.
 
 ## Git

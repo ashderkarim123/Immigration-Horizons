@@ -4,6 +4,7 @@
     "ClientCase": "client_cases",
     "CaseWorkspace": "case_workspaces",
     "WorkspaceMember": "workspace_members",
+    "CaseActivity": "case_activities",
     "ClientUser": "clientusers"
   },
   "caseTypeValues": [
@@ -48,5 +49,42 @@
     "observer"
   ],
   "membershipStatusValues": ["invited", "active", "removed", "suspended"],
-  "clientUserStatusValues": ["pending", "active", "locked", "disabled"]
+  "clientUserStatusValues": ["pending", "active", "locked", "disabled"],
+  "_caseActivityComment": "Added in Cycle 8C (ADR-010 §3): the SaaS app became a second writer to case_activities, so both apps must agree on the type enum. Add a type on one side only and both suites fail.",
+  "caseActivityTypes": [
+    "case_created",
+    "workspace_created",
+    "client_membership_created",
+    "employee_membership_created",
+    "member_reactivated",
+    "member_removed",
+    "project_manager_changed",
+    "stage_changed",
+    "case_archived",
+    "category_provisioned",
+    "category_created",
+    "category_renamed",
+    "category_reordered",
+    "category_disabled",
+    "category_reactivated",
+    "document_requested",
+    "document_request_updated",
+    "document_request_cancelled",
+    "document_uploaded",
+    "document_reviewed",
+    "document_replacement_uploaded",
+    "document_category_changed",
+    "document_version_created",
+    "document_archived",
+    "channel_provisioned",
+    "channel_created",
+    "channel_renamed",
+    "channel_visibility_changed",
+    "channel_archived",
+    "channel_reordered",
+    "channel_member_added",
+    "channel_member_removed",
+    "client_update_published"
+  ],
+  "caseActivityActorTypes": ["admin_user", "env_fallback", "system"]
 }

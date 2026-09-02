@@ -11,6 +11,7 @@ import { ChannelReadState } from "../models/ChannelReadState";
 import { Task } from "../models/Task";
 import { accessibleCaseIdFilter } from "../auth/employee-case-policy";
 import { roleHasCapability } from "../auth/capabilities";
+import { queryScopeFilter } from "../staff/query-queues";
 import { ACTIVE_UNANSWERED_STATUSES } from "../content/interaction-constants";
 import type { EmployeeActor } from "../auth/actors";
 
@@ -142,6 +143,13 @@ export async function getEmployeeDashboard(actor: EmployeeActor): Promise<Employ
       ? { case: (caseFilter as { _id: { $in: unknown[] } })._id }
       : {};
 
+    // Query counts are row-level scoped exactly like the /staff/queries
+    // queues (ADR-010 §8), so a tile and the queue it links to can never
+    // disagree about how much work is waiting. `null` = queries.view_all.
+    const queryScope = canSeeQueries ? await queryScopeFilter(actor) : { _id: { $in: [] } };
+    const scopedQuery = (filter: Record<string, unknown>) =>
+      queryScope ? { $and: [filter, queryScope] } : filter;
+
     const [
       myCases,
       unassignedCases,
@@ -190,15 +198,19 @@ export async function getEmployeeDashboard(actor: EmployeeActor): Promise<Employ
         : Promise.resolve(null),
 
       canSeeQueries
-        ? ConsultationInteraction.countDocuments({ status: { $in: ACTIVE_UNANSWERED_STATUSES } })
+        ? ConsultationInteraction.countDocuments(
+            scopedQuery({ status: { $in: ACTIVE_UNANSWERED_STATUSES } }),
+          )
         : Promise.resolve(null),
 
       canSeeQueries
-        ? ConsultationInteraction.countDocuments({
-            type: "scheduled_consultation",
-            scheduledFor: null,
-            status: { $in: ACTIVE_UNANSWERED_STATUSES },
-          })
+        ? ConsultationInteraction.countDocuments(
+            scopedQuery({
+              type: "scheduled_consultation",
+              scheduledFor: null,
+              status: { $in: ACTIVE_UNANSWERED_STATUSES },
+            }),
+          )
         : Promise.resolve(null),
 
       canSeeChannels && canSeeCases ? countUnreadClientMessages(caseFilter) : Promise.resolve(null),

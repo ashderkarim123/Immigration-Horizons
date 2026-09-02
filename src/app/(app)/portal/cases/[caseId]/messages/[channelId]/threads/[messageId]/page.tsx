@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Container } from "@/components/ui/container";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHeader } from "@/components/app/page-header";
 import { MessageComposer } from "@/components/portal/message-composer";
 import { MessageActions } from "@/components/portal/message-actions";
 import { requireClient } from "@/lib/auth/current-client";
@@ -40,19 +40,21 @@ export default async function PortalThreadPage({
   const replies = repliesDocs.map(serializeMessage);
 
   const trail = [
-    { name: "Portal", path: "/portal" },
-    { name: "Cases", path: "/portal/cases" },
-    { name: caseDoc.caseNumber, path: `/portal/cases/${caseId}` },
-    { name: "Messages", path: `/portal/cases/${caseId}/messages` },
-    { name: channel.name, path: `/portal/cases/${caseId}/messages/${channelId}` },
-    { name: "Thread", path: `/portal/cases/${caseId}/messages/${channelId}/threads/${messageId}` },
+    { name: "Portal", href: "/portal" },
+    { name: "Cases", href: "/portal/cases" },
+    { name: caseDoc.caseNumber, href: `/portal/cases/${caseId}` },
+    { name: "Messages", href: `/portal/cases/${caseId}/messages` },
+    { name: channel.name, href: `/portal/cases/${caseId}/messages/${channelId}` },
+    { name: "Thread", href: `/portal/cases/${caseId}/messages/${channelId}/threads/${messageId}` },
   ];
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <Breadcrumbs trail={trail} className="mb-8" />
-
-      <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">Thread</h1>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title="Thread"
+        description="This conversation and every reply to it."
+        breadcrumbs={trail}
+      />
 
       <div className="rounded-panel border-ink-200 mt-6 border bg-white p-5 shadow-subtle">
         <p className="text-navy-800 text-sm font-semibold">{rootMessage.senderDisplayName}</p>

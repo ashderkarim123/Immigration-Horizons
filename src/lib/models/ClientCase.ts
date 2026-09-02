@@ -40,6 +40,10 @@ ClientCaseSchema.index(
   { unique: true, partialFilterExpression: { consultation: { $type: "objectId" } } },
 );
 ClientCaseSchema.index({ primaryClient: 1, archivedAt: 1, createdAt: -1 });
+// Cycle 8C: the staff case list sorts every query by updatedAt, and the
+// "needing attention" queue filters on it. Declared identically in
+// server/models/ClientCase.js so the two mirrors stay in step.
+ClientCaseSchema.index({ archivedAt: 1, updatedAt: -1 });
 
 export const ClientCase =
   mongoose.models.ClientCase ||

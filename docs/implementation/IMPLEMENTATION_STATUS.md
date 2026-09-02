@@ -1430,3 +1430,249 @@ tests passed against a real production build with `Host` headers.
 `09_CLIENT_PORTAL_EXPERIENCE.md` — `/portal/profile` and `/portal/security`
 are still missing, and the shared shell those needed now exists (8B built
 it). ADR-006 §10 deferred the notification bell for exactly that reason.
+
+---
+
+# Cycle 8C — staff case and client operations (ADR-010)
+
+**Starting HEAD:** `5e0f0e8`. Worktree clean at start; no anomaly, no
+concurrent repository mutation. (The long-standing
+`server/public/css/admin.css` anomaly recorded in earlier cycles is no
+longer present in `git status` — it was committed or reverted outside this
+session between 8B and 8C.)
+
+## Audit findings before writing code
+
+The brief asked for three capabilities the "old module plan referenced".
+All three already exist:
+
+| Capability | Status | Roles |
+|---|---|---|
+| `clients.view` | Already present (ADR-007 §7) | super_admin, admin, pm |
+| `clients.manage` | Already present | super_admin, admin |
+| `client_updates.publish` | Already present | super_admin, admin, pm |
+
+**No capability was added.** The registry holds **54**, not the 49 the
+brief cites — the count grew in Cycles 3–8. Likewise **no new model**: the
+brief's "do not introduce a duplicate Client model" was already satisfied
+by `ClientUser` + `ClientCase` + `CaseWorkspace` + `WorkspaceMember`.
+
+The one real blocker was that the SaaS app had **no write path into the
+case domain at all** — ADR-002 §1 made Express the sole writer. Reversing
+that is the cycle's headline architectural decision (ADR-010 §1).
+
+## Built
+
+**Write path (new).** `src/lib/staff/case-operations.ts` mirrors
+`server/services/caseManagement.js` decision for decision, plus
+`workspace-membership.ts` and `system-messages.ts` mirroring their server
+counterparts. `src/lib/models/CaseActivity.ts` is a new mirrored,
+dual-written model; its type and actor-type enums are now asserted from
+both sides against `case-schema-contract.json`.
+
+**Four mutation routes**, each behind `guardStaffRequest` (Origin, rate
+limit, session, capability) + `requireCaseAccess` (row-level):
+
+| Route | Capability |
+|---|---|
+| `POST /api/staff/cases/:id/manager` | `cases.assign` |
+| `POST /api/staff/cases/:id/stage` | `cases.manage` |
+| `POST /api/staff/cases/:id/members` | `workspace.members.manage` |
+| `POST /api/staff/cases/:id/members/:memberId/remove` | `workspace.members.manage` |
+
+**Six pages.** `/staff/cases` (search + stage/type/priority/scope/archived
+filters + pagination), `/staff/cases/[caseId]` (overview, operations,
+members, documents, document requests, queries, tasks, channels + messages,
+activity), `/staff/clients`, `/staff/clients/[clientId]` (account,
+consultations, cases, memberships, documents, queries, communication,
+notifications), `/staff/queries` (eight queues), `/staff/operations`.
+
+**Read models.** `employee-client-policy.ts`, `staff/case-detail.ts`,
+`staff/operations.ts`, `staff/query-queues.ts`, and an extended
+`employee-case-policy.ts` (filters, pagination, workspace loader, staff
+member serializer).
+
+## Behaviour changes to shipped code
+
+1. **Query counts on the 8B dashboard are now row-level scoped** through
+   the same `queryScopeFilter` the new queues use (ADR-010 §8). A PM's
+   "unanswered queries" tile previously counted the whole practice and now
+   counts their own cases — so the tile and the queue it links to cannot
+   disagree. Deliberate; it corrects an oversight, it is not a new feature.
+2. **Dashboard tile links** now point at real destinations
+   (`?scope=unassigned`, `?queue=…`, `/staff/operations`) instead of all
+   landing on `/staff/cases`.
+3. **`Operations` added to employee navigation with no capability** —
+   every queue inside is gated individually, so a `viewer` gets a useful
+   page rather than a 404. One existing nav test was updated for this.
+4. **One new index on both `ClientCase` mirrors:**
+   `{ archivedAt: 1, updatedAt: -1 }`, plus `CaseActivity` registered in
+   this app's `createIndexes` script. Still **not run against production** —
+   deployment blocker #1 is unchanged.
+
+## Acceptance criteria
+
+- [x] Client list, search, filters, detail, consultations, cases, workspace
+      memberships, documents, queries, communication, notifications
+- [x] Case list, my cases, filters, detail, manager/team assignment,
+      workspace members, stage, activity, queries, documents, messages, tasks
+- [x] Unified operations dashboard aggregating existing indexed queues
+      (8 queues), capability-gated and scope-aware
+- [x] No duplicate Client model; no parallel permission system; no new capability
+- [x] Every read/write enforces actor + capability + membership + case scope
+- [x] Integration tests: unauthorized employee, read-only capability,
+      cross-workspace leakage, assignment changes, client visibility,
+      internal-channel leakage, operational queues
+- [x] All existing tests preserved
+
+## Verification
+
+Root **225/225** (37 new in `test/staff-operations.integration.test.ts`) ·
+server **373/373** (2 new contract assertions) · `tsc --noEmit` clean ·
+`npm run lint` clean · `npm run build` clean, all six staff routes present ·
+index dry-run lists `case_activities` and the new `ClientCase` index on
+both apps.
+
+## Not built (see ADR-010 "Not built this cycle")
+
+Document review, query answering, and message **sending** remain in the
+admin CMS — the staff console reads them and routes you to the case.
+`client_updates.publish` and `clients.manage` have no SaaS surface yet.
+Case archiving stays CMS-only. Tasks remain lead-scoped.
+
+## Recommended next module
+
+Unchanged: `09_CLIENT_PORTAL_EXPERIENCE.md`. The staff-side write path
+built here is also the pattern the remaining staff actions (document
+review, query answering, message sending) should follow when they land.
+
+---
+
+# Cycle 9 — client portal experience (ADR-011)
+
+**Starting HEAD:** `5e0f0e8`, with Cycle 8C still uncommitted in the tree
+(the owner asked for approval before committing 8C, and it was not given,
+so 9 is built on top of it). No git anomaly; no concurrent repository
+mutation.
+
+## Audit findings before writing code
+
+Every client-facing *capability* already worked. Five experience gaps were
+real:
+
+1. **The dashboard duplicated the shell** — its own notification bell with
+   its own unread count, plus its own sign-out button, both already
+   provided by `AppShell` on every page.
+2. `/portal/profile` and `/portal/security` did not exist. A signed-in
+   client could not correct their name, change their password, or see
+   what devices held a session.
+3. Page chrome was hand-rolled per page: three vertical rhythms,
+   breadcrumbs on 8 of 11 screens, four distinct empty states.
+4. No portal `loading.tsx` or `error.tsx` (the staff area got both in 8B).
+5. Private pages carried no explicit cache directive.
+
+## Built
+
+**Shell.** Notification bell as an icon with an unread badge and an
+accessible label (`"Notifications, 3 unread"`), and it is now the only
+entry point — `/portal/notifications` left the primary nav.
+`AccountMenu` gained a `links` prop; Profile, Security, and Notification
+preferences live there. Skip-to-content link added. Mobile menu closes on
+link click rather than via a `useEffect` on `pathname` (same behaviour, no
+cascading render — and the React lint rule that forbids the effect form is
+right).
+
+**Promoted primitives.** `Panel`, `PanelLink`, `EmptyState`, `RowList`,
+`Row`, `DefinitionList`, `Badge` and its tone helpers moved from
+`components/staff/` to `components/app/` and are now shared. Only
+`RestrictedState` stayed staff-side, because its copy names internal
+roles. `EmptyState` gained `icon`/`action`.
+
+**`PageHeader`** applied to all eleven signed-in portal screens, with
+container rhythm normalised to `py-10 sm:py-14`. Its breadcrumbs are
+deliberately not the marketing `Breadcrumbs` component, which exists to be
+paired with JSON-LD — structured data describing private case URLs would
+be wrong on a noindex surface.
+
+**Account management.** `lib/auth/client-account.ts` +
+`lib/auth/portal-api.ts` (the client-side counterpart of 8C's
+`staff-api.ts`), four routes, three client components, two pages:
+
+| Route | Notes |
+|---|---|
+| `POST /api/portal/profile` | No client id in the request — the record is the session's |
+| `POST /api/portal/security/password` | Requires current password; own rate-limit bucket |
+| `POST /api/portal/security/sessions/revoke` | Scoped `{ _id, clientUser }`; clears the cookie if self |
+| `POST /api/portal/security/sessions/revoke-others` | Keeps the device that asked |
+
+**States.** `portal/loading.tsx` (skeleton `aria-hidden`, with a
+`role="status"` message beside it) and `portal/error.tsx` (never renders
+`error.message` — driver errors quote collection and field names; the
+digest is shown instead).
+
+**Cache headers.** `proxy.ts` now stamps
+`Cache-Control: private, no-store, max-age=0, must-revalidate` alongside
+`X-Robots-Tag` on everything `app.*` serves. Defence in depth, not the
+authorization boundary.
+
+## Deliberate product decisions
+
+- **Email is not editable** — it is the login identity, the invitation
+  key, and the notification address. Stated in a sentence on the page
+  rather than shown as an unexplained disabled field.
+- **Password change revokes other sessions, not the current one.** A
+  reset (user absent, compromise suspected) still revokes everything.
+- **The raw user-agent is never rendered** — `describeUserAgent` reduces
+  it to "Chrome on Windows".
+- **Documents/messages stay out of the nav**: both are case-scoped and no
+  cross-case index exists, so a top-level entry would be a dead end. The
+  module document's flat nav list is not followed literally.
+- **Dashboard data was not expanded.** This cycle was the experience
+  layer; the dashboard was restyled, not re-scoped.
+
+## Acceptance criteria
+
+- [x] Shared portal shell, persistent client navigation, responsive/mobile nav
+- [x] Notification bell with unread state (single source, accessible label)
+- [x] `/portal/profile`, `/portal/security`, account/session management UI
+- [x] Password/security UX (current-password requirement, length guidance,
+      form clears on success, side effect named)
+- [x] Consistent breadcrumbs/page headers, loading/error/empty states
+- [x] Client-only navigation; no internal staff data, review comments,
+      roles, or internal channels on any client surface
+- [x] Workspace membership remains the authorization boundary — untouched
+- [x] noindex still active on every SaaS surface, now with `no-store` too
+- [x] Existing leakage and authorization tests preserved and passing
+
+## Verification
+
+Root **252/252** (27 new in `test/portal-experience.integration.test.ts`) ·
+server **373/373** · `tsc --noEmit` clean · `npm run lint` clean ·
+`npm run build` clean with `/portal/profile` and `/portal/security` present.
+
+**Live smoke test** against a disposable in-memory MongoDB (never the real
+`MONGODB_URI`), seeded with one client and two device sessions:
+
+- all seven signed-in portal pages: `200`, exactly one `<h1>`, exactly one
+  `<meta name="robots">`, `Cache-Control: private, no-store, …`
+- heading hierarchy on `/portal/security`: one `h1`, three `h2`, no skips
+- device list renders "Chrome on Windows" / "Safari on iPhone" with **zero**
+  `AppleWebKit`/`Mozilla` fragments
+- programmatic scan of the rendered HTML found **zero** occurrences of
+  `/staff`, `/admin/`, `super_admin`, `petition_writer`, `project_manager`,
+  `employees_only`, `internalReviewComment`, or `tokenHash`
+- end-to-end over HTTP: profile update `200` and reflected in the rendered
+  page; bad Origin `403`; no session `401`; revoke-others removed exactly
+  the other device; wrong current password rejected with a clear message
+
+## Not built
+
+Dashboard widget expansion, cross-case document/message indexes, email
+change, and two-factor authentication — see ADR-011 "Not built this cycle".
+
+## Recommended next module
+
+`10_SECURITY_PRIVACY_AND_AUDIT.md`. Two things this cycle surfaced belong
+there: client-facing account events (password changed, device signed out)
+are not written to any audit log, and the portal has no 2FA. Both are
+security-module work, not portal-experience work.

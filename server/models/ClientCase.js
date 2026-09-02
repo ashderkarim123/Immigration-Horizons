@@ -86,5 +86,9 @@ ClientCaseSchema.index({ primaryClient: 1, archivedAt: 1, createdAt: -1 });
 ClientCaseSchema.index({ projectManager: 1, archivedAt: 1, status: 1 });
 ClientCaseSchema.index({ currentStage: 1, createdAt: -1 });
 ClientCaseSchema.index({ createdAt: -1 });
+// Cycle 8C: the SaaS staff case list sorts by updatedAt and the
+// "needing attention"/stalled queues filter on it. Declared identically in
+// src/lib/models/ClientCase.ts so the two mirrors stay in step.
+ClientCaseSchema.index({ archivedAt: 1, updatedAt: -1 });
 
 module.exports = mongoose.model('ClientCase', ClientCaseSchema, 'client_cases');

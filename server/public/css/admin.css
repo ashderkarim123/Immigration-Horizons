@@ -57,6 +57,18 @@
   --accent-blue: var(--navy-600);
   --accent-blue-light: var(--navy-100);
 
+  /* ---------- Sidebar (dark ground) ----------
+     The sidebar is the one surface in this app with a dark background, so
+     its text colours cannot come from the light-surface aliases above.
+     Gold is deliberately NOT used for the nav labels: per the project's
+     gold contrast rule, gold is for fills, rules, and ornament, never for
+     a column of body-sized text. It stays on the active indicator, the
+     active icon, and the badges. */
+  --sidebar-text: var(--navy-100);        /* 13.6:1 on --navy-900 */
+  --sidebar-text-hover: var(--white);
+  --sidebar-surface-hover: rgba(255, 255, 255, .07);
+  --sidebar-plate: rgba(255, 255, 255, .96);
+
   /* ---------- Status colours — each state gets a distinct, legible pair ---------- */
   --status-new-bg: #eaf1ff;       --status-new-text: #1d4ed8;
   --status-contacted-bg: #f3ecff; --status-contacted-text: #6d28d9;
@@ -198,25 +210,39 @@ body.admin-body {
 
 /* ---- Brand ---- */
 .sidebar-brand {
-  padding: 22px 20px 18px;
+  padding: 18px 16px 14px;
   flex-shrink: 0;
 }
 
+/* The website logo is a navy wordmark on transparency — it was drawn for
+   the marketing site's white header and disappears on this dark sidebar.
+   Rather than commission a second, lighter mark (and risk the two drifting
+   apart), the real logo is placed on a light plate: same asset as
+   public/images/logo-header.png, byte for byte, shown on the ground it was
+   designed for. */
 .sidebar-brand > a {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: block;
+  padding: 10px 14px;
+  background: var(--sidebar-plate);
+  border-radius: var(--r-md);
   text-decoration: none;
-  border-radius: var(--r-sm);
-  transition: opacity var(--t-fast);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
 }
-.sidebar-brand > a:hover { opacity: .88; }
+.sidebar-brand > a:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+}
+.sidebar-brand > a:focus-visible {
+  outline: 2px solid var(--gold-400);
+  outline-offset: 3px;
+}
 
 .sidebar-brand .brand-logo {
-  height: 48px;
+  height: 44px;
   width: auto;
   max-width: 100%;
   display: block;
+  margin: 0 auto;
 }
 
 .sidebar-divider {
@@ -250,23 +276,28 @@ body.admin-body {
   border-radius: var(--r-sm);
   font-size: .875rem;
   font-weight: 500;
-  color: var(--gold-400);
+  color: var(--sidebar-text);
   text-decoration: none;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 
 .nav-link:hover {
-  background: rgba(201, 153, 46, .16);
-  color: var(--gold-300);
+  background: var(--sidebar-surface-hover);
+  color: var(--sidebar-text-hover);
+}
+
+.nav-link:focus-visible {
+  outline: 2px solid var(--gold-400);
+  outline-offset: -2px;
 }
 
 .nav-item.active .nav-link:hover {
-  color: #ffffff;
+  color: var(--sidebar-text-hover);
 }
 
 .nav-item.active .nav-link {
-  background: linear-gradient(90deg, rgba(201, 153, 46, .18), rgba(201, 153, 46, .05));
-  color: #ffffff;
+  background: linear-gradient(90deg, rgba(201, 153, 46, .22), rgba(201, 153, 46, .04));
+  color: var(--sidebar-text-hover);
   font-weight: 600;
 }
 
@@ -289,8 +320,10 @@ body.admin-body {
   align-items: center;
   justify-content: center;
   font-size: .95rem;
-  opacity: .85;
+  color: var(--gold-400);
+  opacity: .9;
 }
+.nav-link:hover .nav-icon { opacity: 1; }
 .nav-item.active .nav-icon { opacity: 1; color: var(--gold-400); }
 
 .nav-label { flex: 1; }
@@ -1576,18 +1609,16 @@ select.form-control {
 
 .login-brand { text-align: center; margin-bottom: 30px; }
 
-.login-brand-icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 16px;
-  border-radius: var(--r-md);
-  background: linear-gradient(135deg, var(--navy-800), var(--navy-600));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-md);
+/* The website logo replaces the old generic globe icon. The login card is
+   a light surface, so the navy wordmark reads directly — no plate needed
+   (unlike the dark sidebar, see .sidebar-brand). */
+.login-brand-logo {
+  height: 62px;
+  width: auto;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto 18px;
 }
-.login-brand-icon i { font-size: 1.6rem; color: var(--gold-400); }
 
 .login-brand h1 {
   font-size: 1.2rem;

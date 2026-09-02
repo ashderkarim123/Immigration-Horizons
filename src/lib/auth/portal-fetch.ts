@@ -5,7 +5,7 @@
  */
 
 export type PortalApiResult =
-  | { ok: true; redirectTo?: string; message?: string }
+  | { ok: true; redirectTo?: string; message?: string; outcome?: string }
   | { ok: false; error: { code: string; message: string } };
 
 export async function postPortalJson(
@@ -38,8 +38,16 @@ export async function postPortalJson(
     };
   }
 
-  return { ok: true, redirectTo: data?.redirectTo, message: data?.message };
+  return { ok: true, redirectTo: data?.redirectTo, message: data?.message, outcome: data?.outcome };
 }
+
+/**
+ * The same helper under the name the staff console uses. Both apps share
+ * one `{ ok, error }` response contract (src/lib/auth/http.ts), so they
+ * share one client helper rather than two identical ones — the alias
+ * exists only so `/api/staff/*` call sites do not read as portal calls.
+ */
+export const postAppJson = postPortalJson;
 
 /**
  * Same response normalization as postPortalJson, for a multipart file

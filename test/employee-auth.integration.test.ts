@@ -375,7 +375,10 @@ test("employee navigation is capability-filtered, and a client never receives it
   const viewerNav = visibleEmployeeNav((c) => roleHasCapability("viewer", c));
   assert.deepEqual(
     viewerNav.map((i) => i.label),
-    ["Dashboard", "Tasks"],
+    // Operations carries no capability because every queue inside it is
+    // gated individually (Cycle 8C) — a viewer lands on a page that shows
+    // their own tasks and names what their role cannot hold.
+    ["Dashboard", "Operations", "Tasks"],
     "a viewer gets only the always-visible items",
   );
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/app/page-header";
 import { NewQueryForm } from "@/components/portal/new-query-form";
 import { requireClient } from "@/lib/auth/current-client";
 import { getDb } from "@/lib/db";
@@ -44,16 +45,19 @@ export default async function NewQueryPage() {
     }));
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
+    <Container width="default" className="py-10 sm:py-14">
       <div className="mx-auto max-w-xl">
-        <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-          Ask a question
-        </h1>
-        <p className="text-ink-600 mt-2 text-[0.9375rem]">
-          Submit a question or request a consultation. Our team will respond as soon as possible.
-        </p>
+        <PageHeader
+          title="Ask a question"
+          description="Submit a question or request a consultation. Our team will respond as soon as possible."
+          breadcrumbs={[
+            { name: "Portal", href: "/portal" },
+            { name: "Questions", href: "/portal/queries" },
+            { name: "Ask", href: "/portal/queries/new" },
+          ]}
+        />
 
-        <div className="rounded-panel border-ink-200 mt-8 border bg-white p-6 shadow-subtle sm:p-8">
+        <div className="rounded-panel border-ink-200 border bg-white p-6 shadow-subtle sm:p-8">
           {consultationOptions.length === 0 && caseOptions.length === 0 ? (
             <p className="text-ink-600 text-sm">
               You don&apos;t have any consultations or cases to ask about yet.

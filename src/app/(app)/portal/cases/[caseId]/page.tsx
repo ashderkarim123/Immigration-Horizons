@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHeader } from "@/components/app/page-header";
+import { Badge, stageTone } from "@/components/app/badge";
 import { requireClient } from "@/lib/auth/current-client";
 import { getAccessibleCase } from "@/lib/auth/case-policy";
 import { AdminUser } from "@/lib/models/AdminUser";
@@ -34,29 +35,23 @@ export default async function PortalCaseDetailPage({
     : null;
 
   const trail = [
-    { name: "Portal", path: "/portal" },
-    { name: "Cases", path: "/portal/cases" },
-    { name: caseDoc.caseNumber, path: `/portal/cases/${caseId}` },
+    { name: "Portal", href: "/portal" },
+    { name: "Cases", href: "/portal/cases" },
+    { name: caseDoc.caseNumber, href: `/portal/cases/${caseId}` },
   ];
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <Breadcrumbs trail={trail} className="mb-8" />
-
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-            {caseDoc.caseNumber} — {caseDoc.title}
-          </h1>
-          <p className="text-ink-500 mt-1 text-sm">
-            {CASE_TYPE_LABELS[caseDoc.caseType as string] ?? caseDoc.caseType} · Opened{" "}
-            {new Date(caseDoc.openedAt as unknown as string).toLocaleDateString()}
-          </p>
-        </div>
-        <span className="bg-navy-50 text-navy-700 rounded-full px-3 py-1 text-xs font-semibold">
-          {CLIENT_STAGE_LABELS[caseDoc.currentStage as CaseStage] ?? caseDoc.currentStage}
-        </span>
-      </div>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title={`${caseDoc.caseNumber} — ${caseDoc.title}`}
+        description={`${CASE_TYPE_LABELS[caseDoc.caseType as string] ?? caseDoc.caseType} · Opened ${new Date(caseDoc.openedAt as unknown as string).toLocaleDateString()}`}
+        breadcrumbs={trail}
+        badge={
+          <Badge tone={stageTone(caseDoc.currentStage)}>
+            {CLIENT_STAGE_LABELS[caseDoc.currentStage as CaseStage] ?? String(caseDoc.currentStage)}
+          </Badge>
+        }
+      />
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2">
         <div className="rounded-panel border-ink-200 border bg-white p-6 shadow-subtle">

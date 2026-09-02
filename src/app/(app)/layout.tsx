@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { site } from "@/lib/content/site";
 import { AppShell } from "@/components/app/app-shell";
-import { CLIENT_NAV, visibleEmployeeNav } from "@/lib/content/app-navigation";
+import { CLIENT_NAV, CLIENT_ACCOUNT_NAV, visibleEmployeeNav } from "@/lib/content/app-navigation";
 import { getEmployeeContext } from "@/lib/auth/current-employee";
 import { roleLabel } from "@/lib/auth/capabilities";
 import { getSessionActorFromCookieStore } from "@/lib/auth/session";
@@ -57,6 +57,7 @@ export default async function AppLayout({
         displayName={(user as { name?: string } | null)?.name || "Team member"}
         roleLabel={roleLabel(employee.role)}
         areaLabel="Staff"
+        homeHref="/staff"
         logoutPath="/api/staff/logout"
       >
         {children}
@@ -74,11 +75,16 @@ export default async function AppLayout({
     return (
       <AppShell
         nav={CLIENT_NAV}
+        // Account destinations live in the menu, not the primary nav
+        // (ADR-011 §1). This list is a client-only constant — there is no
+        // capability check here that could resolve to a staff destination.
+        accountLinks={CLIENT_ACCOUNT_NAV}
         displayName={record?.firstName || record?.email || "Your account"}
         // Clients have no role — passing null keeps internal role codes out
         // of the client-facing shell by construction, not by remembering.
         roleLabel={null}
         areaLabel="Client Portal"
+        homeHref="/portal"
         logoutPath="/api/portal/logout"
         notificationsHref="/portal/notifications"
         unreadCount={unread}

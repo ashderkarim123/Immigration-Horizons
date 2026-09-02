@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Container } from "@/components/ui/container";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHeader } from "@/components/app/page-header";
+import { Badge } from "@/components/app/badge";
 import { requireClient } from "@/lib/auth/current-client";
 import {
   getAccessibleInteraction,
@@ -37,32 +38,26 @@ export default async function PortalQueryDetailPage({
   ]);
 
   const trail = [
-    { name: "Portal", path: "/portal" },
-    { name: "Queries", path: "/portal/queries" },
-    { name: interaction.interactionNumber, path: `/portal/queries/${interactionId}` },
+    { name: "Portal", href: "/portal" },
+    { name: "Queries", href: "/portal/queries" },
+    { name: interaction.interactionNumber, href: `/portal/queries/${interactionId}` },
   ];
 
   const canFollowUp = !["closed", "cancelled"].includes(interaction.status);
   const canConfirmResolution = interaction.status === "answered";
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <Breadcrumbs trail={trail} className="mb-8" />
-
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-            {interaction.subject}
-          </h1>
-          <p className="text-ink-500 mt-1 text-sm">
-            {INTERACTION_TYPE_LABELS[interaction.type as keyof typeof INTERACTION_TYPE_LABELS] ?? interaction.type} ·{" "}
-            {interaction.interactionNumber}
-          </p>
-        </div>
-        <span className="bg-navy-50 text-navy-700 rounded-full px-3 py-1 text-xs font-semibold">
-          {INTERACTION_STATUS_LABELS[interaction.status as keyof typeof INTERACTION_STATUS_LABELS] ?? interaction.status}
-        </span>
-      </div>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title={String(interaction.subject)}
+        description={`${INTERACTION_TYPE_LABELS[interaction.type as keyof typeof INTERACTION_TYPE_LABELS] ?? interaction.type} · ${interaction.interactionNumber}`}
+        breadcrumbs={trail}
+        badge={
+          <Badge tone={interaction.status === "answered" ? "positive" : "neutral"}>
+            {INTERACTION_STATUS_LABELS[interaction.status as keyof typeof INTERACTION_STATUS_LABELS] ?? String(interaction.status)}
+          </Badge>
+        }
+      />
 
       {interaction.scheduledFor ? (
         <div className="rounded-panel border-navy-200 bg-navy-50 mt-6 border p-4 text-sm">

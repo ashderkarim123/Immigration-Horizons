@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Container } from "@/components/ui/container";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHeader } from "@/components/app/page-header";
 import { DocumentUploadForm } from "@/components/portal/document-upload-form";
 import { requireClient } from "@/lib/auth/current-client";
 import { getAccessibleDocumentCenter } from "@/lib/auth/document-policy";
@@ -42,19 +42,19 @@ export default async function PortalCaseDocumentsPage({
   }
 
   const trail = [
-    { name: "Portal", path: "/portal" },
-    { name: "Cases", path: "/portal/cases" },
-    { name: caseDoc.caseNumber, path: `/portal/cases/${caseId}` },
-    { name: "Documents", path: `/portal/cases/${caseId}/documents` },
+    { name: "Portal", href: "/portal" },
+    { name: "Cases", href: "/portal/cases" },
+    { name: caseDoc.caseNumber, href: `/portal/cases/${caseId}` },
+    { name: "Documents", href: `/portal/cases/${caseId}/documents` },
   ];
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <Breadcrumbs trail={trail} className="mb-8" />
-
-      <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-        Documents — {caseDoc.caseNumber}
-      </h1>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title="Documents"
+        description={`Everything shared on ${caseDoc.caseNumber}, and anything we still need from you.`}
+        breadcrumbs={trail}
+      />
 
       {requests.length > 0 ? (
         <div className="rounded-panel border-ink-200 mt-8 border bg-white p-6 shadow-subtle">

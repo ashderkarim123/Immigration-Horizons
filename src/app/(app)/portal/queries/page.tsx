@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MessageCircleQuestion } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { requireClient } from "@/lib/auth/current-client";
 import { listAccessibleInteractions } from "@/lib/auth/interaction-policy";
@@ -18,21 +19,26 @@ export default async function PortalQueriesPage() {
   const interactions = await listAccessibleInteractions(String(client._id));
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-          Your queries
-        </h1>
-        <Button href="/portal/queries/new" variant="gold" size="sm">
-          Ask a question
-        </Button>
-      </div>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title="Your questions"
+        description="Questions you have asked us, and consultations you have requested."
+        breadcrumbs={[
+          { name: "Portal", href: "/portal" },
+          { name: "Questions", href: "/portal/queries" },
+        ]}
+        actions={
+          <Button href="/portal/queries/new" variant="gold" size="sm">
+            Ask a question
+          </Button>
+        }
+      />
 
-      <div className="rounded-panel border-ink-200 mt-8 border bg-white shadow-subtle">
+      <div className="rounded-panel border-ink-200 border bg-white shadow-subtle">
         {interactions.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-            <MessageCircleQuestion className="text-ink-400" size={32} aria-hidden />
-            <p className="text-ink-600 text-sm">No queries yet.</p>
+          <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+            <MessageCircleQuestion className="text-ink-400" size={28} aria-hidden />
+            <p className="text-navy-800 text-sm font-semibold">No questions yet</p>
             <Button href="/portal/queries/new" variant="gold" size="sm" className="mt-1">
               Ask a question
             </Button>

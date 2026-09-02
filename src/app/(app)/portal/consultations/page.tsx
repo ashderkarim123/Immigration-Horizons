@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Inbox } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/app/page-header";
+import { EmptyState } from "@/components/app/panel";
 import { Button } from "@/components/ui/button";
 import { requireClient } from "@/lib/auth/current-client";
 import { getDb } from "@/lib/db";
@@ -31,20 +33,28 @@ export default async function PortalConsultationsPage() {
     : [];
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-        Your consultations
-      </h1>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title="Your consultations"
+        description="Every consultation request you have submitted, and what happened next."
+        breadcrumbs={[
+          { name: "Portal", href: "/portal" },
+          { name: "Consultations", href: "/portal/consultations" },
+        ]}
+      />
 
-      <div className="rounded-panel border-ink-200 mt-8 border bg-white shadow-subtle">
+      <div className="rounded-panel border-ink-200 border bg-white shadow-subtle">
         {consultations.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-            <Inbox className="text-ink-400" size={32} aria-hidden />
-            <p className="text-ink-600 text-sm">No consultations yet.</p>
-            <Button href="/consultation" variant="gold" size="sm" className="mt-1">
-              Book a free consultation
-            </Button>
-          </div>
+          <EmptyState
+            icon={<Inbox size={28} aria-hidden />}
+            title="No consultations yet"
+            body="Book a free consultation and we will review your background and eligibility."
+            action={
+              <Button href="/consultation" variant="gold" size="sm">
+                Book a free consultation
+              </Button>
+            }
+          />
         ) : (
           <ul className="divide-ink-200 divide-y">
             {consultations.map((c) => (

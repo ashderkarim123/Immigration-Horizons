@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import mongoose from "mongoose";
 
 import { Container } from "@/components/ui/container";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHeader } from "@/components/app/page-header";
+import { Badge } from "@/components/app/badge";
 import { requireClient } from "@/lib/auth/current-client";
 import { getDb } from "@/lib/db";
 import { Consultation } from "@/lib/models/Consultation";
@@ -39,29 +40,23 @@ export default async function PortalConsultationDetailPage({
   if (!consultation) notFound();
 
   const trail = [
-    { name: "Portal", path: "/portal" },
-    { name: "Consultations", path: "/portal/consultations" },
-    { name: consultation.service, path: `/portal/consultations/${id}` },
+    { name: "Portal", href: "/portal" },
+    { name: "Consultations", href: "/portal/consultations" },
+    { name: consultation.service, href: `/portal/consultations/${id}` },
   ];
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <Breadcrumbs trail={trail} className="mb-8" />
-
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-            {consultation.service}
-          </h1>
-          <p className="text-ink-500 mt-1 text-sm">
-            Submitted{" "}
-            {new Date(consultation.createdAt as unknown as string).toLocaleString()}
-          </p>
-        </div>
-        <span className="bg-navy-50 text-navy-700 rounded-full px-3 py-1 text-xs font-semibold">
-          {STATUS_LABELS[consultation.status as string] ?? consultation.status}
-        </span>
-      </div>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title={String(consultation.service)}
+        description={`Submitted ${new Date(consultation.createdAt as unknown as string).toLocaleString()}`}
+        breadcrumbs={trail}
+        badge={
+          <Badge tone="neutral">
+            {STATUS_LABELS[consultation.status as string] ?? String(consultation.status)}
+          </Badge>
+        }
+      />
 
       <div className="rounded-panel border-ink-200 mt-8 border bg-white p-6 shadow-subtle sm:p-8">
         <h2 className="font-display text-navy-800 text-base font-semibold">

@@ -39,6 +39,7 @@ import { ChannelReadState } from "../src/lib/models/ChannelReadState";
 import { Notification } from "../src/lib/models/Notification";
 import { NotificationPreference } from "../src/lib/models/NotificationPreference";
 import { EmployeeSession } from "../src/lib/models/EmployeeSession";
+import { CaseActivity } from "../src/lib/models/CaseActivity";
 
 // Cycle 2 case/workspace/membership models are also declared here even
 // though server/ is their primary writer (see
@@ -80,6 +81,11 @@ const MODELS = [
   // app (the admin CMS keeps its own express-session store), so it is the
   // only place these indexes are declared.
   EmployeeSession,
+  // Cycle 8C — this app became a writer to case_activities (ADR-010 §3),
+  // so it declares that collection's indexes too. server/ declares the
+  // same ones; createIndexes() is additive and idempotent, so whichever
+  // pipeline runs first wins and the second is a no-op.
+  CaseActivity,
 ];
 
 const isDryRun = process.argv.includes("--dry-run");

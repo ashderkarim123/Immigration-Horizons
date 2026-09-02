@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Container } from "@/components/ui/container";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHeader } from "@/components/app/page-header";
 import { MessageComposer } from "@/components/portal/message-composer";
 import { MessageActions } from "@/components/portal/message-actions";
 import { requireClient } from "@/lib/auth/current-client";
@@ -45,19 +45,16 @@ export default async function PortalChannelPage({
   }
 
   const trail = [
-    { name: "Portal", path: "/portal" },
-    { name: "Cases", path: "/portal/cases" },
-    { name: caseDoc.caseNumber, path: `/portal/cases/${caseId}` },
-    { name: "Messages", path: `/portal/cases/${caseId}/messages` },
-    { name: channel.name, path: `/portal/cases/${caseId}/messages/${channelId}` },
+    { name: "Portal", href: "/portal" },
+    { name: "Cases", href: "/portal/cases" },
+    { name: caseDoc.caseNumber, href: `/portal/cases/${caseId}` },
+    { name: "Messages", href: `/portal/cases/${caseId}/messages` },
+    { name: channel.name, href: `/portal/cases/${caseId}/messages/${channelId}` },
   ];
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <Breadcrumbs trail={trail} className="mb-8" />
-
-      <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">{channel.name}</h1>
-      {channel.description ? <p className="text-ink-500 mt-1 text-sm">{channel.description}</p> : null}
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader title={channel.name} description={channel.description} breadcrumbs={trail} />
 
       <div className="mt-8 flex flex-col gap-4">
         {messages.map((message) => (

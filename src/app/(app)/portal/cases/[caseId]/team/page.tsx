@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Users } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHeader } from "@/components/app/page-header";
 import { requireClient } from "@/lib/auth/current-client";
 import { getAccessibleCase, getClientVisibleTeam } from "@/lib/auth/case-policy";
 
@@ -27,22 +27,19 @@ export default async function PortalCaseTeamPage({
   const team = await getClientVisibleTeam(String(workspace._id));
 
   const trail = [
-    { name: "Portal", path: "/portal" },
-    { name: "Cases", path: "/portal/cases" },
-    { name: caseDoc.caseNumber, path: `/portal/cases/${caseId}` },
-    { name: "Team", path: `/portal/cases/${caseId}/team` },
+    { name: "Portal", href: "/portal" },
+    { name: "Cases", href: "/portal/cases" },
+    { name: caseDoc.caseNumber, href: `/portal/cases/${caseId}` },
+    { name: "Team", href: `/portal/cases/${caseId}/team` },
   ];
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <Breadcrumbs trail={trail} className="mb-8" />
-
-      <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-        Your team
-      </h1>
-      <p className="text-ink-600 mt-2 text-[0.9375rem]">
-        The Immigration Horizons team working on {caseDoc.caseNumber}.
-      </p>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title="Your team"
+        description={`The Immigration Horizons team working on ${caseDoc.caseNumber}.`}
+        breadcrumbs={trail}
+      />
 
       <div className="rounded-panel border-ink-200 mt-8 border bg-white shadow-subtle">
         {team.length === 0 ? (

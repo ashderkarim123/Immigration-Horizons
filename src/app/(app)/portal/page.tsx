@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowRight, Bell, Briefcase, Inbox } from "lucide-react";
+import { Briefcase, Inbox } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { LogoutButton } from "@/components/portal/logout-button";
+import { PageHeader } from "@/components/app/page-header";
+import { Panel, PanelLink, EmptyState, RowList, Row } from "@/components/app/panel";
+import { Badge, stageTone } from "@/components/app/badge";
 import { requireClient } from "@/lib/auth/current-client";
 import { getDb } from "@/lib/db";
 import { Consultation } from "@/lib/models/Consultation";
 import { STATUS_LABELS } from "@/lib/content/portal";
 import { listAccessibleCases } from "@/lib/auth/case-policy";
-import { getUnreadCountForClient } from "@/lib/notifications/notification-service";
 import { CASE_TYPES, CLIENT_STAGE_LABELS, type CaseStage } from "@/lib/content/case-constants";
 
 export const metadata: Metadata = {
@@ -20,142 +20,107 @@ export const metadata: Metadata = {
 
 const CASE_TYPE_LABELS = Object.fromEntries(CASE_TYPES.map((t) => [t.value, t.label]));
 
+/**
+ * The client dashboard.
+ *
+ * The notification bell and sign-out button used to live here as well as
+ * in the shell. They were removed rather than restyled: two bells with two
+ * unread counts is worse than one, and the shell's version is present on
+ * every page instead of only this one (ADR-011 §1).
+ */
 export default async function PortalDashboardPage() {
   const client = await requireClient("/portal");
 
   const db = getDb();
   if (db) await db;
 
-  const [consultations, cases, unreadNotificationCount] = await Promise.all([
+  const [consultations, cases] = await Promise.all([
     db
-      ? Consultation.find({ clientUser: client._id }).sort({ createdAt: -1 }).limit(5).lean()
+      ? Consultation.find({ clientUser: client._id })
+          .select("service status createdAt")
+          .sort({ createdAt: -1 })
+          .limit(5)
+          .lean()
       : Promise.resolve([]),
     listAccessibleCases(String(client._id)),
-    db ? getUnreadCountForClient(client._id) : Promise.resolve(0),
   ]);
 
   const displayName = client.firstName || client.email;
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-            Welcome back, {displayName}
-          </h1>
-          <p className="text-ink-600 mt-1 text-[0.9375rem]">
-            Here&apos;s a summary of your cases and consultations.
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/portal/notifications"
-            className="text-navy-700 relative inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
-          >
-            <Bell size={16} strokeWidth={1.75} aria-hidden />
-            Notifications
-            {unreadNotificationCount > 0 ? (
-              <span className="bg-gold-500 text-navy-900 ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold">
-                {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
-              </span>
-            ) : null}
-          </Link>
-          <LogoutButton />
-        </div>
-      </div>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title={`Welcome back, ${displayName}`}
+        description="A summary of your cases and consultations."
+      />
 
-      {cases.length > 0 ? (
-        <div className="rounded-panel border-ink-200 mt-8 border bg-white shadow-subtle">
-          <div className="border-ink-200 flex items-center justify-between border-b px-6 py-4">
-            <h2 className="font-display text-navy-800 text-lg font-semibold">Your cases</h2>
-            <Link
-              href="/portal/cases"
-              className="text-navy-700 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
-            >
-              View all
-              <ArrowRight size={14} aria-hidden />
-            </Link>
-          </div>
-          <ul className="divide-ink-200 divide-y">
-            {cases.slice(0, 5).map((c) => (
-              <li key={String(c._id)}>
-                <Link
+      <div className="flex flex-col gap-6">
+        <Panel
+          title="Your cases"
+          action={cases.length > 0 ? <PanelLink href="/portal/cases">View all</PanelLink> : undefined}
+        >
+          {cases.length === 0 ? (
+            <EmptyState
+              title="No active cases yet"
+              body="Once we begin work on your petition, your case appears here with its current status."
+            />
+          ) : (
+            <RowList>
+              {cases.slice(0, 5).map((c) => (
+                <Row
+                  key={String(c._id)}
                   href={`/portal/cases/${c._id}`}
-                  className="hover:bg-navy-50/50 flex items-center justify-between gap-4 px-6 py-4 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      aria-hidden
-                      className="bg-navy-50 text-navy-700 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                    >
-                      <Briefcase size={16} strokeWidth={1.75} />
-                    </span>
-                    <div>
-                      <p className="text-navy-800 text-sm font-semibold">
-                        {c.caseNumber} — {c.title}
-                      </p>
-                      <p className="text-ink-500 mt-0.5 text-xs">
-                        {CASE_TYPE_LABELS[c.caseType as string] ?? c.caseType}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="bg-navy-50 text-navy-700 rounded-full px-3 py-1 text-xs font-semibold">
-                    {CLIENT_STAGE_LABELS[c.currentStage as CaseStage] ?? c.currentStage}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+                  icon={<Briefcase size={16} strokeWidth={1.75} />}
+                  primary={`${c.caseNumber} — ${c.title}`}
+                  secondary={CASE_TYPE_LABELS[c.caseType as string] ?? String(c.caseType)}
+                  trailing={
+                    <Badge tone={stageTone(c.currentStage)}>
+                      {CLIENT_STAGE_LABELS[c.currentStage as CaseStage] ?? String(c.currentStage)}
+                    </Badge>
+                  }
+                />
+              ))}
+            </RowList>
+          )}
+        </Panel>
 
-      <div className="rounded-panel border-ink-200 mt-8 border bg-white shadow-subtle">
-        <div className="border-ink-200 flex items-center justify-between border-b px-6 py-4">
-          <h2 className="font-display text-navy-800 text-lg font-semibold">
-            Recent consultations
-          </h2>
-          <Link
-            href="/portal/consultations"
-            className="text-navy-700 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
-          >
-            View all
-            <ArrowRight size={14} aria-hidden />
-          </Link>
-        </div>
-
-        {consultations.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-            <Inbox className="text-ink-400" size={32} aria-hidden />
-            <p className="text-ink-600 text-sm">
-              No consultations yet.
-            </p>
-            <Button href="/consultation" variant="gold" size="sm" className="mt-1">
-              Book a free consultation
-            </Button>
-          </div>
-        ) : (
-          <ul className="divide-ink-200 divide-y">
-            {consultations.map((c) => (
-              <li key={String(c._id)}>
-                <Link
+        <Panel
+          title="Recent consultations"
+          action={
+            consultations.length > 0 ? (
+              <PanelLink href="/portal/consultations">View all</PanelLink>
+            ) : undefined
+          }
+        >
+          {consultations.length === 0 ? (
+            <EmptyState
+              title="No consultations yet"
+              body="Book a free consultation and we'll review your background and eligibility."
+              icon={<Inbox size={28} aria-hidden />}
+              action={
+                <Button href="/consultation" variant="gold" size="sm">
+                  Book a free consultation
+                </Button>
+              }
+            />
+          ) : (
+            <RowList>
+              {consultations.map((c) => (
+                <Row
+                  key={String(c._id)}
                   href={`/portal/consultations/${c._id}`}
-                  className="hover:bg-navy-50/50 flex items-center justify-between gap-4 px-6 py-4 transition-colors"
-                >
-                  <div>
-                    <p className="text-navy-800 text-sm font-semibold">{c.service}</p>
-                    <p className="text-ink-500 mt-0.5 text-xs">
-                      Submitted{" "}
-                      {new Date(c.createdAt as unknown as string).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="bg-navy-50 text-navy-700 rounded-full px-3 py-1 text-xs font-semibold">
-                    {STATUS_LABELS[c.status as string] ?? c.status}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+                  primary={String(c.service)}
+                  secondary={`Submitted ${new Date(c.createdAt as unknown as string).toLocaleDateString()}`}
+                  trailing={
+                    <Badge tone="neutral">
+                      {STATUS_LABELS[c.status as string] ?? String(c.status)}
+                    </Badge>
+                  }
+                />
+              ))}
+            </RowList>
+          )}
+        </Panel>
       </div>
     </Container>
   );

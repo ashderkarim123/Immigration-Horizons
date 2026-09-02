@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Bell, SlidersHorizontal } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/app/page-header";
+import { EmptyState } from "@/components/app/panel";
 import { requireClient } from "@/lib/auth/current-client";
 import { getDb } from "@/lib/db";
 import { listForClient } from "@/lib/notifications/notification-service";
@@ -30,33 +32,35 @@ export default async function PortalNotificationsPage() {
   const notifications = db ? await listForClient({ clientUserId: client._id, limit: 50 }) : [];
 
   return (
-    <Container width="default" className="py-16 sm:py-20">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-navy-900 flex items-center gap-2 text-2xl font-semibold sm:text-3xl">
-            <Bell size={24} strokeWidth={1.75} aria-hidden />
-            Notifications
-          </h1>
-          <p className="text-ink-600 mt-1 text-[0.9375rem]">Updates about your cases, documents, and messages.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/portal/notifications/preferences"
-            className="text-navy-700 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
-          >
-            <SlidersHorizontal size={14} aria-hidden />
-            Preferences
-          </Link>
-          <MarkAllNotificationsReadButton />
-        </div>
-      </div>
+    <Container width="default" className="py-10 sm:py-14">
+      <PageHeader
+        title="Notifications"
+        description="Updates about your cases, documents, and messages."
+        breadcrumbs={[
+          { name: "Portal", href: "/portal" },
+          { name: "Notifications", href: "/portal/notifications" },
+        ]}
+        actions={
+          <>
+            <Link
+              href="/portal/notifications/preferences"
+              className="text-navy-700 inline-flex items-center gap-1.5 text-sm font-semibold hover:underline"
+            >
+              <SlidersHorizontal size={14} aria-hidden />
+              Preferences
+            </Link>
+            <MarkAllNotificationsReadButton />
+          </>
+        }
+      />
 
-      <div className="rounded-panel border-ink-200 mt-8 border bg-white shadow-subtle">
+      <div className="rounded-panel border-ink-200 border bg-white shadow-subtle">
         {notifications.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-            <Bell className="text-ink-400" size={32} aria-hidden />
-            <p className="text-ink-600 text-sm">You&apos;re all caught up.</p>
-          </div>
+          <EmptyState
+            icon={<Bell size={28} aria-hidden />}
+            title="You are all caught up"
+            body="We will let you know here when something changes on your case."
+          />
         ) : (
           <ul className="divide-ink-200 divide-y">
             {notifications.map((n) => (
