@@ -21,6 +21,7 @@ const MAIL_ENV_KEYS = [
   "MAIL_TRANSPORT",
   "RESEND_API_KEY",
   "EMAIL_FROM",
+  "MAIL_REPLY_TO",
   "SMTP_HOST",
   "SMTP_PORT",
   "SMTP_USER",
@@ -165,6 +166,68 @@ test("replyTo is carried through, which is what makes a lead notification answer
   });
 
   assert.match(smtp.messages[0].data, /Reply-To: lead@example\.test/i);
+});
+
+test("MAIL_REPLY_TO is applied to mail that sets no reply address of its own", async () => {
+  // EMAIL_FROM is a sending identity on a subdomain nobody reads. Without
+  // this, a client replying to "your document was accepted" writes into a
+  // void — which matters most for a practice running one shared mailbox.
+  smtp = await startFakeSmtp();
+  const { sendMail } = await loadTransport();
+
+  process.env.MAIL_TRANSPORT = "smtp";
+  process.env.SMTP_HOST = "127.0.0.1";
+  process.env.SMTP_PORT = String(smtp.port);
+  process.env.SMTP_SECURE = "false";
+  process.env.EMAIL_FROM = "Immigration Horizons <notifications@send.example.test>";
+  process.env.MAIL_REPLY_TO = "info@example.test";
+
+  await sendMail({
+    to: "client@example.test",
+    subject: "Your document was accepted",
+    html: "<p>Accepted</p>",
+    tag: "document-email",
+  });
+
+  assert.match(smtp.messages[0].data, /Reply-To: info@example\.test/i);
+});
+
+test("a per-message replyTo still wins over the default", async () => {
+  // Lead notifications set it to the lead's own address so staff can answer
+  // the enquiry directly; the shared-inbox default must not override that.
+  smtp = await startFakeSmtp();
+  const { sendMail } = await loadTransport();
+
+  process.env.MAIL_TRANSPORT = "smtp";
+  process.env.SMTP_HOST = "127.0.0.1";
+  process.env.SMTP_PORT = String(smtp.port);
+  process.env.SMTP_SECURE = "false";
+  process.env.MAIL_REPLY_TO = "info@example.test";
+
+  await sendMail({
+    to: "office@example.test",
+    replyTo: "lead@elsewhere.test",
+    subject: "New Consultation Request",
+    html: "<p>Details</p>",
+    tag: "leads",
+  });
+
+  const body = smtp.messages[0].data;
+  assert.match(body, /Reply-To: lead@elsewhere\.test/i);
+  assert.equal(/Reply-To: info@example\.test/i.test(body), false);
+});
+
+test("no Reply-To header is set when neither is configured", async () => {
+  smtp = await startFakeSmtp();
+  const { sendMail } = await loadTransport();
+
+  process.env.MAIL_TRANSPORT = "smtp";
+  process.env.SMTP_HOST = "127.0.0.1";
+  process.env.SMTP_PORT = String(smtp.port);
+  process.env.SMTP_SECURE = "false";
+
+  await sendMail({ to: "a@b.test", subject: "s", html: "<p>h</p>", tag: "test" });
+  assert.equal(/Reply-To:/i.test(smtp.messages[0].data), false);
 });
 
 test("SMTP authentication is attempted when a user is configured", async () => {

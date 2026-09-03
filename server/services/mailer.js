@@ -35,6 +35,16 @@ function resolveFrom() {
 }
 
 /**
+ * Where a reply should land. EMAIL_FROM is a sending identity, not a
+ * mailbox — with a transactional provider it is usually on a subdomain
+ * nobody reads, so a client hitting Reply would be writing into a void.
+ * A per-message replyTo still wins.
+ */
+function resolveReplyTo() {
+  return process.env.MAIL_REPLY_TO || '';
+}
+
+/**
  * MAIL_TRANSPORT is explicit and wins. Without it the transport is inferred
  * from whichever credentials are present, so a deployment that only ever set
  * RESEND_API_KEY keeps working with no new configuration. Resend wins a tie
@@ -65,7 +75,8 @@ async function sendViaResend(message) {
       subject: message.subject,
       html: message.html,
     };
-    if (message.replyTo) payload.replyTo = message.replyTo;
+    const replyTo = message.replyTo || resolveReplyTo();
+    if (replyTo) payload.replyTo = replyTo;
 
     const { error } = await resend.emails.send(payload);
     if (error) {
@@ -128,7 +139,8 @@ async function sendViaSmtp(message) {
       subject: message.subject,
       html: message.html,
     };
-    if (message.replyTo) payload.replyTo = message.replyTo;
+    const replyTo = message.replyTo || resolveReplyTo();
+    if (replyTo) payload.replyTo = replyTo;
 
     await transporter.sendMail(payload);
     return true;
@@ -208,6 +220,7 @@ module.exports = {
   closeMailTransport,
   activeTransport,
   resolveFrom,
+  resolveReplyTo,
   _setTransportForTests,
   _resetTransportForTests,
 };

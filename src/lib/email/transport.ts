@@ -52,6 +52,21 @@ export function resolveFrom(): string {
 }
 
 /**
+ * Where a reply should land.
+ *
+ * `EMAIL_FROM` is a sending identity, not a mailbox — with a transactional
+ * provider it is usually on a subdomain nobody reads, so a client who hits
+ * Reply on "your document was accepted" would be writing into a void. This
+ * points those replies at a real inbox.
+ *
+ * A per-message `replyTo` still wins: lead notifications set it to the
+ * lead's own address so staff can answer the enquiry directly.
+ */
+export function resolveReplyTo(): string {
+  return process.env.MAIL_REPLY_TO || "";
+}
+
+/**
  * Which transport is configured.
  *
  * `MAIL_TRANSPORT` is explicit and wins. Without it the choice is inferred
@@ -77,6 +92,7 @@ export function activeTransport(): MailTransportName {
 async function sendViaResend(message: MailMessage): Promise<boolean> {
   const { Resend } = await import("resend");
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const replyTo = message.replyTo || resolveReplyTo();
 
   try {
     const { error } = await resend.emails.send({
@@ -84,7 +100,7 @@ async function sendViaResend(message: MailMessage): Promise<boolean> {
       to: message.to,
       subject: message.subject,
       html: message.html,
-      ...(message.replyTo ? { replyTo: message.replyTo } : {}),
+      ...(replyTo ? { replyTo } : {}),
     });
     if (error) {
       console.error(`[${message.tag}] Resend send failed:`, error);
@@ -144,6 +160,7 @@ async function getSmtpTransporter() {
 }
 
 async function sendViaSmtp(message: MailMessage): Promise<boolean> {
+  const replyTo = message.replyTo || resolveReplyTo();
   try {
     const transporter = await getSmtpTransporter();
     await transporter.sendMail({
@@ -151,7 +168,7 @@ async function sendViaSmtp(message: MailMessage): Promise<boolean> {
       to: message.to,
       subject: message.subject,
       html: message.html,
-      ...(message.replyTo ? { replyTo: message.replyTo } : {}),
+      ...(replyTo ? { replyTo } : {}),
     });
     return true;
   } catch (err) {
