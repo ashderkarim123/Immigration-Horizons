@@ -68,7 +68,14 @@ async function startTestDb() {
           `Original error: ${err.message}`
       );
     }
-    memoryServer = await MongoMemoryServer.create();
+    // Each test FILE starts its own instance (node:test runs files in
+    // separate processes), so a suite of this size pays the mongod spawn
+    // cost a dozen-plus times. The library's 10s default is marginal on a
+    // cold Windows filesystem and produced flaky "Instance failed to start"
+    // failures that look exactly like real test failures but are not.
+    memoryServer = await MongoMemoryServer.create({
+      instance: { launchTimeout: 60000 },
+    });
     uri = memoryServer.getUri();
   }
 
