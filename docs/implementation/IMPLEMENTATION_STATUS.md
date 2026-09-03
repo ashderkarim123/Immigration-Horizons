@@ -1852,3 +1852,128 @@ step for two reasons beyond its own scope: deployment blocker #1 (indexes
 have never been run in production) covers a collection count that grew
 again this cycle, and the retention period defined in
 `DATA_RETENTION.md` needs the purge job that module owns.
+
+---
+
+# Cycle 11 — migrations, indexes, and retention (ADR-014)
+
+**Starting HEAD:** `300d868`, after Cycle 10 and the mail-transport work
+(ADR-013) were committed and pushed.
+
+**Concurrent working-tree changes.** Roughly 38 UI files — new hero images,
+`auth-frame.tsx`, `page-hero.tsx`, `globals.css`, several `(site)` pages and
+the admin layout/sidebar/topbar — appeared in the working tree during this
+session from outside it. They were left untouched and not committed. All 75
+CSRF tokens added in Cycle 10 were verified still present after those edits.
+
+## Audit findings before writing code
+
+Module 11 proposes four backfills. Two describe work already done:
+
+- **"Add missing display snapshots"** — `server/utils/actorSnapshot.js` has
+  captured these since Cycle 2.
+- **"Normalize existing consultation emails"** — implemented as
+  normalise-at-comparison rather than a rewrite of stored data. See below.
+
+Two are real:
+
+- **Legacy notification recipients.** Cycle 7 (ADR-006 §1) replaced
+  name-keyed recipients with immutable identity fields. Rows written before
+  it carry only `recipientName`, and every identity-keyed query since filters
+  on `recipientType` — so those notifications exist, are unread, and are
+  invisible to their recipient permanently.
+- **Unlinked consultations.** `Consultation.clientUser` is written in exactly
+  one place, `src/app/api/portal/activate/route.ts`, and only for the single
+  consultation the invitation named. The portal lists
+  `Consultation.find({ clientUser })`, so a client who submitted three
+  enquiries before activating sees one.
+
+The index script already met most of module 11's requirements (dry run,
+placeholder-URI refusal, `createIndexes()` only, never drops, before/after
+counts). It needed `security_events` registered and nothing else.
+
+## Built
+
+**Migration runner** — `scripts/migrate.ts`, `npm run db:migrate`. Dry run by
+default; `--apply` is the deliberate act. `--apply` against a
+production-looking URI additionally demands `--i-have-a-backup`. Credentials
+are redacted from every printed line. `--only <id>` runs one.
+
+**`scripts/migrations/001-notification-recipient-identity.ts`** — resolves
+legacy `recipientName` to an `AdminUser` id, but only when exactly one active
+employee matches. Names are escaped before being used in a regex, since a
+display name is user input. An existing `recipientId` is trusted over
+re-deriving from the name.
+
+**`scripts/migrations/002-link-consultations-to-clients.ts`** — links unlinked
+consultations to the client account owning the address, only where it
+resolves to exactly one **active** account. Re-asserts `clientUser: null` in
+the update filter so a concurrent activation cannot be overwritten.
+
+**Retention purge** — `scripts/purgeRetention.ts`, `npm run db:purge`. Dry run
+by default, enforces the 400-day period as a floor, goes through the raw
+driver collection because the model correctly refuses deletes. Closes
+deployment blocker 7.
+
+**`docs/deployment/VPS_MIGRATION.md`** — the readiness document for the local
+→ VPS move: blocking decisions, the seven deployment blockers with current
+status, the environment variables that fail confusingly, the migration
+sequence, backups, cron, and a pre-cutover checklist.
+
+## Deliberate decisions
+
+- **One `run({ dryRun })` per migration, not plan/apply.** Two functions
+  implementing one rule drift, and a dry run that is a separate
+  implementation is a dry run that lies.
+- **Migrations refuse to guess.** Both match on a weak key — a display name,
+  an email — and both leave ambiguous records exactly as they were, counted
+  under a named reason. A wrong answer is a data-exposure bug here, not an
+  untidy row: `001` would show an employee a case they were never on, `002`
+  would put one person's immigration enquiry in another person's portal.
+- **Consultation emails are normalised at comparison, never rewritten.**
+  `Consultation.email` is what the visitor typed and is the only record of
+  it.
+- **`pending` is not "verified".** Activation is the only proof the platform
+  has that a person controls an inbox, so it is the whole of module 11's
+  "verified matching rules".
+- **Still no TTL index on `security_events`.** A log that deletes itself is
+  unreviewable and does so exactly when an investigation wants the oldest
+  record.
+- **The purge cannot shorten the window.** `--older-than-days 30` is refused;
+  changing the period means changing the policy document and contract.
+- **No migration ledger.** Idempotency is what makes re-running safe, and it
+  is asserted directly. A ledger is for migrations that cannot be idempotent.
+
+## Acceptance criteria
+
+- [x] Every migration is idempotent — asserted by running each twice
+- [x] Production connection is guarded — explicit URI, plus a backup flag
+- [x] Backups and rollback documented — `VPS_MIGRATION.md` §5, `DEPLOYMENT.md` Part 10
+- [x] Indexes match real query shapes — unchanged from prior cycles, plus
+      `security_events`' six
+- [x] No migration silently discards unresolved data — counted, reasoned,
+      sampled, and left untouched
+
+## Verification
+
+Root **315/315** (19 new) · server **417/417** · `tsc --noEmit` clean ·
+`npm run lint` clean · `npm run build` clean.
+
+Guards exercised by hand, all refusing correctly: no `MONGODB_URI`; `--apply`
+against an Atlas-shaped URI without `--i-have-a-backup`; `--older-than-days`
+below the retention floor; an unknown `--only` id. Credentials redacted in
+every case.
+
+`npm run db:indexes:dry-run` lists `security_events` with its six indexes.
+
+## Not built
+
+Migration ledger, scheduled purge, down migrations, and the actual
+production index run — that last one is a deployment step, not a code change,
+and remains blocker 1.
+
+## Recommended next module
+
+`12_TESTING_QA_AND_ACCEPTANCE.md`, but the VPS migration is the more useful
+next action: `VPS_MIGRATION.md` §4.4 and §4.5 close blockers 1 and 4, and
+neither can be closed from a development machine.

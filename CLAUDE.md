@@ -218,8 +218,10 @@ authoritative per-cycle record — **read it before starting anything.**
 | 8C | Staff case & client operations console | ✅ ADR-010 |
 | 9 | Client portal experience layer | ✅ ADR-011 |
 | 10 | Security, privacy & audit | ✅ ADR-012 |
-| **11** | **Migrations · indexes · retention — next** | ⬜ |
-| 12–14 | Testing · deployment · analytics | 🔨 partial |
+| — | Pluggable mail transport (SMTP + Resend) | ✅ ADR-013 |
+| 11 | Migrations · indexes · retention | ✅ ADR-014 |
+| **12** | **Testing · QA · acceptance — next** | ⬜ |
+| 13–14 | Deployment · analytics | 🔨 partial |
 
 Marketing-site work that was never finished (low priority, unrelated to the
 platform cycles): blog data layer for real posts, and canonicalising the
@@ -240,10 +242,15 @@ site.
    across eight cycles is tested with doubles only.
 5. `SITE_URL` must be set in production, to `https://app.immigrationhorizons.com` — the CSRF Origin check for every mutating portal **and staff** route reads it, and so do the activation/reset email links. A wrong value 403s every write. Documented in `DEPLOYMENT.md`; still unset in the checked-in `.env`.
 6. No malware scanning on uploads; no scheduler wired for the digest job.
-7. **No retention purge for `security_events`.** The 400-day period is
-   defined in `docs/security/DATA_RETENTION.md` and deliberately has no TTL
-   index (an audit log that silently deletes itself is worse than one that
-   grows) — the reviewed purge job is Cycle 11 work.
+7. ~~No retention purge for `security_events`.~~ **Closed in Cycle 11**
+   (ADR-014 §3) — `npm run db:purge`, dry-run by default, enforcing the
+   400-day period as a floor. Still deliberately has no TTL index, and is
+   deliberately not automated to delete.
+
+**Migrating to a VPS? Read `docs/deployment/VPS_MIGRATION.md` first** — it
+carries the readiness checks (blocking decisions, the `SITE_URL` 403 trap,
+mail/DNS verification, backups, cron, pre-cutover checklist) that
+`DEPLOYMENT.md`'s command sequence assumes you have already done.
 
 ## Git
 
