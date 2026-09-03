@@ -17,7 +17,7 @@ const ClientCase = require('../../models/ClientCase');
 const CaseWorkspace = require('../../models/CaseWorkspace');
 const WorkspaceMember = require('../../models/WorkspaceMember');
 const Notification = require('../../models/admin/Notification');
-const interactionEmail = require('../../services/interactionEmail');
+const mailer = require('../../services/mailer');
 const { generateInteractionNumber } = require('../../utils/interactionNumber');
 
 let app;
@@ -26,14 +26,13 @@ test.before(async () => {
   await startTestDb();
   app = createApp();
   // Test double per module doc §23 ("Add test doubles ... so failure
-  // behavior is testable") — no real Resend account in tests.
-  interactionEmail._setMailerForTests({
-    emails: { send: async () => ({ data: { id: 'test' }, error: null }) },
-  });
+  // behavior is testable") — no real mail account in tests. Since ADR-013
+  // one seam on services/mailer.js covers every adapter.
+  mailer._setTransportForTests(async () => true);
 });
 
 test.after(async () => {
-  interactionEmail._resetMailerForTests();
+  mailer._resetTransportForTests();
   await stopTestDb();
 });
 

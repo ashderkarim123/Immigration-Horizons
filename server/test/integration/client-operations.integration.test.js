@@ -18,20 +18,20 @@ const Consultation = require('../../models/Consultation');
 const AdminUser = require('../../models/admin/User');
 
 const clientAccountService = require('../../services/clientAccountService');
-const clientPortalEmail = require('../../services/clientPortalEmail');
+const mailer = require('../../services/mailer');
 
 let app;
 
 test.before(async () => {
   await startTestDb();
   app = createApp();
-  clientPortalEmail._setMailerForTests({
-    emails: { send: async () => ({ data: { id: 'test' }, error: null }) },
-  });
+  // One seam for every adapter since ADR-013 — services/mailer.js is the
+  // only place a provider is reached, so intercepting it covers them all.
+  mailer._setTransportForTests(async () => true);
 });
 
 test.after(async () => {
-  clientPortalEmail._resetMailerForTests();
+  mailer._resetTransportForTests();
   await stopTestDb();
 });
 

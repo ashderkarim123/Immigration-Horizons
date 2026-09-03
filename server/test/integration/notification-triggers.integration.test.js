@@ -17,24 +17,20 @@ const WorkspaceMessage = require('../../models/WorkspaceMessage');
 const Notification = require('../../models/admin/Notification');
 
 const interactionService = require('../../services/interactionService');
-const interactionEmail = require('../../services/interactionEmail');
 const documentRequestService = require('../../services/documentRequestService');
-const documentEmail = require('../../services/documentEmail');
 const { reviewDocument } = require('../../services/documentReviewService');
 const { createMessage } = require('../../services/messageService');
-const collaborationEmail = require('../../services/collaborationEmail');
+const mailer = require('../../services/mailer');
 
 test.before(async () => {
   await startTestDb();
-  const noopMailer = { emails: { send: async () => ({ data: { id: 'test' }, error: null }) } };
-  interactionEmail._setMailerForTests(noopMailer);
-  documentEmail._setMailerForTests(noopMailer);
-  collaborationEmail._setMailerForTests(noopMailer);
+  // Since ADR-013 every adapter reaches its provider through
+  // services/mailer.js, so this single seam replaces the three separate
+  // per-service doubles that used to be installed here.
+  mailer._setTransportForTests(async () => true);
 });
 test.after(async () => {
-  interactionEmail._resetMailerForTests();
-  documentEmail._resetMailerForTests();
-  collaborationEmail._resetMailerForTests();
+  mailer._resetTransportForTests();
   await stopTestDb();
 });
 test.beforeEach(clearCollections);
