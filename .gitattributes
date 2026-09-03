@@ -1,0 +1,27 @@
+# Normalise line endings in the repository, and control what lands in a
+# working tree. Development happens on Windows (core.autocrlf=true) and
+# deployment on Ubuntu, so this is not cosmetic.
+* text=auto eol=lf
+
+# MUST be LF. A CRLF shebang makes the kernel look for an interpreter
+# literally named "/usr/bin/env bash\r", and the deploy fails on the server
+# with "bad interpreter: No such file or directory".
+*.sh    text eol=lf
+*.conf  text eol=lf
+
+# Same reasoning: these are read by Linux tooling.
+.env.example      text eol=lf
+Dockerfile        text eol=lf
+*.yml             text eol=lf
+*.yaml            text eol=lf
+
+# Binary — never touch.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.woff binary
+*.woff2 binary
