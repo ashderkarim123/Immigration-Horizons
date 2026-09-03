@@ -1,29 +1,13 @@
-const { Resend } = require('resend');
+const { sendMail } = require('./mailer');
 
 /**
  * Client-facing email adapter for mention notifications (module doc §27:
  * "Email direct mentions when configured by the existing infrastructure").
  * Mirrors server/services/documentEmail.js/interactionEmail.js exactly —
- * same Resend usage, same "missing key/failed send logs a warning, never
+ * same transport, same "missing key/failed send logs a warning, never
  * throws" behavior, same test-double injection points. No routine-message
  * email — only a direct mention ever reaches this adapter.
  */
-
-let mailerOverride = null;
-
-function _setMailerForTests(mailer) {
-  mailerOverride = mailer;
-}
-function _resetMailerForTests() {
-  mailerOverride = null;
-}
-
-function resolveMailer() {
-  if (mailerOverride) return mailerOverride;
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  return new Resend(apiKey);
-}
 
 function portalUrl(path) {
   const base = process.env.SITE_URL || 'http://localhost:3000';
@@ -38,23 +22,7 @@ function escapeHtml(value = '') {
 }
 
 async function sendCollaborationEmail({ to, subject, html }) {
-  const mailer = resolveMailer();
-  if (!mailer) {
-    console.warn(`[collaboration-email] RESEND_API_KEY not set — "${subject}" not sent to ${to}.`);
-    return false;
-  }
-  const from = process.env.EMAIL_FROM || 'Immigration Horizons <onboarding@resend.dev>';
-  try {
-    const { error } = await mailer.emails.send({ from, to, subject, html });
-    if (error) {
-      console.error('[collaboration-email] Resend send failed:', error);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error('[collaboration-email] Resend send threw:', err.message);
-    return false;
-  }
+  return sendMail({ to, subject, html, tag: 'collaboration-email' });
 }
 
 async function sendMentionEmail({ to, firstName, caseNumber, channelName, senderDisplayName, messageExcerpt, caseId }) {
@@ -67,4 +35,4 @@ async function sendMentionEmail({ to, firstName, caseNumber, channelName, sender
   return sendCollaborationEmail({ to, subject: `${senderDisplayName} mentioned you`, html });
 }
 
-module.exports = { sendCollaborationEmail, sendMentionEmail, _setMailerForTests, _resetMailerForTests };
+module.exports = { sendCollaborationEmail, sendMentionEmail };

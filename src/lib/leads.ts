@@ -1,10 +1,9 @@
 import "server-only";
 
-import { Resend } from "resend";
-
 import { contact } from "./content/site";
 import { getDb } from "./db";
 import { Consultation } from "./models/Consultation";
+import { sendMail } from "./email/transport";
 
 /**
  * Lead delivery.
@@ -96,23 +95,7 @@ export async function deliverLead(lead: LeadInput): Promise<DeliverLeadResult> {
   const consultationId = await persistLead(lead);
   const saved = consultationId !== null;
 
-  const apiKey = process.env.RESEND_API_KEY;
   const receiver = process.env.CONTACT_RECEIVER_EMAIL || contact.email;
-
-  if (!apiKey) {
-    // Not configured — make the gap visible in logs, but the lead still
-    // counts as delivered if it made it into the database.
-    console.warn(
-      `[leads] RESEND_API_KEY not set — ${lead.kind} lead from ${lead.email} was not emailed.`,
-    );
-    return { delivered: saved, consultationId };
-  }
-
-  const resend = new Resend(apiKey);
-  const from =
-    process.env.EMAIL_FROM ||
-    "Immigration Horizons Website <onboarding@resend.dev>";
-
   const isContact = lead.kind === "contact";
   const heading = isContact
     ? "New Contact Form Message"
@@ -137,24 +120,18 @@ export async function deliverLead(lead: LeadInput): Promise<DeliverLeadResult> {
     <p style="color:#888;font-size:12px;">Submitted via immigrationhorizons.com on ${new Date().toLocaleString()}</p>
   `;
 
-  try {
-    const { error } = await resend.emails.send({
-      from,
-      to: receiver,
-      replyTo: lead.email,
-      subject: isContact
-        ? `New Contact Message - ${lead.name}`
-        : `New Consultation Request - ${lead.service ?? ""} - ${lead.name}`,
-      html,
-    });
+  // A send failure is not a delivery failure if the lead reached the
+  // database — the two paths are independent on purpose, so `saved` alone
+  // still counts as delivered.
+  const sent = await sendMail({
+    to: receiver,
+    replyTo: lead.email,
+    subject: isContact
+      ? `New Contact Message - ${lead.name}`
+      : `New Consultation Request - ${lead.service ?? ""} - ${lead.name}`,
+    html,
+    tag: "leads",
+  });
 
-    if (error) {
-      console.error("[leads] Resend send failed:", error);
-      return { delivered: saved, consultationId };
-    }
-    return { delivered: true, consultationId };
-  } catch (err) {
-    console.error("[leads] Resend send threw:", err);
-    return { delivered: saved, consultationId };
-  }
+  return { delivered: sent || saved, consultationId };
 }

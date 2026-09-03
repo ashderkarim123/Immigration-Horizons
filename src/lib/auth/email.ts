@@ -1,12 +1,14 @@
 import "server-only";
 
-import { Resend } from "resend";
+import { sendMail } from "../email/transport";
 
 /**
- * Portal transactional email (activation, password reset). Deliberately
- * mirrors src/lib/leads.ts's Resend usage and its "missing key/failed send
- * logs a warning, never throws" behavior — an email failure here must never
- * block or roll back the caller (consultation submission, reset request).
+ * Portal transactional email (activation, password reset).
+ *
+ * Composes the copy; ../email/transport.ts owns the transport and the
+ * "missing configuration / failed send logs a warning, never throws"
+ * contract (ADR-013). An email failure here must never block or roll back
+ * the caller (consultation submission, reset request).
  */
 
 function escapeHtml(value = ""): string {
@@ -25,35 +27,7 @@ async function sendPortalEmail(params: {
   subject: string;
   html: string;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.warn(
-      `[portal-email] RESEND_API_KEY not set — "${params.subject}" not sent to ${params.to}.`,
-    );
-    return false;
-  }
-
-  const resend = new Resend(apiKey);
-  const from =
-    process.env.EMAIL_FROM ||
-    "Immigration Horizons Portal <onboarding@resend.dev>";
-
-  try {
-    const { error } = await resend.emails.send({
-      from,
-      to: params.to,
-      subject: params.subject,
-      html: params.html,
-    });
-    if (error) {
-      console.error("[portal-email] Resend send failed:", error);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error("[portal-email] Resend send threw:", err);
-    return false;
-  }
+  return sendMail({ ...params, tag: "portal-email" });
 }
 
 export async function sendActivationEmail(params: {

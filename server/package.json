@@ -17,7 +17,8 @@
     "collaboration:provision-channels": "node scripts/provisionChannels.js",
     "collaboration:provision-channels:apply": "node scripts/provisionChannels.js --apply",
     "notifications:send-digests": "node scripts/sendNotificationDigests.js",
-    "notifications:send-digests:apply": "node scripts/sendNotificationDigests.js --apply"
+    "notifications:send-digests:apply": "node scripts/sendNotificationDigests.js --apply",
+    "mail:check": "node scripts/checkMail.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -34,6 +35,7 @@
     "method-override": "^3.0.0",
     "mongoose": "^9.8.0",
     "multer": "^2.0.0-rc.1",
+    "nodemailer": "^9.1.1",
     "resend": "^6.18.1",
     "slugify": "^1.6.6"
   },

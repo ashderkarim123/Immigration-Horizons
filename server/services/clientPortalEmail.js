@@ -1,4 +1,4 @@
-const { Resend } = require('resend');
+const { sendMail } = require('./mailer');
 
 /**
  * Client-facing portal-account email adapter for admin-initiated actions
@@ -8,22 +8,6 @@ const { Resend } = require('resend');
  * every other adapter in this app (documentEmail.js, interactionEmail.js,
  * collaborationEmail.js, notificationDigestEmail.js).
  */
-
-let mailerOverride = null;
-
-function _setMailerForTests(mailer) {
-  mailerOverride = mailer;
-}
-function _resetMailerForTests() {
-  mailerOverride = null;
-}
-
-function resolveMailer() {
-  if (mailerOverride) return mailerOverride;
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  return new Resend(apiKey);
-}
 
 function portalUrl(path) {
   const base = process.env.SITE_URL || 'http://localhost:3000';
@@ -38,23 +22,7 @@ function escapeHtml(value = '') {
 }
 
 async function sendClientPortalEmail({ to, subject, html }) {
-  const mailer = resolveMailer();
-  if (!mailer) {
-    console.warn(`[client-portal-email] RESEND_API_KEY not set — "${subject}" not sent to ${to}.`);
-    return false;
-  }
-  const from = process.env.EMAIL_FROM || 'Immigration Horizons <onboarding@resend.dev>';
-  try {
-    const { error } = await mailer.emails.send({ from, to, subject, html });
-    if (error) {
-      console.error('[client-portal-email] Resend send failed:', error);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error('[client-portal-email] Resend send threw:', err.message);
-    return false;
-  }
+  return sendMail({ to, subject, html, tag: 'client-portal-email' });
 }
 
 /** Same copy and link shape as src/lib/auth/email.ts's sendActivationEmail. */
@@ -77,7 +45,5 @@ async function sendActivationEmail({ to, firstName, token }) {
 }
 
 module.exports = {
-  _setMailerForTests,
-  _resetMailerForTests,
   sendActivationEmail,
 };
