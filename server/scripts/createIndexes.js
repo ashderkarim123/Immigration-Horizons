@@ -72,6 +72,9 @@ const MODELS = [
   require('../models/WorkspaceMessage'),
   require('../models/MessageRevision'),
   require('../models/ChannelReadState'),
+  // Cycle 10 — the security/audit log (ADR-012 §1). Dual-writer with the
+  // Next.js app, which declares the same indexes.
+  require('../models/SecurityEvent'),
   // Cycle 7 — notifications. Notification (above) gained new identity-
   // keyed indexes this cycle; NotificationPreference is new. Dual-writer
   // with the Next.js app (ADR-006 §1) — both apps declare and provision

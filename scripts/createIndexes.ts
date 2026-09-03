@@ -40,6 +40,7 @@ import { Notification } from "../src/lib/models/Notification";
 import { NotificationPreference } from "../src/lib/models/NotificationPreference";
 import { EmployeeSession } from "../src/lib/models/EmployeeSession";
 import { CaseActivity } from "../src/lib/models/CaseActivity";
+import { SecurityEvent } from "../src/lib/models/SecurityEvent";
 
 // Cycle 2 case/workspace/membership models are also declared here even
 // though server/ is their primary writer (see
@@ -86,6 +87,12 @@ const MODELS = [
   // same ones; createIndexes() is additive and idempotent, so whichever
   // pipeline runs first wins and the second is a no-op.
   CaseActivity,
+  // Cycle 10 — the security/audit log (ADR-012 §1). Dual-writer with the
+  // admin CMS, which declares the same indexes. Its `ip` and
+  // `subjectEmail` indexes are what make "show me every attempt against
+  // this account, or from this host" answerable during an incident rather
+  // than a collection scan.
+  SecurityEvent,
 ];
 
 const isDryRun = process.argv.includes("--dry-run");

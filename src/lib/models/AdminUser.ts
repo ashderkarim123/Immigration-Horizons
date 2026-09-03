@@ -3,9 +3,10 @@ import "server-only";
 import mongoose, { Schema } from "mongoose";
 
 /**
- * Read-only mirror of server/models/admin/User.js. This app never writes
- * an AdminUser — creating, editing, and deactivating employees stays in
- * the admin CMS. It reads them for two distinct purposes:
+ * Mirror of server/models/admin/User.js. This app does not manage
+ * employees — creating, editing, and deactivating them stays in the admin
+ * CMS — and writes exactly one thing here: the login lockout counters at
+ * the bottom of the schema (ADR-012 3). It reads them for two purposes:
  *
  *   1. Client-facing display (Cycle 2): an employee's `name` and
  *      `isActive`, for the portal team page and case pages.
@@ -37,6 +38,16 @@ const AdminUserSchema = new Schema(
     password: { type: String },
     role: { type: String, default: "viewer" },
     isActive: { type: Boolean, default: true },
+
+    // Login lockout counters (ADR-012 3). These are the one exception to
+    // the "never writes an AdminUser" rule above: the staff login route
+    // increments and clears them. It must, because this app and the admin
+    // CMS authenticate the same records — a lockout only one of them
+    // enforces is bypassed by signing in at the other. Credentials, role,
+    // and isActive remain owned exclusively by the CMS.
+    lastLoginAt: { type: Date, default: null },
+    failedLoginCount: { type: Number, default: 0 },
+    lockedUntil: { type: Date, default: null },
   },
   { timestamps: true },
 );

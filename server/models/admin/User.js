@@ -20,6 +20,13 @@ const UserSchema = new mongoose.Schema(
     },
     avatar: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
+
+    // Login lockout counters (ADR-012 3). Written by BOTH this app and the
+    // SaaS staff app, which authenticate the same records — see
+    // utils/lockout.js for why enforcement in only one of them is worthless.
+    lastLoginAt: { type: Date, default: null },
+    failedLoginCount: { type: Number, default: 0 },
+    lockedUntil: { type: Date, default: null },
   },
   { timestamps: true }
 );
