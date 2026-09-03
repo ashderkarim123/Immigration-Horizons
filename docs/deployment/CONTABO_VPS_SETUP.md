@@ -332,21 +332,41 @@ to debug afterwards. Read it before touching the GoDaddy panel.
 
 ### 5.1 The mail decision — read this first
 
-You have **GoDaddy Outlook (Microsoft 365)** for `immigrationhorizons.com`.
-That is the right place for *human* mailboxes: `info@`, `rahat@`.
+You have GoDaddy mail for `immigrationhorizons.com` — one mailbox with
+several aliases. That is the right place for *human* correspondence:
+`info@`, `rahat@`.
 
-**Do not send the application's mail through it.** Three reasons, each
-sufficient on its own:
+**Do not send the application's mail through it**, whichever GoDaddy product
+it turns out to be. Check which you have — it only matters so you know what
+to leave alone in DNS:
 
-1. **Microsoft has been switching off Basic Auth (SMTP AUTH).** It is off by
-   default on new tenants and is being permanently disabled. If SMTP works
-   for you today, it may stop without warning — and the failure looks like
-   "invitations silently stopped arriving".
-2. **Microsoft 365 is not a transactional mail service.** ~30 messages/minute
-   and 10,000 recipients/day, and their terms discourage app-generated mail.
-   Your marketing automation plans will hit this.
-3. **A shared sending reputation.** App mail that gets marked as spam damages
-   deliverability for the mailbox your clients actually reply to.
+```bash
+dig +short MX immigrationhorizons.com
+```
+
+| MX answer | Product |
+|---|---|
+| `…mail.protection.outlook.com` | Microsoft-backed (Microsoft 365 / Professional Email) |
+| `smtp.secureserver.net`, `mailstore1.secureserver.net` | GoDaddy Workspace Email (legacy) |
+
+The reasons not to route app mail through either:
+
+1. **Send limits.** Legacy Workspace Email allows a few hundred messages a
+   day. Microsoft 365 allows roughly 30 a minute and 10,000 recipients a
+   day, and its terms discourage app-generated mail outright. Marketing
+   automation hits both ceilings.
+2. **Authentication is unreliable or absent.** Microsoft has been switching
+   off Basic Auth (SMTP AUTH) — off by default on new tenants and being
+   permanently disabled — so SMTP that works today can stop without warning,
+   and the symptom is "invitations silently stopped arriving". The legacy
+   product has no sending API at all.
+3. **Aliases cannot send.** On Microsoft-backed plans an alias is
+   receive-only; you can only authenticate as the primary mailbox. So the
+   tidy `notifications@` sender you would want does not exist as a
+   credential.
+4. **A shared sending reputation.** App mail marked as spam damages
+   deliverability for the mailbox your clients actually reply to — and with
+   a single mailbox, that is the only one you have.
 
 **Recommended split:**
 
@@ -414,7 +434,12 @@ some visitors only, which is miserable to diagnose. IPv4-only is fine.
 
 | Type | Name | Value |
 |---|---|---|
-| TXT | `_dmarc.send` | `v=DMARC1; p=none; rua=mailto:dmarc@immigrationhorizons.com` |
+| TXT | `_dmarc.send` | `v=DMARC1; p=none; rua=mailto:info@immigrationhorizons.com` |
+
+> Point `rua=` at an address that **actually receives**. Reports are noisy
+> XML, so a dedicated `dmarc@` alias is tidier if your plan allows one — but
+> an alias that does not exist means the reports bounce, which is worse than
+> sending them to your main inbox.
 
 Start at `p=none` and read the reports for a couple of weeks before
 tightening to `quarantine`. Jumping straight to `p=reject` on a new sending
