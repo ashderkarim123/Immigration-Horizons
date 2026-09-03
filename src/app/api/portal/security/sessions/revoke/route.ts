@@ -4,6 +4,7 @@ import { guardPortalRequest, readPortalJsonBody } from "@/lib/auth/portal-api";
 import { jsonError, jsonOk } from "@/lib/auth/http";
 import { revokeClientSession } from "@/lib/auth/client-account";
 import { serializeClearedSessionCookie } from "@/lib/auth/session";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 
 /**
  * Revokes one of the client's own sessions (ADR-011 §4).
@@ -36,8 +37,30 @@ export async function POST(request: Request): Promise<Response> {
   });
 
   if (result.outcome !== "updated") {
+    // Includes the cross-account case, which is indistinguishable from a
+    // nonexistent id to the caller but is worth seeing in the log.
+    await recordSecurityEvent({
+      type: "session_revoked",
+      result: "failure",
+      surface: "portal",
+      actorType: "client",
+      actorClientId: guard.context.client._id,
+      request,
+      meta: { reason: "not_found_or_not_own" },
+    });
     return jsonError("not_found", "That session could not be found.");
   }
+
+  await recordSecurityEvent({
+    type: "session_revoked",
+    result: "success",
+    surface: "portal",
+    actorType: "client",
+    actorClientId: guard.context.client._id,
+    subjectEmail: guard.context.client.email,
+    request,
+    meta: { scope: "single", wasCurrent: result.value.wasCurrent },
+  });
 
   const response = jsonOk({
     outcome: "updated",

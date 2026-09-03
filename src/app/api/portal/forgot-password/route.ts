@@ -9,6 +9,7 @@ import { verifyOrigin } from "../../../../lib/auth/csrf";
 import { isRateLimited } from "../../../../lib/rate-limit";
 import { isValidEmail } from "../../../../lib/auth/validation";
 import { jsonError, jsonOk } from "../../../../lib/auth/http";
+import { recordSecurityEvent } from "../../../../lib/security/security-events";
 
 const RESET_TTL_MS = 1000 * 60 * 60; // 1 hour
 
@@ -18,7 +19,17 @@ const GENERIC_MESSAGE =
   "If an account exists for that email, we've sent password reset instructions.";
 
 export async function POST(request: Request): Promise<Response> {
-  if (!verifyOrigin(request)) return jsonError("forbidden", "Request rejected.");
+  if (!verifyOrigin(request)) {
+    await recordSecurityEvent({
+      type: "csrf_rejected",
+      result: "denied",
+      surface: "portal",
+      actorType: "anonymous",
+      request,
+      meta: { route: "/api/portal/forgot-password" },
+    });
+    return jsonError("forbidden", "Request rejected.");
+  }
   if (await isRateLimited("portal-forgot-password", request)) {
     return jsonError("rate_limited", "Too many requests. Please try again later.");
   }
@@ -70,6 +81,30 @@ export async function POST(request: Request): Promise<Response> {
           email: client.email,
           firstName: client.firstName || "there",
           token,
+        });
+
+        await recordSecurityEvent({
+          type: "password_reset_requested",
+          result: "success",
+          surface: "portal",
+          actorType: "anonymous",
+          actorClientId: client._id,
+          subjectEmail: normalizedEmail,
+          request,
+        });
+      } else {
+        // Recorded even when no email goes out. A burst of requests against
+        // addresses that do not resolve is exactly the enumeration attempt
+        // the generic response is designed to hide from the caller — it
+        // must not be hidden from the operator as well.
+        await recordSecurityEvent({
+          type: "password_reset_requested",
+          result: "failure",
+          surface: "portal",
+          actorType: "anonymous",
+          subjectEmail: normalizedEmail,
+          request,
+          meta: { reason: client ? "ineligible_status" : "no_such_account" },
         });
       }
     } catch (err) {

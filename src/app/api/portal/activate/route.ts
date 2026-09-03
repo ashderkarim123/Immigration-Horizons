@@ -12,6 +12,7 @@ import { verifyOrigin } from "../../../../lib/auth/csrf";
 import { isRateLimited } from "../../../../lib/rate-limit";
 import { isValidPassword } from "../../../../lib/auth/validation";
 import { jsonError, jsonOk } from "../../../../lib/auth/http";
+import { recordSecurityEvent } from "../../../../lib/security/security-events";
 
 /**
  * Redeems a PortalInvitation: creates the ClientUser, marks the invitation
@@ -20,7 +21,17 @@ import { jsonError, jsonOk } from "../../../../lib/auth/http";
  * is the first session id the client ever sees).
  */
 export async function POST(request: Request): Promise<Response> {
-  if (!verifyOrigin(request)) return jsonError("forbidden", "Request rejected.");
+  if (!verifyOrigin(request)) {
+    await recordSecurityEvent({
+      type: "csrf_rejected",
+      result: "denied",
+      surface: "portal",
+      actorType: "anonymous",
+      request,
+      meta: { route: "/api/portal/activate" },
+    });
+    return jsonError("forbidden", "Request rejected.");
+  }
   if (await isRateLimited("portal-activate", request)) {
     return jsonError("rate_limited", "Too many attempts. Please try again later.");
   }
@@ -127,6 +138,18 @@ export async function POST(request: Request): Promise<Response> {
   const sessionToken = await createSession(String(client._id), {
     ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "",
     userAgent: request.headers.get("user-agent") || "",
+  });
+
+  await recordSecurityEvent({
+    type: "activation_completed",
+    result: "success",
+    surface: "portal",
+    actorType: "client",
+    actorClientId: client._id,
+    actorName: `${client.firstName || ""} ${client.lastName || ""}`.trim(),
+    subjectEmail: String(client.normalizedEmail || client.email || ""),
+    request,
+    meta: { purpose: String(invitation.purpose || "") },
   });
 
   return jsonOk(

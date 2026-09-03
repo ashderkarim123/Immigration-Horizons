@@ -10,6 +10,8 @@ import { verifyOrigin } from "@/lib/auth/csrf";
 import { isRateLimited } from "@/lib/rate-limit";
 import { isValidEmail } from "@/lib/auth/validation";
 import { jsonError, jsonOk } from "@/lib/auth/http";
+import { failedLoginUpdate, isLockedOut, successfulLoginUpdate } from "@/lib/auth/lockout";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 
 /**
  * Employee sign-in for the SaaS app (ADR-009 §2). Mirrors the client login
@@ -17,8 +19,11 @@ import { jsonError, jsonOk } from "@/lib/auth/http";
  * error, and a constant-cost bcrypt compare for unknown accounts so
  * response timing never reveals whether an employee account exists.
  *
- * Credentials are the same AdminUser records the admin CMS uses — this
- * route verifies against them but never writes them.
+ * Credentials are the same AdminUser records the admin CMS uses. Since
+ * ADR-012 3 this route also writes their lockout counters — and only
+ * those. Per-account lockout has to be enforced by every surface that
+ * accepts the credential, or an attacker locked out here simply moves to
+ * admin.* and keeps guessing.
  */
 
 // Computed once so an unknown email still pays a real bcrypt cost.
@@ -36,7 +41,17 @@ function safeStaffRedirect(next: unknown): string {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  if (!verifyOrigin(request)) return jsonError("forbidden", "Request rejected.");
+  if (!verifyOrigin(request)) {
+    await recordSecurityEvent({
+      type: "csrf_rejected",
+      result: "denied",
+      surface: "staff",
+      actorType: "anonymous",
+      request,
+      meta: { route: "/api/staff/login" },
+    });
+    return jsonError("forbidden", "Request rejected.");
+  }
   if (await isRateLimited("staff-login", request)) {
     return jsonError("rate_limited", "Too many sign-in attempts. Please try again later.");
   }
@@ -58,18 +73,91 @@ export async function POST(request: Request): Promise<Response> {
   await db;
 
   const normalizedEmail = email.trim().toLowerCase();
-  const user = await AdminUser.findOne({ email: normalizedEmail }).select("password role isActive");
+  const user = await AdminUser.findOne({ email: normalizedEmail }).select(
+    "name password role isActive failedLoginCount lockedUntil",
+  );
 
   if (!user) {
     await verifyPassword(password, DUMMY_HASH);
+    await recordSecurityEvent({
+      type: "login_failed",
+      result: "failure",
+      surface: "staff",
+      actorType: "anonymous",
+      subjectEmail: normalizedEmail,
+      request,
+      meta: { reason: "no_such_account" },
+    });
+    return jsonError("unauthenticated", GENERIC_LOGIN_ERROR);
+  }
+
+  const now = Date.now();
+  if (isLockedOut(user, now)) {
+    // Same generic message as any other failure: that an account is locked
+    // is not something an unauthenticated caller may learn.
+    await recordSecurityEvent({
+      type: "login_failed",
+      result: "denied",
+      surface: "staff",
+      actorType: "anonymous",
+      actorAdminId: user._id,
+      subjectEmail: normalizedEmail,
+      request,
+      meta: { reason: "account_locked" },
+    });
     return jsonError("unauthenticated", GENERIC_LOGIN_ERROR);
   }
 
   const passwordMatches = await verifyPassword(password, user.password);
 
+  if (!passwordMatches) {
+    const { patch, justLocked } = failedLoginUpdate(user, now);
+    // updateOne, not user.save(): AdminUser is a mirror this app does not
+    // own. Saving the document would re-validate fields the CMS owns and
+    // re-run its bcrypt pre('save') hook over an already-hashed password.
+    await AdminUser.updateOne({ _id: user._id }, { $set: patch });
+
+    await recordSecurityEvent({
+      type: "login_failed",
+      result: "failure",
+      surface: "staff",
+      actorType: "anonymous",
+      actorAdminId: user._id,
+      subjectEmail: normalizedEmail,
+      request,
+      meta: { reason: "bad_password" },
+    });
+    if (justLocked) {
+      await recordSecurityEvent({
+        type: "account_locked",
+        result: "denied",
+        surface: "staff",
+        actorType: "anonymous",
+        actorAdminId: user._id,
+        subjectEmail: normalizedEmail,
+        request,
+        meta: { lockedUntil: patch.lockedUntil?.toISOString() },
+      });
+    }
+    return jsonError("unauthenticated", GENERIC_LOGIN_ERROR);
+  }
+
   // A deactivated employee gets the same generic failure as a wrong
   // password — "this account exists but is disabled" is information.
-  if (!passwordMatches || user.isActive === false) {
+  // Counters are deliberately NOT touched here: the credential was
+  // correct, so counting it as a failed guess would let a deactivated
+  // account's owner lock out their own (possibly later reactivated) login.
+  if (user.isActive === false) {
+    await recordSecurityEvent({
+      type: "login_failed",
+      result: "denied",
+      surface: "staff",
+      actorType: "anonymous",
+      actorAdminId: user._id,
+      subjectEmail: normalizedEmail,
+      request,
+      meta: { reason: "account_deactivated" },
+    });
     return jsonError("unauthenticated", GENERIC_LOGIN_ERROR);
   }
 
@@ -79,11 +167,37 @@ export async function POST(request: Request): Promise<Response> {
   // for a SaaS session they have no case-working capabilities for — they
   // keep using admin.*.)
   const role = String(user.role || "");
-  if (!role) return jsonError("forbidden", "This account has no assigned role.");
+  if (!role) {
+    await recordSecurityEvent({
+      type: "login_failed",
+      result: "denied",
+      surface: "staff",
+      actorType: "anonymous",
+      actorAdminId: user._id,
+      subjectEmail: normalizedEmail,
+      request,
+      meta: { reason: "no_role_assigned" },
+    });
+    return jsonError("forbidden", "This account has no assigned role.");
+  }
+
+  await AdminUser.updateOne({ _id: user._id }, { $set: successfulLoginUpdate(now) });
 
   const token = await createEmployeeSession(String(user._id), role, {
     ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "",
     userAgent: request.headers.get("user-agent") || "",
+  });
+
+  await recordSecurityEvent({
+    type: "login_succeeded",
+    result: "success",
+    surface: "staff",
+    actorType: "admin_user",
+    actorAdminId: user._id,
+    actorName: String(user.name || ""),
+    subjectEmail: normalizedEmail,
+    request,
+    meta: { role },
   });
 
   const response = jsonOk({ redirectTo: safeStaffRedirect(body.next) });

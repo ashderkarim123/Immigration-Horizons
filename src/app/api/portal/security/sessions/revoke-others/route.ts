@@ -3,6 +3,7 @@ import "server-only";
 import { guardPortalRequest } from "@/lib/auth/portal-api";
 import { jsonOk } from "@/lib/auth/http";
 import { revokeOtherClientSessions } from "@/lib/auth/client-account";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 
 /**
  * Signs the client out of every device except this one (ADR-011 §4).
@@ -19,6 +20,17 @@ export async function POST(request: Request): Promise<Response> {
   const { revokedSessions } = await revokeOtherClientSessions({
     clientUserId: guard.context.actor.clientUserId,
     currentSessionId: guard.context.actor.sessionId,
+  });
+
+  await recordSecurityEvent({
+    type: "session_revoked",
+    result: "success",
+    surface: "portal",
+    actorType: "client",
+    actorClientId: guard.context.client._id,
+    subjectEmail: guard.context.client.email,
+    request,
+    meta: { scope: "others", revokedSessions },
   });
 
   return jsonOk({ outcome: "updated", revokedSessions });

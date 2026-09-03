@@ -6,6 +6,7 @@ import { getSessionActor, type SessionActor } from "./session";
 import { verifyOrigin } from "./csrf";
 import { isRateLimited } from "../rate-limit";
 import { jsonError } from "./http";
+import { recordSecurityEvent } from "../security/security-events";
 
 /**
  * The gate every mutating `/api/portal/*` account route passes through
@@ -45,6 +46,14 @@ export async function guardPortalRequest(
   options: { rateLimitBucket: string },
 ): Promise<PortalApiGuard> {
   if (!verifyOrigin(request)) {
+    await recordSecurityEvent({
+      type: "csrf_rejected",
+      result: "denied",
+      surface: "portal",
+      actorType: "anonymous",
+      request,
+      meta: { bucket: options.rateLimitBucket },
+    });
     return { ok: false, response: jsonError("forbidden", "Request rejected.") };
   }
   if (await isRateLimited(options.rateLimitBucket, request)) {

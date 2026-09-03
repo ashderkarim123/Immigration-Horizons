@@ -3,6 +3,7 @@ import "server-only";
 import { guardPortalRequest, readPortalJsonBody } from "@/lib/auth/portal-api";
 import { jsonError, jsonOk } from "@/lib/auth/http";
 import { changeClientPassword } from "@/lib/auth/client-account";
+import { recordSecurityEvent } from "@/lib/security/security-events";
 
 /**
  * Password change for a signed-in client (ADR-011 §4).
@@ -31,6 +32,22 @@ export async function POST(request: Request): Promise<Response> {
   });
 
   if (result.outcome === "validation_error") {
+    // A wrong current password is a credential guess against a live
+    // session, not a typo worth ignoring — record it as a failure so a
+    // hijacked-session attempt is visible. Other validation errors (too
+    // short, mismatched confirmation) are ordinary form noise.
+    if (result.field === "currentPassword") {
+      await recordSecurityEvent({
+        type: "password_changed",
+        result: "failure",
+        surface: "portal",
+        actorType: "client",
+        actorClientId: guard.context.client._id,
+        subjectEmail: guard.context.client.email,
+        request,
+        meta: { reason: "wrong_current_password" },
+      });
+    }
     return jsonError("unprocessable", result.message);
   }
   if (result.outcome === "not_found") {
@@ -39,6 +56,18 @@ export async function POST(request: Request): Promise<Response> {
   if (result.outcome === "unchanged") {
     return jsonOk({ outcome: "unchanged" });
   }
+
+  await recordSecurityEvent({
+    type: "password_changed",
+    result: "success",
+    surface: "portal",
+    actorType: "client",
+    actorClientId: guard.context.client._id,
+    actorName: `${guard.context.client.firstName} ${guard.context.client.lastName}`.trim(),
+    subjectEmail: guard.context.client.email,
+    request,
+    meta: { revokedSessions: result.value.revokedSessions },
+  });
 
   return jsonOk({ outcome: "updated", revokedSessions: result.value.revokedSessions });
 }

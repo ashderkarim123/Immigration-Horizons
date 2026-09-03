@@ -8,6 +8,7 @@ import { verifyOrigin } from "./csrf";
 import { isRateLimited } from "../rate-limit";
 import { jsonError } from "./http";
 import { getAccessibleCaseWorkspace } from "./employee-case-policy";
+import { recordSecurityEvent } from "../security/security-events";
 import type { EmployeeActor } from "./actors";
 
 /**
@@ -22,6 +23,12 @@ import type { EmployeeActor } from "./actors";
  * A signed-in employee lacking the capability gets **404, not 403**,
  * matching `requireCapability` on the page side: the existence of a
  * resource is itself information.
+ *
+ * Because the refusal is indistinguishable from "no such thing" to the
+ * caller, the refusal is recorded (ADR-012 §4): the caller must not learn
+ * that a capability boundary exists, but the operator must. This is the
+ * only place staff-side denials are recorded, which is precisely why every
+ * mutating staff route goes through it.
  */
 
 export type StaffApiContext = {
@@ -39,6 +46,14 @@ export async function guardStaffRequest(
   options: { capability: string; rateLimitBucket: string },
 ): Promise<StaffApiGuard> {
   if (!verifyOrigin(request)) {
+    await recordSecurityEvent({
+      type: "csrf_rejected",
+      result: "denied",
+      surface: "staff",
+      actorType: "anonymous",
+      request,
+      meta: { capability: options.capability },
+    });
     return { ok: false, response: jsonError("forbidden", "Request rejected.") };
   }
   if (await isRateLimited(options.rateLimitBucket, request)) {
@@ -63,6 +78,15 @@ export async function guardStaffRequest(
   }
 
   if (!roleHasCapability(actor.role, options.capability)) {
+    await recordSecurityEvent({
+      type: "permission_denied",
+      result: "denied",
+      surface: "staff",
+      actorType: "admin_user",
+      actorAdminId: actor.adminUserId,
+      request,
+      meta: { capability: options.capability, role: actor.role },
+    });
     return { ok: false, response: jsonError("not_found", "Not found.") };
   }
 
@@ -91,9 +115,22 @@ export type CaseAccessGuard =
 export async function requireCaseAccess(
   caseId: string,
   actor: EmployeeActor,
+  request?: Request,
 ): Promise<CaseAccessGuard> {
   const loaded = await getAccessibleCaseWorkspace(caseId, actor);
   if (!loaded) {
+    // Row-level refusals are the ones an attacker probes with — an
+    // employee walking case ids they hold no membership on produces a run
+    // of these against one actor.
+    await recordSecurityEvent({
+      type: "permission_denied",
+      result: "denied",
+      surface: "staff",
+      actorType: "admin_user",
+      actorAdminId: actor.adminUserId,
+      request,
+      meta: { scope: "case", caseId: String(caseId), role: actor.role },
+    });
     return { ok: false, response: jsonError("not_found", "That case could not be found.") };
   }
   return {

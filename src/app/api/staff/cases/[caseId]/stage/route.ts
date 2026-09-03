@@ -22,7 +22,7 @@ export async function POST(
   if (!guard.ok) return guard.response;
 
   const { caseId } = await params;
-  const access = await requireCaseAccess(caseId, guard.context.actor);
+  const access = await requireCaseAccess(caseId, guard.context.actor, request);
   if (!access.ok) return access.response;
 
   const parsed = await readJsonBody(request);
