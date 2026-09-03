@@ -10,7 +10,9 @@
     "test": "node --conditions=react-server --import tsx --test --test-concurrency=1 \"test/**/*.test.ts\"",
     "db:indexes": "node --conditions=react-server --import tsx scripts/createIndexes.ts",
     "db:indexes:dry-run": "node --conditions=react-server --import tsx scripts/createIndexes.ts --dry-run",
-    "mail:check": "node --conditions=react-server --import tsx scripts/checkMail.ts"
+    "mail:check": "node --conditions=react-server --import tsx scripts/checkMail.ts",
+    "db:migrate": "node --conditions=react-server --import tsx scripts/migrate.ts",
+    "db:purge": "node --conditions=react-server --import tsx scripts/purgeRetention.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
