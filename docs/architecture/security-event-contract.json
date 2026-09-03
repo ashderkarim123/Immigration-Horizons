@@ -1,0 +1,42 @@
+{
+  "_comment": "Canonical cross-app contract for the security/audit event log and the shared account-lockout policy (ADR-012). Both applications WRITE security_events, and both enforce the same lockout counters on the same AdminUser fields — a lockout enforced by only one app is not a lockout, because the attacker simply uses the other. Asserted from server/test/security-event-contract.test.js and test/security-event-contract.test.ts. Test-time-only fixture; never imported by production code.",
+  "collections": {
+    "SecurityEvent": "security_events"
+  },
+  "eventTypes": [
+    "login_succeeded",
+    "login_failed",
+    "account_locked",
+    "logout",
+    "activation_completed",
+    "password_reset_requested",
+    "password_reset_completed",
+    "password_changed",
+    "session_revoked",
+    "permission_denied",
+    "csrf_rejected"
+  ],
+  "resultValues": ["success", "failure", "denied"],
+  "actorTypeValues": ["client", "admin_user", "env_fallback", "anonymous", "system"],
+  "surfaceValues": ["portal", "staff", "admin_cms"],
+  "lockout": {
+    "maxFailedAttempts": 5,
+    "lockDurationMs": 900000,
+    "counterFields": ["failedLoginCount", "lockedUntil"]
+  },
+  "forbiddenMetaKeys": [
+    "password",
+    "newPassword",
+    "currentPassword",
+    "confirmPassword",
+    "passwordHash",
+    "token",
+    "tokenHash",
+    "sessionToken",
+    "csrfToken",
+    "secret",
+    "authorization",
+    "cookie"
+  ],
+  "retentionDays": 400
+}
