@@ -337,8 +337,11 @@ to debug afterwards. Read it before touching the GoDaddy panel.
 Check propagation at any point:
 
 ```bash
-dig +short immigrationhorizons.com www.immigrationhorizons.com             app.immigrationhorizons.com admin.immigrationhorizons.com
-# all four must return 169.58.250.40 before certbot in §6.4
+# Phase 1 — both must return 169.58.250.40 before certbot in §6.4
+dig +short app.immigrationhorizons.com admin.immigrationhorizons.com
+
+# Phase 2 — still Render until you cut over
+dig +short immigrationhorizons.com www.immigrationhorizons.com
 ```
 
 ### 5.1 The mail decision — read this first
@@ -404,14 +407,49 @@ GoDaddy → **My Products → DNS → Manage Zones → immigrationhorizons.com**
 GoDaddy IP, and any `www` CNAME to `@parked`. Leaving them means the site
 resolves to a GoDaddy placeholder for some visitors.
 
-**Then add:**
+### The domain is already live — this is a cutover
+
+`immigrationhorizons.com` and `www` currently resolve to **Render**
+(`216.24.57.1`, and a CNAME chain through `immigration-horizons.onrender.com`
+and Cloudflare). Something is serving your visitors today.
+
+So the DNS work splits into two phases, and **only the first one is safe to
+do now**:
+
+**Phase 1 — the new hosts, which do not exist yet.** Zero risk: nothing
+resolves for them today, so nothing can break.
+
+| Type | Name | Value | TTL |
+|---|---|---|---|
+| A | `app` | `169.58.250.40` | 600 |
+| A | `admin` | `169.58.250.40` | 600 |
+
+Add these now. They carry the portal, the staff console and the admin CMS —
+none of which exist on Render — so you can build, deploy and fully test the
+VPS while the marketing site keeps running untouched.
+
+**Phase 2 — the apex and `www`.** Do this only after §8's checklist passes
+on the VPS. It is the moment the public site moves.
 
 | Type | Name | Value | TTL |
 |---|---|---|---|
 | A | `@` | `169.58.250.40` | 600 |
 | A | `www` | `169.58.250.40` | 600 |
-| A | `app` | `169.58.250.40` | 600 |
-| A | `admin` | `169.58.250.40` | 600 |
+
+`www` is currently a CNAME. Delete it and replace it with an A record —
+GoDaddy will not let both exist for one name.
+
+> **Before Phase 2, establish what Render is actually serving.** If it is the
+> legacy Express site from the old repo, its `consultations` collection may
+> be the live lead store, and cutting over without pointing both at the same
+> MongoDB means leads submitted either side of the switch land in different
+> databases. `CLAUDE.md` records that the legacy site "stays live in
+> production until an explicit cutover decision" — this is that decision, and
+> it deserves its own checklist rather than being folded into a server build.
+
+> Lower the TTL on the apex and `www` to 600 **a day before** Phase 2, while
+> they still point at Render. TTL changes only take effect after the old TTL
+> expires, so doing it at cutover time is too late to help a rollback.
 
 **Leave every existing MX, and the `autodiscover` / `_dmarc` / SPF records
 that GoDaddy created for Microsoft 365, exactly as they are.** Touching those
@@ -612,25 +650,41 @@ sudo rm -f default
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-**Wait until DNS resolves to your IP before running certbot** — it fails
-otherwise, and repeated failures hit Let's Encrypt rate limits:
+Certbot proves control with an HTTP-01 challenge, which means **every name
+in one request must already point at this server**. One name that does not
+fails the whole request — including the certificate for the names that would
+have worked. Repeated failures hit Let's Encrypt rate limits.
+
+The apex still points at Render (§5), so request it separately, later.
+
+**Now — the Phase 1 hosts only:**
 
 ```bash
-dig +short immigrationhorizons.com app.immigrationhorizons.com admin.immigrationhorizons.com
-# all three must return 169.58.250.40
-```
+dig +short app.immigrationhorizons.com admin.immigrationhorizons.com
+# both must return 169.58.250.40 first
 
-```bash
 sudo apt install -y certbot python3-certbot-nginx
 
 sudo certbot --nginx \
-  -d immigrationhorizons.com -d www.immigrationhorizons.com \
   -d app.immigrationhorizons.com \
   -d admin.immigrationhorizons.com \
   --agree-tos -m info@immigrationhorizons.com --redirect
 
 sudo certbot renew --dry-run
 ```
+
+**At cutover — the apex and `www`**, once they resolve here:
+
+```bash
+dig +short immigrationhorizons.com www.immigrationhorizons.com
+
+sudo certbot --nginx \
+  -d immigrationhorizons.com -d www.immigrationhorizons.com \
+  --agree-tos -m info@immigrationhorizons.com --redirect
+```
+
+Two certificates rather than one. Renewal handles both; nothing else
+changes.
 
 ### 6.5 Create the database indexes — never yet done
 
@@ -765,6 +819,12 @@ Do all of this before you tell anyone the site is live.
 - [ ] `ssh root@169.58.250.40` is **refused**
 
 **Host separation** (routing, not authorization — ADR-008)
+
+> Until the Phase 2 cutover the apex still points at Render, so these apex
+> checks only become meaningful afterwards. Test the marketing site on the
+> VPS before then by overriding it in your local `hosts` file:
+> `169.58.250.40 immigrationhorizons.com www.immigrationhorizons.com`.
+
 - [ ] `immigrationhorizons.com/portal` does **not** serve the portal
 - [ ] `app.immigrationhorizons.com/portal/login` loads
 - [ ] `admin.immigrationhorizons.com/admin/login` loads
