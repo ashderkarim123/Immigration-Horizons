@@ -309,6 +309,10 @@ ssh -T git@github.com    # "successfully authenticated" — shell access denied 
 
 ## 4. MongoDB Atlas
 
+> **Do §5 first, then come back here.** DNS propagation is the long pole and
+> certbot in §6.4 cannot run until all four names resolve. Enter the GoDaddy
+> records and the Resend subdomain now, and set Atlas up while they spread.
+
 Free M0 is enough to launch; move to M10 when documents grow.
 
 1. Create a cluster in the region closest to Contabo's datacentre.
@@ -329,6 +333,13 @@ mongodb+srv://ih_app:PASSWORD@cluster0.xxxxx.mongodb.net/immigration-horizons?re
 
 This is the section that most often goes wrong, and the part that is hardest
 to debug afterwards. Read it before touching the GoDaddy panel.
+
+Check propagation at any point:
+
+```bash
+dig +short immigrationhorizons.com www.immigrationhorizons.com             app.immigrationhorizons.com admin.immigrationhorizons.com
+# all four must return 169.58.250.40 before certbot in §6.4
+```
 
 ### 5.1 The mail decision — read this first
 
@@ -774,6 +785,8 @@ Do all of this before you tell anyone the site is live.
 - [ ] Activation completes and the client can sign in
 - [ ] A password reset link works
 - [ ] **Check the spam folder for all of the above**
+- [ ] `MAIL_REPLY_TO` is set in **both** `.env` files
+- [ ] Replying to one of those emails reaches your GoDaddy inbox, not a bounce
 
 **Security**
 - [ ] Five wrong admin passwords locks the account for 15 minutes
