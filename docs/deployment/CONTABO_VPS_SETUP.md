@@ -262,15 +262,37 @@ and 500s on every deploy. Building a new directory and moving a symlink means
 the running process never sees a half-written build — and rollback becomes a
 symlink move instead of a rebuild.
 
-### 3.1 Give the server access to GitHub
+### 3.1 Give the server read access to GitHub
+
+The VPS has to `git clone` and `git fetch` your repository on every deploy,
+so it needs its own key.
 
 ```bash
 ssh-keygen -t ed25519 -f ~/.ssh/github_deploy -N "" -C "vmi3538706-deploy"
 cat ~/.ssh/github_deploy.pub
 ```
 
-Add that public key to the repo → **Settings → Deploy keys** → *Add deploy
-key*. **Leave "Allow write access" unchecked** — the server only ever reads.
+Copy that whole line, then **in a browser**:
+
+1. `github.com/ashderkarim123/Immigration-Horizons` → **Settings**
+2. **Deploy keys** in the left sidebar → **Add deploy key**
+3. Title `vmi3538706`, and paste the key into the Key box
+4. **Leave "Allow write access" unticked** → *Add key*
+
+> A **deploy key** grants access to one repository only. Your personal SSH
+> key would give this server access to everything in your GitHub account,
+> which is far more than it needs — it only ever reads this one repo, and
+> never pushes, so write access would be permission it never uses.
+
+> **This is not the same key as the one in §7.1.** They point in opposite
+> directions and are easy to confuse:
+>
+> | | §3.1 `github_deploy` | §7.1 `ci_deploy` |
+> |---|---|---|
+> | Direction | VPS → GitHub | GitHub Actions → VPS |
+> | Purpose | the server pulls your code | CI triggers a deploy |
+> | Public half goes to | GitHub → repo **Deploy keys** | the VPS's `authorized_keys` |
+> | Private half stays | on the VPS | in GitHub **Secrets** |
 
 ```bash
 cat >> ~/.ssh/config <<'EOF'
