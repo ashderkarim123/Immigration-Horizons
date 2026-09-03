@@ -1,0 +1,87 @@
+name: Deploy to production
+
+# Only main, and only after CI has gone green on that exact commit.
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  # Manual trigger for a rollback or a re-deploy of an unchanged commit.
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag or commit to deploy'
+        required: false
+        default: 'origin/main'
+
+concurrency:
+  # Never two deploys at once — they would fight over the `current` symlink.
+  # No cancel-in-progress: killing a deploy mid-build leaves a worktree to
+  # clean up, and the script's own trap handles a failure better than a
+  # SIGKILL does.
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    # workflow_run fires on failure too, so the result must be checked
+    # explicitly — without this, a red CI run would still deploy.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    environment:
+      name: production
+      url: https://immigrationhorizons.com
+
+    steps:
+      - name: Open an SSH session to the VPS
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_USER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_REF: ${{ github.event.inputs.ref || 'origin/main' }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Pinned host key, not StrictHostKeyChecking=no. Accepting any
+          # key on first contact would let anyone who can MITM the runner
+          # collect a shell session on the production box.
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          # The server-side key is restricted with a forced command in
+          # authorized_keys, so whatever is sent here, the only thing that
+          # can run is deploy.sh. The argument is passed via
+          # SSH_ORIGINAL_COMMAND and validated server-side.
+          ssh -i ~/.ssh/deploy_key \
+              -o IdentitiesOnly=yes \
+              -o BatchMode=yes \
+              -o ConnectTimeout=15 \
+              -o ServerAliveInterval=30 \
+              "$SSH_USER@$SSH_HOST" "deploy $DEPLOY_REF"
+
+      - name: Remove the key from the runner
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
+      - name: Confirm the site is answering
+        run: |
+          set -euo pipefail
+          for host in \
+            https://immigrationhorizons.com \
+            https://app.immigrationhorizons.com/portal/login \
+            https://admin.immigrationhorizons.com/admin/login
+          do
+            code=$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 20 "$host")
+            echo "$code  $host"
+          done

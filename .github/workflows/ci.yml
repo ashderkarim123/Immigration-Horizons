@@ -1,0 +1,111 @@
+name: CI
+
+# Every push and PR. Deployment is a separate workflow that waits on this
+# one, so nothing reaches the server without a green run.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A newer push supersedes an in-flight run on the same branch.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  static:
+    name: Lint · types · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          # The build reads SITE_URL. A placeholder is fine here — it only
+          # has to be a valid absolute URL — but it must NOT be the real
+          # production value, so a CI artifact can never be mistaken for a
+          # deployable one. The server builds its own release.
+          SITE_URL: https://app.example.invalid
+          NEXT_PUBLIC_SITE_URL: https://example.invalid
+
+  test-root:
+    name: Tests (Next.js app)
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand(1).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Run suite
+        run: npm test
+        env:
+          # Points the test helper at the service container instead of
+          # letting mongodb-memory-server download and spawn a binary per
+          # test file — faster, and it removes the startup-timeout flake
+          # that makes an environment problem look like a test failure.
+          # The helper refuses production-looking URIs; localhost passes.
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/ih-ci-root
+
+  test-server:
+    name: Tests (admin CMS)
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand(1).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+        working-directory: server
+
+      - name: Run suite
+        run: npm test
+        working-directory: server
+        env:
+          # A SEPARATE database from the root suite. The two must never
+          # share one: both call clearCollections() between tests, so on a
+          # shared database they would delete each other's fixtures
+          # mid-run. Separate jobs with separate databases is what lets
+          # them run in parallel at all.
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/ih-ci-server
+          LOGIN_RATE_LIMIT: '1000'
