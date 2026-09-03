@@ -1676,3 +1676,179 @@ change, and two-factor authentication — see ADR-011 "Not built this cycle".
 there: client-facing account events (password changed, device signed out)
 are not written to any audit log, and the portal has no 2FA. Both are
 security-module work, not portal-experience work.
+
+---
+
+# Cycle 10 — security, privacy, and audit (ADR-012)
+
+**Starting HEAD:** `50b6c8a`, clean tree, `origin/main` in sync.
+
+**The handoff notes for this session were stale and are worth recording as
+such.** They described HEAD as the broken `cc43363` (Cycle 8A's 38 file
+moves with none of the code that makes them work), Cycles 8A/8B as
+uncommitted, and Cycle 9 as the next module. None of that was still true:
+`cc43363` is unreachable from any branch, 8A/8B/8C/9 are all committed in
+`7dc35be`..`50b6c8a`, `origin/main` matches local `main`, and `a7cc546`
+remains an ancestor — the history was rebuilt cleanly, not rewritten
+destructively. Cycle 9 was already complete with ADR-011 on disk.
+
+One artefact of that rebuild is worth knowing: commit `50b6c8a` squashes
+Cycles 8C **and** 9 together under a message that describes only 8A/8B
+("Implement host management and employee session handling"). The code is
+correct; the commit message understates it by two cycles.
+
+`AGENTS.md`'s "Read this before touching git" section still described the
+`cc43363` incident as live. It was rewritten this cycle, on the owner's
+instruction, to describe the actual state.
+
+## Audit findings before writing code
+
+Module 10 assumes far less exists than actually does. Verified present and
+tested before writing anything:
+
+- bcrypt (cost 12) on both credential stores; generic login errors; a
+  precomputed dummy hash so unknown accounts pay a real comparison cost
+- session rotation on privilege change, idle + absolute expiry, live
+  re-reads of `status`/`isActive`/`role` on every request
+- capability map mirrored across both apps and contract-asserted
+- workspace membership as the row-level boundary, 404-not-403 throughout
+- Origin-verified mutations on both Next.js apps
+- private document storage, extension + declared-MIME + magic-byte
+  agreement, checksums, random storage keys, forced downloads
+- `DocumentAccessLog` (every download, both apps) and `CaseActivity`
+  (every case change, both apps) — both already append-only
+- CSV formula-injection escaping on lead export
+- `noindex` + `Cache-Control: private, no-store` on every `app.*` response
+
+Four gaps were real:
+
+1. **No account/security audit trail at all.** Nothing recorded logins,
+   lockouts, resets, password changes, session revocations, or permission
+   denials. Cycle 9's handoff flagged this.
+2. **Lockout was on the wrong actor.** Clients had per-account lockout;
+   both *employee* sign-in surfaces had only IP rate limiting. Rotating
+   source IPs defeated the only control protecting the higher-privilege
+   account.
+3. **The admin CMS had no CSRF tokens** — 73 mutating routes, 85 forms,
+   `sameSite: 'lax'` and nothing else.
+4. **No threat model, no retention policy.**
+
+## Built
+
+**`security_events`** — a mirrored, append-only audit collection
+(`src/lib/models/SecurityEvent.ts` ·
+`server/models/SecurityEvent.js`), written by all three surfaces and
+asserted from both sides against
+`docs/architecture/security-event-contract.json`. Eleven event types; a
+`surface` field (`portal`/`staff`/`admin_cms`) keeps the three
+distinguishable inside one timeline. Update and delete throw at the
+Mongoose layer, and `save()` throws on a non-new document.
+
+**Recorders** — `src/lib/security/security-events.ts` ·
+`server/utils/securityEvents.js`. Never throw; `meta` is denylist-filtered,
+truncated at 500 chars, and nested objects are dropped rather than walked.
+
+**Wired into every chokepoint:** portal login/logout, staff login/logout,
+admin CMS login/logout, activation, forgot-password, reset-password,
+password change, session revoke and revoke-others, `guardStaffRequest`
+capability denials, `requireCaseAccess` row-level denials, and every
+`verifyOrigin`/CSRF refusal on all three surfaces.
+
+**Shared lockout policy** — `src/lib/auth/lockout.ts` ·
+`server/utils/lockout.js`. `AdminUser` gains `failedLoginCount`,
+`lockedUntil`, `lastLoginAt`; five failures locks for fifteen minutes;
+both employee surfaces enforce it.
+
+**Admin CMS CSRF** — `server/middleware/csrf.js`, mounted after the session
+and body parsers. Token in the session, rendered into all 75 POST forms;
+the 10 GET filter forms deliberately excluded. Multipart routes are
+verified after multer via `uploadSingle()`, which composes the two so a
+route cannot take uploads without verification.
+
+**Documentation** — ADR-012, `docs/security/THREAT_MODEL.md`,
+`docs/security/DATA_RETENTION.md`. `SecurityEvent` registered in both
+index-provisioning scripts (6 indexes).
+
+## Behaviour changes to shipped code
+
+- **The SaaS app now writes `AdminUser`**, reversing ADR-009 §3 for exactly
+  two fields. Unavoidable: both apps authenticate the same records, so a
+  lockout one of them does not enforce is not a lockout.
+- **Lockout counters are written with `updateOne({ $set })`, never
+  `document.save()`.** This was found by an existing fail-closed test:
+  saving re-validates the whole document, so one legacy row with a role
+  outside the schema enum stopped being able to log in at all. `updateOne`
+  also cannot re-run the CMS's bcrypt `pre('save')` hook over an
+  already-hashed password. Covered by its own regression test.
+- **The admin login no longer filters on `isActive: true`.** A deactivated
+  account must still be *found*, so guesses against it are counted and
+  audited rather than silently falling through to the env-credential
+  branch. It still fails with the same generic message.
+- **A correct password against a deactivated account no longer consumes
+  the lockout budget** — the credential was right, so counting it would let
+  a deactivated user lock out a login that may later be reactivated.
+- **`mongodb-memory-server` launch timeout raised to 60s** in both test
+  helpers. The 10s default is marginal on a cold Windows filesystem and
+  produced 20 spurious "Instance failed to start" failures that read
+  exactly like real ones.
+
+## Deliberate decisions
+
+- **The audit recorder is fail-open.** A Mongo outage loses entries rather
+  than locking every user out. Mirrors the lead-pipeline decoupling. A test
+  simulates an audit outage and asserts the login still succeeds and still
+  issues a session.
+- **`subjectEmail` is stored on failed logins**, including against accounts
+  that do not exist — without it the log cannot answer "which account was
+  attacked". An identifier, not a credential.
+- **Two CSRF mechanisms, on purpose.** Origin checks suit `fetch`-only
+  Next.js apps; synchroniser tokens suit real HTML forms. ADR-012 §5
+  records why this is not an inconsistency to reconcile.
+- **Unauthenticated non-login POSTs are not CSRF-rejected.** They cannot
+  change anything (`requireAdmin` redirects them), and a 403 would replace
+  a useful redirect with a dead end for an admin whose session expired.
+- **No TTL index on `security_events`.** An audit log that silently deletes
+  itself is worse than one that grows; a purge should be reviewed.
+
+## Acceptance criteria
+
+- [x] Threat model documented (`docs/security/THREAT_MODEL.md`), covering
+      every scenario module 10 lists
+- [x] Critical routes have negative authorization tests — and denials are
+      now recorded at the guard, where the caller only sees a 404
+- [x] Files are private (already true; re-verified, unchanged)
+- [x] CSRF implemented before production — closes deployment blocker #3
+- [x] Audit records are append-oriented and protected (enforced, not
+      documented)
+- [x] Logs contain no secrets — asserted by a test that drives real
+      credentials through the system then scans the whole log
+- [x] Retention and incident procedures documented
+
+## Verification
+
+Root **281/281** (29 new: 13 contract, 18 audit/lockout integration) ·
+server **407/407** (34 new: 13 contract, 12 CSRF, 9 audit/lockout) ·
+`tsc --noEmit` clean · `npm run lint` clean · `npm run build` clean.
+
+The CSRF suite's last test is the one that matters most: it walks the live
+Express router's stack and asserts **every** mutating route it declares
+refuses a tokenless request. That, not the `uploadSingle()` convention, is
+what will catch a route added later that escapes the middleware.
+
+**Run the two suites sequentially.** Run concurrently they contend for
+`mongodb-memory-server` instances and produce startup-timeout failures
+that look like assertion failures but are not.
+
+## Not built
+
+Automated retention purge, 2FA, malware scanning, an admin UI for the audit
+log, database-level append-only enforcement, and systematic scrubbing of
+`console.error` output. See ADR-012 "Not built this cycle".
+
+## Recommended next module
+
+`11_DATA_MIGRATIONS_INDEXES_AND_RETENTION.md`. It is now the natural next
+step for two reasons beyond its own scope: deployment blocker #1 (indexes
+have never been run in production) covers a collection count that grew
+again this cycle, and the retention period defined in
+`DATA_RETENTION.md` needs the purge job that module owns.

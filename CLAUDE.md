@@ -157,7 +157,13 @@ WCAG AA, keyboard navigation, ARIA labels, semantic HTML, proper contrast (see t
 
 ## Security
 
-Validate input, escape output, hash passwords (bcrypt), protect sessions, prevent XSS/CSRF/injection, never expose secrets. Note: admin forms currently have **no CSRF token protection** (mitigated by `sameSite: 'lax'` cookies, not eliminated) — a known, deliberately deferred gap, not an oversight to silently "fix" as a drive-by change.
+Validate input, escape output, hash passwords (bcrypt), protect sessions, prevent XSS/CSRF/injection, never expose secrets.
+
+**CSRF uses two mechanisms on purpose** (ADR-012 §5) — do not "unify" them. The Next.js apps verify `Origin`, which works because every mutation there is a `fetch` from their own JavaScript. The admin CMS uses session-backed synchroniser tokens, because it posts real HTML forms where `Origin` is not reliable. In the CMS, the token is verified *after* the body parser, so multipart routes must use `uploadSingle()` (which composes multer + `verifyCsrf`) rather than a bare `upload.single()`. `server/test/integration/csrf.integration.test.js` walks the live router and fails if any mutating route accepts a tokenless request.
+
+**Security events are append-only.** `security_events` (ADR-012 §1) is written by all three surfaces and refuses updates and deletes at the model layer. The recorder is deliberately fail-open — an audit write failing must never break the request it is auditing — and its `meta` is denylist-filtered so a credential cannot be logged even by a careless call site.
+
+**Account lockout lives on the account, not the IP**, and both employee sign-in surfaces enforce it against the same `AdminUser` fields. A lockout only one app enforces is not a lockout. Write those counters with `updateOne({ $set })`, never `document.save()` — saving re-validates the whole document and would lock a legacy row out of its own login entirely.
 
 ## Coding standards
 
@@ -209,8 +215,9 @@ authoritative per-cycle record — **read it before starting anything.**
 | 8B | Employee SaaS shell & role-aware dashboards | ✅ ADR-009 |
 | 8C | Staff case & client operations console | ✅ ADR-010 |
 | 9 | Client portal experience layer | ✅ ADR-011 |
-| **10** | **Security, privacy & audit — next** | ⬜ |
-| 11–14 | Migrations · testing · deployment · analytics | 🔨 partial |
+| 10 | Security, privacy & audit | ✅ ADR-012 |
+| **11** | **Migrations · indexes · retention — next** | ⬜ |
+| 12–14 | Testing · deployment · analytics | 🔨 partial |
 
 Marketing-site work that was never finished (low priority, unrelated to the
 platform cycles): blog data layer for real posts, and canonicalising the
@@ -224,12 +231,17 @@ site.
    them against the live database.
 2. **Documents write to local disk.** Breaks on any multi-instance or
    ephemeral host — needs S3/Cloudinary before scaling.
-3. **The admin CMS has no CSRF tokens** (`sameSite: lax` only). The portal
-   and SaaS app do have Origin verification.
+3. ~~The admin CMS has no CSRF tokens.~~ **Closed in Cycle 10** (ADR-012
+   §5) — session-backed synchroniser tokens on all 75 mutating admin
+   forms, with a test that enumerates the live router.
 4. **No email has been verified against real Resend** — every adapter
-   across seven cycles is tested with doubles only.
+   across eight cycles is tested with doubles only.
 5. `SITE_URL` must be set in production, to `https://app.immigrationhorizons.com` — the CSRF Origin check for every mutating portal **and staff** route reads it, and so do the activation/reset email links. A wrong value 403s every write. Documented in `DEPLOYMENT.md`; still unset in the checked-in `.env`.
 6. No malware scanning on uploads; no scheduler wired for the digest job.
+7. **No retention purge for `security_events`.** The 400-day period is
+   defined in `docs/security/DATA_RETENTION.md` and deliberately has no TTL
+   index (an audit log that silently deletes itself is worse than one that
+   grows) — the reviewed purge job is Cycle 11 work.
 
 ## Git
 

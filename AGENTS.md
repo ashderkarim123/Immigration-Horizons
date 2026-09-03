@@ -55,51 +55,42 @@ keeps its own session check and row-level policy.
 <!-- END:project-topology -->
 
 <!-- BEGIN:working-state -->
-# ⚠️ Read this before touching git (as of 2026-08-29)
+# Repository state (as of 2026-09-03)
 
-**There is uncommitted work in the tree and one broken commit on `main`.**
-Verify with `git log --oneline -3` and `git status` before assuming any of
-this is still true — it is a snapshot, not a guarantee.
+**This is a snapshot, not a guarantee.** Verify with `git log --oneline -3`
+and `git status` before relying on any of it.
 
-## The broken commit
+At the time of writing: `main` is `50b6c8a`, the working tree is clean, and
+`origin/main` matches. Cycles 1 through 10 are committed. Nothing is
+pending approval.
 
-`cc43363` ("feat: add reviews and services pages…") was authored outside
-the agent session. It contains **only the 38 route-group file moves** from
-Cycle 8A — `0 insertions, 0 deletions` — and its message describes
-unrelated work. It **excludes** everything that makes those moves function:
-`src/proxy.ts`, `src/lib/hosts.ts`, both route-group layouts,
-`(app)/not-found.tsx`, ADR-008, the host tests, and the import fixes.
+## Two things about the history worth knowing
 
-**That commit does not build.** Six stale imports across four files point
-at pre-move paths (e.g. `consultation-form.tsx` imports
-`@/app/consultation/actions`, which now lives at `@/app/(site)/...`).
+**`50b6c8a` says less than it did.** Its message — "feat: Implement host
+management and employee session handling" — describes Cycles 8A and 8B, but
+the commit also contains all of Cycle 8C (ADR-010, the staff case and
+client operations console) and all of Cycle 9 (ADR-011, the client portal
+experience layer). If you are looking for where `/staff/clients`,
+`/staff/operations`, `/portal/profile` or `/portal/security` came from, it
+is there. Don't conclude they are uncommitted because the message doesn't
+mention them.
 
-Mitigating facts: ancestry is intact (`a7cc546` is still an ancestor,
-nothing was rewritten), and it is **local only** — `origin/main` is still
-at `a7cc546`. Every missing piece is in the working tree.
+**`cc43363` is a dead commit, and it is harmless.** It was authored outside
+an agent session and contained only Cycle 8A's 38 route-group file moves —
+`0 insertions, 0 deletions` — without `src/proxy.ts`, the route-group
+layouts, or the import fixes that make those moves build. It briefly sat on
+`main`. It no longer does: `main` was rebuilt cleanly on top of `a7cc546`,
+which is still an ancestor, so nothing was rewritten destructively. The
+commit object survives in the object store but is unreachable from any
+branch, and `git log` will not show it. Nothing needs to be done about it.
 
-**Do not push `main` until this is resolved.** Ask the owner how they want
-it fixed (amend, or commit the remainder on top) — it is their history,
-not the agent's to rewrite.
+## Running the test suites
 
-## Uncommitted work in the tree
+Run the two suites **sequentially**, never concurrently. Run together they
+contend for `mongodb-memory-server` instances and fail with "Instance
+failed to start within Nms" — which reads exactly like a real failure and
+is not one. Both helpers set a 60s launch timeout for the same reason.
 
-Cycles 8A and 8B, complete and green, never committed (the owner asked for
-approval before committing):
-
-- **8A** — host separation: `proxy.ts`, `lib/hosts.ts`, route groups
-  `(site)`/`(app)` with their own layouts, host-aware `robots.ts`,
-  SaaS 404 + portal catch-all, ADR-008, DEPLOYMENT.md vhost.
-- **8B** — employee SaaS: `lib/auth/capabilities.ts` (mirror),
-  `EmployeeSession` + staff login/logout, `employee-case-policy.ts`,
-  `AppShell`/`AccountMenu`, `lib/dashboard/*`, `/staff/**` pages, ADR-009.
-- **A capability change the owner explicitly approved:** the five
-  specialist roles and `reviewer` gained `cases.view`, `documents.view`,
-  and `document_versions.view` — **view-only**, and still membership-scoped
-  because none of them hold `*.view_all`. This edits the *shared* map in
-  `server/utils/permissions.js`, so it affects the admin CMS too. That
-  consequence was stated and accepted.
-
-Last verified green: root **186/186**, server **371/371**, tsc clean, lint
-clean, build clean.
+Last verified green: root **281/281**, server **407/407**, `tsc --noEmit`
+clean, `npm run lint` clean, `npm run build` clean.
 <!-- END:working-state -->
