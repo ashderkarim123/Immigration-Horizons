@@ -8,6 +8,7 @@
 <div class="admin-card">
   <div class="admin-card-body">
     <form action="/admin/faqs<%= faq ? '/' + faq._id + '?_method=PUT' : '' %>" method="POST" class="admin-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="admin-form-group full-width">
         <label>Question</label>
         <input type="text" name="question" class="form-control" value="<%= faq ? faq.question : '' %>" required>

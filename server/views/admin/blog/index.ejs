@@ -64,11 +64,13 @@
                   <% if (can('blog.manage')) { %>
                     <a href="/admin/blog/<%= post._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
                     <form action="/admin/blog/<%= post._id %>/toggle-publish" method="POST" style="display:inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-sm btn-ghost" title="<%= post.published ? 'Unpublish' : 'Publish' %>">
                         <i class="fas <%= post.published ? 'fa-eye-slash' : 'fa-check-circle' %>"></i>
                       </button>
                     </form>
                     <form action="/admin/blog/<%= post._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this post?');" style="display:inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                     </form>
                   <% } %>

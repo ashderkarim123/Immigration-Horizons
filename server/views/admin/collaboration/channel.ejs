@@ -31,11 +31,13 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
               <a href="/admin/channels/<%= channel._id %>/thread/<%= m.threadRoot || m.id %>">Thread<% if (m.replyCount > 0) { %> (<%= m.replyCount %>)<% } %></a>
               <% if (canModerate && !m.deletedAt) { %>
                 · <form action="/admin/messages/<%= m.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('Delete this message?');">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit" class="btn btn-sm btn-ghost">Delete</button>
                   </form>
               <% } %>
               <% if (canModerate && m.deletedAt) { %>
                 · <form action="/admin/messages/<%= m.id %>/restore" method="POST" style="display:inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit" class="btn btn-sm btn-ghost">Restore</button>
                   </form>
               <% } %>
@@ -55,6 +57,7 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
       <div class="admin-card-header"><h3>Send a Message</h3></div>
       <div class="admin-card-body">
         <form action="/admin/channels/<%= channel._id %>/messages" method="POST" class="form-grid">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <input type="hidden" name="idempotencyKey" value="<%= Math.random().toString(36).slice(2) + Date.now() %>">
           <div class="form-group full-width"><textarea name="body" class="form-control" rows="3" required maxlength="8000"></textarea></div>
           <div class="form-group full-width"><button type="submit" class="btn btn-sm btn-primary">Send</button></div>
@@ -75,6 +78,7 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
               <%= rm.workspaceMember.clientUser ? (rm.workspaceMember.clientUser.firstName || rm.workspaceMember.clientUser.email) : (rm.workspaceMember.adminUser ? rm.workspaceMember.adminUser.name : 'Member') %>
               <% if (canManageMembers) { %>
                 <form action="/admin/channels/<%= channel._id %>/members/<%= rm._id %>/remove" method="POST" style="display:inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button type="submit" class="btn btn-sm btn-ghost">Remove</button>
                 </form>
               <% } %>
@@ -83,6 +87,7 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
         </ul>
         <% if (canManageMembers) { %>
         <form action="/admin/channels/<%= channel._id %>/members" method="POST" class="form-inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <select name="workspaceMemberId" class="form-control" required>
             <% workspaceMembers.forEach(function(wm) { %>
               <option value="<%= wm._id %>"><%= wm.clientUser ? (wm.clientUser.firstName || wm.clientUser.email) : (wm.adminUser ? wm.adminUser.name : 'Member') %></option>

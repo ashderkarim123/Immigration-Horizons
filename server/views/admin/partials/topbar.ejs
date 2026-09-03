@@ -89,6 +89,7 @@ function timeAgoShort(d) {
         </a>
         <div class="dropdown-divider"></div>
         <form action="/admin/logout" method="POST" class="dropdown-logout-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <button type="submit" class="dropdown-item logout-btn">
             <i class="fas fa-sign-out-alt"></i> Logout
           </button>

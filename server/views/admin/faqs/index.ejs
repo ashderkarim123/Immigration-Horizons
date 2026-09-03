@@ -54,6 +54,7 @@
                   <% if (can('faqs.manage')) { %>
                     <a href="/admin/faqs/<%= f._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
                     <form action="/admin/faqs/<%= f._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this FAQ?');" style="display:inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                     </form>
                   <% } %>

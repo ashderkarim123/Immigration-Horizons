@@ -18,6 +18,7 @@ const expressLayouts = require('express-ejs-layouts');
 const helmet = require('helmet');
 
 const adminRoutes = require('./routes/admin/index');
+const { csrfProtection } = require('./middleware/csrf');
 
 function createApp() {
   const app = express();
@@ -113,6 +114,12 @@ function createApp() {
   app.locals.hasPersistentSessionStore = !!sessionConfig.store;
 
   app.use(session(sessionConfig));
+
+  // ----- CSRF -----
+  // After the session (it stores the token there) and after the body
+  // parsers (it reads the token from the parsed body). Multipart routes
+  // are verified separately, after multer — see middleware/csrf.js.
+  app.use(csrfProtection);
 
   // ----- Locals available to every admin view -----
   app.use((req, res, next) => {

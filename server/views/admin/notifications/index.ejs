@@ -22,6 +22,7 @@ function timeAgo(d) {
   <div class="page-actions">
     <a href="/admin/notifications/preferences" class="btn btn-ghost btn-sm"><i class="fas fa-sliders-h"></i> Preferences</a>
     <form action="/admin/notifications/read-all" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-ghost btn-sm"><i class="fas fa-check-double"></i> Mark all read</button>
     </form>
   </div>
@@ -74,6 +75,7 @@ function timeAgo(d) {
             </div>
             <% if (!n.read) { %>
               <form action="/admin/notifications/<%= n._id %>/read" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="btn btn-sm btn-ghost">Mark read</button>
               </form>
             <% } %>

@@ -11,6 +11,7 @@
 <div class="admin-card">
   <div class="admin-card-body">
     <form action="/admin/seo/<%= seo.pageRef %>" method="POST" class="admin-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="admin-form-grid">
         <div class="admin-form-group full-width">
           <label>SEO Title</label>

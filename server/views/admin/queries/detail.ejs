@@ -51,12 +51,14 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
       <div class="admin-card-body" style="display:flex;flex-direction:column;gap:16px">
         <% if (canTriage && interaction.status === 'submitted') { %>
           <form action="/admin/queries/<%= interaction._id %>/acknowledge" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button type="submit" class="btn btn-sm btn-primary">Acknowledge</button>
           </form>
         <% } %>
 
         <% if (canAssign) { %>
           <form action="/admin/queries/<%= interaction._id %>/assign" method="POST" class="form-inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <select name="assignedTo" class="form-control" required>
               <option value="">Assign to…</option>
               <% teamMembers.forEach(function(m) { %>
@@ -69,6 +71,7 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
 
         <% if (canSchedule) { %>
           <form action="/admin/queries/<%= interaction._id %>/schedule" method="POST" class="form-inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="datetime-local" name="scheduledFor" class="form-control" required>
             <input type="text" name="timezone" class="form-control" placeholder="Asia/Karachi" value="<%= interaction.timezone || '' %>" required>
             <button type="submit" class="btn btn-sm btn-primary"><%= interaction.scheduledFor ? 'Reschedule' : 'Schedule' %></button>
@@ -77,6 +80,7 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
 
         <% if (canTriage && interaction.status !== 'in_progress') { %>
           <form action="/admin/queries/<%= interaction._id %>/status" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="hidden" name="status" value="in_progress">
             <button type="submit" class="btn btn-sm btn-ghost">Start Work</button>
           </form>
@@ -84,6 +88,7 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
 
         <% if (canAnswer) { %>
           <form action="/admin/queries/<%= interaction._id %>/answer" method="POST" class="form-grid">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="form-group full-width">
               <label>Client-visible answer</label>
               <textarea name="clientVisibleResponse" class="form-control" rows="3" required></textarea>
@@ -98,6 +103,7 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
           </form>
 
           <form action="/admin/queries/<%= interaction._id %>/request-clarification" method="POST" class="form-inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="text" name="clientVisibleQuestion" class="form-control" placeholder="What do you need from the client?" required style="flex:1">
             <button type="submit" class="btn btn-sm btn-ghost">Request Clarification</button>
           </form>
@@ -106,20 +112,24 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <% if (canTriage) { %>
             <form action="/admin/queries/<%= interaction._id %>/no-show" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn btn-sm btn-ghost">Mark No-Show</button>
             </form>
             <form action="/admin/queries/<%= interaction._id %>/cancel" method="POST" onsubmit="return confirm('Cancel this query?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
             </form>
           <% } %>
           <% if (canClose) { %>
             <form action="/admin/queries/<%= interaction._id %>/close" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn btn-sm btn-ghost">Close</button>
             </form>
           <% } %>
         </div>
 
         <form action="/admin/queries/<%= interaction._id %>/notes" method="POST" class="form-inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <input type="text" name="note" class="form-control" placeholder="Add an internal note…" style="flex:1">
           <button type="submit" class="btn btn-sm btn-ghost">Add Note</button>
         </form>

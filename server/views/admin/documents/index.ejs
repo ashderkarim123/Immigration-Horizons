@@ -27,6 +27,7 @@ function isOverdue(r) { return r.dueDate && new Date(r.dueDate) < new Date() && 
           <% if (canManageRequests) { %>
           <td>
             <form action="/admin/document-requests/<%= r._id %>/cancel" method="POST" style="display:inline" onsubmit="return confirm('Cancel this request?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn btn-sm btn-ghost">Cancel</button>
             </form>
           </td>
@@ -44,6 +45,7 @@ function isOverdue(r) { return r.dueDate && new Date(r.dueDate) < new Date() && 
   <div class="admin-card-header"><h3>Request a Document</h3></div>
   <div class="admin-card-body">
     <form action="/admin/cases/<%= caseDoc._id %>/document-requests" method="POST" class="form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="form-group"><label>Title</label><input type="text" name="title" class="form-control" required></div>
       <div class="form-group">
         <label>Category</label>
@@ -72,6 +74,7 @@ function isOverdue(r) { return r.dueDate && new Date(r.dueDate) < new Date() && 
   <div class="admin-card-header"><h3>Add Category</h3></div>
   <div class="admin-card-body">
     <form action="/admin/cases/<%= caseDoc._id %>/categories" method="POST" class="form-inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="text" name="name" class="form-control" placeholder="Category name" required>
       <select name="visibility" class="form-control">
         <option value="client_visible">Client-visible</option>
@@ -94,6 +97,7 @@ function isOverdue(r) { return r.dueDate && new Date(r.dueDate) < new Date() && 
     <h3><%= category.name %> <span class="badge"><%= category.visibility === 'client_visible' ? 'Client-visible' : 'Employees only' %></span><% if (category.required) { %> <span class="badge badge-priority-high">Required</span><% } %></h3>
     <% if (canManageCategories) { %>
     <form action="/admin/categories/<%= category._id %>/disable" method="POST" onsubmit="return confirm('Disable this category?');">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-sm btn-ghost">Disable</button>
     </form>
     <% } %>
@@ -120,6 +124,7 @@ function isOverdue(r) { return r.dueDate && new Date(r.dueDate) < new Date() && 
 
     <% if (canUpload) { %>
     <form action="/admin/cases/<%= caseDoc._id %>/documents" method="POST" enctype="multipart/form-data" class="form-inline" style="margin-top:12px">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="categoryId" value="<%= category._id %>">
       <input type="file" name="file" required>
       <button type="submit" class="btn btn-sm btn-primary">Upload</button>

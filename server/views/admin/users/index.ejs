@@ -35,6 +35,7 @@
                 <td class="cell-actions">
                   <% if (can('users.delete') && String(u._id) !== String(adminUser.id || '')) { %>
                     <form action="/admin/users/<%= u._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                     </form>
                   <% } %>

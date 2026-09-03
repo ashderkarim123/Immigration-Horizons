@@ -36,6 +36,7 @@ function isDueSoon(t) {
   <div class="page-actions">
     <% if (can('leads.delete')) { %>
       <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently? This cannot be undone.');" style="display:inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Lead</button>
       </form>
     <% } %>
@@ -89,6 +90,7 @@ function isDueSoon(t) {
             </div>
           <% } %>
           <form action="/admin/leads/<%= lead._id %>/convert-to-case" method="POST" class="form-grid">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="form-group">
               <label>Case Title</label>
               <input type="text" name="title" class="form-control" value="<%= lead.name %> — <%= lead.service %>" required>
@@ -184,6 +186,7 @@ function isDueSoon(t) {
                     <td>
                       <% if (canManageTask(t)) { %>
                         <form action="/admin/tasks/<%= t._id %>/status" method="POST" style="display:inline">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                           <select name="status" class="filter-select" onchange="this.form.submit()">
                             <% Object.keys(TASK_STATUS_LABELS).forEach(function(s) { %>
                               <option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= TASK_STATUS_LABELS[s] %></option>
@@ -205,6 +208,7 @@ function isDueSoon(t) {
         <details>
           <summary>+ Create task</summary>
           <form action="/admin/leads/<%= lead._id %>/tasks" method="POST" class="admin-form" style="margin-top:16px">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="admin-form-grid">
               <div class="admin-form-group full-width">
                 <label>Title</label>
@@ -261,6 +265,7 @@ function isDueSoon(t) {
       <div class="admin-card-body">
         <% if (can('deliveries.manage')) { %>
         <form action="/admin/leads/<%= lead._id %>/delivery" method="POST" class="admin-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="admin-form-grid">
             <div class="admin-form-group">
               <label>Delivery state</label>
@@ -300,6 +305,7 @@ function isDueSoon(t) {
         <details style="margin-top:12px">
           <summary>+ Add file to package</summary>
           <form action="/admin/leads/<%= lead._id %>/delivery/files" method="POST" class="admin-form" style="margin-top:12px">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="admin-form-grid">
               <div class="admin-form-group"><label>File name</label><input type="text" name="fileName" class="form-control" placeholder="Petition letter — final.pdf" required></div>
               <div class="admin-form-group"><label>URL (optional)</label><input type="url" name="fileUrl" class="form-control"></div>
@@ -317,6 +323,7 @@ function isDueSoon(t) {
         </details>
 
         <form action="/admin/leads/<%= lead._id %>/delivery/export" method="POST" style="margin-top:16px">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <button type="submit" class="btn btn-ghost btn-sm"><i class="fas fa-file-export"></i> Export Package</button>
           <span class="cell-sub">Placeholder — logs the request; automatic file generation isn't wired up yet.</span>
         </form>
@@ -373,6 +380,7 @@ function isDueSoon(t) {
       <div class="admin-card-body">
         <% if (can('leads.edit')) { %>
           <form action="/admin/leads/<%= lead._id %>/status" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="admin-form-group">
               <select name="status" class="form-control">
                 <% leadStatusStages.forEach(function(s) { %>
@@ -386,6 +394,7 @@ function isDueSoon(t) {
           <div class="quick-status-row">
             <% [['waiting_on_client','Waiting on client'], ['ready_for_filing','Ready for filing'], ['submitted','Submitted'], ['delivered','Delivered']].forEach(function(pair) { %>
               <form action="/admin/leads/<%= lead._id %>/status" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <input type="hidden" name="status" value="<%= pair[0] %>">
                 <button type="submit" class="btn btn-xs btn-ghost" <%= lead.status === pair[0] ? 'disabled' : '' %>><%= pair[1] %></button>
               </form>
@@ -403,6 +412,7 @@ function isDueSoon(t) {
       <div class="admin-card-body">
         <% if (can('leads.assign')) { %>
           <form action="/admin/leads/<%= lead._id %>/assign" method="POST" class="admin-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="admin-form-group">
               <label>Primary owner</label>
               <select name="owner" class="form-control">
@@ -443,6 +453,7 @@ function isDueSoon(t) {
       <div class="admin-card-body">
         <% if (can('notes.create')) { %>
           <form action="/admin/leads/<%= lead._id %>/notes" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="admin-form-group">
               <textarea name="content" class="form-control" rows="3" placeholder="Add a note..." required></textarea>
             </div>

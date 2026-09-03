@@ -1,4 +1,5 @@
 const multer = require('multer');
+const { verifyCsrf } = require('../../middleware/csrf');
 
 const DocumentCategory = require('../../models/DocumentCategory');
 const CaseDocument = require('../../models/CaseDocument');
@@ -365,6 +366,9 @@ module.exports = function attachDocuments(router) {
     '/admin/cases/:caseId/documents',
     requireCapability('documents.upload'),
     documentUpload.single('file'),
+    // After multer, never before: the CSRF token is a field in the
+    // multipart body and does not exist until multer has parsed it.
+    verifyCsrf,
     async (req, res) => {
       const redirectTo = `/admin/cases/${req.params.caseId}/documents`;
       try {
@@ -407,6 +411,9 @@ module.exports = function attachDocuments(router) {
     '/admin/documents/:documentId/version',
     requireCapability('documents.upload'),
     documentUpload.single('file'),
+    // After multer, never before: the CSRF token is a field in the
+    // multipart body and does not exist until multer has parsed it.
+    verifyCsrf,
     async (req, res) => {
       try {
         const document = await CaseDocument.findById(req.params.documentId).lean();

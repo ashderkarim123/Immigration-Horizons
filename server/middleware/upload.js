@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { verifyCsrf } = require('./csrf');
 
 const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -32,4 +33,21 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-module.exports = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+
+/**
+ * Multipart upload WITH CSRF verification, in that order.
+ *
+ * The token travels in the form body, which for `multipart/form-data` only
+ * exists after multer has parsed it — so the global CSRF middleware defers
+ * these requests (see middleware/csrf.js) and they are verified here
+ * instead. Exposing the pair as one middleware is what stops a route from
+ * acquiring file uploads without also acquiring verification: use
+ * `uploadSingle('field')`, never a bare `upload.single('field')`.
+ */
+function uploadSingle(fieldName) {
+  return [upload.single(fieldName), verifyCsrf];
+}
+
+module.exports = upload;
+module.exports.uploadSingle = uploadSingle;

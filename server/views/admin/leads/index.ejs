@@ -163,6 +163,7 @@ function qs(extra) {
                   </a>
                   <% if (can('leads.delete')) { %>
                     <form action="/admin/leads/<%= lead._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this lead permanently?');" style="display:inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-sm btn-danger" title="Delete">
                         <i class="fas fa-trash"></i>
                       </button>

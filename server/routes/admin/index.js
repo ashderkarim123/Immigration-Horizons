@@ -23,13 +23,15 @@ const DeliveryRecord = require('../../models/admin/DeliveryRecord');
 const ActivityLog = require('../../models/admin/ActivityLog');
 
 const { requireAdmin } = require('../../middleware/auth');
-const upload = require('../../middleware/upload');
+const { uploadSingle } = require('../../middleware/upload');
 const categories = require('../../utils/blogCategories');
 const servicesList = require('../../utils/services');
 const { notify, notifyMany } = require('../../utils/notify');
 const { logActivity } = require('../../utils/activity');
 const { ROLE_LABELS, getRole, can, requireCapability, canManageTask } = require('../../utils/permissions');
 const { csvCell } = require('../../utils/csv');
+const { recordSecurityEvent } = require('../../utils/securityEvents');
+const { isLockedOut, failedLoginUpdate, successfulLoginUpdate } = require('../../utils/lockout');
 const { DUE_SOON_DAYS, overdueTaskMatch, dueSoonTaskMatch, isOverdue, isDueSoon } = require('../../utils/taskDeadlines');
 const attachLeadOps = require('./leadOps');
 const { ASSIGNMENT_SLOTS } = attachLeadOps;
@@ -91,11 +93,14 @@ router.get('/admin/login', (req, res) => {
 
 router.post('/admin/login', loginLimiter, async (req, res) => {
   const { username, password } = req.body;
+  const subjectEmail = typeof username === 'string' ? username.trim().toLowerCase() : '';
 
   const finishLogin = (sessionData) => {
     // Regenerate the session ID on privilege change so a pre-login session
     // (e.g. one an attacker planted via a shared/public machine) can't be
-    // fixated into an authenticated one.
+    // fixated into an authenticated one. This also discards the pre-login
+    // CSRF token, so one harvested from the login page cannot be replayed
+    // against an authenticated session.
     req.session.regenerate((err) => {
       if (err) {
         console.error('[login] session regenerate failed:', err.message);
@@ -106,14 +111,107 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
     });
   };
 
+  const renderFailure = () =>
+    res.render('admin/login', {
+      title: 'Admin Login | Immigration Horizons',
+      layout: false,
+      error: 'Invalid username or password.',
+    });
+
   // Check admin users in DB first
   if (mongoose.connection.readyState === 1) {
     try {
-      const user = await AdminUser.findOne({ email: username, isActive: true });
-      if (user && (await user.comparePassword(password))) {
+      // `isActive` is deliberately NOT part of this query any more: a
+      // deactivated account must still be found, so guesses against it are
+      // counted and audited rather than silently falling through to the
+      // env-credential branch below.
+      const user = await AdminUser.findOne({ email: subjectEmail });
+      if (user) {
+        if (isLockedOut(user)) {
+          await recordSecurityEvent({
+            type: 'login_failed',
+            result: 'denied',
+            surface: 'admin_cms',
+            actorType: 'anonymous',
+            actorAdminId: user._id,
+            subjectEmail,
+            req,
+            meta: { reason: 'account_locked' },
+          });
+          return renderFailure();
+        }
+
+        const passwordMatches = await user.comparePassword(password);
+
+        if (!passwordMatches) {
+          const { patch, justLocked } = failedLoginUpdate(user);
+          // updateOne, not user.save(): saving re-validates the whole
+          // document, so a single legacy row with an off-enum role would
+          // stop being able to log in at all, and it would re-run the
+          // bcrypt pre('save') hook over an already-hashed password.
+          await AdminUser.updateOne({ _id: user._id }, { $set: patch });
+
+          await recordSecurityEvent({
+            type: 'login_failed',
+            result: 'failure',
+            surface: 'admin_cms',
+            actorType: 'anonymous',
+            actorAdminId: user._id,
+            subjectEmail,
+            req,
+            meta: { reason: 'bad_password' },
+          });
+          if (justLocked) {
+            await recordSecurityEvent({
+              type: 'account_locked',
+              result: 'denied',
+              surface: 'admin_cms',
+              actorType: 'anonymous',
+              actorAdminId: user._id,
+              subjectEmail,
+              req,
+              meta: { lockedUntil: patch.lockedUntil && patch.lockedUntil.toISOString() },
+            });
+          }
+          return renderFailure();
+        }
+
+        // Correct credential, account switched off. Counters are untouched:
+        // the password was right, so counting it as a guess would let the
+        // account's own owner lock out a login that may be reactivated.
+        if (user.isActive === false) {
+          await recordSecurityEvent({
+            type: 'login_failed',
+            result: 'denied',
+            surface: 'admin_cms',
+            actorType: 'anonymous',
+            actorAdminId: user._id,
+            subjectEmail,
+            req,
+            meta: { reason: 'account_deactivated' },
+          });
+          return renderFailure();
+        }
+
+        await AdminUser.updateOne({ _id: user._id }, { $set: successfulLoginUpdate() });
+
+        await recordSecurityEvent({
+          type: 'login_succeeded',
+          result: 'success',
+          surface: 'admin_cms',
+          actorType: 'admin_user',
+          actorAdminId: user._id,
+          actorName: user.name || '',
+          subjectEmail,
+          req,
+          meta: { role: user.role },
+        });
+
         return finishLogin({ isAdmin: true, adminUser: { id: user._id, name: user.name, role: user.role } });
       }
-    } catch (_) { /* fall through to env-based auth */ }
+    } catch (err) {
+      console.error('[login] DB auth failed, falling back to env credentials:', err.message);
+    }
   }
 
   // Fallback to env-based auth
@@ -127,17 +225,48 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
   }
 
   if (!ok) {
-    return res.render('admin/login', {
-      title: 'Admin Login | Immigration Horizons',
-      layout: false,
-      error: 'Invalid username or password.',
+    await recordSecurityEvent({
+      type: 'login_failed',
+      result: 'failure',
+      surface: 'admin_cms',
+      actorType: 'anonymous',
+      subjectEmail,
+      req,
+      meta: { reason: 'no_such_account' },
     });
+    return renderFailure();
   }
+
+  // The break-glass credential has no AdminUser id, so it is recorded as
+  // `env_fallback` rather than attributed to a person. Every use of it
+  // should be reviewable — that is the point of a break-glass login.
+  await recordSecurityEvent({
+    type: 'login_succeeded',
+    result: 'success',
+    surface: 'admin_cms',
+    actorType: 'env_fallback',
+    actorName: 'Admin',
+    subjectEmail,
+    req,
+    meta: { reason: 'env_credential_fallback' },
+  });
 
   finishLogin({ isAdmin: true, adminUser: { name: 'Admin', role: 'super_admin' } });
 });
 
-router.post('/admin/logout', (req, res) => {
+router.post('/admin/logout', async (req, res) => {
+  const adminUser = req.session && req.session.adminUser;
+  if (adminUser) {
+    await recordSecurityEvent({
+      type: 'logout',
+      result: 'success',
+      surface: 'admin_cms',
+      actorType: adminUser.id ? 'admin_user' : 'env_fallback',
+      actorAdminId: adminUser.id || null,
+      actorName: adminUser.name || '',
+      req,
+    });
+  }
   req.session.destroy(() => res.redirect('/admin/login'));
 });
 
@@ -686,7 +815,7 @@ router.get('/admin/blog/new', (req, res) => {
   });
 });
 
-router.post('/admin/blog', requireCapability('blog.manage'), upload.single('coverImage'), async (req, res) => {
+router.post('/admin/blog', requireCapability('blog.manage'), uploadSingle('coverImage'), async (req, res) => {
   try {
     const { title, slug, category, excerpt, content, tags, author, readingTime, published, publishDate } = req.body;
 
@@ -738,7 +867,7 @@ router.get('/admin/blog/:id/edit', async (req, res) => {
   }
 });
 
-router.put('/admin/blog/:id', requireCapability('blog.manage'), upload.single('coverImage'), async (req, res) => {
+router.put('/admin/blog/:id', requireCapability('blog.manage'), uploadSingle('coverImage'), async (req, res) => {
   try {
     const { title, slug, category, excerpt, content, tags, author, readingTime, published, publishDate } = req.body;
 
@@ -950,7 +1079,7 @@ router.get('/admin/testimonials/new', (req, res) => {
   });
 });
 
-router.post('/admin/testimonials', requireCapability('testimonials.manage'), upload.single('photo'), async (req, res) => {
+router.post('/admin/testimonials', requireCapability('testimonials.manage'), uploadSingle('photo'), async (req, res) => {
   try {
     const { name, country, profession, review, rating, verificationUrl, featured, displayOrder, status } = req.body;
     await Testimonial.create({
@@ -991,7 +1120,7 @@ router.get('/admin/testimonials/:id/edit', async (req, res) => {
   }
 });
 
-router.put('/admin/testimonials/:id', requireCapability('testimonials.manage'), upload.single('photo'), async (req, res) => {
+router.put('/admin/testimonials/:id', requireCapability('testimonials.manage'), uploadSingle('photo'), async (req, res) => {
   try {
     const { name, country, profession, review, rating, verificationUrl, featured, displayOrder, status } = req.body;
     const update = {
@@ -1209,7 +1338,7 @@ router.get('/admin/media', async (req, res) => {
   }
 });
 
-router.post('/admin/media/upload', requireCapability('media.manage'), upload.single('file'), async (req, res) => {
+router.post('/admin/media/upload', requireCapability('media.manage'), uploadSingle('file'), async (req, res) => {
   try {
     if (!req.file) throw new Error('No file uploaded');
     const { folder, altText } = req.body;

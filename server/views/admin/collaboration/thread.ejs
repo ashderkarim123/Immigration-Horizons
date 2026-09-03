@@ -30,6 +30,7 @@ function fmtDateTime(d) { return d ? new Date(d).toLocaleString() : '—'; }
   <div class="admin-card-header"><h3>Reply</h3></div>
   <div class="admin-card-body">
     <form action="/admin/messages/<%= rootMessage.id %>/replies" method="POST" class="form-grid">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="hidden" name="idempotencyKey" value="<%= Math.random().toString(36).slice(2) + Date.now() %>">
       <div class="form-group full-width"><textarea name="body" class="form-control" rows="2" required maxlength="8000"></textarea></div>
       <div class="form-group full-width"><button type="submit" class="btn btn-sm btn-primary">Reply</button></div>

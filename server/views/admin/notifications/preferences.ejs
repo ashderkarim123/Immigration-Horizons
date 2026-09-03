@@ -11,6 +11,7 @@
 <div class="admin-card" style="max-width:560px">
   <div class="admin-card-body">
     <form method="POST" action="/admin/notifications/preferences">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <label class="toggle-switch" style="margin-bottom:16px">
         <input type="checkbox" name="mentionEmails" <%= preferences.mentionEmails ? 'checked' : '' %>>
         <span class="toggle-slider"></span>

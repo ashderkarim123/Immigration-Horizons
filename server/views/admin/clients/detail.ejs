@@ -112,10 +112,12 @@ const lockedNow = security.lockedUntil && new Date(security.lockedUntil) > new D
         <% if (canManage) { %>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
             <form method="POST" action="/admin/clients/<%= clientUser._id %>/resend-invitation">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-paper-plane"></i> Send new invitation</button>
             </form>
             <% if (activeInvitation) { %>
               <form method="POST" action="/admin/clients/<%= clientUser._id %>/revoke-invitation">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="btn btn-sm btn-ghost">Revoke</button>
               </form>
             <% } %>
@@ -175,11 +177,13 @@ const lockedNow = security.lockedUntil && new Date(security.lockedUntil) > new D
           <% if (clientUser.status === 'disabled') { %>
             <p class="page-subtitle" style="margin-top:0">This account is disabled. The client cannot log in.</p>
             <form method="POST" action="/admin/clients/<%= clientUser._id %>/reactivate">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn btn-sm btn-primary">Reactivate account</button>
             </form>
           <% } else { %>
             <p class="page-subtitle" style="margin-top:0">Disabling signs the client out of every device immediately and blocks future logins.</p>
             <form method="POST" action="/admin/clients/<%= clientUser._id %>/disable" onsubmit="return confirm('Disable this client account and revoke all active sessions?')">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn btn-sm btn-danger">Disable account</button>
             </form>
           <% } %>

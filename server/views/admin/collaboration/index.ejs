@@ -21,6 +21,7 @@
           <td><% var unread = unreadCounts[String(channel._id)] || 0; %><% if (unread > 0) { %><span class="badge badge-priority-high"><%= unread %></span><% } else { %>—<% } %></td>
           <td>
             <form action="/admin/channels/<%= channel._id %>/archive" method="POST" style="display:inline" onsubmit="return confirm('Archive this channel?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button type="submit" class="btn btn-sm btn-ghost">Archive</button>
             </form>
           </td>
@@ -36,6 +37,7 @@
   <div class="admin-card-header"><h3>Add Channel</h3></div>
   <div class="admin-card-body">
     <form action="/admin/cases/<%= caseDoc._id %>/channels" method="POST" class="form-inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <input type="text" name="name" class="form-control" placeholder="Channel name" required>
       <select name="channelType" class="form-control">
         <% channelTypes.forEach(function(t) { %><option value="<%= t %>"><%= t %></option><% }); %>

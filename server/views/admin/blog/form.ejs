@@ -8,6 +8,7 @@
 <div class="admin-card">
   <div class="admin-card-body">
     <form action="/admin/blog<%= post ? '/' + post._id + '?_method=PUT' : '' %>" method="POST" enctype="multipart/form-data" class="admin-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="admin-form-grid">
         <div class="admin-form-group full-width">
           <label>Title</label>

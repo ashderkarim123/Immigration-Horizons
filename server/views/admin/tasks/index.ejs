@@ -76,6 +76,7 @@ function isOverdue(t) { return t.dueDate && t.status !== 'completed' && new Date
 
             <% if (canManageTask(t)) { %>
             <form action="/admin/tasks/<%= t._id %>/status" method="POST" class="task-quick-status">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <select name="status" class="filter-select" onchange="this.form.submit()">
                 <% taskStatuses.forEach(function(s) { %>
                   <option value="<%= s %>" <%= t.status === s ? 'selected' : '' %>><%= STATUS_LABELS[s] %></option>
@@ -86,6 +87,7 @@ function isOverdue(t) { return t.dueDate && t.status !== 'completed' && new Date
             <details class="task-details">
               <summary>Edit</summary>
               <form action="/admin/tasks/<%= t._id %>?_method=PUT" method="POST" class="admin-form task-edit-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="admin-form-group">
                   <label>Title</label>
                   <input type="text" name="title" class="form-control" value="<%= t.title %>" required>
@@ -132,6 +134,7 @@ function isOverdue(t) { return t.dueDate && t.status !== 'completed' && new Date
                 <div class="admin-form-actions" style="justify-content:space-between">
                   <% if (can('tasks.manage')) { %>
                     <form action="/admin/tasks/<%= t._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this task?');">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Delete</button>
                     </form>
                   <% } else { %><span></span><% } %>
@@ -140,6 +143,7 @@ function isOverdue(t) { return t.dueDate && t.status !== 'completed' && new Date
               </form>
 
               <form action="/admin/tasks/<%= t._id %>/sprint" method="POST" class="task-sprint-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <label>Sprint</label>
                 <select name="sprintId" class="form-control" onchange="this.form.submit()">
                   <option value="">No sprint</option>

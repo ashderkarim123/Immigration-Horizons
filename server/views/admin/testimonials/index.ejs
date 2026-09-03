@@ -50,6 +50,7 @@
                   <% if (can('testimonials.manage')) { %>
                     <a href="/admin/testimonials/<%= t._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
                     <form action="/admin/testimonials/<%= t._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this testimonial?');" style="display:inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
                     </form>
                   <% } %>
