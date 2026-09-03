@@ -99,33 +99,72 @@ to the internet regardless of what UFW says.
 
 ### 2.1 Create the deploy user
 
+> **If you are logged into root with a password** — which is Contabo's
+> default — read this whole section before running any of it. You need a
+> working SSH key *and* a sudo password for `deploy` before §2.2, or the
+> hardening step locks you out of SSH entirely.
+>
+> It is recoverable if that happens: Contabo's customer panel has a **VNC
+> console** that does not go through SSH. But it is far easier not to need it.
+
+**Step 1 — generate a key on your own machine**, not on the server. The
+private half should never exist on a box that faces the internet.
+
+```powershell
+# Windows PowerShell. Press Enter for the default path; a passphrase is
+# optional but worth setting.
+ssh-keygen -t ed25519 -C "ashder@immigrationhorizons"
+
+# Copy the PUBLIC half — the line starting `ssh-ed25519`.
+type $env:USERPROFILE\.ssh\id_ed25519.pub
+```
+
+**Step 2 — create the user and install that key**, as root on the server:
+
 ```bash
-adduser --disabled-password --gecos "" deploy
+# Safe to re-run: skips creation if the account already exists.
+id deploy >/dev/null 2>&1 || adduser --disabled-password --gecos "" deploy
 usermod -aG sudo deploy
 
 mkdir -p /home/deploy/.ssh
-cp /root/.ssh/authorized_keys /home/deploy/.ssh/ 2>/dev/null || true
+
+# Paste YOUR public key between the quotes, on one line.
+echo 'ssh-ed25519 AAAA...paste-your-public-key... ashder@immigrationhorizons' \
+  > /home/deploy/.ssh/authorized_keys
+
 chown -R deploy:deploy /home/deploy/.ssh
 chmod 700 /home/deploy/.ssh
 chmod 600 /home/deploy/.ssh/authorized_keys
 ```
 
-If you have no key yet, generate one **on your Windows machine** and paste
-the public half in:
+**Step 3 — set a password for `deploy`.** This is not for logging in — §2.2
+turns off password authentication over SSH. It is what `sudo` prompts for,
+and without it `deploy` cannot run any of the `sudo` commands in §3 and §6:
+
+```bash
+passwd deploy
+```
+
+> `adduser --disabled-password` creates the account with its password field
+> locked. That is correct for SSH, but `sudo` authenticates against the same
+> field — so a `deploy` user who never gets a password is in the `sudo` group
+> and still cannot use it. Setting one here, and disabling password *login*
+> in §2.2, gives you both halves.
+
+**Step 4 — prove it works before hardening anything.** Leave your root
+session open and use a **second terminal**:
 
 ```powershell
-ssh-keygen -t ed25519 -C "ashder@immigrationhorizons"
-type $env:USERPROFILE\.ssh\id_ed25519.pub
+ssh deploy@169.58.250.40
 ```
 
 ```bash
-# on the server
-echo 'ssh-ed25519 AAAA...your-public-key... ashder@immigrationhorizons' \
-  >> /home/deploy/.ssh/authorized_keys
+# in that new session
+whoami        # deploy
+sudo whoami   # root, after entering the password from Step 3
 ```
 
-**Open a second terminal and confirm `ssh deploy@169.58.250.40` works before
-continuing.** The next step can lock you out.
+Both must succeed. Only then continue to §2.2.
 
 ### 2.2 Harden SSH
 
@@ -147,6 +186,13 @@ sshd -t && systemctl restart ssh
 
 `sshd -t` validates before restarting. If it prints nothing, the config is
 good.
+
+> **If you do lock yourself out:** Contabo's customer control panel has a
+> **VNC / noVNC console** that connects below SSH and is unaffected by any of
+> this. Log in there as `root` with the password Contabo issued, then
+> `rm /etc/ssh/sshd_config.d/99-hardening.conf && systemctl restart ssh` to
+> undo it and start again. Worth confirming that console works *before* you
+> run the block above.
 
 ### 2.3 Firewall
 
