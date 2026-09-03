@@ -138,7 +138,9 @@ Lead workflow: New Lead → Contacted → Qualified → Assigned → Tasks → R
 
 ## Lead delivery — actual current state (not aspirational)
 
-- **Email is Resend**, not Gmail SMTP — `RESEND_API_KEY` in `.env`, sent from `src/lib/leads.ts`. Missing key fails silently to the visitor (console warning only) — this is a documented, deliberate tradeoff, not a bug to "fix" by adding fallback SMTP.
+- **Email goes through one transport per app** — `src/lib/email/transport.ts` and `server/services/mailer.js` (ADR-013). `MAIL_TRANSPORT=resend|smtp` picks the provider; omitted, it is inferred from whichever credentials are set. Never add a provider call anywhere else: seven duplicated Resend blocks is the problem ADR-013 removed. An explicit transport with missing credentials resolves to `none`, never silently to the other provider.
+- **A failed send never throws.** Missing configuration or a rejected message logs and returns `false`, so a notification failure cannot roll back the consultation, reset, or review that triggered it. This is the one part of the old Resend-only behaviour that must not change.
+- **Verify mail with `npm run mail:check` in BOTH apps** before go-live — they read the same variable names from different `.env` files. `-- --send you@example.com` proves a real message is accepted.
 - **MongoDB persistence** via `MONGODB_URI`, shared `consultations` collection with the legacy site and this repo's own `server/`. Missing URI means leads still email but are never saved — silent data loss, so treat this env var as load-bearing.
 - **Google Sheets sync is NOT implemented in this stack.** Only the legacy site has it. Do not assume it exists; do not silently add it as a "small" feature without discussing scope first.
 - The two paths (email, DB) are intentionally decoupled — a Mongo hiccup shouldn't block the email notification and vice versa.

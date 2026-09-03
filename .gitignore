@@ -32,6 +32,11 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the templates MUST be committed: DEPLOYMENT.md tells an operator to
+# copy from them, and until now the blanket .env* rule above meant they were
+# never in the repo at all.
+!.env.example
+!server/.env.example
 
 # vercel
 .vercel
