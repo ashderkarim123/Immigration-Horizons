@@ -11,6 +11,8 @@
  * guessable password is worse than a loud failure.
  */
 
+const path = require('path');
+
 // bcrypt output: $2a$ / $2b$ / $2y$, a two-digit cost, then 53 chars of
 // salt+digest. Checked because a truncated paste produces a value that
 // looks plausible and fails every login attempt with no useful error.
@@ -55,6 +57,23 @@ function productionStartupProblems(env) {
     problems.push(
       'Neither ADMIN_PASSWORD_HASH nor a real ADMIN_PASSWORD is set. Prefer the hash:\n' +
         '  node -e "console.log(require(\'bcryptjs\').hashSync(\'your-password\', 12))"'
+    );
+  }
+
+  // Checked here, before ./app is required, because the document services
+  // build a storage provider at module load — so without this the process
+  // dies inside an import with a message that never reaches the formatting
+  // above, and the failure reads as "the admin CMS just doesn't start".
+  if (!env.PRIVATE_DOCUMENT_ROOT) {
+    problems.push(
+      'PRIVATE_DOCUMENT_ROOT is not set. Client documents have nowhere to live, and both\n' +
+        '  apps refuse to start without it — the development default is a temporary\n' +
+        "  directory the operating system erases on reboot. Add to this app's .env:\n" +
+        '  PRIVATE_DOCUMENT_ROOT=/srv/immigration-horizons/shared/private-documents'
+    );
+  } else if (!path.isAbsolute(env.PRIVATE_DOCUMENT_ROOT)) {
+    problems.push(
+      `PRIVATE_DOCUMENT_ROOT must be an absolute path, starting with /. Got: ${env.PRIVATE_DOCUMENT_ROOT}`
     );
   }
 

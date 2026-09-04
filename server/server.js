@@ -12,8 +12,6 @@
  */
 require('dotenv').config();
 
-const connectDB = require('./config/db');
-const { createApp } = require('./app');
 const { productionStartupProblems } = require('./utils/startupChecks');
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -37,6 +35,13 @@ if (isProduction) {
     process.exit(1);
   }
 }
+
+// Required AFTER the guard, deliberately. ./app pulls in the document
+// services, which construct a storage provider at module load and throw if
+// PRIVATE_DOCUMENT_ROOT is unset — an import-time crash that would pre-empt
+// every message above and leave only a stack trace.
+const connectDB = require('./config/db');
+const { createApp } = require('./app');
 
 connectDB();
 
