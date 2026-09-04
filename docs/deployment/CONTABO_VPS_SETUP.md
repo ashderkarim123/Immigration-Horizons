@@ -562,6 +562,35 @@ node -e "console.log('ADMIN_PASSWORD_HASH=' + require('bcryptjs').hashSync('PICK
 cd ..
 ```
 
+> **A bcrypt hash is shell-hostile, and fails silently.** It looks like
+> `$2b$12$s94wFllKft2nVi9M8vZQbuf5h.QLm...` and is exactly 60 characters.
+> Put it inside **double quotes** anywhere and bash expands `$2`, `$1` and
+> `$s94...` as empty variables, leaving about 30 characters that still look
+> plausible in the file:
+>
+> ```
+> $2b$12$s94wFllKft2nVi9M8vZQbuf5h.QLmFkWmq5iS.Ib02IcjxM3hcpr2   (60, correct)
+> b2.QLmFkWmq5iS.Ib02IcjxM3hcpr2                                 (30, mangled)
+> ```
+>
+> Paste it into `nano` (which interprets nothing), single-quote it, or route
+> it through a variable:
+>
+> ```bash
+> HASH=$(node -e "console.log(require('bcryptjs').hashSync('PICK-A-REAL-PASSWORD', 12))")
+> echo "length: ${#HASH}"   # must be exactly 60
+>
+> # "$HASH" writes literally: the shell does not re-read $ inside a variable
+> printf 'ADMIN_PASSWORD_HASH=%s
+' "$HASH" >> shared/server.env
+> printf 'ADMIN_PASSWORD_HASH=%s
+' "$HASH" >> shared/root.env
+> ```
+>
+> `server/utils/startupChecks.js` rejects a malformed hash at boot rather
+> than letting it through to fail every login with "Invalid username or
+> password" and no explanation.
+
 ```bash
 nano /srv/immigration-horizons/shared/root.env
 ```
