@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Briefcase } from "lucide-react";
+import { BriefcaseBusiness } from "lucide-react";
 
-import { Container } from "@/components/ui/container";
+import { Badge, stageTone } from "@/components/app/badge";
 import { PageHeader } from "@/components/app/page-header";
-import { EmptyState } from "@/components/app/panel";
-import { requireClient } from "@/lib/auth/current-client";
+import { EmptyState, Panel, Row, RowList } from "@/components/app/panel";
+import { Container } from "@/components/ui/container";
 import { listAccessibleCases } from "@/lib/auth/case-policy";
-import { CASE_TYPES, CLIENT_STAGE_LABELS, type CaseStage } from "@/lib/content/case-constants";
+import { requireClient } from "@/lib/auth/current-client";
+import {
+  CASE_TYPES,
+  CLIENT_STAGE_LABELS,
+  type CaseStage,
+} from "@/lib/content/case-constants";
 
 export const metadata: Metadata = {
   title: "Your Cases",
   robots: { index: false, follow: false },
 };
 
-const CASE_TYPE_LABELS = Object.fromEntries(CASE_TYPES.map((t) => [t.value, t.label]));
+const CASE_TYPE_LABELS = Object.fromEntries(
+  CASE_TYPES.map((type) => [type.value, type.label]),
+);
 
 export default async function PortalCasesPage() {
   const client = await requireClient("/portal/cases");
@@ -31,39 +37,40 @@ export default async function PortalCasesPage() {
         ]}
       />
 
-      <div className="rounded-panel border-ink-200 border bg-white shadow-subtle">
+      <Panel
+        title="Case workspace"
+        description={
+          cases.length === 1 ? "1 case available" : `${cases.length} cases available`
+        }
+      >
         {cases.length === 0 ? (
           <EmptyState
-            icon={<Briefcase size={28} aria-hidden />}
+            icon={<BriefcaseBusiness size={24} aria-hidden />}
             title="No active cases yet"
             body="Once we begin work on your petition, your case appears here with its current status."
           />
         ) : (
-          <ul className="divide-ink-200 divide-y">
-            {cases.map((c) => (
-              <li key={String(c._id)}>
-                <Link
-                  href={`/portal/cases/${c._id}`}
-                  className="hover:bg-navy-50/50 flex items-center justify-between gap-4 px-6 py-4 transition-colors"
-                >
-                  <div>
-                    <p className="text-navy-800 text-sm font-semibold">
-                      {c.caseNumber} — {c.title}
-                    </p>
-                    <p className="text-ink-500 mt-0.5 text-xs">
-                      {CASE_TYPE_LABELS[c.caseType as string] ?? c.caseType} · Opened{" "}
-                      {new Date(c.openedAt as unknown as string).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="bg-navy-50 text-navy-700 rounded-full px-3 py-1 text-xs font-semibold">
-                    {CLIENT_STAGE_LABELS[c.currentStage as CaseStage] ?? c.currentStage}
-                  </span>
-                </Link>
-              </li>
+          <RowList>
+            {cases.map((caseRecord) => (
+              <Row
+                key={String(caseRecord._id)}
+                href={`/portal/cases/${caseRecord._id}`}
+                icon={<BriefcaseBusiness size={16} strokeWidth={1.75} />}
+                primary={`${caseRecord.caseNumber} — ${caseRecord.title}`}
+                secondary={`${CASE_TYPE_LABELS[caseRecord.caseType as string] ?? caseRecord.caseType} · Opened ${new Date(
+                  caseRecord.openedAt as unknown as string,
+                ).toLocaleDateString()}`}
+                trailing={
+                  <Badge tone={stageTone(caseRecord.currentStage)}>
+                    {CLIENT_STAGE_LABELS[caseRecord.currentStage as CaseStage] ??
+                      caseRecord.currentStage}
+                  </Badge>
+                }
+              />
             ))}
-          </ul>
+          </RowList>
         )}
-      </div>
+      </Panel>
     </Container>
   );
 }

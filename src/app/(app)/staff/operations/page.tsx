@@ -29,7 +29,8 @@ export default async function StaffOperationsPage() {
 
   return (
     <Container width="default" className="py-10 sm:py-14">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="relative flex flex-wrap items-end justify-between gap-4 overflow-hidden rounded-[1.35rem] border border-white bg-white/72 px-6 py-6 shadow-subtle backdrop-blur-sm sm:px-7">
+        <span aria-hidden className="bg-gold-500 absolute top-0 left-6 h-1 w-12 rounded-b-full" />
         <div>
           <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
             Operations
@@ -59,9 +60,10 @@ export default async function StaffOperationsPage() {
         {board.queues.map((queue) => (
           <section
             key={queue.key}
-            className="rounded-panel border-ink-200 shadow-subtle flex flex-col border bg-white"
+            className="rounded-panel border-ink-200 shadow-subtle flex flex-col overflow-hidden border bg-white transition-[border-color,box-shadow,transform] duration-300 hover:border-navy-200 hover:shadow-card motion-safe:hover:-translate-y-0.5"
           >
-            <div className="border-ink-200 flex items-start justify-between gap-3 border-b px-5 py-4 sm:px-6">
+            <div className="border-ink-200 relative flex items-start justify-between gap-3 border-b bg-gradient-to-r from-white to-navy-50/40 px-5 py-4 sm:px-6">
+              <span aria-hidden className="bg-gold-500 absolute top-0 left-6 h-0.5 w-10 rounded-b-full" />
               <div className="min-w-0">
                 <h2 className="font-display text-navy-800 text-lg font-semibold">
                   {queue.href ? (

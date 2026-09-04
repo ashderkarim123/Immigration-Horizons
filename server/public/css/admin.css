@@ -103,8 +103,8 @@
   --admin-shadow-lg: var(--shadow-lg);
 
   /* ---------- Layout ---------- */
-  --sidebar-width: 264px;
-  --topbar-height: 68px;
+  --sidebar-width: 276px;
+  --topbar-height: 76px;
 
   /* ---------- Motion ---------- */
   --ease: cubic-bezier(.22, 1, .36, 1);
@@ -119,7 +119,10 @@ body.admin-body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: var(--admin-bg);
+  background:
+    radial-gradient(circle at 88% 2%, rgba(44, 92, 161, .08), transparent 28rem),
+    radial-gradient(circle at 12% 92%, rgba(201, 153, 46, .07), transparent 24rem),
+    var(--admin-bg);
   color: var(--text-primary);
   line-height: 1.55;
   min-height: 100vh;
@@ -172,7 +175,10 @@ body.admin-body {
 }
 
 .admin-content {
-  padding: 32px;
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 36px clamp(24px, 3vw, 48px);
   flex: 1;
 }
 
@@ -245,6 +251,16 @@ body.admin-body {
   margin: 0 auto;
 }
 
+.sidebar-brand-caption {
+  margin: 10px 4px 0;
+  color: rgba(228, 235, 246, .68);
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .sidebar-divider {
   height: 1px;
   background: rgba(255, 255, 255, .08);
@@ -266,9 +282,21 @@ body.admin-body {
   gap: 2px;
 }
 
+.sidebar-section-label {
+  margin: 15px 10px 5px;
+  color: rgba(228, 235, 246, .64);
+  font-size: .61rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.sidebar-section-label:first-child { margin-top: 5px; }
+
 .nav-item { position: relative; }
 
-.nav-link {
+.admin-sidebar .nav-link {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -276,17 +304,18 @@ body.admin-body {
   border-radius: var(--r-sm);
   font-size: .875rem;
   font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--sidebar-text);
   text-decoration: none;
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 
-.nav-link:hover {
+.admin-sidebar .nav-link:hover {
   background: var(--sidebar-surface-hover);
   color: var(--sidebar-text-hover);
 }
 
-.nav-link:focus-visible {
+.admin-sidebar .nav-link:focus-visible {
   outline: 2px solid var(--gold-400);
   outline-offset: -2px;
 }
@@ -326,7 +355,10 @@ body.admin-body {
 .nav-link:hover .nav-icon { opacity: 1; }
 .nav-item.active .nav-icon { opacity: 1; color: var(--gold-400); }
 
-.nav-label { flex: 1; }
+.nav-label {
+  flex: 1;
+  color: inherit;
+}
 
 .nav-badge {
   background: var(--gold-500);
@@ -380,6 +412,22 @@ body.admin-body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.topbar-heading-group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.topbar-context {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
 }
 
 .topbar-search {

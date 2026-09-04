@@ -13,15 +13,16 @@ export function TableOfContents({
   return (
     <nav
       aria-label="On this page"
-      className="rounded-card border-ink-200 bg-ink-50 border p-6 lg:sticky lg:top-28"
+      className="rounded-panel border-ink-200 relative overflow-hidden border bg-white p-6 shadow-subtle lg:sticky lg:top-36"
     >
+      <span aria-hidden className="bg-gold-500 absolute top-0 left-6 h-1 w-10 rounded-b-full" />
       <p className="text-navy-800 mb-4 inline-flex items-center gap-2 font-sans text-xs font-bold tracking-[0.14em] uppercase">
         <List size={14} aria-hidden />
         On this page
       </p>
       <ol className="flex flex-col gap-2.5">
         {items.map((item, index) => (
-          <li key={item.id} className="flex gap-2.5">
+          <li key={item.id} className="group flex gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-navy-50">
             <span
               aria-hidden
               className="text-gold-600 font-sans text-xs font-semibold tabular-nums"
@@ -30,7 +31,7 @@ export function TableOfContents({
             </span>
             <a
               href={`#${item.id}`}
-              className="text-ink-600 hover:text-navy-800 font-sans text-sm underline-offset-4 transition-colors duration-200 hover:underline"
+              className="text-ink-600 group-hover:text-navy-800 font-sans text-sm font-medium transition-colors duration-200"
             >
               {item.label}
             </a>

@@ -23,7 +23,10 @@ export function ContentSection({
           {eyebrow}
         </p>
       ) : null}
-      <h2 className="text-display-md font-semibold text-pretty">{heading}</h2>
+      <div className="flex items-center gap-3">
+        <span aria-hidden className="bg-gold-500 h-px w-8 shrink-0" />
+        <h2 className="text-display-md font-semibold text-pretty">{heading}</h2>
+      </div>
       <div className="mt-6">{children}</div>
     </section>
   );
@@ -69,7 +72,10 @@ export function DefinitionList({
   return (
     <List className={cn("flex flex-col gap-6", className)}>
       {items.map((item, index) => (
-        <li key={item.title} className="flex gap-4">
+        <li
+          key={item.title}
+          className="rounded-card border-ink-200 flex gap-4 border bg-white p-5 shadow-subtle sm:p-6"
+        >
           <span
             aria-hidden
             className={cn(
@@ -125,8 +131,11 @@ export function Callout({
   children: React.ReactNode;
 }) {
   return (
-    <aside className="rounded-card border-navy-200 bg-navy-50 flex gap-4 border p-6">
-      <Info size={20} className="text-navy-600 mt-0.5 shrink-0" aria-hidden />
+    <aside className="rounded-panel border-navy-200 relative flex gap-4 overflow-hidden border bg-gradient-to-br from-navy-50 to-white p-6 shadow-subtle">
+      <span aria-hidden className="bg-gold-500 absolute inset-y-0 left-0 w-1" />
+      <span className="bg-navy-100 text-navy-700 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" aria-hidden>
+        <Info size={19} />
+      </span>
       <div className="flex flex-col gap-2">
         <p className="font-display text-navy-800 text-base font-semibold">
           {title}

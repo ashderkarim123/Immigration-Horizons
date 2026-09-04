@@ -1,27 +1,25 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Inbox } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
-import { Container } from "@/components/ui/container";
+import { Badge } from "@/components/app/badge";
 import { PageHeader } from "@/components/app/page-header";
-import { EmptyState } from "@/components/app/panel";
+import { EmptyState, Panel, Row, RowList } from "@/components/app/panel";
 import { Button } from "@/components/ui/button";
+import { Container } from "@/components/ui/container";
 import { requireClient } from "@/lib/auth/current-client";
+import { STATUS_LABELS } from "@/lib/content/portal";
 import { getDb } from "@/lib/db";
 import { Consultation } from "@/lib/models/Consultation";
-import { STATUS_LABELS } from "@/lib/content/portal";
 
 export const metadata: Metadata = {
   title: "Your Consultations",
   robots: { index: false, follow: false },
 };
 
-// Bounded — a client-portal query must never be unbounded (module 12).
 const MAX_RESULTS = 50;
 
 export default async function PortalConsultationsPage() {
   const client = await requireClient("/portal/consultations");
-
   const db = getDb();
   if (db) await db;
 
@@ -41,12 +39,20 @@ export default async function PortalConsultationsPage() {
           { name: "Portal", href: "/portal" },
           { name: "Consultations", href: "/portal/consultations" },
         ]}
+        actions={
+          <Button href="/consultation" variant="gold" size="sm">
+            Book consultation
+          </Button>
+        }
       />
 
-      <div className="rounded-panel border-ink-200 border bg-white shadow-subtle">
+      <Panel
+        title="Consultation history"
+        description={`Showing ${consultations.length} most recent request${consultations.length === 1 ? "" : "s"}`}
+      >
         {consultations.length === 0 ? (
           <EmptyState
-            icon={<Inbox size={28} aria-hidden />}
+            icon={<CalendarDays size={24} aria-hidden />}
             title="No consultations yet"
             body="Book a free consultation and we will review your background and eligibility."
             action={
@@ -56,29 +62,27 @@ export default async function PortalConsultationsPage() {
             }
           />
         ) : (
-          <ul className="divide-ink-200 divide-y">
-            {consultations.map((c) => (
-              <li key={String(c._id)}>
-                <Link
-                  href={`/portal/consultations/${c._id}`}
-                  className="hover:bg-navy-50/50 flex items-center justify-between gap-4 px-6 py-4 transition-colors"
-                >
-                  <div>
-                    <p className="text-navy-800 text-sm font-semibold">{c.service}</p>
-                    <p className="text-ink-500 mt-0.5 text-xs">
-                      Submitted{" "}
-                      {new Date(c.createdAt as unknown as string).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="bg-navy-50 text-navy-700 rounded-full px-3 py-1 text-xs font-semibold">
-                    {STATUS_LABELS[c.status as string] ?? c.status}
-                  </span>
-                </Link>
-              </li>
+          <RowList>
+            {consultations.map((consultation) => (
+              <Row
+                key={String(consultation._id)}
+                href={`/portal/consultations/${consultation._id}`}
+                icon={<CalendarDays size={16} strokeWidth={1.75} />}
+                primary={String(consultation.service)}
+                secondary={`Submitted ${new Date(
+                  consultation.createdAt as unknown as string,
+                ).toLocaleDateString()}`}
+                trailing={
+                  <Badge tone="neutral">
+                    {STATUS_LABELS[consultation.status as string] ??
+                      String(consultation.status)}
+                  </Badge>
+                }
+              />
             ))}
-          </ul>
+          </RowList>
         )}
-      </div>
+      </Panel>
     </Container>
   );
 }

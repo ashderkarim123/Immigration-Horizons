@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, MessageCircle } from "lucide-react";
+import { ArrowRight, LockKeyhole, Mail, MessageCircle } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { footerNav, legalNav } from "@/lib/content/navigation";
 import { contact, site, social, whatsappLink } from "@/lib/content/site";
@@ -13,8 +14,40 @@ const externalProfiles = [
 
 export function Footer() {
   return (
-    <footer className="bg-navy-950 text-navy-200 mt-auto">
-      <Container width="wide" className="py-16 sm:py-20">
+    <footer className="bg-navy-950 text-navy-200 relative mt-auto overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_15%_10%,rgba(201,153,46,0.22),transparent_24rem),radial-gradient(circle_at_90%_100%,rgba(68,100,152,0.25),transparent_28rem)]"
+      />
+      <Container width="wide" className="relative pt-12 sm:pt-16">
+        <div className="rounded-panel border border-white/12 bg-white/[0.06] p-7 shadow-[0_24px_70px_rgba(0,0,0,0.18)] backdrop-blur-sm sm:flex sm:items-center sm:justify-between sm:gap-8 sm:p-9">
+          <div className="max-w-2xl">
+            <p className="text-gold-300 text-xs font-bold tracking-[0.15em] uppercase">
+              Start with clarity
+            </p>
+            <h2 className="font-display mt-2 text-2xl font-semibold text-white sm:text-3xl">
+              Let&apos;s understand your immigration goals.
+            </h2>
+            <p className="text-navy-200 mt-2 text-sm leading-relaxed sm:text-base">
+              Share your background and receive a focused first assessment of
+              the path that may fit your profile.
+            </p>
+          </div>
+          <div className="mt-6 flex shrink-0 flex-col gap-3 sm:mt-0">
+            <Button href="/consultation" variant="gold">
+              Book a consultation <ArrowRight size={16} aria-hidden />
+            </Button>
+            <Link
+              href="/portal/login"
+              className="text-navy-100 hover:text-gold-300 inline-flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
+            >
+              <LockKeyhole size={14} aria-hidden /> Client portal
+            </Link>
+          </div>
+        </div>
+      </Container>
+
+      <Container width="wide" className="relative py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="flex max-w-sm flex-col gap-5">
             {/* The logo is full-colour navy + gold on transparency, so it needs

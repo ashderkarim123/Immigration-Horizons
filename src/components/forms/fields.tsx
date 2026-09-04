@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 const baseField =
-  "w-full rounded-xl border bg-white px-4 py-3 font-sans text-[0.9375rem] text-navy-900 placeholder:text-ink-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gold-500/40";
+  "w-full min-h-12 rounded-xl border bg-white px-4 py-3 font-sans text-[0.9375rem] text-navy-900 shadow-[0_1px_2px_rgba(15,31,61,0.03)] placeholder:text-ink-400 transition-[border-color,box-shadow,background-color] duration-200 hover:border-navy-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gold-500/35 disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-500";
 
 export function Field({
   label,
@@ -54,7 +54,9 @@ export function TextInput({
     <input
       className={cn(
         baseField,
-        error ? "border-red-400" : "border-ink-300 focus:border-navy-400",
+        error
+          ? "border-red-400 ring-2 ring-red-100"
+          : "border-ink-300 focus:border-navy-500",
         className,
       )}
       aria-invalid={error || undefined}
@@ -73,7 +75,9 @@ export function TextArea({
       className={cn(
         baseField,
         "min-h-32 resize-y",
-        error ? "border-red-400" : "border-ink-300 focus:border-navy-400",
+        error
+          ? "border-red-400 ring-2 ring-red-100"
+          : "border-ink-300 focus:border-navy-500",
         className,
       )}
       aria-invalid={error || undefined}
@@ -93,7 +97,9 @@ export function Select({
       className={cn(
         baseField,
         "appearance-none bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat pr-10",
-        error ? "border-red-400" : "border-ink-300 focus:border-navy-400",
+        error
+          ? "border-red-400 ring-2 ring-red-100"
+          : "border-ink-300 focus:border-navy-500",
         className,
       )}
       style={{

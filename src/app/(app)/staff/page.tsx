@@ -30,14 +30,15 @@ export default async function StaffDashboardPage() {
 
   return (
     <Container width="default" className="py-10 sm:py-14">
-      <div>
+      <div className="relative overflow-hidden rounded-[1.35rem] border border-white bg-white/72 px-6 py-6 shadow-subtle backdrop-blur-sm sm:px-7">
+        <span aria-hidden className="bg-gold-500 absolute top-0 left-6 h-1 w-12 rounded-b-full" />
         <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">Your dashboard</h1>
         <p className="text-ink-600 mt-1 text-[0.9375rem]">
           {roleLabel(role)} · what needs your attention right now
         </p>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {widgets.map((widget) => (
           <StatTile
             key={widget.key}
@@ -51,8 +52,9 @@ export default async function StaffDashboardPage() {
       </div>
 
       <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-panel border-ink-200 shadow-subtle border bg-white">
-          <div className="border-ink-200 flex items-center justify-between border-b px-6 py-4">
+        <section className="rounded-panel border-ink-200 shadow-subtle overflow-hidden border bg-white transition-[border-color,box-shadow] duration-300 hover:border-navy-200 hover:shadow-card">
+          <div className="border-ink-200 relative flex items-center justify-between border-b bg-gradient-to-r from-white to-navy-50/40 px-6 py-4">
+            <span aria-hidden className="bg-gold-500 absolute top-0 left-6 h-0.5 w-10 rounded-b-full" />
             <h2 className="font-display text-navy-800 text-lg font-semibold">Your cases</h2>
             {data.myCases !== null ? (
               <Link href="/staff/cases" className="text-navy-700 text-sm font-semibold hover:underline">
@@ -101,8 +103,9 @@ export default async function StaffDashboardPage() {
           )}
         </section>
 
-        <section className="rounded-panel border-ink-200 shadow-subtle border bg-white">
-          <div className="border-ink-200 flex items-center justify-between border-b px-6 py-4">
+        <section className="rounded-panel border-ink-200 shadow-subtle overflow-hidden border bg-white transition-[border-color,box-shadow] duration-300 hover:border-navy-200 hover:shadow-card">
+          <div className="border-ink-200 relative flex items-center justify-between border-b bg-gradient-to-r from-white to-navy-50/40 px-6 py-4">
+            <span aria-hidden className="bg-gold-500 absolute top-0 left-6 h-0.5 w-10 rounded-b-full" />
             <h2 className="font-display text-navy-800 text-lg font-semibold">Your tasks</h2>
             <Link href="/staff/tasks" className="text-navy-700 text-sm font-semibold hover:underline">
               View all

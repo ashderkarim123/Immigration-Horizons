@@ -33,7 +33,11 @@ export function PageHeader({
   badge?: React.ReactNode;
 }) {
   return (
-    <div className="mb-8">
+    <div className="relative mb-8 overflow-hidden rounded-[1.35rem] border border-white bg-white/72 px-6 py-6 shadow-subtle backdrop-blur-sm sm:px-7">
+      <span
+        aria-hidden
+        className="bg-gold-500 absolute top-0 left-6 h-1 w-12 rounded-b-full"
+      />
       {breadcrumbs && breadcrumbs.length > 0 ? (
         <nav aria-label="Breadcrumb" className="mb-4">
           <ol className="text-ink-500 flex flex-wrap items-center gap-1.5 font-sans text-xs">

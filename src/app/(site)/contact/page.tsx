@@ -53,7 +53,7 @@ export default function ContactPage() {
     <>
       <JsonLd data={breadcrumbSchema(trail)} />
 
-      <section className="bg-navy-900 relative overflow-hidden">
+      <section className="bg-navy-950 relative overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
@@ -76,7 +76,7 @@ export default function ContactPage() {
 
       <Container width="wide" className="py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
-          <aside className="flex flex-col gap-8">
+          <aside className="flex flex-col gap-8 lg:sticky lg:top-36 lg:h-fit">
             <ul className="flex flex-col gap-4">
               {channels.map((channel) => (
                 <li key={channel.label}>
@@ -88,7 +88,7 @@ export default function ContactPage() {
                         ? "noopener noreferrer"
                         : undefined
                     }
-                    className="rounded-card border-ink-200 hover:border-navy-300 hover:bg-navy-50 flex items-center gap-4 border bg-white p-5 transition-colors duration-200"
+                    className="rounded-card border-ink-200 hover:border-navy-300 group flex items-center gap-4 border bg-white p-5 shadow-subtle transition-[border-color,box-shadow,transform] duration-300 hover:shadow-card motion-safe:hover:-translate-y-0.5"
                   >
                     <span
                       aria-hidden
@@ -131,7 +131,8 @@ export default function ContactPage() {
             </div>
           </aside>
 
-          <div className="rounded-panel border-ink-200 border bg-white p-6 shadow-subtle sm:p-9">
+          <div className="rounded-panel border-ink-200 relative overflow-hidden border bg-white p-6 shadow-card sm:p-9">
+            <span aria-hidden className="bg-gold-500 absolute top-0 left-9 h-1 w-14 rounded-b-full" />
             <h2 className="font-display text-navy-800 text-xl font-semibold">
               Send us a message
             </h2>

@@ -24,7 +24,10 @@ function timeAgoShort(d) {
     // A <div>, not a heading — every page body already renders its own <h1>
     // inside .page-header, and a page must have exactly one h1.
     %>
-    <div class="topbar-page-title"><%= pageHeading %></div>
+    <div class="topbar-heading-group">
+      <div class="topbar-page-title"><%= pageHeading %></div>
+      <div class="topbar-context">Administration workspace</div>
+    </div>
     <div class="topbar-search">
       <form action="/admin/search" method="GET" class="search-form">
         <div class="search-wrapper">

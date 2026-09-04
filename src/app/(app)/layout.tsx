@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 
 import { site } from "@/lib/content/site";
 import { AppShell } from "@/components/app/app-shell";
@@ -97,12 +98,25 @@ export default async function AppLayout({
   // Signed out: login, activate, and password-reset screens.
   return (
     <>
-      <header className="border-navy-800 bg-navy-900 border-b">
-        <div className="mx-auto flex w-full max-w-7xl items-center px-6 py-4 sm:px-8">
-          <span className="font-display text-lg font-semibold text-white">{site.name}</span>
+      <header className="bg-navy-950 border-b border-white/10 shadow-[0_12px_36px_rgba(8,19,42,0.16)]">
+        <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-6 py-3 sm:px-8">
+          <span className="flex h-12 w-[5.15rem] items-center justify-center overflow-hidden rounded-xl bg-white px-2 shadow-lg">
+            <Image
+              src="/images/logo-header.png"
+              alt=""
+              width={551}
+              height={320}
+              priority
+              className="h-auto w-full"
+            />
+          </span>
+          <span>
+            <span className="font-display block text-lg leading-tight font-semibold text-white">{site.name}</span>
+            <span className="text-gold-300 mt-1 block text-[0.66rem] font-bold tracking-[0.18em] uppercase">Secure workspace</span>
+          </span>
         </div>
       </header>
-      <main id="main" className="flex-1">
+      <main id="main" className="ih-app-canvas flex-1">
         {children}
       </main>
     </>

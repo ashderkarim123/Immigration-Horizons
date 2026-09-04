@@ -28,7 +28,7 @@ export function StatTile({
   const needsAttention = tone === "attention" && typeof value === "number" && value > 0;
 
   const body = (
-    <>
+    <div className="relative">
       <p className="text-ink-500 font-sans text-xs font-semibold tracking-wide uppercase">{label}</p>
       {unavailable ? (
         <p className="text-ink-400 mt-2 font-sans text-sm">Not your remit</p>
@@ -44,20 +44,26 @@ export function StatTile({
           <p className="text-ink-500 mt-1 text-xs">{value === 0 ? "Nothing waiting" : hint}</p>
         </>
       )}
-    </>
+    </div>
   );
 
   if (unavailable) {
     return (
-      <div className="rounded-panel border-ink-200 border bg-white/60 p-5">{body}</div>
+      <div className="rounded-panel border-ink-200 border bg-white/60 p-5 backdrop-blur-sm">{body}</div>
     );
   }
 
   return (
     <Link
       href={href}
-      className="rounded-panel border-ink-200 shadow-subtle hover:border-navy-300 block border bg-white p-5 transition-colors"
+      className="rounded-panel border-ink-200 shadow-subtle hover:border-navy-300 group relative block overflow-hidden border bg-white p-5 transition-[border-color,box-shadow,transform] duration-300 ease-(--ease-out-soft) hover:shadow-card motion-safe:hover:-translate-y-0.5"
     >
+      <span
+        aria-hidden
+        className={`absolute top-0 right-0 h-20 w-20 translate-x-8 -translate-y-8 rounded-full transition-transform duration-500 motion-safe:group-hover:scale-125 ${
+          needsAttention ? "bg-gold-100/70" : "bg-navy-50"
+        }`}
+      />
       {body}
     </Link>
   );

@@ -82,7 +82,7 @@ export default async function ConsultationPage({
     <>
       <JsonLd data={breadcrumbSchema(trail)} />
 
-      <section className="bg-navy-900 relative overflow-hidden">
+      <section className="bg-navy-950 relative overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
@@ -105,14 +105,15 @@ export default async function ConsultationPage({
 
       <Container width="wide" className="py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.3fr_0.7fr] lg:gap-16">
-          <div className="rounded-panel border-ink-200 border bg-white p-6 shadow-subtle sm:p-9">
+          <div className="rounded-panel border-ink-200 relative overflow-hidden border bg-white p-6 shadow-card sm:p-9">
+            <span aria-hidden className="bg-gold-500 absolute top-0 left-9 h-1 w-14 rounded-b-full" />
             <ConsultationForm
               defaultService={matched?.name}
               tracking={tracking}
             />
           </div>
 
-          <aside className="flex flex-col gap-8">
+          <aside className="flex flex-col gap-8 lg:sticky lg:top-36 lg:h-fit">
             <ul className="flex flex-col gap-6">
               {assurances.map((item) => (
                 <li key={item.title} className="flex gap-4">

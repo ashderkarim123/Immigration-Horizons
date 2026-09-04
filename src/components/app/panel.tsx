@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 
 /**
  * Layout primitives shared by both halves of the SaaS app (ADR-011 §2).
@@ -24,8 +25,9 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-panel border-ink-200 shadow-subtle border bg-white">
-      <div className="border-ink-200 flex flex-wrap items-start justify-between gap-3 border-b px-5 py-4 sm:px-6">
+    <section className="rounded-panel border-ink-200 shadow-subtle overflow-hidden border bg-white/95 transition-[border-color,box-shadow] duration-300 hover:border-navy-200 hover:shadow-card">
+      <div className="border-ink-200 relative flex flex-wrap items-start justify-between gap-3 border-b bg-gradient-to-r from-white to-navy-50/40 px-5 py-4 sm:px-6">
+        <span aria-hidden className="bg-gold-500 absolute top-0 left-6 h-0.5 w-10 rounded-b-full" />
         <div className="min-w-0">
           <h2 className="font-display text-navy-800 text-lg font-semibold">{title}</h2>
           {description ? <p className="text-ink-500 mt-0.5 text-xs">{description}</p> : null}
@@ -39,8 +41,16 @@ export function Panel({
 
 export function PanelLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="text-navy-700 text-sm font-semibold hover:underline">
+    <Link
+      href={href}
+      className="group text-navy-700 hover:text-navy-900 inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
+    >
       {children}
+      <ArrowUpRight
+        size={14}
+        aria-hidden
+        className="transition-transform motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+      />
     </Link>
   );
 }
@@ -63,8 +73,12 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-      {icon ? <span className="text-ink-400" aria-hidden>{icon}</span> : null}
+    <div className="flex flex-col items-center gap-2 bg-gradient-to-b from-white to-ink-50/55 px-6 py-12 text-center">
+      {icon ? (
+        <span className="bg-navy-50 text-navy-600 mb-1 inline-flex h-12 w-12 items-center justify-center rounded-2xl" aria-hidden>
+          {icon}
+        </span>
+      ) : null}
       <p className="text-navy-800 text-sm font-semibold">{title}</p>
       {body ? <p className="text-ink-600 mx-auto max-w-sm text-sm">{body}</p> : null}
       {action ? <div className="mt-2">{action}</div> : null}
@@ -113,7 +127,7 @@ export function Row({
   return (
     <li>
       {href ? (
-        <Link href={href} className="hover:bg-navy-50/50 block transition-colors">
+        <Link href={href} className="hover:bg-navy-50/70 block transition-colors">
           {body}
         </Link>
       ) : (

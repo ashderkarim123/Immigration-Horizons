@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Globe2, LockKeyhole, Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -95,8 +95,8 @@ export function Header() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 bg-white/90 backdrop-blur-md transition-shadow duration-300",
-        scrolled ? "border-ink-200 border-b shadow-subtle" : "border-b border-transparent",
+        "sticky top-0 z-50 border-b bg-white/95 backdrop-blur-xl transition-[border-color,box-shadow] duration-300",
+        scrolled ? "border-ink-200 shadow-card" : "border-transparent",
       )}
     >
       <a
@@ -106,21 +106,55 @@ export function Header() {
         Skip to content
       </a>
 
+      <div className="bg-navy-950 hidden text-white sm:block">
+        <Container
+          width="wide"
+          className="flex h-9 items-center justify-between text-[0.7rem] font-semibold tracking-wide"
+        >
+          <p className="text-navy-200 flex items-center gap-2">
+            <Globe2 size={13} className="text-gold-400" aria-hidden />
+            Supporting professionals and law firms worldwide
+          </p>
+          <Link
+            href="/portal/login"
+            className="group text-navy-100 flex items-center gap-2 transition-colors hover:text-white"
+          >
+            <LockKeyhole size={12} className="text-gold-400" aria-hidden />
+            Secure client portal
+            <ArrowUpRight
+              size={12}
+              className="transition-transform motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </Link>
+        </Container>
+      </div>
+
       <Container width="wide">
         <div className="flex h-20 items-center justify-between gap-6">
           <Link
             href="/"
-            className="shrink-0"
+            className="group flex shrink-0 items-center gap-3"
             aria-label={`Immigration Horizons — home`}
           >
-            <Image
-              src="/images/logo-header.png"
-              alt="Immigration Horizons"
-              width={551}
-              height={320}
-              priority
-              className="h-14 w-auto sm:h-16"
-            />
+            <span className="flex h-14 w-24 items-center justify-center overflow-hidden rounded-xl bg-white px-2.5 shadow-subtle ring-1 ring-navy-100 transition-[transform,box-shadow] duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 group-hover:shadow-card sm:h-16 sm:w-28">
+              <Image
+                src="/images/logo-header.png"
+                alt="Immigration Horizons"
+                width={551}
+                height={320}
+                priority
+                className="h-auto w-full"
+              />
+            </span>
+            <span className="hidden border-l border-ink-200 pl-3 xl:block">
+              <span className="font-display text-navy-900 block text-base leading-tight font-semibold">
+                Immigration Horizons
+              </span>
+              <span className="text-gold-700 mt-1 block text-[0.6rem] font-bold tracking-[0.16em] uppercase">
+                Your future, thoughtfully prepared
+              </span>
+            </span>
           </Link>
 
           {/* `relative` anchors the mega panel to the nav block rather than to
@@ -149,7 +183,7 @@ export function Header() {
 
           <div className="hidden shrink-0 lg:block">
             <Button href="/consultation" variant="gold">
-              Free Consultation
+              Free Consultation <ArrowUpRight size={16} aria-hidden />
             </Button>
           </div>
 
@@ -314,7 +348,7 @@ function MobileNav({
     <div
       id="mobile-nav"
       hidden={!open}
-      className="border-ink-200 h-[calc(100dvh-5rem)] overflow-y-auto border-t bg-white lg:hidden"
+      className="border-ink-200 h-[calc(100dvh-5rem)] overflow-y-auto border-t bg-white sm:h-[calc(100dvh-7.25rem)] lg:hidden"
     >
       <Container className="py-6">
         <ul className="flex flex-col gap-1">

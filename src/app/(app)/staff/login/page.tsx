@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Container } from "@/components/ui/container";
+import { AuthFrame } from "@/components/app/auth-frame";
 import { StaffLoginForm } from "@/components/app/staff-login-form";
 import { getEmployeeContext } from "@/lib/auth/current-employee";
 
@@ -32,25 +32,26 @@ export default async function StaffLoginPage({
   if (existing) redirect(target ?? "/staff");
 
   return (
-    <Container width="prose" className="py-20 sm:py-28">
-      <div className="mx-auto max-w-sm">
-        <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">Staff sign in</h1>
-        <p className="text-ink-600 mt-2 text-[0.9375rem]">
-          For Immigration Horizons team members. Use the same credentials as the admin system.
-        </p>
-
-        <div className="rounded-panel border-ink-200 shadow-subtle mt-8 border bg-white p-6">
-          <StaffLoginForm next={target} />
-        </div>
-
-        <p className="text-ink-500 mt-6 text-xs">
+    <AuthFrame
+      eyebrow="Team workspace"
+      title="Staff sign in"
+      description="Use the same Immigration Horizons credentials as the admin system."
+      points={[
+        "Review assigned cases and priorities",
+        "Coordinate clients, queries, and tasks",
+        "Work within role-based permissions",
+      ]}
+      footer={
+        <p>
           Looking for your client account?{" "}
           <Link href="/portal/login" className="text-navy-700 font-semibold hover:underline">
             Sign in to the client portal
           </Link>
           .
         </p>
-      </div>
-    </Container>
+      }
+    >
+      <StaffLoginForm next={target} />
+    </AuthFrame>
   );
 }

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { Container } from "@/components/ui/container";
+import Link from "next/link";
+
+import { AuthFrame } from "@/components/app/auth-frame";
 import { LoginForm } from "@/components/portal/login-form";
 
 export const metadata: Metadata = {
@@ -11,29 +13,28 @@ export const metadata: Metadata = {
 
 export default function PortalLoginPage() {
   return (
-    <Container width="default" className="py-16 sm:py-24">
-      <div className="mx-auto max-w-md">
-        <h1 className="font-display text-navy-900 text-2xl font-semibold sm:text-3xl">
-          Sign in to your portal
-        </h1>
-        <p className="text-ink-600 mt-2 text-[0.9375rem]">
-          Track your consultation and case updates.
-        </p>
-
-        <div className="rounded-panel border-ink-200 mt-8 border bg-white p-6 shadow-subtle sm:p-8">
-          <Suspense fallback={null}>
-            <LoginForm />
-          </Suspense>
-        </div>
-
-        <p className="text-ink-500 mt-6 text-sm">
+    <AuthFrame
+      eyebrow="Client portal"
+      title="Welcome back"
+      description="Sign in to follow your consultation, case milestones, documents, and messages."
+      points={[
+        "See case progress in one place",
+        "Exchange documents securely",
+        "Keep questions and replies together",
+      ]}
+      footer={
+        <p>
           Don&apos;t have an account yet?{" "}
-          <a href="/consultation" className="text-navy-700 font-semibold hover:underline">
+          <Link href="/consultation" className="text-navy-700 font-semibold hover:underline">
             Book a free consultation
-          </a>{" "}
+          </Link>{" "}
           to get started.
         </p>
-      </div>
-    </Container>
+      }
+    >
+      <Suspense fallback={null}>
+        <LoginForm />
+      </Suspense>
+    </AuthFrame>
   );
 }

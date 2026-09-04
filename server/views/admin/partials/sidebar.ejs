@@ -1,23 +1,23 @@
 <%
 // Sidebar navigation for admin panel
 const menuItems = [
-  { label: 'Dashboard', icon: 'tachometer-alt', page: 'dashboard', url: '/admin' },
-  { label: 'Leads', icon: 'users', page: 'leads', url: '/admin/leads', badge: 'newLeadsCount' },
-  { label: 'Clients', icon: 'user-circle', page: 'clients', url: '/admin/clients', capability: 'clients.view' },
-  { label: 'Cases', icon: 'briefcase', page: 'cases', url: '/admin/cases', capability: 'cases.view' },
-  { label: 'Queries', icon: 'comment-dots', page: 'queries', url: '/admin/queries', capability: 'queries.view' },
-  { label: 'Task Board', icon: 'clipboard-list', page: 'tasks', url: '/admin/tasks' },
-  { label: 'Sprint Board', icon: 'flag', page: 'sprints', url: '/admin/sprints' },
-  { label: 'Delivery', icon: 'truck', page: 'delivery', url: '/admin/delivery' },
-  { label: 'Notifications', icon: 'bell', page: 'notifications', url: '/admin/notifications', badge: 'unreadNotificationCount' },
-  { label: 'Blog', icon: 'edit', page: 'blog', url: '/admin/blog' },
-  { label: 'SEO Manager', icon: 'search-plus', page: 'seo', url: '/admin/seo' },
-  { label: 'Testimonials', icon: 'star', page: 'testimonials', url: '/admin/testimonials' },
-  { label: 'FAQs', icon: 'question-circle', page: 'faqs', url: '/admin/faqs' },
-  { label: 'Services', icon: 'cogs', page: 'services', url: '/admin/services' },
-  { label: 'Media Library', icon: 'images', page: 'media', url: '/admin/media' },
-  { label: 'Settings', icon: 'cog', page: 'settings', url: '/admin/settings', capability: 'settings.manage' },
-  { label: 'Users', icon: 'user-shield', page: 'users', url: '/admin/users', capability: 'users.manage' },
+  { label: 'Dashboard', icon: 'tachometer-alt', page: 'dashboard', url: '/admin', group: 'Workspace' },
+  { label: 'Leads', icon: 'users', page: 'leads', url: '/admin/leads', badge: 'newLeadsCount', group: 'Client operations' },
+  { label: 'Clients', icon: 'user-circle', page: 'clients', url: '/admin/clients', capability: 'clients.view', group: 'Client operations' },
+  { label: 'Cases', icon: 'briefcase', page: 'cases', url: '/admin/cases', capability: 'cases.view', group: 'Client operations' },
+  { label: 'Queries', icon: 'comment-dots', page: 'queries', url: '/admin/queries', capability: 'queries.view', group: 'Client operations' },
+  { label: 'Task Board', icon: 'clipboard-list', page: 'tasks', url: '/admin/tasks', group: 'Planning & delivery' },
+  { label: 'Sprint Board', icon: 'flag', page: 'sprints', url: '/admin/sprints', group: 'Planning & delivery' },
+  { label: 'Delivery', icon: 'truck', page: 'delivery', url: '/admin/delivery', group: 'Planning & delivery' },
+  { label: 'Notifications', icon: 'bell', page: 'notifications', url: '/admin/notifications', badge: 'unreadNotificationCount', group: 'Planning & delivery' },
+  { label: 'Blog', icon: 'edit', page: 'blog', url: '/admin/blog', group: 'Website content' },
+  { label: 'SEO Manager', icon: 'search-plus', page: 'seo', url: '/admin/seo', group: 'Website content' },
+  { label: 'Testimonials', icon: 'star', page: 'testimonials', url: '/admin/testimonials', group: 'Website content' },
+  { label: 'FAQs', icon: 'question-circle', page: 'faqs', url: '/admin/faqs', group: 'Website content' },
+  { label: 'Services', icon: 'cogs', page: 'services', url: '/admin/services', group: 'Website content' },
+  { label: 'Media Library', icon: 'images', page: 'media', url: '/admin/media', group: 'Website content' },
+  { label: 'Settings', icon: 'cog', page: 'settings', url: '/admin/settings', capability: 'settings.manage', group: 'System' },
+  { label: 'Users', icon: 'user-shield', page: 'users', url: '/admin/users', capability: 'users.manage', group: 'System' },
 ].filter(function(item) { return !item.capability || can(item.capability); });
 %>
 <aside class="admin-sidebar">
@@ -26,13 +26,18 @@ const menuItems = [
       <%# Same asset as the marketing site's header (public/images/logo-header.png). %>
       <img src="/images/logo-header.png" alt="Immigration Horizons" class="brand-logo" width="551" height="320">
     </a>
+    <p class="sidebar-brand-caption">Administration workspace</p>
   </div>
 
   <div class="sidebar-divider"></div>
 
   <nav class="sidebar-nav">
     <ul class="nav-list">
+      <% var activeGroup = null; %>
       <% menuItems.forEach(function(item) { %>
+        <% if (item.group !== activeGroup) { activeGroup = item.group; %>
+          <li class="sidebar-section-label"><%= item.group %></li>
+        <% } %>
         <li class="nav-item <%= currentPage === item.page ? 'active' : '' %>">
           <a href="<%= item.url %>" class="nav-link">
             <span class="nav-icon">
