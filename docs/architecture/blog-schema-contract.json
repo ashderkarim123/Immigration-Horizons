@@ -1,0 +1,6 @@
+{
+  "_comment": "Canonical test-time contract for BlogPost, authored by server/models/BlogPost.js and read by src/lib/models/BlogPost.ts.",
+  "collection": "blogposts",
+  "categories": ["EB-2 NIW", "EB-1A", "USCIS Updates", "Success Stories", "Immigration Tips"],
+  "requiredFields": ["title", "slug", "excerpt", "content"]
+}

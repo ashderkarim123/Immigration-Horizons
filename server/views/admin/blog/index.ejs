@@ -60,7 +60,8 @@
                 </td>
                 <td><%= new Date(post.createdAt).toLocaleDateString() %></td>
                 <td class="cell-actions">
-                  <a href="/blog/<%= post.slug %>" target="_blank" class="btn btn-sm btn-ghost" title="View"><i class="fas fa-eye"></i></a>
+                  <% const publicOrigin = typeof publicSiteUrl === 'string' && publicSiteUrl ? publicSiteUrl.replace(/\/+$/, '') : 'https://immigrationhorizons.com'; %>
+                  <a href="<%= publicOrigin %>/blog/<%= post.slug %>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-ghost" title="View on public website"><i class="fas fa-eye"></i></a>
                   <% if (can('blog.manage')) { %>
                     <a href="/admin/blog/<%= post._id %>/edit" class="btn btn-sm btn-ghost" title="Edit"><i class="fas fa-edit"></i></a>
                     <form action="/admin/blog/<%= post._id %>/toggle-publish" method="POST" style="display:inline">

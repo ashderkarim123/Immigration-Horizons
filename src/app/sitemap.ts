@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { getPublishedBlogPosts } from "@/lib/blogs";
 import { site } from "@/lib/content/site";
 import { caseCategories, supportServices } from "@/lib/content/services";
 
@@ -26,7 +27,12 @@ const staticRoutes = [
   { path: "/terms", priority: 0.2 },
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const blogRoutes = (await getPublishedBlogPosts()).map((post) => ({
+    url: `${site.url}/blog/${post.slug}`,
+    lastModified: post.updatedAt,
+    priority: 0.7,
+  }));
   const serviceRoutes = [
     ...caseCategories.map((c) => `/services/${c.slug}`),
     ...supportServices.map((s) => `/services/${s.slug}`),
@@ -45,5 +51,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority,
     })),
     ...serviceRoutes,
+    ...blogRoutes,
   ];
 }

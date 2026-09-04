@@ -124,6 +124,9 @@ function createApp() {
   // ----- Locals available to every admin view -----
   app.use((req, res, next) => {
     res.locals.siteUrl = process.env.SITE_URL || 'http://localhost:4000';
+    // The admin host is a separate app, so public blog previews must never
+    // use a relative URL (which would keep them on admin.*).
+    res.locals.publicSiteUrl = process.env.PUBLIC_SITE_URL || 'https://immigrationhorizons.com';
     res.locals.error = null;
     res.locals.success = null;
     res.locals.leadCount = 0;
