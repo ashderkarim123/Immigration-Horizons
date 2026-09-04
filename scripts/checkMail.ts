@@ -11,6 +11,12 @@
  * Run it on the server, with the production .env loaded, before go-live.
  */
 
+// Loads .env exactly as scripts/createIndexes.ts does. A tsx script is not
+// Next.js: nothing reads the environment file for us, so without this the
+// script sees an empty environment and reports every setting as missing —
+// which looks identical to a genuinely unconfigured server.
+import "dotenv/config";
+
 import {
   activeTransport,
   closeMailTransport,

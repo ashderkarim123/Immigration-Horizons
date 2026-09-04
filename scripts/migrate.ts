@@ -1,3 +1,9 @@
+// Loads .env exactly as scripts/createIndexes.ts does. A tsx script is not
+// Next.js: nothing reads the environment file for us, so without this the
+// script sees an empty environment and reports every setting as missing —
+// which looks identical to a genuinely unconfigured server.
+import "dotenv/config";
+
 import mongoose from "mongoose";
 
 import { migration as m001 } from "./migrations/001-notification-recipient-identity";
