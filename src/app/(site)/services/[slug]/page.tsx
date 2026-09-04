@@ -16,6 +16,7 @@ import { RelatedServices } from "@/components/service/related-services";
 import { ServiceHero } from "@/components/service/service-hero";
 import { TableOfContents } from "@/components/service/table-of-contents";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/components/seo/json-ld";
+import { articleOpenGraph } from "@/lib/seo/og";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -48,18 +49,10 @@ export async function generateMetadata({
     keywords: page.keywords,
     alternates: { canonical: `/services/${page.slug}` },
     openGraph: {
-      type: "article",
+      ...articleOpenGraph,
       title: page.metaTitle,
       description: page.metaDescription,
       url: `/services/${page.slug}`,
-      siteName: site.name,
-      images: [{ url: "/images/logo-header.png", width: 551, height: 320 }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: page.metaTitle,
-      description: page.metaDescription,
-      images: ["/images/logo-header.png"],
     },
   };
 }

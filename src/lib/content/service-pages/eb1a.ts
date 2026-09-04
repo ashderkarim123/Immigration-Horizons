@@ -13,9 +13,9 @@ export const eb1a: ServicePageContent = {
     "Criteria mapping, evidence selection, and petition drafting for applicants with sustained national or international acclaim — prepared for individuals and for law firms needing drafting capacity.",
   definition:
     "EB-1A is a U.S. employment-based immigrant category for individuals with extraordinary ability in the sciences, arts, education, business, or athletics. It requires sustained national or international acclaim and is a self-petition — no employer sponsorship or labor certification is required to file Form I-140.",
-  metaTitle: "EB-1A Extraordinary Ability Petition Preparation | Requirements & Evidence",
+  metaTitle: "EB-1A Extraordinary Ability Green Card: Criteria & Evidence",
   metaDescription:
-    "Complete guide to the EB-1A extraordinary ability green card: the ten regulatory criteria, the Kazarian two-step analysis, evidence strategy, and common mistakes. Petition preparation by Immigration Horizons.",
+    "The EB-1A extraordinary-ability green card explained: the ten regulatory criteria, the Kazarian two-step test, evidence strategy, and the mistakes that draw RFEs.",
   keywords: [
     "EB1A",
     "EB-1A",

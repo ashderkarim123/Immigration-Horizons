@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { caseCategories } from "@/lib/content/services";
+import { baseOpenGraph } from "@/lib/seo/og";
 
 export const metadata: Metadata = {
   title: "Immigration Blog",
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
     "In-depth articles on EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 immigration petitions are coming soon. In the meantime, explore our full category guides.",
   alternates: { canonical: "/blog" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "Immigration Blog | Immigration Horizons",
     description: "In-depth immigration articles — coming soon.",
     url: "/blog",

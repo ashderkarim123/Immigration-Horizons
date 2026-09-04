@@ -19,6 +19,7 @@ import {
   breadcrumbSchema,
   faqSchema,
 } from "@/components/seo/json-ld";
+import { articleOpenGraph } from "@/lib/seo/og";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -60,18 +61,10 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/services/eb2-niw" },
   openGraph: {
-    type: "article",
+    ...articleOpenGraph,
     title: eb2NiwMeta.metaTitle,
     description: eb2NiwMeta.metaDescription,
     url: "/services/eb2-niw",
-    siteName: site.name,
-    images: [{ url: "/images/logo-header.png", width: 551, height: 320 }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: eb2NiwMeta.metaTitle,
-    description: eb2NiwMeta.metaDescription,
-    images: ["/images/logo-header.png"],
   },
 };
 

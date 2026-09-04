@@ -10,9 +10,9 @@ export const eb1b: ServicePageContent = {
     "Petition preparation for academics and industry researchers with international recognition — including the employer-side documentation this category requires.",
   definition:
     "EB-1B is a U.S. employment-based immigrant category for outstanding professors and researchers who are internationally recognised in a specific academic area. It requires at least three years of teaching or research experience in that area and a qualifying job offer from a U.S. employer, who files Form I-140 on the applicant's behalf.",
-  metaTitle: "EB-1B Outstanding Professor & Researcher Petition Preparation",
+  metaTitle: "EB-1B Outstanding Professor & Researcher Petitions",
   metaDescription:
-    "Complete guide to the EB-1B outstanding professor or researcher green card: the six regulatory criteria, employer requirements, qualifying positions, evidence strategy and common mistakes.",
+    "The EB-1B outstanding professor or researcher green card: the six regulatory criteria, employer requirements, qualifying positions, and evidence strategy.",
   keywords: [
     "EB1B",
     "EB-1B",

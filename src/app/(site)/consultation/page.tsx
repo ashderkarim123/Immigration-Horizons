@@ -8,14 +8,15 @@ import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/section";
 import { allServices } from "@/lib/content/services";
 import { contact, stats, whatsappLink } from "@/lib/content/site";
+import { baseOpenGraph } from "@/lib/seo/og";
 
 export const metadata: Metadata = {
   title: "Book a Free Consultation",
   description:
-    "Book a free consultation for your EB-2 NIW, EB-1A, EB-1B, EB-1C or O-1 petition. Tell us about your background and we'll assess which route your profile actually supports.",
+    "Book a free consultation for your EB-2 NIW, EB-1A, EB-1B, EB-1C or O-1 petition — we'll assess which route your profile actually supports.",
   alternates: { canonical: "/consultation" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "Book a Free Consultation | Immigration Horizons",
     description:
       "Tell us about your background and goals. We'll assess which employment-based route your profile supports — honestly, before you commit to anything.",

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/section";
 import { contact, whatsappLink } from "@/lib/content/site";
+import { baseOpenGraph } from "@/lib/seo/og";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
     "Get in touch with Immigration Horizons by email or WhatsApp, or send us a message. We support clients worldwide across time zones.",
   alternates: { canonical: "/contact" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "Contact Us | Immigration Horizons",
     description: "Reach us by email, WhatsApp, or the contact form.",
     url: "/contact",

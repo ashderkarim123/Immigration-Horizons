@@ -11,7 +11,7 @@ export const recommendationLetters: ServicePageContent = {
     "A recommendation letter in an employment-based petition is a statement from someone positioned to speak to your work, used as evidence toward the petition's criteria. In an immigration context its value depends less on praise and more on specific, first-hand testimony that an adjudicator can weigh — which is what distinguishes a persuasive letter from a generic one.",
   metaTitle: "Recommendation Letter Preparation for Immigration Petitions",
   metaDescription:
-    "Custom recommendation and reference letter drafting for EB-2 NIW, EB-1A, EB-1B and O-1 petitions. Written from scratch around each recommender's relationship to your work, with no boilerplate.",
+    "Custom recommendation and reference letters for EB-2 NIW, EB-1A, EB-1B and O-1 petitions — written from scratch around each recommender, never templated.",
   keywords: [
     "recommendation letters",
     "immigration recommendation letter",

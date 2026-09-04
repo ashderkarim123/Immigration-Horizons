@@ -14,9 +14,9 @@ export const eb1c: ServicePageContent = {
     "Petition preparation for executives and managers transferring into a U.S. entity — including the corporate relationship and organisational evidence this category turns on.",
   definition:
     "EB-1C is a U.S. employment-based immigrant category for multinational managers and executives. It generally requires one year of qualifying employment abroad in a managerial or executive capacity within the three years before the petition, and a U.S. employer — related to the foreign entity — offering a managerial or executive role.",
-  metaTitle: "EB-1C Multinational Manager & Executive Petition Preparation",
+  metaTitle: "EB-1C Multinational Manager & Executive Petitions",
   metaDescription:
-    "Complete guide to the EB-1C multinational manager or executive green card: qualifying corporate relationships, managerial and executive capacity, required evidence, and common mistakes.",
+    "The EB-1C multinational manager or executive green card: qualifying corporate relationships, managerial vs executive capacity, and the required evidence.",
   keywords: [
     "EB1C",
     "EB-1C",

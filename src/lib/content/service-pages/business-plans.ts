@@ -9,9 +9,9 @@ export const businessPlans: ServicePageContent = {
     "Business plans and personal endeavor plans that document what you intend to do in the United States and why it carries national importance — written to support the petition, not to raise capital.",
   definition:
     "In an employment-based petition, a business or personal endeavor plan documents the applicant's proposed work in the United States and its prospective impact. Unlike an investor's business plan, its audience is a USCIS adjudicator, and its purpose is to establish national importance and feasibility — not to attract funding.",
-  metaTitle: "Business Plan & Endeavor Plan Preparation for Immigration Petitions",
+  metaTitle: "Immigration Business & Endeavor Plan Preparation",
   metaDescription:
-    "Business plan and personal endeavor plan preparation for EB-2 NIW and EB-1C petitions. Written for a USCIS audience to document proposed work, national importance, and feasibility.",
+    "Business and personal endeavor plan preparation for EB-2 NIW and EB-1C petitions — written for a USCIS audience to show national importance and feasibility.",
   keywords: [
     "immigration business plan",
     "EB2 NIW business plan",

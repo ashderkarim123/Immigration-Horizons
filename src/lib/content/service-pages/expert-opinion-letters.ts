@@ -11,7 +11,7 @@ export const expertOpinionLetters: ServicePageContent = {
     "An expert opinion letter is a statement from a recognised authority in a field, offering an independent assessment of the significance of someone's work or the standards of their profession. In a petition it functions as third-party expert testimony, helping a non-specialist adjudicator understand why a contribution matters.",
   metaTitle: "Expert Opinion Letter Preparation for Immigration Petitions",
   metaDescription:
-    "Independent expert opinion letter drafting for EB-2 NIW, EB-1A, EB-1B and O-1 petitions. Field-expert assessments that explain the significance of your work to a non-specialist adjudicator.",
+    "Independent expert opinion letters for EB-2 NIW, EB-1A, EB-1B and O-1 petitions — assessments that explain your work's significance to a non-specialist adjudicator.",
   keywords: [
     "expert opinion letter",
     "immigration expert letter",

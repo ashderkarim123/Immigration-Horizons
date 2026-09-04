@@ -22,9 +22,9 @@ export type Criterion = {
 
 export const eb2NiwMeta = {
   title: "EB-2 NIW: Complete Guide to the National Interest Waiver",
-  metaTitle: "EB-2 NIW Petition Preparation | National Interest Waiver Guide",
+  metaTitle: "EB-2 NIW Petition Preparation | National Interest Waiver",
   metaDescription:
-    "Complete guide to the EB-2 National Interest Waiver: Dhanasar eligibility, evidence strategy, required documents, USCIS process, and common mistakes. Petition preparation by Immigration Horizons.",
+    "The EB-2 National Interest Waiver explained: Dhanasar eligibility, evidence strategy, required documents, the USCIS process, and common mistakes.",
   heroHeadline: "EB-2 National Interest Waiver (NIW)",
   heroSubhead:
     "The complete guide to eligibility, evidence, and petition strategy — plus how we prepare NIW cases for professionals and law firms worldwide.",

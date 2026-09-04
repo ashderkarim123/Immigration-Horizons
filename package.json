@@ -11,6 +11,7 @@
     "db:indexes": "node --conditions=react-server --import tsx scripts/createIndexes.ts",
     "db:indexes:dry-run": "node --conditions=react-server --import tsx scripts/createIndexes.ts --dry-run",
     "mail:check": "node --conditions=react-server --import tsx scripts/checkMail.ts",
+    "og:generate": "node --conditions=react-server --import tsx scripts/generateOgImage.tsx",
     "db:migrate": "node --conditions=react-server --import tsx scripts/migrate.ts",
     "db:purge": "node --conditions=react-server --import tsx scripts/purgeRetention.ts"
   },

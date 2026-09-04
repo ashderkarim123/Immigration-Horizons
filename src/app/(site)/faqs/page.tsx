@@ -10,6 +10,7 @@ import { Eyebrow } from "@/components/ui/section";
 import { homepageFaqs, type Faq } from "@/lib/content/faqs";
 import { eb2NiwFaqs } from "@/lib/content/eb2-niw";
 import { getServicePage } from "@/lib/content/service-pages";
+import { baseOpenGraph } from "@/lib/seo/og";
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     "Answers on EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 eligibility, evidence, RFE support, scope, and what an immigration consulting practice can and cannot do.",
   alternates: { canonical: "/faqs" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "Frequently Asked Questions | Immigration Horizons",
     description:
       "Straight answers on employment-based immigration eligibility, evidence, and process.",

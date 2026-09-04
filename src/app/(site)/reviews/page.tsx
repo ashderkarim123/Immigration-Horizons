@@ -11,6 +11,7 @@ import { RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { Eyebrow } from "@/components/ui/section";
 import { social } from "@/lib/content/site";
 import { testimonials } from "@/lib/content/testimonials";
+import { baseOpenGraph } from "@/lib/seo/og";
 
 export const metadata: Metadata = {
   title: "Client Reviews",
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
     "Verified client reviews and case-approval messages from Immigration Horizons. Every review links to our public marketplace profile so you can confirm it yourself.",
   alternates: { canonical: "/reviews" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "Client Reviews | Immigration Horizons",
     description:
       "Verifiable client reviews and approvals — every one links back to its public source.",

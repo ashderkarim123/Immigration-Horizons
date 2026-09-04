@@ -12,7 +12,7 @@ export const rfeResponse: ServicePageContent = {
     "A USCIS Request for Evidence (RFE) is a formal notice asking for additional documentation before an officer decides a petition. It is not a denial. A well-prepared RFE response addresses the specific concerns the officer raised, point by point, with targeted evidence — rather than resubmitting the original filing with more material attached.",
   metaTitle: "USCIS RFE Response Preparation | RFE & NOID Support",
   metaDescription:
-    "Professional USCIS RFE and NOID response preparation for EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions — including cases filed by someone else. Focused, evidence-led responses under deadline.",
+    "USCIS RFE and NOID response preparation for EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions — including cases originally filed by someone else, under deadline.",
   keywords: [
     "USCIS RFE",
     "RFE response",

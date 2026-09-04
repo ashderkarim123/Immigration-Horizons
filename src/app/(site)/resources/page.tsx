@@ -12,6 +12,7 @@ import { RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { Eyebrow, Section, SectionHeading } from "@/components/ui/section";
 import { caseCategories, supportServices } from "@/lib/content/services";
 import { officialResources } from "@/lib/content/resources";
+import { baseOpenGraph } from "@/lib/seo/og";
 
 export const metadata: Metadata = {
   title: "Resources",
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     "Immigration Horizons guides on EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1, plus links to authoritative USCIS and Department of State resources.",
   alternates: { canonical: "/resources" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "Immigration Resources | Immigration Horizons",
     description:
       "In-depth guides and links to authoritative official immigration resources.",

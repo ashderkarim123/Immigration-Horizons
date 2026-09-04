@@ -20,30 +20,23 @@ import {
   websiteSchema,
 } from "@/components/seo/json-ld";
 import { homepageFaqs } from "@/lib/content/faqs";
+import { baseOpenGraph } from "@/lib/seo/og";
 
 export const metadata: Metadata = {
   title: {
     absolute: "EB-2 NIW Petition Preparation | Immigration Horizons",
   },
   description:
-    "Professional EB-2 NIW petition preparation, USCIS RFE support, and employment-based US immigration consulting. Immigration Horizons helps professionals build stronger immigration petitions.",
+    "EB-2 NIW petition preparation, USCIS RFE support, and employment-based US immigration consulting for professionals building stronger petitions.",
   alternates: { canonical: "/" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "EB-2 NIW Petition Preparation | Immigration Horizons",
     description:
-      "Professional EB-2 NIW petition preparation, USCIS RFE support, and employment-based US immigration consulting.",
+      "EB-2 NIW petition preparation, USCIS RFE support, and employment-based US immigration consulting.",
     url: "/",
-    siteName: "Immigration Horizons",
-    images: [{ url: "/images/logo-header.png", width: 551, height: 320 }],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "EB-2 NIW Petition Preparation | Immigration Horizons",
-    description:
-      "Professional EB-2 NIW petition preparation, USCIS RFE support, and employment-based US immigration consulting.",
-    images: ["/images/logo-header.png"],
-  },
+  // twitter:* falls back to the openGraph values above.
 };
 
 /**

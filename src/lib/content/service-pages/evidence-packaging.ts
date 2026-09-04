@@ -9,9 +9,9 @@ export const evidencePackaging: ServicePageContent = {
     "Review, organisation, and indexing of your supporting evidence into a clean, navigable exhibit set — so every claim in the petition maps to a document an adjudicator can find immediately.",
   definition:
     "Evidence packaging is the review, organisation, and indexing of a petition's supporting documents into a structured exhibit set. Well-organised evidence lets an adjudicator locate the proof behind each claim without searching; poorly organised evidence, however strong, can be overlooked simply because it could not be found.",
-  metaTitle: "Evidence Packaging & Document Organization for USCIS Petitions",
+  metaTitle: "USCIS Evidence Packaging & Document Organization",
   metaDescription:
-    "Evidence review, exhibit organisation, and indexing for EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions. Turn a strong record into a navigable, filing-ready exhibit set.",
+    "Evidence review, exhibit organisation, and indexing for EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions — a strong record made into a filing-ready exhibit set.",
   keywords: [
     "evidence packaging",
     "USCIS documentation",

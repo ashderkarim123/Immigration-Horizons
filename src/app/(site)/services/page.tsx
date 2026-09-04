@@ -6,6 +6,7 @@ import { CtaBanner } from "@/components/sections/cta-banner";
 import { Faqs } from "@/components/sections/faqs";
 import { CategoryComparison } from "@/components/visuals/category-comparison";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
+import { baseOpenGraph } from "@/lib/seo/og";
 import { Badge, Card, CardBody, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -18,10 +19,10 @@ import { caseCategories, supportServices } from "@/lib/content/services";
 export const metadata: Metadata = {
   title: "Our Services",
   description:
-    "EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petition preparation, plus single deliverables: RFE responses, recommendation letters, expert opinion letters, business plans and evidence packaging.",
+    "Petition preparation for EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1, plus standalone RFE responses, recommendation letters, business plans and evidence packaging.",
   alternates: { canonical: "/services" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "Our Services | Immigration Horizons",
     description:
       "Employment-based immigration petition preparation and single-deliverable support services.",

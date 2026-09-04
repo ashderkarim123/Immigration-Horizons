@@ -17,14 +17,15 @@ import { Eyebrow, Section, SectionHeading } from "@/components/ui/section";
 import { coreValues, mission, vision } from "@/lib/content/brand";
 import { team } from "@/lib/content/about";
 import { stats } from "@/lib/content/site";
+import { baseOpenGraph } from "@/lib/seo/og";
 
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Immigration Horizons is an immigration consulting and paralegal services practice specialising in EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions. 200+ cases handled, 5+ years of experience.",
+    "An immigration consulting and paralegal services practice preparing EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions. Not a law firm.",
   alternates: { canonical: "/about" },
   openGraph: {
-    type: "website",
+    ...baseOpenGraph,
     title: "About Immigration Horizons",
     description:
       "An immigration consulting and paralegal services practice for employment-based petitions. Not a law firm.",
