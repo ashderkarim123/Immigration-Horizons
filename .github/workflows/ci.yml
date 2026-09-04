@@ -14,7 +14,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
+  # Must match production (DEPLOYMENT.md installs Node 22 on the VPS), and
+  # must be >= 21: the root suite passes a glob as a positional argument to
+  # `node --test`, which Node 20 treats as a literal filename and fails with
+  # "Could not find '.../test/**/*.test.ts'" before running a single test.
+  # `file-type` also declares engines >= 22.
+  NODE_VERSION: '22'
 
 jobs:
   static:

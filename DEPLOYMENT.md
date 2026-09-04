@@ -48,8 +48,10 @@ One VPS, one nginx, one PM2 process manager running two apps, one shared databas
 Install on the server:
 
 ```bash
-# Node.js 20.x (NodeSource)
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# Node.js 22.x (NodeSource). 22 is the floor, not a preference: `file-type`
+# declares engines >= 22, and the root test suite passes a glob to
+# `node --test`, which only expands from Node 21 onwards.
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs git nginx
 
 # PM2 (process manager) — installed globally, used for both apps
