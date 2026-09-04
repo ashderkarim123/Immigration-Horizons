@@ -44,6 +44,12 @@ const attachCollaboration = require('./collaboration');
 const attachClients = require('./clients');
 const { getOperationalCounts } = require('../../services/operationsQueues');
 const { isChecked } = require('../../utils/checkbox');
+const {
+  organizationTimezone,
+  zonedTimeToUtc,
+  formatForDateTimeLocalInput,
+  timezoneLabel,
+} = require('../../utils/timezone');
 
 // ========================================================================
 // AUTHENTICATION
@@ -810,6 +816,8 @@ router.get('/admin/blog/new', (req, res) => {
   res.render('admin/blog/form', {
     title: 'New Blog Post | Admin',
     post: null,
+    publishDateLocal: '',
+    timezone: timezoneLabel(organizationTimezone()),
     categories,
     error: null,
     currentPage: 'blog',
@@ -833,7 +841,10 @@ router.post('/admin/blog', requireCapability('blog.manage'), uploadSingle('cover
       published: isChecked(published),
     };
 
-    if (publishDate) postData.publishDate = new Date(publishDate);
+    // publishDate arrives as a timezone-less "datetime-local" string (the
+    // form label tells the editor which zone it's read in) — parse it as
+    // wall-clock time in that zone, not as UTC.
+    if (publishDate) postData.publishDate = zonedTimeToUtc(publishDate, organizationTimezone());
     // If published but no publishDate, set it
     if (postData.published && !postData.publishDate) {
       postData.publishDate = new Date();
@@ -845,6 +856,11 @@ router.post('/admin/blog', requireCapability('blog.manage'), uploadSingle('cover
     res.render('admin/blog/form', {
       title: 'New Blog Post | Admin',
       post: req.body,
+      // req.body.publishDate is already the exact datetime-local string the
+      // input needs back — re-converting it would apply the timezone
+      // correction a second time.
+      publishDateLocal: req.body.publishDate || '',
+      timezone: timezoneLabel(organizationTimezone()),
       categories,
       error: err.message,
       currentPage: 'blog',
@@ -859,6 +875,8 @@ router.get('/admin/blog/:id/edit', async (req, res) => {
     res.render('admin/blog/form', {
       title: 'Edit Blog Post | Admin',
       post,
+      publishDateLocal: formatForDateTimeLocalInput(post.publishDate, organizationTimezone()),
+      timezone: timezoneLabel(organizationTimezone()),
       categories,
       error: null,
       currentPage: 'blog',
@@ -886,7 +904,7 @@ router.put('/admin/blog/:id', requireCapability('blog.manage'), uploadSingle('co
     if (slug && slug.trim()) update.slug = slug.trim();
     if (req.file) update.coverImage = `/uploads/${req.file.filename}`;
     else if (req.body.coverImageUrl) update.coverImage = req.body.coverImageUrl;
-    if (publishDate) update.publishDate = new Date(publishDate);
+    if (publishDate) update.publishDate = zonedTimeToUtc(publishDate, organizationTimezone());
     if (update.published && !update.publishDate) {
       update.publishDate = new Date();
     }
@@ -898,6 +916,12 @@ router.put('/admin/blog/:id', requireCapability('blog.manage'), uploadSingle('co
     res.render('admin/blog/form', {
       title: 'Edit Blog Post | Admin',
       post: { ...post, ...req.body },
+      // The string just submitted takes priority over the stored value —
+      // that is what the person is actively editing.
+      publishDateLocal:
+        req.body.publishDate ||
+        (post ? formatForDateTimeLocalInput(post.publishDate, organizationTimezone()) : ''),
+      timezone: timezoneLabel(organizationTimezone()),
       categories,
       error: err.message,
       currentPage: 'blog',

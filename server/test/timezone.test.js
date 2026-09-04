@@ -1,7 +1,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { isValidTimezone, organizationTimezone, todayBoundsInTimezone } = require('../utils/timezone');
+const {
+  isValidTimezone,
+  organizationTimezone,
+  todayBoundsInTimezone,
+  zonedTimeToUtc,
+  formatForDateTimeLocalInput,
+  timezoneLabel,
+} = require('../utils/timezone');
 
 test('isValidTimezone accepts real IANA Area/Location identifiers', () => {
   assert.equal(isValidTimezone('Asia/Karachi'), true);
@@ -74,4 +81,44 @@ test('todayBoundsInTimezone is DST-aware for a zone that observes it (America/Ne
 test('todayBoundsInTimezone bounds are exactly 24 hours apart', () => {
   const { start, end } = todayBoundsInTimezone('America/New_York', new Date('2026-11-02T12:00:00Z'));
   assert.equal(end.getTime() - start.getTime(), 24 * 60 * 60 * 1000);
+});
+
+test('zonedTimeToUtc reproduces the exact scheduling bug: "23:26" in Asia/Karachi is 18:26 UTC, not 23:26 UTC', () => {
+  // The real value that shipped a post ~5 hours later than intended: an
+  // editor in Pakistan typed "publish now" (23:26 local) into a
+  // datetime-local field, and the old code stored it as 23:26 UTC.
+  const utc = zonedTimeToUtc('2026-09-04T23:26', 'Asia/Karachi');
+  assert.equal(utc.toISOString(), '2026-09-04T18:26:00.000Z');
+});
+
+test('zonedTimeToUtc is DST-aware (America/New_York, EDT in August is UTC-4)', () => {
+  const utc = zonedTimeToUtc('2026-08-04T09:00', 'America/New_York');
+  assert.equal(utc.toISOString(), '2026-08-04T13:00:00.000Z');
+});
+
+test('zonedTimeToUtc treats UTC as a no-op', () => {
+  const utc = zonedTimeToUtc('2026-09-04T23:26', 'UTC');
+  assert.equal(utc.toISOString(), '2026-09-04T23:26:00.000Z');
+});
+
+test('zonedTimeToUtc returns null for empty or malformed input', () => {
+  assert.equal(zonedTimeToUtc('', 'Asia/Karachi'), null);
+  assert.equal(zonedTimeToUtc(undefined, 'Asia/Karachi'), null);
+  assert.equal(zonedTimeToUtc('not-a-date', 'Asia/Karachi'), null);
+});
+
+test('formatForDateTimeLocalInput is the exact inverse of zonedTimeToUtc', () => {
+  const utc = zonedTimeToUtc('2026-09-04T23:26', 'Asia/Karachi');
+  assert.equal(formatForDateTimeLocalInput(utc, 'Asia/Karachi'), '2026-09-04T23:26');
+});
+
+test('formatForDateTimeLocalInput returns an empty string for a falsy date', () => {
+  assert.equal(formatForDateTimeLocalInput(null, 'Asia/Karachi'), '');
+  assert.equal(formatForDateTimeLocalInput(undefined, 'Asia/Karachi'), '');
+});
+
+test('timezoneLabel shows the zone name and its current UTC offset', () => {
+  const now = new Date('2026-09-04T12:00:00Z');
+  assert.equal(timezoneLabel('Asia/Karachi', now), 'Asia/Karachi (UTC+05:00)');
+  assert.equal(timezoneLabel('UTC', now), 'UTC (UTC+00:00)');
 });
