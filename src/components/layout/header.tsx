@@ -9,6 +9,7 @@ import { ArrowUpRight, ChevronDown, Globe2, LockKeyhole, Menu, X } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { primaryNav, type NavItem } from "@/lib/content/navigation";
+import { APP_HOST } from "@/lib/hosts";
 import { cn } from "@/lib/utils";
 
 function isActive(pathname: string, href: string) {
@@ -115,8 +116,8 @@ export function Header() {
             <Globe2 size={13} className="text-gold-400" aria-hidden />
             Supporting professionals and law firms worldwide
           </p>
-          <Link
-            href="/portal/login"
+          <a
+            href={`https://${APP_HOST}/portal/login`}
             className="group text-navy-100 flex items-center gap-2 transition-colors hover:text-white"
           >
             <LockKeyhole size={12} className="text-gold-400" aria-hidden />
@@ -126,7 +127,7 @@ export function Header() {
               className="transition-transform motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
               aria-hidden
             />
-          </Link>
+          </a>
         </Container>
       </div>
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { footerNav, legalNav } from "@/lib/content/navigation";
 import { contact, site, social, whatsappLink } from "@/lib/content/site";
+import { APP_HOST } from "@/lib/hosts";
 
 const externalProfiles = [
   { label: "Fiverr Profile", href: social.fiverrProfile },
@@ -37,12 +38,12 @@ export function Footer() {
             <Button href="/consultation" variant="gold">
               Book a consultation <ArrowRight size={16} aria-hidden />
             </Button>
-            <Link
-              href="/portal/login"
+            <a
+              href={`https://${APP_HOST}/portal/login`}
               className="text-navy-100 hover:text-gold-300 inline-flex items-center justify-center gap-2 text-sm font-semibold transition-colors"
             >
               <LockKeyhole size={14} aria-hidden /> Client portal
-            </Link>
+            </a>
           </div>
         </div>
       </Container>
