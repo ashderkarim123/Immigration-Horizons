@@ -132,28 +132,28 @@ export function Header() {
 
       <Container width="wide">
         <div className="flex h-20 items-center justify-between gap-6">
+          {/* The logo carries the brand on its own here — the wordmark and
+              tagline that used to sit beside it were removed deliberately.
+              That makes `aria-label` load-bearing rather than supplementary:
+              it is now the only accessible name this link has. */}
           <Link
             href="/"
-            className="group flex shrink-0 items-center gap-3"
-            aria-label={`Immigration Horizons — home`}
+            className="group flex shrink-0 items-center"
+            aria-label="Immigration Horizons — home"
           >
-            <span className="flex h-14 w-24 items-center justify-center overflow-hidden rounded-xl bg-white px-2.5 shadow-subtle ring-1 ring-navy-100 transition-[transform,box-shadow] duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 group-hover:shadow-card sm:h-16 sm:w-28">
+            <span className="flex h-16 w-28 items-center justify-center overflow-hidden rounded-xl bg-white px-2.5 shadow-subtle ring-1 ring-navy-100 transition-[transform,box-shadow] duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 group-hover:shadow-card sm:h-[4.5rem] sm:w-32">
               <Image
                 src="/images/logo-header.png"
                 alt="Immigration Horizons"
                 width={551}
                 height={320}
                 priority
-                className="h-auto w-full"
+                // object-contain rather than `w-full`: the box no longer
+                // matches the artwork's 551×320 ratio exactly, and a width-
+                // driven image would overflow the fixed height and be clipped
+                // by `overflow-hidden` — silently, and only at some widths.
+                className="h-full w-full object-contain"
               />
-            </span>
-            <span className="hidden border-l border-ink-200 pl-3 xl:block">
-              <span className="font-display text-navy-900 block text-base leading-tight font-semibold">
-                Immigration Horizons
-              </span>
-              <span className="text-gold-700 mt-1 block text-[0.6rem] font-bold tracking-[0.16em] uppercase">
-                Your future, thoughtfully prepared
-              </span>
             </span>
           </Link>
 
