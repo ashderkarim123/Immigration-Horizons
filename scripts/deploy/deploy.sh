@@ -111,7 +111,17 @@ chmod 700 "$SHARED/private-documents"
 # Install and build
 # ---------------------------------------------------------------------------
 log "Installing dependencies (npm ci, both apps)"
-( cd "$RELEASE"        && npm ci --no-audit --no-fund )
+# --include=dev is required here, not optional: `next build` needs
+# tailwindcss, @tailwindcss/postcss, and typescript, all devDependencies.
+# npm's own docs warn that a bare `npm ci` silently omits devDependencies
+# whenever NODE_ENV=production is already set in the environment it runs
+# in — true regardless of any --omit/--include flag you didn't pass. This
+# release's own .env (just linked in above, with NODE_ENV=production) is
+# exactly that trigger the moment anything sources it into this shell, so
+# the flag has to be explicit rather than relying on npm's default. The
+# server's own npm ci is the mirror image, deliberately: server/ has no
+# build step, so its devDependencies (mocha, etc.) are never needed here.
+( cd "$RELEASE"        && npm ci --no-audit --no-fund --include=dev )
 ( cd "$RELEASE/server" && npm ci --no-audit --no-fund --omit=dev )
 
 log "Building the Next.js app"
