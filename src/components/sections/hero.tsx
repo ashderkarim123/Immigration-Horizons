@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, CheckCircle2, Globe2, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,32 @@ import { Reveal } from "@/components/ui/reveal";
 import { contact, whatsappLink } from "@/lib/content/site";
 
 import { HeroVisual } from "./hero-visual";
+
+/**
+ * Contextual link inside the hero lead. In-body links with descriptive
+ * anchor text are the ones that carry weight — these put an exact-match
+ * anchor to every case-category page above the fold, where the categories
+ * were previously named as plain text.
+ *
+ * Underline-only styling so a sentence with seven links still reads as a
+ * sentence rather than a link list.
+ */
+function HeroLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="decoration-gold-400/45 hover:decoration-gold-300 rounded-sm underline decoration-1 underline-offset-4 transition-colors duration-200 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400"
+    >
+      {children}
+    </Link>
+  );
+}
 
 export function Hero() {
   return (
@@ -35,15 +62,31 @@ export function Hero() {
               Employment-Based U.S. Immigration
             </Eyebrow>
 
+            {/* The H1 leads with the categories the page is actually trying to
+                rank for — the title targets EB-2 NIW, and a brand slogan alone
+                left the strongest on-page element carrying no query term. The
+                explicit {" "} matters: without it the two lines concatenate to
+                "petitions,prepared" for a screen reader and for a crawler,
+                because JSX drops whitespace that spans a newline. */}
             <h1 className="text-[2rem] leading-[1.12] font-semibold text-white sm:text-display-lg lg:text-display-xl">
-              Your immigration case,
+              EB-2 NIW and EB-1 petitions,{" "}
               <span className="text-gold-300 block">prepared with precision.</span>
             </h1>
 
             <p className="text-lead text-navy-200 max-w-xl text-pretty">
-              Strategic EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petition support
-              for professionals and law firms worldwide — from case strategy
-              and original drafting to evidence organisation and RFE responses.
+              Strategic{" "}
+              <HeroLink href="/services/eb2-niw">EB-2 NIW</HeroLink>,{" "}
+              <HeroLink href="/services/eb1a">EB-1A</HeroLink>,{" "}
+              <HeroLink href="/services/eb1b">EB-1B</HeroLink>,{" "}
+              <HeroLink href="/services/eb1c">EB-1C</HeroLink> and{" "}
+              <HeroLink href="/services/o1-visa">O-1</HeroLink> petition support
+              for professionals and law firms worldwide — from case strategy and
+              original drafting to{" "}
+              <HeroLink href="/services/evidence-packaging">
+                evidence organisation
+              </HeroLink>{" "}
+              and{" "}
+              <HeroLink href="/services/rfe-response">RFE responses</HeroLink>.
             </p>
 
             <div className="flex flex-wrap gap-3">

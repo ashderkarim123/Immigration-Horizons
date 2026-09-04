@@ -6,7 +6,11 @@ import { Reveal } from "@/components/ui/reveal";
 import { Section, SectionHeading } from "@/components/ui/section";
 import type { Faq } from "@/lib/content/faqs";
 
+// The FAQ hub led this list by omission: the homepage showed a handful of
+// questions and then pointed everywhere except the full set, leaving a
+// 2,300-word page with a single inbound link from here.
 const onwardLinks = [
+  { label: "All immigration FAQs", href: "/faqs" },
   { label: "Immigration blog", href: "/blog" },
   { label: "Resources", href: "/resources" },
   { label: "Client reviews", href: "/reviews" },
