@@ -14,6 +14,7 @@ require('dotenv').config();
 
 const connectDB = require('./config/db');
 const { createApp } = require('./app');
+const { productionStartupProblems } = require('./utils/startupChecks');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -25,21 +26,14 @@ process.on('uncaughtException', (err) => {
   console.error('[uncaughtException]', err && err.message ? err.message : err);
 });
 
-// Refuse to boot in production with a secret/password that was never rotated
-// from its documented placeholder — these are guessable and shipped in this
-// repo's own .env.example / this file's fallback.
+// Refuse to boot in production with a credential that was never rotated from
+// a documented placeholder — see utils/startupChecks.js.
 if (isProduction) {
-  const insecureDefaults = [
-    ['SESSION_SECRET', ['insecure-dev-secret-change-me', 'change-this-to-a-long-random-string', '']],
-    ['ADMIN_PASSWORD', ['admin', 'admin123', 'admin123456', '']],
-  ];
-  const problems = insecureDefaults.filter(([key, bad]) => bad.includes(process.env[key] || ''));
+  const problems = productionStartupProblems(process.env);
   if (problems.length) {
-    console.error(
-      `[startup] Refusing to start in production with insecure default value(s) for: ${problems
-        .map(([key]) => key)
-        .join(', ')}. Set a real, unique value in the environment.`
-    );
+    console.error('[startup] Refusing to start in production. Fix the following:');
+    problems.forEach((problem) => console.error(`\n  - ${problem}`));
+    console.error(`\n[startup] These are read from ${process.cwd()}/.env`);
     process.exit(1);
   }
 }
