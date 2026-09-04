@@ -50,7 +50,9 @@ jobs:
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          # Accept either a true multi-line secret or one pasted with literal
+          # "\n" escapes (common when copied from env-style files).
+          printf '%b' "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
           # Pinned host key, not StrictHostKeyChecking=no. Accepting any
