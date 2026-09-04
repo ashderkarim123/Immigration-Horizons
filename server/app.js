@@ -47,7 +47,27 @@ function createApp() {
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
   app.use(methodOverride('_method'));
-  app.use(express.static(path.join(__dirname, 'public')));
+
+  // `server/public` (css, images, uploads) is entirely, intentionally
+  // public — localPrivateStorageProvider.js refuses to boot if
+  // PRIVATE_DOCUMENT_ROOT ever resolves inside it, specifically so nothing
+  // sensitive can end up here. Helmet's site-wide default
+  // (Cross-Origin-Resource-Policy: same-origin, set above) is exactly
+  // wrong for it: it blocks the one thing an uploaded blog cover image is
+  // FOR — being embedded by <img> on immigrationhorizons.com, a different
+  // origin. `curl` sees a clean 200 either way, since CORP is enforced by
+  // the browser, not the server, which is why this was invisible until
+  // someone actually looked at devtools instead of the network response.
+  // Scoped to this one mount so the admin UI's own pages (session-
+  // authenticated EJS, never meant to be embedded elsewhere) keep
+  // helmet's stricter default.
+  app.use(
+    express.static(path.join(__dirname, 'public'), {
+      setHeaders: (res) => {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      },
+    }),
+  );
 
   // ----- Sessions -----
   const sessionConfig = {
