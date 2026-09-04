@@ -56,17 +56,16 @@ export function Footer() {
             <Link
               href="/"
               aria-label="Immigration Horizons — home"
-              className="inline-flex w-fit rounded-xl bg-white px-4 py-3 shadow-subtle"
+              className="inline-flex w-fit rounded-xl bg-white px-5 py-4 shadow-subtle"
             >
               <Image
                 src="/images/logo-header.png"
                 alt="Immigration Horizons"
                 width={551}
                 height={320}
-                className="h-14 w-auto"
+                className="h-20 w-auto"
               />
             </Link>
-            <p className="font-display text-gold-300 text-lg">{site.tagline}</p>
             <p className="text-sm leading-relaxed">
               Petition strategy, writing, and RFE responses for EB-2 NIW, EB-1A,
               EB-1B, EB-1C and O-1 cases. Clients supported across multiple

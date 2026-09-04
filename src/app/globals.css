@@ -138,8 +138,11 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    /* Offset anchor targets so a sticky header never covers a heading. */
-    scroll-padding-top: 6rem;
+    /* Offset anchor targets so a sticky header never covers a heading.
+       The sticky header is 8.25rem at sm and up (2.25rem utility strip +
+       6rem logo row); this clears it with a little breathing room. Below
+       sm the strip is hidden, so the extra gap is slack, not overlap. */
+    scroll-padding-top: 8.5rem;
     -webkit-text-size-adjust: 100%;
   }
 

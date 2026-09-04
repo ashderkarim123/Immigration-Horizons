@@ -131,7 +131,7 @@ export function Header() {
       </div>
 
       <Container width="wide">
-        <div className="flex h-20 items-center justify-between gap-6">
+        <div className="flex h-24 items-center justify-between gap-6">
           {/* The logo carries the brand on its own here — the wordmark and
               tagline that used to sit beside it were removed deliberately.
               That makes `aria-label` load-bearing rather than supplementary:
@@ -141,7 +141,7 @@ export function Header() {
             className="group flex shrink-0 items-center"
             aria-label="Immigration Horizons — home"
           >
-            <span className="flex h-16 w-28 items-center justify-center overflow-hidden rounded-xl bg-white px-2.5 shadow-subtle ring-1 ring-navy-100 transition-[transform,box-shadow] duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 group-hover:shadow-card sm:h-[4.5rem] sm:w-32">
+            <span className="flex h-[4.5rem] w-32 items-center justify-center overflow-hidden rounded-xl bg-white px-3 shadow-subtle ring-1 ring-navy-100 transition-[transform,box-shadow] duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 group-hover:shadow-card sm:h-20 sm:w-40">
               <Image
                 src="/images/logo-header.png"
                 alt="Immigration Horizons"

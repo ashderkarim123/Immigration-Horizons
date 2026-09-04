@@ -99,20 +99,19 @@ export default async function AppLayout({
   return (
     <>
       <header className="bg-navy-950 border-b border-white/10 shadow-[0_12px_36px_rgba(8,19,42,0.16)]">
-        <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-6 py-3 sm:px-8">
-          <span className="flex h-12 w-[5.15rem] items-center justify-center overflow-hidden rounded-xl bg-white px-2 shadow-lg">
+        <div className="mx-auto flex w-full max-w-7xl items-center px-6 py-3 sm:px-8">
+          {/* Logo only, matching the marketing header and the signed-in shell.
+              With the wordmark gone the image's `alt` is the only accessible
+              name here — this is not a decorative logo any more. */}
+          <span className="flex h-14 w-[6.25rem] items-center justify-center overflow-hidden rounded-xl bg-white px-2.5 shadow-lg">
             <Image
               src="/images/logo-header.png"
-              alt=""
+              alt={site.name}
               width={551}
               height={320}
               priority
-              className="h-auto w-full"
+              className="h-full w-full object-contain"
             />
-          </span>
-          <span>
-            <span className="font-display block text-lg leading-tight font-semibold text-white">{site.name}</span>
-            <span className="text-gold-300 mt-1 block text-[0.66rem] font-bold tracking-[0.18em] uppercase">Secure workspace</span>
           </span>
         </div>
       </header>

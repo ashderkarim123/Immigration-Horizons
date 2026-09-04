@@ -102,26 +102,22 @@ export function AppShell({
             <div className="flex min-w-0 items-center">
               <Link
                 href={homeHref ?? nav[0]?.href ?? "/"}
-                className="group flex min-w-0 shrink-0 items-center gap-3"
+                className="group flex min-w-0 shrink-0 items-center"
                 aria-label={`Immigration Horizons ${areaLabel} home`}
               >
-                <span className="flex h-12 w-[5.15rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white px-2 shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5">
+                {/* Logo only — the wordmark and area label that used to sit
+                    beside it were removed to match the marketing header. That
+                    leaves `aria-label` above as this link's only accessible
+                    name, so it must keep naming the area. */}
+                <span className="flex h-14 w-[6.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white px-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5">
                   <Image
                     src="/images/logo-header.png"
                     alt=""
                     width={551}
                     height={320}
                     priority
-                    className="h-auto w-full"
+                    className="h-full w-full object-contain"
                   />
-                </span>
-                <span className="hidden min-w-0 sm:block">
-                  <span className="font-display block truncate text-lg leading-tight font-semibold text-white">
-                    Immigration Horizons
-                  </span>
-                  <span className="text-gold-300 mt-1 block font-sans text-[0.66rem] font-bold tracking-[0.18em] uppercase">
-                    {areaLabel}
-                  </span>
                 </span>
               </Link>
             </div>
