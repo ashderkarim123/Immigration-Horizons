@@ -54,15 +54,27 @@ timedatectl set-timezone UTC
 ### 1.2 Install what you need
 
 ```bash
-# Node 20 LTS. Ubuntu 24.04's own repo has Node 18, which Next.js 16 rejects.
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+# Node 22 LTS. Ubuntu 24.04's own repo has Node 18, which Next.js 16 rejects.
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt install -y nodejs git nginx ufw fail2ban curl unzip
 
 npm install -g pm2
 
-node -v    # expect v20.x
+node -v    # expect v22.x
 nginx -v
 ```
+
+> **Why 22 rather than 20.** Next.js 16 needs 20+, so either works — but
+> `file-type` declares `engines.node >= 22`, and it is the package that
+> verifies an uploaded file's magic bytes rather than trusting its
+> extension. That is the check standing between a renamed executable and
+> your document store; running it on an unsupported engine is a poor place
+> to economise. It is the only package in either tree that asks for 22, and
+> both suites pass on Node 24 locally, so 22 is comfortably within range.
+>
+> On Node 20 the install still works and prints `npm warn EBADENGINE` on
+> every run. If you already installed 20, re-run the two lines above with
+> `setup_22.x`.
 
 ### 1.3 Add swap
 
@@ -628,6 +640,25 @@ chmod 600 /srv/immigration-horizons/shared/*.env
 
 It clones, installs both apps, builds, symlinks shared state, starts PM2,
 and health-checks. If the health check fails it rolls back automatically.
+
+Two warnings during the build are expected and harmless: `npm warn
+EBADENGINE` (only on Node 20 — see §1.2) and Turbopack's "Encountered
+unexpected file in NFT list" for
+`local-private-storage-provider.ts`, which resolves
+`PRIVATE_DOCUMENT_ROOT` at run time by design.
+
+**If it reports `OK web (marketing)` but `FAIL admin CMS`,** the Next.js
+app is serving and the Express app exited. Read why:
+
+```bash
+pm2 logs ih-admin --lines 30 --nostream
+```
+
+A `[startup] Refusing to start in production` message names the offending
+variable and how to generate a valid value — see
+`server/utils/startupChecks.js`. Fix `shared/server.env` and re-run the
+deploy; it is safe to repeat, and a failure leaves the previous release
+serving.
 
 ```bash
 pm2 list          # ih-web (2, cluster) and ih-admin (1, fork) online
