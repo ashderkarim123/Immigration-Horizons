@@ -132,7 +132,7 @@ export function Header() {
       </div>
 
       <Container width="wide">
-        <div className="flex h-24 items-center justify-between gap-6">
+        <div className="flex h-20 items-center justify-between gap-6">
           {/* The logo carries the brand on its own here — the wordmark and
               tagline that used to sit beside it were removed deliberately.
               That makes `aria-label` load-bearing rather than supplementary:
@@ -142,20 +142,18 @@ export function Header() {
             className="group flex shrink-0 items-center"
             aria-label="Immigration Horizons — home"
           >
-            <span className="flex h-[4.5rem] w-32 items-center justify-center overflow-hidden rounded-xl bg-white px-3 shadow-subtle ring-1 ring-navy-100 transition-[transform,box-shadow] duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 group-hover:shadow-card sm:h-20 sm:w-40">
-              <Image
-                src="/images/logo-header.png"
-                alt="Immigration Horizons"
-                width={551}
-                height={320}
-                priority
-                // object-contain rather than `w-full`: the box no longer
-                // matches the artwork's 551×320 ratio exactly, and a width-
-                // driven image would overflow the fixed height and be clipped
-                // by `overflow-hidden` — silently, and only at some widths.
-                className="h-full w-full object-contain"
-              />
-            </span>
+            {/* No plate, ring, or radius: the header is already white, so the
+                mark sits on it directly. Height drives the size and `w-auto`
+                keeps the artwork's 551×320 ratio — a fixed width here would
+                letterbox it. */}
+            <Image
+              src="/images/logo-header.png"
+              alt="Immigration Horizons"
+              width={551}
+              height={320}
+              priority
+              className="h-11 w-auto transition-transform duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 sm:h-14"
+            />
           </Link>
 
           {/* `relative` anchors the mega panel to the nav block rather than to
