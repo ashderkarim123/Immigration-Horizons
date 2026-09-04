@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --conditions=react-server --import tsx --test --test-concurrency=1 \"test/**/*.test.ts\"",
+    "test": "node --conditions=react-server --import tsx --test --test-concurrency=1 test/*.test.ts",
     "db:indexes": "node --conditions=react-server --import tsx scripts/createIndexes.ts",
     "db:indexes:dry-run": "node --conditions=react-server --import tsx scripts/createIndexes.ts --dry-run",
     "mail:check": "node --conditions=react-server --import tsx scripts/checkMail.ts",
