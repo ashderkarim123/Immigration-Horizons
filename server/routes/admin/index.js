@@ -43,6 +43,7 @@ const attachDocuments = require('./documents');
 const attachCollaboration = require('./collaboration');
 const attachClients = require('./clients');
 const { getOperationalCounts } = require('../../services/operationsQueues');
+const { isChecked } = require('../../utils/checkbox');
 
 // ========================================================================
 // AUTHENTICATION
@@ -829,7 +830,7 @@ router.post('/admin/blog', requireCapability('blog.manage'), uploadSingle('cover
       author: author || 'Immigration Horizons Team',
       readingTime: Number(readingTime) || 0,
       coverImage: req.file ? `/uploads/${req.file.filename}` : (req.body.coverImageUrl || ''),
-      published: published === 'on' || published === 'true',
+      published: isChecked(published),
     };
 
     if (publishDate) postData.publishDate = new Date(publishDate);
@@ -879,7 +880,7 @@ router.put('/admin/blog/:id', requireCapability('blog.manage'), uploadSingle('co
       tags: tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       author: author || 'Immigration Horizons Team',
       readingTime: Number(readingTime) || 0,
-      published: published === 'on' || published === 'true',
+      published: isChecked(published),
     };
 
     if (slug && slug.trim()) update.slug = slug.trim();
