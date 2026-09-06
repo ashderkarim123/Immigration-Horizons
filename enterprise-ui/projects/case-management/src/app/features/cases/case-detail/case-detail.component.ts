@@ -154,7 +154,7 @@ export class CaseDetailComponent implements OnInit {
         this.isSubmitting.set(false);
         this.toast.success('Case stage updated successfully.');
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting.set(false);
         this.toast.error(err?.error?.message || 'Failed to update stage.');
       }
@@ -174,7 +174,7 @@ export class CaseDetailComponent implements OnInit {
         this.isSubmitting.set(false);
         this.toast.success('Project Manager updated.');
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting.set(false);
         this.toast.error(err?.error?.message || 'Failed to update Project Manager.');
       }
@@ -196,7 +196,7 @@ export class CaseDetailComponent implements OnInit {
         this.isSubmitting.set(false);
         this.toast.success('Team member added.');
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting.set(false);
         this.toast.error(err?.error?.message || 'Failed to add member.');
       }
@@ -222,7 +222,7 @@ export class CaseDetailComponent implements OnInit {
         this.isSubmitting.set(false);
         this.toast.success('Team member removed.');
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting.set(false);
         this.toast.error(err?.error?.message || 'Failed to remove member.');
       }
@@ -240,7 +240,7 @@ export class CaseDetailComponent implements OnInit {
         this.isSubmitting.set(false);
         this.toast.success('Case archived.');
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting.set(false);
         this.toast.error(err?.error?.message || 'Failed to archive case.');
       }
@@ -261,7 +261,7 @@ export class CaseDetailComponent implements OnInit {
         this.isSubmitting.set(false);
         this.toast.success('Client update published.');
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting.set(false);
         this.toast.error(err?.error?.message || 'Failed to publish client update.');
       }

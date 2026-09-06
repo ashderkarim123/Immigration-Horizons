@@ -36,6 +36,10 @@ export class ApiService {
     return this.http.put<ApiResponse<T>>(`${this.basePath}${endpoint}`, body);
   }
 
+  patch<T>(endpoint: string, body: any): Observable<ApiResponse<T>> {
+    return this.http.patch<ApiResponse<T>>(`${this.basePath}${endpoint}`, body);
+  }
+
   delete<T>(endpoint: string): Observable<ApiResponse<T>> {
     return this.http.delete<ApiResponse<T>>(`${this.basePath}${endpoint}`);
   }

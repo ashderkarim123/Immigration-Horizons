@@ -11,6 +11,7 @@ export interface UserProfile {
   avatar: string | null;
   jobTitle: string;
   department: string;
+  roles?: string[];
 }
 
 export interface EmployeeData {
