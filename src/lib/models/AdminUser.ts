@@ -39,6 +39,12 @@ const AdminUserSchema = new Schema(
     role: { type: String, default: "viewer" },
     isActive: { type: Boolean, default: true },
 
+    mustChangePassword: { type: Boolean, default: false },
+    credentialIssuedAt: { type: Date, default: null },
+    passwordChangedAt: { type: Date, default: null },
+    jobTitle: { type: String, default: "" },
+    department: { type: String, default: "" },
+
     // Login lockout counters (ADR-012 3). These are the one exception to
     // the "never writes an AdminUser" rule above: the staff login route
     // increments and clears them. It must, because this app and the admin

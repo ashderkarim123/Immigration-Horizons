@@ -6,17 +6,29 @@
 
 /* ---------- Design Tokens ---------- */
 :root {
-  /* Brand */
-  --ih-brand-50:  #eff6ff;
-  --ih-brand-100: #dbeafe;
-  --ih-brand-200: #bfdbfe;
-  --ih-brand-300: #93c5fd;
-  --ih-brand-400: #60a5fa;
-  --ih-brand-500: #3b82f6;
-  --ih-brand-600: #2563eb;
-  --ih-brand-700: #1d4ed8;
-  --ih-brand-800: #1e40af;
-  --ih-brand-900: #1e3a8a;
+  /* Brand (Navy) */
+  --ih-brand-50:  #f0f4f8;
+  --ih-brand-100: #d9e2ec;
+  --ih-brand-200: #bcccdc;
+  --ih-brand-300: #9fb3c8;
+  --ih-brand-400: #829ab1;
+  --ih-brand-500: #627d98;
+  --ih-brand-600: #486581;
+  --ih-brand-700: #334e68;
+  --ih-brand-800: #243b53;
+  --ih-brand-900: #102a43;
+
+  /* Accent (Gold) */
+  --ih-accent-50:  #fffbf0;
+  --ih-accent-100: #fef0c7;
+  --ih-accent-200: #fde08b;
+  --ih-accent-300: #fac515;
+  --ih-accent-400: #eab308;
+  --ih-accent-500: #ca8a04;
+  --ih-accent-600: #a16207;
+  --ih-accent-700: #854d0e;
+  --ih-accent-800: #713f12;
+  --ih-accent-900: #3f220f;
 
   /* Neutral */
   --ih-gray-50:  #f8fafc;

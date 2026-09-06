@@ -1,0 +1,6 @@
+node_modules
+.next
+out
+build
+enterprise-ui
+server/node_modules

@@ -67,7 +67,9 @@ const TASK_OWNERSHIP_ROLES = [...SPECIALIST_ROLES, 'reviewer'];
  * malformed.
  */
 function getRole(req) {
-  return (req.session && req.session.adminUser && req.session.adminUser.role) || null;
+  if (req.session && req.session.adminUser && req.session.adminUser.role) return req.session.adminUser.role;
+  if (req.staff && req.staff.role) return req.staff.role;
+  return null;
 }
 
 function isManager(req) {
@@ -274,7 +276,7 @@ function requireCapability(capability) {
 
 /** True if `req`'s user is the assignee on `task` (Task.assignee, a real ObjectId ref — not a guess). */
 function isTaskOwner(req, task) {
-  const userId = req.session && req.session.adminUser && req.session.adminUser.id;
+  const userId = (req.session && req.session.adminUser && req.session.adminUser.id) || (req.staff && req.staff._id);
   if (!userId || !task || !task.assignee) return false;
   return String(task.assignee) === String(userId);
 }

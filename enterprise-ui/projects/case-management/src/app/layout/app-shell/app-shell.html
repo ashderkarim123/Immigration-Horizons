@@ -3,10 +3,7 @@
   <aside class="sidebar" role="navigation" aria-label="Main navigation">
     <div class="sidebar-header">
       <div class="logo">
-        <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect width="32" height="32" rx="8" fill="currentColor" class="logo-bg"/>
-          <path d="M10 22V10h3v12h-3zm5-12h3v12h-3V10zm5 0h3v12h-3V10z" fill="white" opacity="0.9"/>
-        </svg>
+        <img src="assets/images/logo-header.png" alt="Immigration Horizons" class="logo-icon" style="width: 32px; height: 32px;" />
         @if (!sidebarCollapsed()) {
           <span class="logo-text">Immigration<br/>Horizons</span>
         }
@@ -34,24 +31,30 @@
 
   <!-- Main content area -->
   <div class="main-area">
-    <header class="top-header">
+    <header class="top-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; border-bottom: 1px solid var(--ih-border-light); background: var(--ih-bg-header); height: var(--ih-header-height);">
       <div class="header-left">
         <button
           class="mobile-menu-btn"
           (click)="toggleSidebar()"
           aria-label="Toggle menu"
-          type="button">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          type="button"
+          style="background: transparent; border: none; cursor: pointer; padding: 0.5rem;">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width: 20px; height: 20px;">
             <path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd"/>
           </svg>
         </button>
       </div>
-      <div class="header-right">
-        <span class="env-badge">Phase 01 — Shell</span>
+      <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+        <span class="user-info" style="font-size: 0.875rem; font-weight: 500; color: var(--ih-text-primary);">
+          {{ auth.user()?.name }} <span style="color: var(--ih-text-muted); font-weight: 400;">({{ auth.role()?.label }})</span>
+        </span>
+        <button (click)="logout()" style="background: transparent; border: 1px solid var(--ih-border-medium); border-radius: var(--ih-radius-sm); padding: 0.25rem 0.75rem; cursor: pointer; font-size: 0.875rem;">
+          Sign out
+        </button>
       </div>
     </header>
 
-    <main class="content-area">
+    <main class="content-area" style="padding: 1.5rem; overflow-y: auto; height: calc(100vh - var(--ih-header-height));">
       <router-outlet />
     </main>
   </div>

@@ -1,0 +1,96 @@
+openapi: 3.0.0
+info:
+  title: Immigration Horizons Staff API
+  version: "1.0"
+  description: Canonical JSON API for the Angular Enterprise UI.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /staff/session/login:
+    post:
+      summary: Authenticate employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Success
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+  /staff/session/logout:
+    post:
+      summary: Revoke session
+      responses:
+        '200':
+          description: Success
+  /staff/me:
+    get:
+      summary: Get current employee profile and capabilities
+      responses:
+        '200':
+          description: Profile data
+  /staff/account/initial-password:
+    post:
+      summary: Set initial permanent password
+      responses:
+        '200':
+          description: Success
+  /staff/dashboard:
+    get:
+      summary: Get dashboard metrics
+      responses:
+        '200':
+          description: Metrics data
+  /staff/cases:
+    get:
+      summary: List cases
+      responses:
+        '200':
+          description: Paginated cases
+  /staff/cases/{id}:
+    get:
+      summary: Get case details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Case details
+  /staff/clients:
+    get:
+      summary: List clients
+      responses:
+        '200':
+          description: Paginated clients
+  /staff/clients/{id}:
+    get:
+      summary: Get client details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Client details
+  /staff/tasks:
+    get:
+      summary: List assigned tasks
+      responses:
+        '200':
+          description: Paginated tasks

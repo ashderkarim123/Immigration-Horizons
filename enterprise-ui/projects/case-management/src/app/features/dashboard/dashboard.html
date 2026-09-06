@@ -3,45 +3,83 @@
   <p class="page-subtitle">Staff case-management overview</p>
 </div>
 
-<div class="placeholder-grid">
-  <div class="placeholder-card">
-    <div class="card-icon">
-      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-      </svg>
+@if (isLoading()) {
+  <div class="loading-state">Loading dashboard...</div>
+} @else if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+} @else {
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-value">{{ metrics()?.myCases ?? '-' }}</div>
+      <div class="metric-label">Active Cases</div>
     </div>
-    <h3>Active Cases</h3>
-    <p class="placeholder-text">Case statistics will appear here once the API is connected in Phase 04.</p>
+    <div class="metric-card">
+      <div class="metric-value">{{ metrics()?.unreadClientMessages ?? '-' }}</div>
+      <div class="metric-label">Unread Messages</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">{{ metrics()?.upcomingDeadlines ?? '-' }}</div>
+      <div class="metric-label">Upcoming Deadlines</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">{{ metrics()?.myOpenTasks ?? '-' }}</div>
+      <div class="metric-label">Open Tasks</div>
+    </div>
   </div>
 
-  <div class="placeholder-card">
-    <div class="card-icon">
-      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
-      </svg>
+  <div class="dashboard-sections" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+    <!-- Recent Cases -->
+    <div class="section-card">
+      <h3>Recent Cases</h3>
+      @if (metrics()?.recentCases?.length) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Case Number</th>
+              <th>Type</th>
+              <th>Stage</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of metrics().recentCases; track c._id) {
+              <tr>
+                <td><a [href]="'/cases/' + c._id">{{ c.caseNumber }}</a></td>
+                <td>{{ c.caseType }}</td>
+                <td><span class="badge">{{ c.currentStage }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="empty-state">No recent cases.</p>
+      }
     </div>
-    <h3>Upcoming Deadlines</h3>
-    <p class="placeholder-text">Deadline tracking will be available in Phase 07.</p>
-  </div>
 
-  <div class="placeholder-card">
-    <div class="card-icon">
-      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"/>
-        <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
-      </svg>
+    <!-- My Tasks -->
+    <div class="section-card">
+      <h3>My Tasks</h3>
+      @if (metrics()?.myTasks?.length) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Status</th>
+              <th>Due</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of metrics().myTasks; track t._id) {
+              <tr>
+                <td>{{ t.title }}</td>
+                <td><span class="badge">{{ t.status }}</span></td>
+                <td>{{ t.dueDate ? (t.dueDate | date) : 'None' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="empty-state">No active tasks.</p>
+      }
     </div>
-    <h3>Recent Activity</h3>
-    <p class="placeholder-text">Activity feed will be populated from case events in Phase 05.</p>
   </div>
-
-  <div class="placeholder-card">
-    <div class="card-icon">
-      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-      </svg>
-    </div>
-    <h3>Notifications</h3>
-    <p class="placeholder-text">Notification center will be built in Phase 15.</p>
-  </div>
-</div>
+}

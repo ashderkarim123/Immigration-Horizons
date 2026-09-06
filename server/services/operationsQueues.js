@@ -42,14 +42,16 @@ function daysAgo(days) {
  * every channel would be expensive. This answers the operationally useful
  * question instead — how many client messages has *nobody* picked up.
  */
-async function countUnreadClientMessages() {
+async function countUnreadClientMessages(caseFilter = null) {
+  const caseScope = caseFilter ? { case: caseFilter._id } : {};
+
   // Newest employee read-state per channel. Bounded by channel count, not
   // message count.
   const employeeMemberIds = await WorkspaceMember.find({ memberType: 'employee', status: 'active' })
     .select('_id')
     .lean();
   if (employeeMemberIds.length === 0) {
-    return WorkspaceMessage.countDocuments({ senderType: 'client', deletedAt: null });
+    return WorkspaceMessage.countDocuments({ senderType: 'client', deletedAt: null, ...caseScope });
   }
 
   const readStates = await ChannelReadState.find({
@@ -77,6 +79,7 @@ async function countUnreadClientMessages() {
   return WorkspaceMessage.countDocuments({
     senderType: 'client',
     deletedAt: null,
+    ...caseScope,
     $or: [
       { channel: { $nin: readChannelIds } },
       ...(clauses.length ? clauses : []),

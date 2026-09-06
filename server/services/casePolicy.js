@@ -22,7 +22,7 @@ const { can, getRole } = require('../utils/permissions');
 
 /** True if `req`'s admin user has an active employee membership for `workspaceId`. Fails closed on any missing identity. */
 async function hasActiveEmployeeMembership(req, workspaceId) {
-  const adminUserId = req.session && req.session.adminUser && req.session.adminUser.id;
+  const adminUserId = (req.session && req.session.adminUser && req.session.adminUser.id) || (req.staff && req.staff._id);
   // The env-credential fallback admin has no persistent AdminUser id and so
   // can never hold a WorkspaceMember row — it can only act through the
   // cases.view_all org-wide bypass (role-based, not identity-based).
@@ -78,6 +78,40 @@ function canCreateCase(req) {
   return can(req, 'cases.create');
 }
 
+/** Ids of cases this employee is personally an active member of. */
+async function memberCaseIds(req) {
+  const adminUserId = (req.session && req.session.adminUser && req.session.adminUser.id) || (req.staff && req.staff._id);
+  if (!adminUserId) return [];
+
+  const memberships = await WorkspaceMember.find({
+    memberType: 'employee',
+    adminUser: adminUserId,
+    status: 'active',
+  })
+    .select('workspace')
+    .lean();
+
+  if (memberships.length === 0) return [];
+
+  // Need CaseWorkspace model
+  const CaseWorkspace = require('../models/CaseWorkspace');
+  
+  const workspaces = await CaseWorkspace.find({
+    _id: { $in: memberships.map((m) => m.workspace) },
+  })
+    .select('case')
+    .lean();
+
+  return workspaces.map((w) => w.case);
+}
+
+/** Case ids this employee may see, or `null` meaning "no restriction" (view_all). */
+async function accessibleCaseIdFilter(req) {
+  if (can(req, 'cases.view_all')) return null;
+  const ids = await memberCaseIds(req);
+  return { _id: { $in: ids } };
+}
+
 module.exports = {
   hasActiveEmployeeMembership,
   canViewCase,
@@ -87,4 +121,6 @@ module.exports = {
   canViewWorkspace,
   canManageWorkspaceMembers,
   canCreateCase,
+  memberCaseIds,
+  accessibleCaseIdFilter
 };

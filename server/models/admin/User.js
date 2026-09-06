@@ -21,6 +21,13 @@ const UserSchema = new mongoose.Schema(
     avatar: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
 
+    // Credential lifecycle fields (ADR-016)
+    mustChangePassword: { type: Boolean, default: false },
+    credentialIssuedAt: { type: Date, default: null },
+    passwordChangedAt: { type: Date, default: null },
+    jobTitle: { type: String, default: '' },
+    department: { type: String, default: '' },
+
     // Login lockout counters (ADR-012 3). Written by BOTH this app and the
     // SaaS staff app, which authenticate the same records — see
     // utils/lockout.js for why enforcement in only one of them is worthless.

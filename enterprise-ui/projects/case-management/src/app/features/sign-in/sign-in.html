@@ -1,16 +1,47 @@
-<div class="sign-in-page">
-  <div class="sign-in-card">
-    <div class="sign-in-logo">
-      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="32" height="32" rx="8" fill="#3b82f6"/>
-        <path d="M10 22V10h3v12h-3zm5-12h3v12h-3V10zm5 0h3v12h-3V10z" fill="white" opacity="0.9"/>
-      </svg>
-      <h1>Immigration Horizons</h1>
+<div class="auth-layout">
+  <div class="auth-panel form-panel">
+    <div class="auth-header">
+      <img src="assets/images/logo-header.png" alt="Immigration Horizons" class="auth-logo" />
+      <h1>Staff Portal</h1>
+      <p>Sign in with your employee account.</p>
     </div>
-    <p class="sign-in-subtitle">Staff Case Management</p>
-    <div class="sign-in-placeholder">
-      <p>Authentication will be implemented in Phase 03.</p>
-      <p class="sign-in-hint">This is a structural placeholder only.</p>
-    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+      @if (errorMessage()) {
+        <div class="alert alert-error">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input 
+          id="email" 
+          type="email" 
+          formControlName="email" 
+          class="form-control" 
+          autocomplete="username" 
+          placeholder="name@immigrationhorizons.com"
+          autofocus />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          id="password" 
+          type="password" 
+          formControlName="password" 
+          class="form-control" 
+          autocomplete="current-password" />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="loginForm.invalid || isSubmitting()">
+        {{ isSubmitting() ? 'Signing in...' : 'Sign in' }}
+      </button>
+    </form>
+  </div>
+
+  <div class="auth-panel visual-panel">
+    <!-- Blank/Branded area for layout -->
   </div>
 </div>
