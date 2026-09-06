@@ -1,6 +1,6 @@
 import { Component, input, inject, computed } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, LayoutDashboard, Briefcase, Users, CheckSquare } from 'lucide-angular';
+import { IhIconComponent } from '../../shared/icon/ih-icon.component';
 import { AuthService } from '../../core/auth/auth.service';
 
 interface NavItem {
@@ -12,7 +12,7 @@ interface NavItem {
 @Component({
   selector: 'ih-navigation',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, LucideAngularModule],
+  imports: [RouterLink, RouterLinkActive, IhIconComponent],
   templateUrl: './navigation.html',
   styleUrl: './navigation.scss',
 })
@@ -33,7 +33,7 @@ export class Navigation {
       items.push({ label: 'Clients', path: '/clients', icon: 'users' });
     }
     
-    // Everyone sees tasks (if they have them), but we can just show it to everyone
+    // Everyone sees tasks
     items.push({ label: 'Tasks', path: '/tasks', icon: 'check-square' });
 
     return items;

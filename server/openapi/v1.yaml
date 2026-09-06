@@ -21,6 +21,7 @@ paths:
           application/json:
             schema:
               type: object
+              required: [email, password]
               properties:
                 email: { type: string }
                 password: { type: string }
@@ -30,6 +31,8 @@ paths:
           headers:
             Set-Cookie:
               schema: { type: string }
+        '401':
+          description: Invalid email or password
   /staff/session/logout:
     post:
       summary: Revoke session
@@ -45,9 +48,21 @@ paths:
   /staff/account/initial-password:
     post:
       summary: Set initial permanent password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, confirmPassword]
+              properties:
+                password: { type: string, minLength: 12 }
+                confirmPassword: { type: string }
       responses:
         '200':
           description: Success
+        '400':
+          description: Validation error
   /staff/dashboard:
     get:
       summary: Get dashboard metrics
@@ -56,7 +71,23 @@ paths:
           description: Metrics data
   /staff/cases:
     get:
-      summary: List cases
+      summary: List cases with search and stage filters
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: stage
+          in: query
+          schema: { type: string }
+        - name: priority
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
       responses:
         '200':
           description: Paginated cases
@@ -71,9 +102,137 @@ paths:
       responses:
         '200':
           description: Case details
+        '404':
+          description: Case not found or inaccessible
+  /staff/cases/{caseId}/stage:
+    patch:
+      summary: Advance or update case stage
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stage]
+              properties:
+                stage: { type: string }
+      responses:
+        '200':
+          description: Updated case details
+        '403':
+          description: Permission denied
+  /staff/cases/{caseId}/project-manager:
+    patch:
+      summary: Assign or change Project Manager for case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employeeId: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Updated case details
+  /staff/cases/{caseId}/members:
+    post:
+      summary: Add employee team member to case workspace
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeId]
+              properties:
+                employeeId: { type: string }
+                role: { type: string, default: contributor }
+      responses:
+        '200':
+          description: Updated case details
+  /staff/cases/{caseId}/members/{memberId}:
+    delete:
+      summary: Remove member from case workspace
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: memberId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated case details
+  /staff/cases/{caseId}/archive:
+    post:
+      summary: Archive case (non-destructive)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated case details
+  /staff/cases/{caseId}/client-updates:
+    post:
+      summary: Publish client update message for case portal
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string, maxLength: 1000 }
+      responses:
+        '201':
+          description: Published update message document
+  /staff/cases/{caseId}/member-options:
+    get:
+      summary: Get active employees selectable for team assignment
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Array of active employees
   /staff/clients:
     get:
       summary: List clients
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
       responses:
         '200':
           description: Paginated clients

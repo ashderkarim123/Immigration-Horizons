@@ -1,3 +1,13 @@
+/**
+ * Staff API: case directory and case detail.
+ *
+ * Security:
+ * - Cases require cases.view capability plus row-level membership for non-view_all roles
+ * - Case concealment: malformed/nonexistent/inaccessible all return 404 (no existence oracle)
+ * - Case detail uses CaseActivity (not ActivityLog)
+ * - DTOs are explicit — no raw .lean() spread
+ * - Client population uses firstName + lastName (not name)
+ */
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
@@ -5,34 +15,163 @@ const mongoose = require('mongoose');
 const ClientCase = require('../../../../models/ClientCase');
 const CaseWorkspace = require('../../../../models/CaseWorkspace');
 const CaseDocument = require('../../../../models/CaseDocument');
+const CaseActivity = require('../../../../models/CaseActivity');
 const WorkspaceMember = require('../../../../models/WorkspaceMember');
-const ActivityLog = require('../../../../models/admin/ActivityLog');
+const AdminUser = require('../../../../models/admin/User');
 
-const { staffAuthMiddleware, requireApiCapability } = require('../../../../middleware/api/staffAuth');
-const { accessibleCaseIdFilter, memberCaseIds, canViewCase } = require('../../../../services/casePolicy');
+// staffAuthMiddleware + requirePasswordSetupComplete applied by staff/index.js
+const { requireApiCapability, staffAuthMiddleware } = require('../../../../middleware/api/staffAuth');
+const {
+  accessibleCaseIdFilter,
+  memberCaseIds,
+  canViewCase,
+  canManageCase,
+  canAssignCase,
+  canArchiveCase,
+  canManageWorkspaceMembers,
+} = require('../../../../services/casePolicy');
 const { can } = require('../../../../utils/permissions');
 const { createApiError } = require('../../../../middleware/api/apiError');
 
+// ─── Serializers ─────────────────────────────────────────────────────────────
+
+function serializeCaseListItem(c) {
+  const pm = c.projectManager;
+  const client = c.primaryClient;
+  return {
+    id: c._id,
+    caseNumber: c.caseNumber,
+    title: c.title,
+    caseType: c.caseType,
+    currentStage: c.currentStage,
+    priority: c.priority,
+    targetFilingDate: c.targetFilingDate || null,
+    archivedAt: c.archivedAt || null,
+    updatedAt: c.updatedAt,
+    projectManager: pm
+      ? { id: pm._id, name: pm.name || '', avatar: pm.avatar || null }
+      : null,
+    primaryClient: client
+      ? {
+          id: client._id,
+          displayName: [client.firstName || '', client.lastName || ''].filter(Boolean).join(' ') || client.email,
+          email: client.email,
+        }
+      : null,
+  };
+}
+
+function serializeCaseDetail(c) {
+  const pm = c.projectManager;
+  const client = c.primaryClient;
+  return {
+    id: c._id,
+    caseNumber: c.caseNumber,
+    title: c.title,
+    caseType: c.caseType,
+    currentStage: c.currentStage,
+    priority: c.priority,
+    targetFilingDate: c.targetFilingDate || null,
+    archivedAt: c.archivedAt || null,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+    projectManager: pm
+      ? { id: pm._id, name: pm.name || '', avatar: pm.avatar || null }
+      : null,
+    primaryClient: client
+      ? {
+          id: client._id,
+          displayName: [client.firstName || '', client.lastName || ''].filter(Boolean).join(' ') || client.email,
+          firstName: client.firstName || '',
+          lastName: client.lastName || '',
+          email: client.email,
+        }
+      : null,
+  };
+}
+
+function serializeMember(m) {
+  const emp = m.adminUser;
+  const cli = m.clientUser;
+  return {
+    id: m._id,
+    memberType: m.memberType,
+    workspaceRole: m.workspaceRole,
+    status: m.status,
+    clientVisible: m.clientVisible,
+    joinedAt: m.createdAt,
+    employee: emp
+      ? {
+          id: emp._id,
+          name: emp.name || '',
+          email: emp.email || '',
+          role: emp.role || '',
+          avatar: emp.avatar || null,
+          jobTitle: emp.jobTitle || '',
+          department: emp.department || '',
+        }
+      : null,
+    client: cli
+      ? {
+          id: cli._id,
+          displayName: [cli.firstName || '', cli.lastName || ''].filter(Boolean).join(' ') || cli.email,
+          email: cli.email,
+        }
+      : null,
+  };
+}
+
+function serializeDocument(d) {
+  return {
+    id: d._id,
+    displayName: d.displayName || d.originalName || '',
+    status: d.status,
+    category: d.category ? (d.category.name || d.category) : null,
+    uploadedAt: d.uploadedAt || d.createdAt,
+    size: d.size || null,
+    scanStatus: d.scanStatus || null,
+  };
+}
+
+function serializeActivity(a) {
+  return {
+    id: a._id,
+    type: a.type,
+    message: a.message,
+    actorName: a.actorName || 'System',
+    createdAt: a.createdAt,
+    meta: a.meta || null,
+  };
+}
+
+// ─── Routes ──────────────────────────────────────────────────────────────────
+
 // GET /api/v1/staff/cases
-router.get('/', staffAuthMiddleware, requireApiCapability('cases.view'), async (req, res, next) => {
+// staffAuth + requirePasswordSetupComplete already applied by parent router
+router.get('/', requireApiCapability('cases.view'), async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 25, 1), 100);
     const skip = (page - 1) * limit;
 
-    const query = { archivedAt: null };
+    const showArchived = req.query.archived === 'true';
+    const query = showArchived ? {} : { archivedAt: null };
 
     if (req.query.stage) query.currentStage = req.query.stage;
     if (req.query.caseType) query.caseType = req.query.caseType;
     if (req.query.priority) query.priority = req.query.priority;
 
     if (req.query.search) {
-      const pattern = new RegExp(req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const escaped = req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = new RegExp(escaped, 'i');
       query.$or = [{ caseNumber: pattern }, { title: pattern }];
     }
 
     if (req.query.scope === 'unassigned') {
-      query.projectManager = null;
+      query.$and = [
+        ...(query.$and || []),
+        { $or: [{ projectManager: null }, { projectManager: { $exists: false } }] },
+      ];
     }
 
     const idSets = [];
@@ -55,25 +194,25 @@ router.get('/', staffAuthMiddleware, requireApiCapability('cases.view'), async (
 
     const [items, total] = await Promise.all([
       ClientCase.find(query)
-        .select('caseNumber title caseType currentStage priority targetFilingDate projectManager primaryClient updatedAt archivedAt')
+        .select('caseNumber title caseType currentStage priority targetFilingDate projectManager primaryClient updatedAt archivedAt createdAt')
         .populate('projectManager', 'name avatar')
-        .populate('primaryClient', 'name email')
+        .populate('primaryClient', 'firstName lastName email')
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      ClientCase.countDocuments(query)
+      ClientCase.countDocuments(query),
     ]);
 
     res.json({
       data: {
-        items,
+        items: items.map(serializeCaseListItem),
         total,
         page,
         totalPages: Math.ceil(total / limit),
-        pageSize: limit
+        pageSize: limit,
       },
-      meta: { requestId: req.id }
+      meta: { requestId: req.id },
     });
   } catch (err) {
     next(err);
@@ -81,62 +220,171 @@ router.get('/', staffAuthMiddleware, requireApiCapability('cases.view'), async (
 });
 
 // GET /api/v1/staff/cases/:id
-router.get('/:id', staffAuthMiddleware, async (req, res, next) => {
+router.get('/:id', staffAuthMiddleware, requireApiCapability('cases.view'), async (req, res, next) => {
   try {
     const caseId = req.params.id;
+
+    // Malformed ID → same 404 as nonexistent (no existence oracle)
     if (!mongoose.Types.ObjectId.isValid(caseId)) {
-      return next(createApiError(404, 'not_found', 'Case not found'));
+      return next(createApiError(404, 'not_found', 'Case not found.'));
     }
 
     const caseDoc = await ClientCase.findById(caseId)
-      .populate('primaryClient', 'name email')
+      .populate('primaryClient', 'firstName lastName email')
       .populate('projectManager', 'name avatar')
       .lean();
 
-    if (!caseDoc || caseDoc.archivedAt) {
-      return next(createApiError(404, 'not_found', 'Case not found'));
+    if (!caseDoc) {
+      return next(createApiError(404, 'not_found', 'Case not found.'));
     }
 
-    // Row-level auth check - the first time the workspace ID is needed
-    // However, canViewCase expects the workspace ID, which we get from CaseWorkspace
-    const workspace = await CaseWorkspace.findOne({ case: caseId }).lean();
+    const workspace = await CaseWorkspace.findOne({ case: caseId, workspaceType: 'primary' }).lean();
     if (!workspace) {
-      return next(createApiError(404, 'not_found', 'Workspace not found'));
+      return next(createApiError(404, 'not_found', 'Case not found.'));
     }
 
+    // Inaccessible case → same 404, not 403 (concealment rule A14)
     const hasAccess = await canViewCase(req, workspace._id);
     if (!hasAccess) {
-      return next(createApiError(403, 'forbidden', 'You do not have access to this case'));
+      return next(createApiError(404, 'not_found', 'Case not found.'));
     }
 
-    // Fetch dependencies
-    const [members, documents, activity] = await Promise.all([
-      WorkspaceMember.find({ workspace: workspace._id, status: 'active' })
-        .populate('adminUser', 'name email role avatar jobTitle department')
-        .populate('clientUser', 'name email')
-        .sort({ createdAt: 1 })
-        .lean(),
-      CaseDocument.find({ case: caseId, archivedAt: null })
-        .select('title status category uploadedAt')
-        .populate('category', 'name')
-        .sort({ uploadedAt: -1 })
-        .limit(10)
-        .lean(),
-      ActivityLog.find({ 'case': caseId }) // We might not have a strong link, but let's try
+    // Compute server-side action flags for the UI
+    const [canManage, canAssign, canArchive, canManageMembers] = await Promise.all([
+      canManageCase(req, workspace._id),
+      canAssignCase(req, workspace._id),
+      canArchiveCase(req, workspace._id),
+      canManageWorkspaceMembers(req, workspace._id),
+    ]);
+    const canPublishClientUpdate = can(req, 'client_updates.publish') &&
+      (can(req, 'cases.view_all') || await canViewCase(req, workspace._id));
+
+    res.json({
+      data: {
+        ...serializeCaseDetail(caseDoc),
+        workspaceId: workspace._id,
+        actions: {
+          canManageCase: canManage,
+          canAssignManager: canAssign,
+          canArchive,
+          canManageMembers,
+          canPublishClientUpdate,
+        },
+      },
+      meta: { requestId: req.id },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/v1/staff/cases/:id/members
+router.get('/:id/members', staffAuthMiddleware, requireApiCapability('cases.view'), async (req, res, next) => {
+  try {
+    const caseId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      return next(createApiError(404, 'not_found', 'Case not found.'));
+    }
+
+    const workspace = await CaseWorkspace.findOne({ case: caseId, workspaceType: 'primary' }).lean();
+    if (!workspace) return next(createApiError(404, 'not_found', 'Case not found.'));
+
+    const hasAccess = await canViewCase(req, workspace._id);
+    if (!hasAccess) return next(createApiError(404, 'not_found', 'Case not found.'));
+
+    const members = await WorkspaceMember.find({ workspace: workspace._id })
+      .populate('adminUser', 'name email role avatar jobTitle department')
+      .populate('clientUser', 'firstName lastName email')
+      .sort({ createdAt: 1 })
+      .lean();
+
+    res.json({
+      data: { members: members.map(serializeMember) },
+      meta: { requestId: req.id },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/v1/staff/cases/:id/activity
+router.get('/:id/activity', staffAuthMiddleware, requireApiCapability('cases.view'), async (req, res, next) => {
+  try {
+    const caseId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      return next(createApiError(404, 'not_found', 'Case not found.'));
+    }
+
+    const workspace = await CaseWorkspace.findOne({ case: caseId, workspaceType: 'primary' }).lean();
+    if (!workspace) return next(createApiError(404, 'not_found', 'Case not found.'));
+
+    const hasAccess = await canViewCase(req, workspace._id);
+    if (!hasAccess) return next(createApiError(404, 'not_found', 'Case not found.'));
+
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 50);
+    const skip = (page - 1) * limit;
+
+    const [activity, total] = await Promise.all([
+      CaseActivity.find({ case: caseId })
         .sort({ createdAt: -1 })
-        .limit(10)
-        .lean().catch(() => []) // fallback if ActivityLog doesn't have a case field
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      CaseActivity.countDocuments({ case: caseId }),
     ]);
 
     res.json({
       data: {
-        ...caseDoc,
-        workspaceId: workspace._id,
-        team: members,
-        recentDocuments: documents,
-        recentActivity: activity
+        items: activity.map(serializeActivity),
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        pageSize: limit,
       },
-      meta: { requestId: req.id }
+      meta: { requestId: req.id },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/v1/staff/cases/:id/member-options (Gate B — candidate employees)
+router.get('/:id/member-options', staffAuthMiddleware, requireApiCapability('cases.view'), async (req, res, next) => {
+  try {
+    const caseId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(caseId)) {
+      return next(createApiError(404, 'not_found', 'Case not found.'));
+    }
+
+    const workspace = await CaseWorkspace.findOne({ case: caseId, workspaceType: 'primary' }).lean();
+    if (!workspace) return next(createApiError(404, 'not_found', 'Case not found.'));
+
+    const hasManage = await canManageWorkspaceMembers(req, workspace._id);
+    const hasAssign = await canAssignCase(req, workspace._id);
+    if (!hasManage && !hasAssign) {
+      return next(createApiError(404, 'not_found', 'Case not found.'));
+    }
+
+    // Only return active employees — no password/lockout/session fields
+    const employees = await AdminUser.find({ isActive: true })
+      .select('name email role jobTitle department avatar')
+      .sort({ name: 1 })
+      .lean();
+
+    res.json({
+      data: {
+        employees: employees.map((e) => ({
+          id: e._id,
+          name: e.name || '',
+          email: e.email || '',
+          role: e.role || '',
+          jobTitle: e.jobTitle || '',
+          department: e.department || '',
+          avatar: e.avatar || null,
+        })),
+      },
+      meta: { requestId: req.id },
     });
   } catch (err) {
     next(err);

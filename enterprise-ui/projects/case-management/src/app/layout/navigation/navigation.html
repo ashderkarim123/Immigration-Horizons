@@ -8,7 +8,7 @@
           routerLinkActive="active"
           [attr.title]="collapsed() ? item.label : null">
           <span class="nav-icon" aria-hidden="true">
-            <lucide-icon [name]="item.icon"></lucide-icon>
+            <ih-icon [name]="item.icon" [size]="20" />
           </span>
           @if (!collapsed()) {
             <span class="nav-label">{{ item.label }}</span>

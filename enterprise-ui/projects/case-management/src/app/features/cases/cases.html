@@ -1,37 +1,116 @@
 <div class="page-header">
-  <h1>Cases</h1>
-  <p class="page-subtitle">Manage client cases and petitions</p>
+  <div>
+    <h1>Cases</h1>
+    <p class="page-subtitle">Manage client petitions, track progress, and review assignments</p>
+  </div>
 </div>
 
-<div class="section-card">
+<div class="filters-bar card">
+  <div class="filter-group">
+    <input
+      type="search"
+      class="form-control"
+      placeholder="Search by case # or title..."
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+      (keyup.enter)="onFilterChange()"
+    />
+  </div>
+
+  <div class="filter-group">
+    <select
+      class="form-select"
+      [ngModel]="selectedStage()"
+      (ngModelChange)="selectedStage.set($event); onFilterChange()"
+    >
+      @for (st of stages; track st.value) {
+        <option [value]="st.value">{{ st.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <select
+      class="form-select"
+      [ngModel]="selectedPriority()"
+      (ngModelChange)="selectedPriority.set($event); onFilterChange()"
+    >
+      @for (pr of priorities; track pr.value) {
+        <option [value]="pr.value">{{ pr.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="filter-group checkbox-group">
+    <label class="checkbox-label">
+      <input
+        type="checkbox"
+        [ngModel]="includeArchived()"
+        (ngModelChange)="includeArchived.set($event); onFilterChange()"
+      />
+      Show Archived
+    </label>
+  </div>
+</div>
+
+<div class="section-card card">
   @if (isLoading()) {
-    <p>Loading cases...</p>
+    <ih-skeleton [rows]="5" rowHeight="2.5rem"></ih-skeleton>
+  } @else if (isError()) {
+    <ih-error-state
+      title="Failed to load cases"
+      [message]="errorMessage()"
+      (retry)="loadCases()"
+    ></ih-error-state>
+  } @else if (cases().length === 0) {
+    <ih-empty-state
+      title="No cases match your filters"
+      description="Try broadening your search query or clearing stage and priority filters."
+    ></ih-empty-state>
   } @else {
-    @if (cases().length) {
+    <div class="table-responsive">
       <table class="data-table">
         <thead>
           <tr>
             <th>Case Number</th>
+            <th>Title & Type</th>
             <th>Client</th>
-            <th>Type</th>
             <th>Stage</th>
+            <th>Priority</th>
             <th>Target Filing</th>
           </tr>
         </thead>
         <tbody>
           @for (c of cases(); track c._id) {
             <tr>
-              <td><a [routerLink]="['/cases', c._id]">{{ c.caseNumber }}</a></td>
-              <td>{{ c.primaryClient?.name || 'Unknown' }}</td>
-              <td>{{ c.caseType }}</td>
-              <td><span class="badge">{{ c.currentStage }}</span></td>
-              <td>{{ c.targetFilingDate ? (c.targetFilingDate | date) : 'Not set' }}</td>
+              <td class="font-medium">
+                <a [routerLink]="['/cases', c._id]" class="case-link">{{ c.caseNumber }}</a>
+              </td>
+              <td>
+                <div class="case-title">{{ c.title }}</div>
+                <div class="case-type-sub">{{ c.caseType }}</div>
+              </td>
+              <td>{{ getClientDisplayName(c) }}</td>
+              <td>
+                <ih-status-badge [status]="c.currentStage"></ih-status-badge>
+              </td>
+              <td>
+                <ih-status-badge [status]="c.priority"></ih-status-badge>
+              </td>
+              <td class="text-secondary">
+                {{ c.targetFilingDate ? (c.targetFilingDate | date:'mediumDate') : 'Not set' }}
+              </td>
             </tr>
           }
         </tbody>
       </table>
-    } @else {
-      <p class="empty-state">No cases found.</p>
-    }
+    </div>
+
+    <ih-pagination
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [totalItems]="totalItems()"
+      (pageChange)="onPageChange($event)"
+    ></ih-pagination>
   }
 </div>

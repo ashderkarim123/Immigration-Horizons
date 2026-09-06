@@ -1,0 +1,457 @@
+@if (isLoading()) {
+  <div class="page-container">
+    <ih-skeleton [rows]="8" rowHeight="3rem"></ih-skeleton>
+  </div>
+} @else if (isError()) {
+  <div class="page-container">
+    <ih-error-state
+      title="Case Not Found"
+      [message]="errorMessage()"
+      (retry)="loadCaseDetail()"
+    ></ih-error-state>
+  </div>
+} @else if (caseData()) {
+  <div class="page-container">
+    <!-- Header -->
+    <div class="workspace-header card">
+      <div class="header-main">
+        <div class="header-titles">
+          <div class="case-meta-line">
+            <span class="case-number">{{ caseData().caseNumber }}</span>
+            <ih-status-badge [status]="caseData().currentStage"></ih-status-badge>
+            <ih-status-badge [status]="caseData().priority"></ih-status-badge>
+            @if (caseData().archivedAt) {
+              <span class="badge badge-danger">ARCHIVED</span>
+            }
+          </div>
+          <h1 class="case-title">{{ caseData().title }}</h1>
+          <p class="case-sub">
+            Type: <strong>{{ caseData().caseType }}</strong> &bull;
+            Client: <strong>{{ caseData().primaryClient?.displayName || caseData().primaryClient?.name || 'Unassigned' }}</strong> &bull;
+            PM: <strong>{{ caseData().projectManager?.name || 'Unassigned' }}</strong>
+          </p>
+        </div>
+
+        <div class="header-actions">
+          @if (canManageStage()) {
+            <button type="button" class="btn btn-secondary" (click)="showStageModal.set(true)">
+              Change Stage
+            </button>
+          }
+          @if (canAssignPM()) {
+            <button type="button" class="btn btn-secondary" (click)="showPmModal.set(true)">
+              Change PM
+            </button>
+          }
+          @if (canPublishUpdate()) {
+            <button type="button" class="btn btn-primary" (click)="showUpdateModal.set(true)">
+              Publish Client Update
+            </button>
+          }
+          @if (canArchiveCase() && !caseData().archivedAt) {
+            <button type="button" class="btn btn-outline-danger" (click)="showArchiveModal.set(true)">
+              Archive
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="workspace-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'overview'"
+          (click)="activeTab.set('overview')"
+        >
+          Overview
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'team'"
+          (click)="activeTab.set('team')"
+        >
+          Team ({{ caseData().team?.length || 0 }})
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'activity'"
+          (click)="activeTab.set('activity')"
+        >
+          Activity Timeline ({{ caseData().activities?.length || 0 }})
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 1: Overview -->
+    @if (activeTab() === 'overview') {
+      <div class="overview-grid">
+        <div class="section-card card">
+          <h3 class="card-title">Case Information</h3>
+          <div class="info-grid">
+            <div>
+              <span class="info-label">Case Number</span>
+              <span class="info-value">{{ caseData().caseNumber }}</span>
+            </div>
+            <div>
+              <span class="info-label">Case Type</span>
+              <span class="info-value">{{ caseData().caseType }}</span>
+            </div>
+            <div>
+              <span class="info-label">Current Stage</span>
+              <span class="info-value">
+                <ih-status-badge [status]="caseData().currentStage"></ih-status-badge>
+              </span>
+            </div>
+            <div>
+              <span class="info-label">Priority</span>
+              <span class="info-value">
+                <ih-status-badge [status]="caseData().priority"></ih-status-badge>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card card">
+          <h3 class="card-title">Key Dates</h3>
+          <div class="info-grid">
+            <div>
+              <span class="info-label">Target Filing Date</span>
+              <span class="info-value">
+                {{ caseData().targetFilingDate ? (caseData().targetFilingDate | date:'mediumDate') : 'Not set' }}
+              </span>
+            </div>
+            <div>
+              <span class="info-label">Actual Filing Date</span>
+              <span class="info-value">
+                {{ caseData().actualFilingDate ? (caseData().actualFilingDate | date:'mediumDate') : 'Not filed yet' }}
+              </span>
+            </div>
+            <div>
+              <span class="info-label">Created Date</span>
+              <span class="info-value">
+                {{ caseData().createdAt ? (caseData().createdAt | date:'mediumDate') : '—' }}
+              </span>
+            </div>
+            <div>
+              <span class="info-label">Last Updated</span>
+              <span class="info-value">
+                {{ caseData().updatedAt ? (caseData().updatedAt | date:'mediumDate') : '—' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card card">
+          <h3 class="card-title">Primary Client Summary</h3>
+          @if (caseData().primaryClient) {
+            <div class="client-card-body">
+              <div class="client-name">
+                {{ caseData().primaryClient.displayName || caseData().primaryClient.name }}
+              </div>
+              <div class="client-email">{{ caseData().primaryClient.email }}</div>
+              <div class="client-status">
+                Status: <ih-status-badge [status]="caseData().primaryClient.status || 'active'"></ih-status-badge>
+              </div>
+              <div class="client-link-row">
+                <a [routerLink]="['/clients', caseData().primaryClient._id || caseData().primaryClient.id]" class="link-btn">
+                  View Full Client Profile &rarr;
+                </a>
+              </div>
+            </div>
+          } @else {
+            <p class="text-secondary">No primary client assigned to this case.</p>
+          }
+        </div>
+
+        <div class="section-card card">
+          <h3 class="card-title">Recent Documents ({{ caseData().documents?.length || 0 }})</h3>
+          @if (caseData().documents?.length) {
+            <ul class="doc-list">
+              @for (doc of caseData().documents; track doc._id) {
+                <li class="doc-item">
+                  <span class="doc-name">{{ doc.displayName || doc.originalName }}</span>
+                  <span class="doc-meta">{{ doc.category }} &bull; {{ doc.status }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="text-secondary">No documents uploaded to this case yet.</p>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Tab 2: Team -->
+    @if (activeTab() === 'team') {
+      <div class="section-card card">
+        <div class="card-header-flex">
+          <h3 class="card-title">Assigned Case Team Members</h3>
+          @if (canManageMembers()) {
+            <button type="button" class="btn btn-primary" (click)="showAddMemberModal.set(true)">
+              Add Team Member
+            </button>
+          }
+        </div>
+
+        @if (caseData().team?.length) {
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Member Name</th>
+                  <th>Type</th>
+                  <th>Role</th>
+                  <th>Assigned Date</th>
+                  @if (canManageMembers()) {
+                    <th>Actions</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of caseData().team; track m._id || m.id) {
+                  <tr>
+                    <td class="font-medium">
+                      {{ m.adminUser?.name || m.clientUser?.displayName || m.clientUser?.name || 'Member' }}
+                    </td>
+                    <td><span class="badge badge-neutral">{{ m.memberType }}</span></td>
+                    <td><span class="badge badge-info">{{ m.role }}</span></td>
+                    <td class="text-secondary">
+                      {{ m.createdAt ? (m.createdAt | date:'mediumDate') : '—' }}
+                    </td>
+                    @if (canManageMembers()) {
+                      <td>
+                        <button
+                          type="button"
+                          class="btn-icon-danger"
+                          (click)="confirmRemoveMember(m)"
+                          title="Remove member"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="text-secondary">No team members assigned.</p>
+        }
+      </div>
+    }
+
+    <!-- Tab 3: Activity Timeline -->
+    @if (activeTab() === 'activity') {
+      <div class="section-card card">
+        <h3 class="card-title">Case Activity Timeline</h3>
+        @if (caseData().activities?.length) {
+          <div class="timeline">
+            @for (act of caseData().activities; track act._id) {
+              <div class="timeline-item">
+                <div class="timeline-badge"></div>
+                <div class="timeline-content">
+                  <div class="timeline-header">
+                    <span class="timeline-action">{{ act.action }}</span>
+                    <span class="timeline-time">{{ act.createdAt | date:'short' }}</span>
+                  </div>
+                  <div class="timeline-actor">
+                    By: {{ act.actor?.name || act.actor?.type || 'System' }}
+                  </div>
+                  @if (act.details) {
+                    <div class="timeline-details">{{ act.details | json }}</div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-secondary">No recorded activity for this case yet.</p>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Change Stage Modal -->
+  @if (showStageModal()) {
+    <div class="modal-backdrop" (click)="showStageModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Change Case Stage</h3>
+          <button type="button" class="btn-close" (click)="showStageModal.set(false)">×</button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Select New Stage</label>
+          <select
+            class="form-select"
+            [ngModel]="selectedNewStage()"
+            (ngModelChange)="selectedNewStage.set($event)"
+          >
+            @for (st of validStages; track st.value) {
+              <option [value]="st.value">{{ st.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="showStageModal.set(false)">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+            (click)="submitStageChange()"
+          >
+            Update Stage
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Change PM Modal -->
+  @if (showPmModal()) {
+    <div class="modal-backdrop" (click)="showPmModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Assign Project Manager</h3>
+          <button type="button" class="btn-close" (click)="showPmModal.set(false)">×</button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Select Employee</label>
+          <select
+            class="form-select"
+            [ngModel]="selectedNewPmId()"
+            (ngModelChange)="selectedNewPmId.set($event)"
+          >
+            <option value="">Unassigned</option>
+            @for (emp of memberOptions(); track emp._id) {
+              <option [value]="emp._id">{{ emp.name }} ({{ emp.email }})</option>
+            }
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="showPmModal.set(false)">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="isSubmitting()"
+            (click)="submitPmChange()"
+          >
+            Save PM
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Add Member Modal -->
+  @if (showAddMemberModal()) {
+    <div class="modal-backdrop" (click)="showAddMemberModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Add Team Member</h3>
+          <button type="button" class="btn-close" (click)="showAddMemberModal.set(false)">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label class="form-label">Select Employee</label>
+            <select
+              class="form-select"
+              [ngModel]="newMemberUserId()"
+              (ngModelChange)="newMemberUserId.set($event)"
+            >
+              <option value="">Choose employee...</option>
+              @for (emp of memberOptions(); track emp._id) {
+                <option [value]="emp._id">{{ emp.name }} ({{ emp.email }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Assignment Role</label>
+            <select
+              class="form-select"
+              [ngModel]="newMemberRole()"
+              (ngModelChange)="newMemberRole.set($event)"
+            >
+              @for (r of memberRoles; track r.value) {
+                <option [value]="r.value">{{ r.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="showAddMemberModal.set(false)">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="!newMemberUserId() || isSubmitting()"
+            (click)="submitAddMember()"
+          >
+            Add Member
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Publish Client Update Modal -->
+  @if (showUpdateModal()) {
+    <div class="modal-backdrop" (click)="showUpdateModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Publish Client Update</h3>
+          <button type="button" class="btn-close" (click)="showUpdateModal.set(false)">×</button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Update Message (visible to client portal)</label>
+          <textarea
+            class="form-control"
+            rows="4"
+            placeholder="Type status update for client..."
+            [ngModel]="clientUpdateMessage()"
+            (ngModelChange)="clientUpdateMessage.set($event)"
+          ></textarea>
+          <div class="char-count">
+            {{ clientUpdateMessage().length }} / 1000 characters
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="showUpdateModal.set(false)">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="!clientUpdateMessage().trim() || isSubmitting()"
+            (click)="submitClientUpdate()"
+          >
+            Publish Update
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Confirm Dialogs -->
+  <ih-confirm-dialog
+    [isOpen]="showRemoveMemberModal()"
+    title="Remove Team Member"
+    message="Are you sure you want to remove this member from the case team?"
+    confirmText="Remove Member"
+    variant="danger"
+    (confirmed)="executeRemoveMember()"
+    (cancelled)="showRemoveMemberModal.set(false)"
+  ></ih-confirm-dialog>
+
+  <ih-confirm-dialog
+    [isOpen]="showArchiveModal()"
+    title="Archive Case"
+    message="Archiving will move this case to read-only status."
+    requireMatch="ARCHIVE"
+    confirmText="Archive Case"
+    variant="danger"
+    (confirmed)="executeArchive()"
+    (cancelled)="showArchiveModal.set(false)"
+  ></ih-confirm-dialog>
+}
