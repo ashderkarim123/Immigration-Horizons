@@ -1,0 +1,58 @@
+<div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <!-- Sidebar -->
+  <aside class="sidebar" role="navigation" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="currentColor" class="logo-bg"/>
+          <path d="M10 22V10h3v12h-3zm5-12h3v12h-3V10zm5 0h3v12h-3V10z" fill="white" opacity="0.9"/>
+        </svg>
+        @if (!sidebarCollapsed()) {
+          <span class="logo-text">Immigration<br/>Horizons</span>
+        }
+      </div>
+    </div>
+
+    <ih-navigation [collapsed]="sidebarCollapsed()" />
+
+    <div class="sidebar-footer">
+      <button
+        class="collapse-btn"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+        type="button">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          @if (sidebarCollapsed()) {
+            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+          } @else {
+            <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
+          }
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content area -->
+  <div class="main-area">
+    <header class="top-header">
+      <div class="header-left">
+        <button
+          class="mobile-menu-btn"
+          (click)="toggleSidebar()"
+          aria-label="Toggle menu"
+          type="button">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+      <div class="header-right">
+        <span class="env-badge">Phase 01 — Shell</span>
+      </div>
+    </header>
+
+    <main class="content-area">
+      <router-outlet />
+    </main>
+  </div>
+</div>
