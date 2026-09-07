@@ -3,7 +3,7 @@ import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ToastService } from '../../../shared/toast.service';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { DatePipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatusBadgeComponent } from '../../../shared/status-badge.component';
 import { SkeletonComponent } from '../../../shared/skeleton.component';
@@ -15,6 +15,7 @@ import { ConfirmDialogComponent } from '../../../shared/confirm-dialog.component
   standalone: true,
   imports: [
     DatePipe,
+    JsonPipe,
     RouterLink,
     FormsModule,
     StatusBadgeComponent,
