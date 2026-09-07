@@ -52,6 +52,11 @@ export const routes: Routes = [
           import('./features/tasks/tasks.component').then((m) => m.TasksComponent),
       },
       {
+        path: 'deadlines',
+        loadComponent: () =>
+          import('./features/deadlines/deadlines.component').then((m) => m.DeadlinesComponent),
+      },
+      {
         path: '**',
         loadComponent: () =>
           import('./features/not-found/not-found').then((m) => m.NotFound),

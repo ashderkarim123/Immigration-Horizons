@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 
 import { migration as m001 } from "./migrations/001-notification-recipient-identity";
 import { migration as m002 } from "./migrations/002-link-consultations-to-clients";
+import { migration as m003 } from "./migrations/003-link-tasks-to-cases";
 import type { Migration } from "./migrations/types";
 
 /**
@@ -32,7 +33,7 @@ import type { Migration } from "./migrations/types";
  *    production changes and a flag is the only place that can be enforced.
  */
 
-const MIGRATIONS: Migration[] = [m001, m002];
+const MIGRATIONS: Migration[] = [m001, m002, m003];
 
 const args = process.argv.slice(2);
 const isApply = args.includes("--apply");

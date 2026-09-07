@@ -1,0 +1,143 @@
+<div class="page-header">
+  <div>
+    <h1>Tasks</h1>
+    <p class="page-subtitle">Manage assigned work, track progress, and review deadlines</p>
+  </div>
+</div>
+
+<div class="filters-bar card">
+  <div class="filter-group">
+    <input
+      type="search"
+      class="form-control"
+      placeholder="Search tasks..."
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+      (keyup.enter)="onFilterChange()"
+    />
+  </div>
+
+  <div class="filter-group">
+    <select
+      class="form-select"
+      [ngModel]="selectedScope()"
+      (ngModelChange)="selectedScope.set($event); onFilterChange()"
+    >
+      <option value="mine">My Tasks</option>
+      <option value="all">All Tasks</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <select
+      class="form-select"
+      [ngModel]="selectedStatus()"
+      (ngModelChange)="selectedStatus.set($event); onFilterChange()"
+    >
+      <option value="">All Statuses</option>
+      <option value="todo">To Do</option>
+      <option value="in_progress">In Progress</option>
+      <option value="waiting">Waiting on Client</option>
+      <option value="review">In Review</option>
+      <option value="completed">Completed</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <select
+      class="form-select"
+      [ngModel]="selectedPriority()"
+      (ngModelChange)="selectedPriority.set($event); onFilterChange()"
+    >
+      <option value="">All Priorities</option>
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+      <option value="urgent">Urgent</option>
+    </select>
+  </div>
+  
+  <div class="filter-group">
+    <select
+      class="form-select"
+      [ngModel]="selectedDue()"
+      (ngModelChange)="selectedDue.set($event); onFilterChange()"
+    >
+      <option value="">Any Due Date</option>
+      <option value="overdue">Overdue</option>
+      <option value="upcoming">Upcoming</option>
+    </select>
+  </div>
+</div>
+
+<div class="section-card card">
+  @if (isLoading()) {
+    <ih-skeleton [rows]="5" rowHeight="2.5rem"></ih-skeleton>
+  } @else if (isError()) {
+    <ih-error-state
+      title="Failed to load tasks"
+      [message]="errorMessage()"
+      (retry)="loadTasks()"
+    ></ih-error-state>
+  } @else if (tasks().length === 0) {
+    <ih-empty-state
+      title="No tasks match your filters"
+      description="Try broadening your search query or clearing status and priority filters."
+    ></ih-empty-state>
+  } @else {
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Title & Type</th>
+            <th>Context (Case/Lead)</th>
+            <th>Assignee</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of tasks(); track t.id) {
+            <tr>
+              <td>
+                <div class="case-title">{{ t.title }}</div>
+                <div class="case-type-sub">{{ t.type }}</div>
+              </td>
+              <td>
+                @if (t.case) {
+                  <div>
+                    <a [routerLink]="['/cases', t.case.id]" class="case-link">{{ t.case.caseNumber }}</a>
+                  </div>
+                  <div class="case-type-sub text-truncate" style="max-width: 200px" [title]="t.case.title">{{ t.case.title }}</div>
+                } @else if (t.lead) {
+                  <div>Consultation</div>
+                  <div class="case-type-sub text-truncate" style="max-width: 200px" [title]="t.lead.displayName">{{ t.lead.displayName }}</div>
+                } @else {
+                  <span class="text-secondary">Unlinked</span>
+                }
+              </td>
+              <td>{{ t.assignee ? t.assignee.displayName : 'Unassigned' }}</td>
+              <td>
+                <ih-status-badge [status]="t.status"></ih-status-badge>
+              </td>
+              <td>
+                <ih-status-badge [status]="t.priority"></ih-status-badge>
+              </td>
+              <td [class.text-danger]="isOverdue(t)">
+                {{ t.dueDate ? (t.dueDate | date:'mediumDate') : 'None' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ih-pagination
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [totalItems]="totalItems()"
+      (pageChange)="onPageChange($event)"
+    ></ih-pagination>
+  }
+</div>

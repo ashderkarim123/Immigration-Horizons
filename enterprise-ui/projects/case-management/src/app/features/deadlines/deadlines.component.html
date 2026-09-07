@@ -1,0 +1,90 @@
+<div class="page-header">
+  <div>
+    <h1>Deadlines</h1>
+    <p class="page-subtitle">Track case target filing dates and task deadlines</p>
+  </div>
+</div>
+
+<div class="filters-bar card">
+  <div class="filter-group">
+    <select
+      class="form-select"
+      [ngModel]="selectedScope()"
+      (ngModelChange)="selectedScope.set($event); loadDeadlines()"
+    >
+      <option value="mine">My Deadlines</option>
+      <option value="all">All Deadlines</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <select
+      class="form-select"
+      [ngModel]="selectedDue()"
+      (ngModelChange)="selectedDue.set($event); loadDeadlines()"
+    >
+      <option value="all">Any Due Date</option>
+      <option value="overdue">Overdue</option>
+      <option value="upcoming">Upcoming</option>
+    </select>
+  </div>
+</div>
+
+<div class="section-card card">
+  @if (isLoading()) {
+    <ih-skeleton [rows]="5" rowHeight="2.5rem"></ih-skeleton>
+  } @else if (isError()) {
+    <ih-error-state
+      title="Failed to load deadlines"
+      [message]="errorMessage()"
+      (retry)="loadDeadlines()"
+    ></ih-error-state>
+  } @else if (deadlines().length === 0) {
+    <ih-empty-state
+      title="No deadlines found"
+      description="There are currently no target dates or task due dates matching your filters."
+    ></ih-empty-state>
+  } @else {
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Context (Case)</th>
+            <th>Description</th>
+            <th>Assignee</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of deadlines(); track item.id) {
+            <tr>
+              <td [class.text-danger]="isOverdue(item)">
+                {{ item.date | date:'mediumDate' }}
+              </td>
+              <td>
+                <span class="badge" [class.badge-primary]="item.type === 'case_target_filing'">
+                  {{ item.type === 'case_target_filing' ? 'Target Filing' : 'Task Due' }}
+                </span>
+              </td>
+              <td>
+                @if (item.case) {
+                  <div>
+                    <a [routerLink]="['/cases', item.case.id]" class="case-link">{{ item.case.caseNumber }}</a>
+                  </div>
+                  <div class="case-type-sub text-truncate" style="max-width: 200px" [title]="item.case.title">{{ item.case.title }}</div>
+                } @else {
+                  <span class="text-secondary">Unlinked</span>
+                }
+              </td>
+              <td>{{ item.title }}</td>
+              <td>
+                {{ item.type === 'task_due' && item.task?.assignee ? item.task.assignee.displayName : '-' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -33,8 +33,9 @@ export class Navigation {
       items.push({ label: 'Clients', path: '/clients', icon: 'users' });
     }
     
-    // Everyone sees tasks
+    // Everyone sees tasks and deadlines
     items.push({ label: 'Tasks', path: '/tasks', icon: 'check-square' });
+    items.push({ label: 'Deadlines', path: '/deadlines', icon: 'calendar' });
 
     return items;
   });

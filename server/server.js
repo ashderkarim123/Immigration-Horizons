@@ -50,7 +50,7 @@ const app = createApp();
 if (isProduction && !app.locals.hasPersistentSessionStore) {
   console.error(
     '[startup] Refusing to start in production without a persistent session store. ' +
-      'Set a real MONGODB_URI so sessions survive restarts and work across multiple instances.'
+    'Set a real MONGODB_URI so sessions survive restarts and work across multiple instances.'
   );
   process.exit(1);
 }
@@ -59,3 +59,4 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Immigration Horizons Admin running at http://localhost:${PORT}/admin`);
 });
+``

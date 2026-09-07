@@ -112,6 +112,17 @@ async function accessibleCaseIdFilter(req) {
   return { _id: { $in: ids } };
 }
 
+async function canManageTask(req, workspaceId) {
+  return authorizeCaseAction(req, workspaceId, 'tasks.manage');
+}
+
+async function canAssignTask(req, workspaceId) {
+  // Uses cases.assign semantics or task assignment capability if defined separately.
+  // The system relies on canAssignCase + tasks.manage typically, but we map it to tasks.manage for basic assignment.
+  // ADR-017 states: A manager must have the relevant task capability and case access unless explicit org-wide capability authorizes otherwise.
+  return authorizeCaseAction(req, workspaceId, 'tasks.manage');
+}
+
 module.exports = {
   hasActiveEmployeeMembership,
   canViewCase,
@@ -122,5 +133,7 @@ module.exports = {
   canManageWorkspaceMembers,
   canCreateCase,
   memberCaseIds,
-  accessibleCaseIdFilter
+  accessibleCaseIdFilter,
+  canManageTask,
+  canAssignTask
 };

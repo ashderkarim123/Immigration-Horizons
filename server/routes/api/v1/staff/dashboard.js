@@ -43,7 +43,8 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
     const [
       myCases,
       unassignedCases,
-      upcomingDeadlines,
+      upcomingCaseDeadlines,
+      upcomingTaskDeadlines,
       documentsAwaitingReview,
       overdueDocumentRequests,
       unansweredQueries,
@@ -52,14 +53,14 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
       myOpenTasks,
       myOverdueTasks,
     ] = await Promise.all([
-      canSeeCases ? ClientCase.countDocuments({ ...caseScope, archivedAt: null }) : Promise.resolve(null),
+      canSeeCases ? ClientCase.countDocuments({ ...caseScope, archivedAt: null }) : Promise.resolve(0),
 
       can(req, 'cases.assign') || can(req, 'cases.view_all')
         ? ClientCase.countDocuments({
             archivedAt: null,
             $or: [{ projectManager: null }, { projectManager: { $exists: false } }],
           })
-        : Promise.resolve(null),
+        : Promise.resolve(0),
 
       canSeeCases
         ? ClientCase.countDocuments({
@@ -67,7 +68,13 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
             archivedAt: null,
             targetFilingDate: { $ne: null, $gte: new Date(), $lte: daysFromNow(UPCOMING_DEADLINE_DAYS) },
           })
-        : Promise.resolve(null),
+        : Promise.resolve(0),
+
+      Task.countDocuments({
+        assignee: req.staff._id,
+        status: { $ne: 'completed' },
+        dueDate: { $ne: null, $gte: new Date(), $lte: daysFromNow(UPCOMING_DEADLINE_DAYS) },
+      }),
 
       canSeeDocuments
         ? CaseDocument.countDocuments({
@@ -75,7 +82,7 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
             status: { $in: ['uploaded', 'pending_review'] },
             archivedAt: null,
           })
-        : Promise.resolve(null),
+        : Promise.resolve(0),
 
       canSeeDocuments
         ? DocumentRequest.countDocuments({
@@ -83,11 +90,11 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
             status: 'open',
             dueDate: { $ne: null, $lt: new Date() },
           })
-        : Promise.resolve(null),
+        : Promise.resolve(0),
 
       canSeeQueries
         ? ConsultationInteraction.countDocuments(scopedQuery({ status: { $in: ACTIVE_UNANSWERED_STATUSES } }))
-        : Promise.resolve(null),
+        : Promise.resolve(0),
 
       canSeeQueries
         ? ConsultationInteraction.countDocuments(
@@ -97,12 +104,9 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
               status: { $in: ACTIVE_UNANSWERED_STATUSES },
             })
           )
-        : Promise.resolve(null),
+        : Promise.resolve(0),
 
-      // Unread client messages currently in operationsQueues isn't scoped per-employee, but we can reuse it
-      // or implement the per-employee logic later if needed. The prompt says "Reuse/migrate the existing meanings"
-      // In Next.js: `countUnreadClientMessages(caseFilter)`
-      canSeeChannels && canSeeCases ? countUnreadClientMessages(caseFilter) : Promise.resolve(null),
+      canSeeChannels && canSeeCases ? countUnreadClientMessages(caseFilter) : Promise.resolve(0),
 
       Task.countDocuments({ assignee: req.staff._id, status: { $ne: 'completed' } }),
       Task.countDocuments({
@@ -127,6 +131,8 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
       .sort({ dueDate: 1, createdAt: -1 })
       .limit(8)
       .lean();
+
+    const upcomingDeadlines = upcomingCaseDeadlines + upcomingTaskDeadlines;
 
     res.json({
       data: {

@@ -77,6 +77,14 @@
         <button
           type="button"
           class="tab-btn"
+          [class.active]="activeTab() === 'tasks'"
+          (click)="activeTab.set('tasks'); loadCaseTasks()"
+        >
+          Tasks
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
           [class.active]="activeTab() === 'activity'"
           (click)="activeTab.set('activity')"
         >
@@ -255,14 +263,14 @@
                 <div class="timeline-badge"></div>
                 <div class="timeline-content">
                   <div class="timeline-header">
-                    <span class="timeline-action">{{ act.action }}</span>
+                    <span class="timeline-action">{{ act.action || act.type }}</span>
                     <span class="timeline-time">{{ act.createdAt | date:'short' }}</span>
                   </div>
                   <div class="timeline-actor">
                     By: {{ act.actor?.name || act.actor?.type || 'System' }}
                   </div>
-                  @if (act.details) {
-                    <div class="timeline-details">{{ act.details | json }}</div>
+                  @if (act.details || act.message) {
+                    <div class="timeline-details">{{ act.message || (act.details | json) }}</div>
                   }
                 </div>
               </div>
@@ -270,6 +278,53 @@
           </div>
         } @else {
           <p class="text-secondary">No recorded activity for this case yet.</p>
+        }
+      </div>
+    }
+
+    <!-- Tab 4: Tasks -->
+    @if (activeTab() === 'tasks') {
+      <div class="section-card card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="card-title m-0">Case Tasks</h3>
+          <!-- We could add a button to create a task here if canManageTask() is true -->
+        </div>
+
+        @if (isTasksLoading()) {
+          <ih-skeleton [rows]="3" rowHeight="2rem"></ih-skeleton>
+        } @else if (caseTasks().length === 0) {
+          <ih-empty-state
+            title="No tasks assigned"
+            description="There are currently no tasks associated with this case."
+          ></ih-empty-state>
+        } @else {
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Assignee</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Due Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (t of caseTasks(); track t.id) {
+                  <tr>
+                    <td>
+                      <div class="fw-medium">{{ t.title }}</div>
+                      <div class="text-secondary small">{{ t.type }}</div>
+                    </td>
+                    <td>{{ t.assignee?.displayName || 'Unassigned' }}</td>
+                    <td><ih-status-badge [status]="t.status"></ih-status-badge></td>
+                    <td><ih-status-badge [status]="t.priority"></ih-status-badge></td>
+                    <td>{{ t.dueDate ? (t.dueDate | date:'mediumDate') : 'None' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         }
       </div>
     }

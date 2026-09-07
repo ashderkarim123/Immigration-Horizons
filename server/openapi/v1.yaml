@@ -250,6 +250,151 @@ paths:
   /staff/tasks:
     get:
       summary: List assigned tasks
+      parameters:
+        - name: scope
+          in: query
+          schema: { type: string, default: mine }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: priority
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: due
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 25 }
       responses:
         '200':
           description: Paginated tasks
+  /staff/tasks/{id}:
+    get:
+      summary: Get task details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Task details
+    patch:
+      summary: Update task details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                priority: { type: string }
+                dueDate: { type: string, format: date-time, nullable: true }
+                type: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/tasks/{id}/status:
+    patch:
+      summary: Update task status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/tasks/{id}/assignee:
+    patch:
+      summary: Update task assignee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignee: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Success
+  /staff/cases/{id}/tasks:
+    get:
+      summary: List tasks for a case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of tasks
+    post:
+      summary: Create a case-native task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                type: { type: string }
+                priority: { type: string }
+                dueDate: { type: string, format: date-time, nullable: true }
+                assignee: { type: string, nullable: true }
+                description: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/deadlines:
+    get:
+      summary: List deadlines (case target filing and task due dates)
+      parameters:
+        - name: due
+          in: query
+          schema: { type: string, default: all }
+        - name: scope
+          in: query
+          schema: { type: string, default: mine }
+      responses:
+        '200':
+          description: List of deadlines

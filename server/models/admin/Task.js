@@ -19,7 +19,8 @@ const TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
 
 const TaskSchema = new mongoose.Schema(
   {
-    lead: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultation', required: true, index: true },
+    lead: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultation', required: false, index: true },
+    case: { type: mongoose.Schema.Types.ObjectId, ref: 'ClientCase', default: null, index: true },
     title: { type: String, required: true, trim: true },
     type: { type: String, enum: TASK_TYPES, default: 'Other' },
     description: { type: String, default: '' },

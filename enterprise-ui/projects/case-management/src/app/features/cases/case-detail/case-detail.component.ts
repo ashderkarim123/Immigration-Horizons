@@ -7,8 +7,10 @@ import { DatePipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatusBadgeComponent } from '../../../shared/status-badge.component';
 import { SkeletonComponent } from '../../../shared/skeleton.component';
+import { EmptyStateComponent } from '../../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../../shared/error-state.component';
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog.component';
+import { IhIconComponent } from '../../../shared/icon/ih-icon.component'; // Let's also make sure ih-icon is imported since we use it
 
 @Component({
   selector: 'ih-case-detail',
@@ -20,8 +22,10 @@ import { ConfirmDialogComponent } from '../../../shared/confirm-dialog.component
     FormsModule,
     StatusBadgeComponent,
     SkeletonComponent,
+    EmptyStateComponent,
     ErrorStateComponent,
-    ConfirmDialogComponent
+    ConfirmDialogComponent,
+    IhIconComponent
   ],
   templateUrl: './case-detail.component.html',
   styleUrls: ['../../dashboard/dashboard.scss', './case-detail.component.scss']
@@ -41,8 +45,9 @@ export class CaseDetailComponent implements OnInit {
   isError = signal(false);
   errorMessage = signal('');
 
-  activeTab = signal<'overview' | 'team' | 'activity'>('overview');
-
+  activeTab = signal<'overview' | 'team' | 'activity' | 'tasks'>('overview');
+  caseTasks = signal<any[]>([]);
+  isTasksLoading = signal(false);
   // Capability signals
   currentUser = computed(() => this.auth.user());
   canManageStage = computed(() => {
@@ -137,6 +142,21 @@ export class CaseDetailComponent implements OnInit {
         this.memberOptions.set(res.data?.employees || []);
       },
       error: () => {}
+    });
+  }
+
+  loadCaseTasks(): void {
+    if (this.caseTasks().length > 0) return; // already loaded
+    this.isTasksLoading.set(true);
+    this.api.get(`/staff/cases/${this.caseId()}/tasks`).subscribe({
+      next: (res: any) => {
+        this.caseTasks.set(res.data?.tasks || []);
+        this.isTasksLoading.set(false);
+      },
+      error: () => {
+        this.toast.error('Failed to load case tasks.');
+        this.isTasksLoading.set(false);
+      }
     });
   }
 
