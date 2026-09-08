@@ -1,9 +1,9 @@
-# ADR-020 — Canonical Staff Communications and Collaboration
+# ADR-020 — Unified Client–Employee Case Chat and Collaboration
 
 **Status:** Accepted for Phase 07 implementation  
 **Date:** 2026-09-08  
 **Branch:** `architecture/angular-enterprise-platform`  
-**Phase:** Execution Phase 07 — Communications + Collaboration  
+**Phase:** Execution Phase 07 — Unified Case Chat + Collaboration  
 **Phase 06 implementation baseline:** `4e344a8513716a57d7f8a97a7fefbc007fa7d024`  
 **Verified Phase 06 CI:** GitHub Actions run #57 — success
 
@@ -11,423 +11,398 @@
 
 ## 1. Context
 
-Immigration Horizons already has two mature communication domains that predate the Angular enterprise UI:
-
-1. **Consultation/case interactions (queries)** — structured client questions and consultation requests with assignment, priority, scheduling, clarification, answer, close/cancel/no-show lifecycle, internal notes, client-visible responses, optimistic concurrency, history and email/notification side effects.
-2. **Case workspace collaboration** — ordered channels with visibility policy, restricted membership, durable messages, one-level threads, mentions, secure document attachments, edit/delete/restore behavior, message revisions, read state, unread counts, system messages and email/notification side effects.
-
-The authoritative models already include:
+Immigration Horizons already has a real collaboration domain used by both employees and clients:
 
 ```text
-ConsultationInteraction
-InteractionHistory
-InteractionUpdate
+CaseWorkspace
+WorkspaceMember
 WorkspaceChannel
 ChannelMember
 WorkspaceMessage
 MessageRevision
 ChannelReadState
-WorkspaceMember
 ```
 
-The authoritative services already include:
+`WorkspaceMessage` is already intentionally dual-writer: clients can send/edit/delete their own messages through the portal, while employees can send and moderate through staff tooling. Existing portal routes and pages already expose channel messages, replies/threads and read state.
 
-```text
-interactionPolicy
-interactionService
-interactionQueues
-interactionEmail
-collaborationPolicy
-channelService
-messageService
-readStateService
-systemMessageService
-collaborationEmail
-notificationService
-```
+The product requirement for Phase 07 is therefore not merely “staff communications.” The required outcome is a complete **two-way case chat experience between clients and the Immigration Horizons team**.
 
-Legacy staff workflows live mainly in Express/EJS. Client-facing counterparts already exist in the Next.js client portal.
+The client should be able to open a case, enter Chat, send updates/questions, reply, attach files, edit/delete their own permitted messages, see employee replies and unread state, and securely access message attachments. Employees should operate the same shared conversation from the Angular case-management application while retaining separate staff-only collaboration channels where needed.
 
-Phase 07 therefore migrates these existing communication capabilities into the canonical `/api/v1/staff` contract and Angular case-management UI. It does **not** create a second chat system, second query model, or new realtime infrastructure.
+Phase 07 must improve and canonicalize the existing domain rather than creating another chat or attachment store.
 
 ---
 
 ## 2. Decision summary
 
-Phase 07 will expose the existing interaction and collaboration domains through explicit staff APIs and Angular workflows.
+Phase 07 is primarily a **Unified Case Chat** phase.
 
-The following remain authoritative:
-
-```text
-ConsultationInteraction   -> structured client query / consultation-request lifecycle
-WorkspaceChannel          -> case workspace conversation container
-WorkspaceMessage          -> durable channel message/thread item
-ChannelReadState          -> per-member read state
-```
-
-No new generic `Communication`, `Conversation`, `ChatMessage`, `Ticket`, or `InboxMessage` collection is introduced merely for Angular.
-
-The Angular application will provide:
-
-- a global **Queries** operational queue/directory;
-- query detail and lifecycle actions;
-- a case **Communications** workspace containing case-scoped queries and collaboration channels;
-- channel/thread message operations;
-- unread/read-state behavior;
-- safe mentions and document attachments;
-- channel administration where authorized.
-
----
-
-## 3. Domain separation remains intentional
-
-`ConsultationInteraction` and `WorkspaceMessage` solve different problems and must not be merged.
-
-A query is structured operational work with fields such as:
+The authoritative chat model remains:
 
 ```text
-interactionNumber
-scopeType
-subject
-description
-type
-status
-priority
-assignedTo
-scheduledFor
-responseDueAt
-clientVisibleResponse
-internalResponse
-clientResolutionStatus
+WorkspaceChannel
+WorkspaceMessage
+ChannelReadState
 ```
 
-A workspace message is conversational collaboration with fields such as:
+The same persisted conversation is rendered by:
 
 ```text
-channel
-sender
-body
-thread root
-mentions
-attachments
-edited/deleted state
-clientVisible
-idempotencyKey
+Client portal (Next.js)        <-> shared workspace messages <-> Angular staff case management
 ```
 
-A query can require assignment, SLA/deadline handling, scheduling and closure. A message is not a ticket. A message thread does not replace query history.
+Phase 07 completion depends on both sides working end-to-end.
 
-Angular may present both under a common Communications navigation area, but the server/domain objects remain separate.
+Structured `ConsultationInteraction` / Queries remain valid and must not be broken, but canonicalizing the entire query-management module is no longer the primary completion requirement of Phase 07. Query migration may be completed opportunistically only if it does not dilute the shared-chat deliverable.
 
----
-
-## 4. Query scope model
-
-Existing query scope remains authoritative:
+No replacement collections such as these are introduced:
 
 ```text
-scopeType = consultation
-scopeType = case
+Chat
+ChatMessage
+Conversation
+InboxMessage
+ClientMessage
+EmployeeMessage
 ```
-
-For consultation-scoped interactions, existing lead/consultation access policy remains intact.
-
-For case-scoped interactions, case/workspace row-level authorization applies.
-
-Angular must not convert a consultation-scoped interaction to case scope simply because the lead later becomes a case unless an existing explicit service/migration rule already does so.
-
-No destructive scope migration is part of Phase 07.
 
 ---
 
-## 5. Query lifecycle
+## 3. Product model
 
-Phase 07 preserves the existing interaction enums and service-owned lifecycle.
-
-Do not invent transitions in Angular.
-
-The current service operations include concepts such as:
+Every active case should be capable of having at least one client-visible shared channel equivalent to:
 
 ```text
-acknowledge
-assign
-schedule/reschedule
-start work
-answer
-request clarification
-mark no-show
-cancel
-close
-add internal note
+Client & Team
 ```
 
-The exact permitted transition graph must be read from `interactionService.js`, `interactionConstants.js`, model validation, and existing tests.
+This is the normal conversation between the client workspace members and authorized employees assigned to/accessing the case.
 
-Optimistic concurrency remains mandatory. Concurrent writes must return a controlled conflict rather than silently overwrite newer work.
+The system may also retain other channel types already supported by ADR-005, including:
+
+- staff-only/internal case channels;
+- restricted-member channels;
+- system/update channels where already defined.
+
+Clients must never see staff-only channels merely because they know a channel ID.
+
+The implementation should reuse existing default channel provisioning and may evolve the default template so each applicable case has an obvious client-team chat destination.
+
+Provisioning remains idempotent.
 
 ---
 
-## 6. Query response visibility
+## 4. Shared conversation semantics
 
-The existing separation is mandatory:
+A shared client-team channel is not an email ticket and not a one-way status feed.
+
+Both sides may actively converse.
+
+The normal message workflow is:
 
 ```text
-clientVisibleResponse
-internalResponse
-resolutionSummary
+client sends message
+    -> employee sees it in Angular
+    -> employee replies
+    -> client sees reply in portal
+    -> both sides receive unread/read-state updates
 ```
 
-Internal response/notes must never appear in client-facing serialization.
+The inverse employee-first flow must work too.
 
-Angular staff DTOs may expose internal fields only to authorized staff endpoints.
-
-Client-facing email/portal behavior continues to use existing safe serializers and services.
-
-Phase 07 must add recursive DTO leakage tests around client-facing and staff-facing response boundaries where touched.
+Messages are durable and ordered. Refreshing either application must show the same persisted conversation.
 
 ---
 
-## 7. Query operational queues
+## 5. Client capabilities
 
-The existing queue semantics in `interactionQueues` remain the source of truth where practical.
+For a client who is an active authorized member of the case workspace and is allowed to view the channel, Phase 07 must support:
 
-Phase 07 should expose useful staff filters such as:
+- list visible case chat channels;
+- open a shared channel;
+- load older messages;
+- send a new message;
+- reply within the existing one-level thread model;
+- edit their own eligible message;
+- delete their own eligible message using existing soft-delete semantics;
+- attach one or more permitted files through the secure document pipeline;
+- attach an already-uploaded client-visible case document where allowed;
+- open/download permitted message attachments through secure document authorization;
+- see edited/deleted state;
+- mark the channel read;
+- see unread counts;
+- see employee/system messages that are explicitly client-visible.
+
+Clients must not gain employee moderation, channel management or staff-only attachment visibility.
+
+---
+
+## 6. Employee capabilities
+
+Authorized employees in Angular must support:
+
+- list visible case channels;
+- clearly distinguish shared client channels from internal/staff-only channels;
+- open shared or permitted internal channels;
+- load older messages;
+- send messages and replies;
+- mention eligible workspace members where current domain supports mentions;
+- attach permitted existing case documents;
+- upload a new secure chat attachment from the composer;
+- edit their own messages according to policy;
+- soft-delete/moderate/restore according to policy;
+- see unread counts;
+- mark channels read;
+- manage channels/restricted members where current capability policy permits.
+
+A staff user removed from the case workspace loses chat access immediately unless an existing explicit organization-wide capability applies.
+
+---
+
+## 7. Message model remains authoritative
+
+`WorkspaceMessage` remains the only durable chat-message model.
+
+Existing semantics stay intact:
+
+- sender type identifies client/employee/system;
+- body is plain text unless a future ADR expands formatting;
+- root messages and one-level replies are supported;
+- mentions are bounded snapshots tied to workspace members;
+- attachments reference secure documents and versions;
+- edit history uses `MessageRevision`;
+- delete is soft/moderated rather than ordinary hard deletion;
+- `clientVisible` remains a defense-in-depth field;
+- idempotency protects sends/retries;
+- optimistic concurrency protects edits.
+
+Do not introduce a rich-text/HTML message format in this phase.
+
+---
+
+## 8. One-level threads
+
+The existing threading model remains:
 
 ```text
-search
-status
-type
-priority
-scope
-assignee
-queue
-page
-pageSize
+root message
+└── replies
 ```
 
-Existing queue concepts may include unanswered, awaiting scheduling, overdue response, assigned work or similar repository-defined queues.
+A reply to a reply is normalized to the thread root by the service layer.
 
-Do not invent metrics that disagree with current service logic.
+Do not create arbitrary recursively nested thread trees.
 
-Normal employees must not gain `queries.view_all` behavior through a broad API filter.
+Both client portal and Angular staff UI must present the same thread semantics.
 
 ---
 
-## 8. Collaboration channels
+## 9. Direct file attachment from the chat composer
 
-`WorkspaceChannel` remains the channel model.
+Phase 07 explicitly requires a user-facing **Attach file** action in both client and employee chat composers.
 
-Existing channel concepts remain authoritative:
+However, a message must never become a second file-storage mechanism.
+
+When a client or employee chooses a new local file from chat:
+
+1. authorize the actor for the case/channel;
+2. upload the file through the existing secure document-validation/storage pipeline;
+3. create the authoritative `CaseDocument` / `DocumentVersion` records;
+4. ensure the resulting document is valid for the target channel audience;
+5. create the message with an attachment reference to that document/version;
+6. if message creation fails after upload, preserve an auditable safe recovery/orphan policy rather than leaking or silently deleting a successfully stored case document without product rules.
+
+Message records store document/version refs and display-name snapshots only.
+
+Never store file bytes, storage keys, private paths or public URLs on `WorkspaceMessage`.
+
+---
+
+## 10. Chat attachment category
+
+If the current document categories do not provide a suitable destination for files attached directly from chat, Phase 07 may introduce an idempotently provisioned case category with a stable template key equivalent to:
 
 ```text
-channelType
-visibility
-order
-templateKey
-archivedAt
+chat_attachments
 ```
 
-Default channel provisioning remains idempotent through `channelService`.
-
-Phase 07 may expose:
-
-- list visible channels;
-- initialize defaults;
-- create channel;
-- update channel;
-- reorder channels;
-- archive channel;
-- manage restricted channel membership.
-
-Do not create another category/channel hierarchy in Angular.
-
----
-
-## 9. Channel visibility
-
-Visibility is server policy, never a naming convention.
-
-`collaborationPolicy` remains authoritative for whether an actor can view/send/manage a channel.
-
-Restricted channel membership is an additional constraint, not a substitute for workspace membership.
-
-An employee removed from the case workspace loses access to all case channels immediately, including channels where an old `ChannelMember` row remains, unless existing explicit organization-wide policy says otherwise.
-
-A restricted channel must not leak its existence, name, unread count, member list or message count to an unauthorized actor.
-
----
-
-## 10. Messages and threads
-
-`WorkspaceMessage` remains the message model.
-
-Phase 07 preserves current one-level threading semantics:
-
-- root message;
-- replies normalized to one thread root;
-- no arbitrary recursive nesting.
-
-The API must support cursor-based message pagination using existing cursor utilities rather than offset pagination for deep channel history.
-
-Message ordering must remain deterministic using current createdAt/_id conventions.
-
-No websocket is required for Phase 07.
-
----
-
-## 11. Message idempotency
-
-Existing `idempotencyKey` behavior remains mandatory for employee sends/replies.
-
-Angular should generate one key per intentional send and reuse it only for a retry of that same send.
-
-The server remains authoritative and must safely deduplicate retry submissions.
-
-Do not create duplicate messages because a user double-clicks or a network retry occurs.
-
----
-
-## 12. Message edit/delete/restore
-
-Existing edit, delete and moderation semantics remain authoritative.
-
-Message edits must preserve optimistic concurrency and revision history where the current service does so.
-
-Delete is a soft/moderated domain action, not a normal hard database deletion.
-
-Angular must distinguish:
-
-- edit own;
-- delete own where permitted;
-- moderator delete/restore where permitted.
-
-The UI cannot infer permission from sender identity alone; server policy decides.
-
----
-
-## 13. Mentions
-
-Mentions remain based on `WorkspaceMember`, not arbitrary email/user IDs.
-
-When an employee mentions a person, the backend must verify:
-
-- the workspace member exists;
-- membership is valid for the case/workspace;
-- the mentioned member is eligible to see the target channel;
-- restricted-channel visibility is respected.
-
-The persisted mention snapshot remains bounded and intentional.
-
-Mention notification/email side effects reuse existing infrastructure and must not determine core message persistence success.
-
----
-
-## 14. Message attachments
-
-Message attachments remain references to existing secure documents/versions:
+Display name may be:
 
 ```text
-CaseDocument
-DocumentVersion
+Chat Attachments
 ```
 
-Phase 07 must not upload arbitrary files directly into messages.
+It should be a normal `DocumentCategory`, not a new model.
 
-Attachment selection in Angular must choose an existing authorized case document (and server-resolved valid version) through Phase 06's secure document domain.
+Recommended properties:
 
-The backend must verify:
+- not evidence-required;
+- client-visible where the file was uploaded into a client-visible chat;
+- permitted uploader types include the appropriate client/employee actors;
+- active and ordered using existing category rules.
 
-- same case/workspace;
-- document access;
-- document/client visibility compatibility with the target channel;
-- version belongs to the document;
-- archived/rejected/private/internal documents are not exposed to clients contrary to document/channel policy.
+If a file is attached in a staff-only channel, its visibility must remain staff-only or otherwise conform to the existing secure document visibility model.
 
-Messages store bounded attachment snapshots/refs, never storage keys or private URLs.
-
-Downloads still go through the Phase 06 secure document API and access log.
+Do not allow a staff-only attachment to become client-visible merely because a message DTO references it.
 
 ---
 
-## 15. Read state and unread counts
+## 11. Attachment security
 
-`ChannelReadState` remains the source of truth.
+For every attachment, the server must verify:
 
-Read state is per workspace member/channel.
+- actor can view/send in the target channel;
+- document belongs to the same case/workspace;
+- document version belongs to the document;
+- channel audience is compatible with document visibility;
+- client actors can access the attachment under document policy;
+- archived/rejected/unavailable files are handled according to existing document policy;
+- storage metadata is never returned.
 
-Phase 07 should support:
-
-- unread counts in channel lists;
-- marking a channel read;
-- optionally marking through a specific last-read message if current service supports it;
-- excluding the actor's own messages from unread calculation according to existing service semantics.
-
-Unread count endpoints must not reveal hidden channels.
-
-Do not create a second unread-counter table for Angular.
+All downloads continue through secure document download routes and retain `DocumentAccessLog` behavior.
 
 ---
 
-## 16. Client-visible system messages and case updates
+## 12. Existing-document attachment
 
-Earlier phases already support publishing client-visible case updates.
+Both sides may optionally attach an already-existing document if policy allows it.
 
-Phase 07 must not create a second case-update mutation path.
+The server, not the UI, determines whether a document is eligible for the channel audience.
 
-If `systemMessageService` already mirrors approved case events into collaboration channels, preserve and render those system messages according to existing `clientVisible` rules.
+A client-visible shared channel must never be used to expose an internal employee document.
 
-If no such mapping exists for a given case update, Phase 07 should not invent one merely for visual completeness.
-
-The case-management service remains authoritative for case update mutations.
-
----
-
-## 17. Notifications and email
-
-Existing services such as:
+Angular and the portal should show only safe document attachment metadata such as:
 
 ```text
-notificationService
-interactionEmail
-collaborationEmail
+id
+displayName
+mimeType/extension
+size
+version id/number where needed
+download action
 ```
-
-remain side-effect providers.
-
-Core query/message persistence must not depend on email delivery succeeding unless the existing service explicitly defines a transactional requirement.
-
-Phase 07 should preserve existing notification generation and may expose unread notification indicators if a current staff notification contract can be safely reused.
-
-A brand-new notification center, websocket push bus, email inbox integration or external messaging provider is not required to complete Phase 07.
 
 ---
 
-## 18. Authorization — queries
+## 13. Near-real-time chat behavior
 
-Existing capabilities/policies remain authoritative, including current equivalents of:
+Phase 07 must feel like chat rather than requiring manual page refresh.
+
+A new external realtime infrastructure is not required.
+
+The default implementation should provide **near-real-time incremental synchronization** using a safe transport supported by the current apps. Bounded polling is acceptable and preferred over unnecessary infrastructure if no realtime bus exists.
+
+Recommended behavior:
+
+- fetch new messages every few seconds while a channel is open and the document/tab is visible;
+- stop or greatly reduce polling while the page is hidden;
+- use incremental message identity/cursor/time boundaries rather than repeatedly downloading the full conversation;
+- apply backoff after repeated failures;
+- immediately merge the server-confirmed result after a successful send;
+- deduplicate by message ID/idempotency key;
+- preserve user scroll position while older/newer messages arrive;
+- provide manual retry if synchronization fails.
+
+If implementation discovers an already-supported SSE/realtime mechanism that is clearly safer and simpler, it may be used, but Socket.IO/WebSocket infrastructure must not be added merely to satisfy the word “chat.”
+
+Typing indicators and online presence are not required for Phase 07 completion.
+
+---
+
+## 14. Message pagination and incremental sync
+
+Historical conversation loading remains cursor based using existing utilities.
+
+Phase 07 may add a bounded incremental “messages after X” contract if needed for polling, but it must preserve deterministic ordering and authorization.
+
+Do not use deep offset pagination for long chat histories.
+
+Malformed cursors/message boundaries fail safely.
+
+---
+
+## 15. Idempotent sends
+
+Both client and employee sends/replies must use a per-intent idempotency key.
+
+The client should generate one key for one deliberate send and reuse that same key only when retrying that exact send.
+
+Double-clicking Send or retrying a network request must not create duplicate messages.
+
+Attachment upload/message composition must define idempotency carefully so a retry does not create duplicate `CaseDocument` records where avoidable.
+
+---
+
+## 16. Edit and delete
+
+Clients and employees may edit only messages permitted by existing ownership/policy rules.
+
+Edits preserve `MessageRevision` and optimistic concurrency.
+
+A stale edit returns a controlled conflict rather than overwriting newer content.
+
+Deletion remains soft/moderated. Thread continuity must not be corrupted.
+
+Employees with moderation capability may restore or moderate where current policy allows.
+
+Clients cannot restore/moderate other users’ messages.
+
+---
+
+## 17. Read state and unread counts
+
+`ChannelReadState` remains authoritative.
+
+Both client portal and Angular must:
+
+- show unread count per visible channel;
+- mark read when appropriate;
+- exclude hidden channels from all counts;
+- avoid counting the actor’s own sends as unread according to current service semantics.
+
+Phase 07 may expose a simple derived “seen” indication where it can be computed reliably from participant read states, but it must not claim individual-message read receipts that the model cannot actually prove.
+
+---
+
+## 18. Notifications
+
+Existing `notificationService` and `collaborationEmail` remain the notification side-effect layer.
+
+When a client sends a new message, appropriate employees should receive existing in-app/email notification behavior according to current preferences/policy.
+
+When an employee sends a client-visible message, appropriate client workspace members should receive existing notification behavior.
+
+Email delivery failure must not roll back a successfully persisted message unless existing architecture explicitly requires that behavior.
+
+Do not create a second notification engine in Phase 07.
+
+---
+
+## 19. Shared versus internal channels
+
+The UI must make the audience obvious.
+
+Employees should be able to distinguish at a glance:
 
 ```text
-queries.view
-queries.view_all
-queries.triage
-queries.assign
-queries.schedule
-queries.manage
-queries.answer
-queries.close
+CLIENT + TEAM
+STAFF ONLY
+RESTRICTED
 ```
 
-Case-scoped interactions require case/workspace access unless an explicit `view_all` capability applies.
+Do not rely only on color.
 
-Consultation-scoped visibility follows existing consultation interaction policy.
+Before an employee sends in a client-visible channel, the composer should visibly indicate that the client can read the message and attachments.
 
-No query endpoint may authorize solely from a guessed interaction ID.
+Internal channels must never appear in client portal channel lists, unread totals, notification payloads or guessed-ID responses.
 
 ---
 
-## 19. Authorization — collaboration
+## 20. Authorization
 
-Existing capabilities/policies remain authoritative, including current equivalents of:
+`collaborationPolicy` remains authoritative.
+
+Existing capability families remain in force, including current equivalents of:
 
 ```text
 channels.view
@@ -440,59 +415,37 @@ messages.edit_own
 messages.moderate
 ```
 
-Every channel/message action also passes row-level channel/workspace visibility policy.
+Employee access combines capability + row-level workspace/channel policy.
 
-Restricted membership is checked where applicable.
+Client access combines authenticated active client session + case workspace membership + channel visibility/restricted membership policy.
 
-Angular navigation/control visibility is UX only.
+Knowledge of case/channel/message IDs never grants access.
 
 ---
 
-## 20. Existence concealment
+## 21. Existence concealment
 
-Phase 07 preserves safe not-found behavior for inaccessible case-scoped resources.
+Hidden case/chat resources must not become object-existence oracles.
 
-Where appropriate, these should not be distinguishable externally:
+Where appropriate, treat these equivalently:
 
 ```text
 malformed ID
 nonexistent ID
 inaccessible case
-inaccessible restricted channel
-message in inaccessible channel
-interaction in inaccessible case
+hidden staff-only channel
+restricted channel the actor cannot access
+message in an inaccessible channel
+attachment in an inaccessible message
 ```
 
-Do not expose channel names, message authors, query subjects or unread counts before authorization.
+Never expose hidden channel names, senders, unread counts or attachment names before authorization.
 
 ---
 
-## 21. Canonical API — queries
+## 22. Staff canonical API
 
-Recommended staff endpoints, adapted to current API conventions:
-
-```text
-GET    /api/v1/staff/queries
-GET    /api/v1/staff/queries/:interactionId
-GET    /api/v1/staff/cases/:caseId/queries
-
-POST   /api/v1/staff/queries/:interactionId/acknowledge
-PATCH  /api/v1/staff/queries/:interactionId/assignee
-POST   /api/v1/staff/queries/:interactionId/schedule
-POST   /api/v1/staff/queries/:interactionId/start
-POST   /api/v1/staff/queries/:interactionId/answer
-POST   /api/v1/staff/queries/:interactionId/request-clarification
-POST   /api/v1/staff/queries/:interactionId/no-show
-POST   /api/v1/staff/queries/:interactionId/cancel
-POST   /api/v1/staff/queries/:interactionId/close
-POST   /api/v1/staff/queries/:interactionId/notes
-```
-
-The exact verb shape may be consolidated where a validated action endpoint is cleaner. Do not build a generic arbitrary status patch that bypasses service transition rules.
-
----
-
-## 22. Canonical API — collaboration
+Phase 07 exposes the shared chat domain under `/api/v1/staff` for Angular.
 
 Recommended staff endpoints:
 
@@ -507,7 +460,10 @@ PATCH  /api/v1/staff/channels/:channelId
 POST   /api/v1/staff/channels/:channelId/archive
 
 GET    /api/v1/staff/channels/:channelId/messages
+GET    /api/v1/staff/channels/:channelId/messages/newer
 POST   /api/v1/staff/channels/:channelId/messages
+POST   /api/v1/staff/channels/:channelId/messages-with-upload   # optional orchestration endpoint
+
 GET    /api/v1/staff/channels/:channelId/threads/:messageId
 POST   /api/v1/staff/messages/:messageId/replies
 PATCH  /api/v1/staff/messages/:messageId
@@ -521,229 +477,223 @@ DELETE /api/v1/staff/channels/:channelId/members/:channelMemberId
 POST   /api/v1/staff/channels/:channelId/read
 ```
 
-Do not add hard message deletion.
+The exact multipart orchestration endpoint may differ if composing existing Phase 06 upload + message APIs in two steps is safer. The user experience still must support attaching a new local file directly from the chat composer.
+
+Do not add hard-delete message endpoints.
 
 ---
 
-## 23. DTO policy
+## 23. Client portal API
 
-Raw Mongoose documents must never become the Angular contract.
+Existing client portal message APIs remain in service and should be extended rather than replaced.
 
-Define explicit DTOs for:
+Inspect current routes under areas equivalent to:
 
 ```text
-QuerySummary
-QueryDetail
-QueryHistoryItem
-QueryUpdate
-QueryQueueCounts
-ChannelSummary
-ChannelDetail
-ChannelMemberRef
-MessageSummary
-MessageDetail
-MessageAttachmentRef
-MessageMentionRef
-ThreadResponse
-UnreadCounts
+src/app/api/portal/channels/[channelId]/messages
+src/app/api/portal/channels/[channelId]/read
+src/app/api/portal/messages/[messageId]/replies
+src/app/api/portal/messages/[messageId]/edit
+src/app/api/portal/messages/[messageId]/delete
 ```
 
-Staff DTOs may intentionally expose staff-only fields when authorized.
+Phase 07 must ensure the client portal has parity for the required shared-chat actions and direct secure chat attachment upload.
 
-Client DTOs remain separate and must never gain staff-only fields as a side effect of shared serializer refactoring.
+Do not route client chat through employee session APIs.
 
-Sensitive credentials/tokens/session data and document storage metadata remain prohibited.
+Authentication boundaries remain separate.
 
 ---
 
-## 24. Angular Queries workspace
+## 24. DTO boundary
 
-Phase 07 adds a real global Queries page.
+Staff and client message DTOs may share safe serialization helpers but remain separate contracts.
+
+A safe message DTO may contain:
+
+```text
+id
+senderType
+senderDisplayName
+body
+messageType
+parentMessageId
+threadRootId
+replyCount
+mentions
+attachments
+editedAt
+deletedAt
+createdAt
+updatedAt
+canEdit
+canDelete
+canRestore   # staff only where permitted
+```
+
+Client DTOs must never expose:
+
+- raw AdminUser objects;
+- employee internal metadata;
+- staff-only channel metadata;
+- storage keys/private paths;
+- password/token/session fields;
+- hidden document details.
+
+---
+
+## 25. Angular staff chat UX
+
+The Angular case workspace should expose an obvious `Chat` or `Communications` surface where Chat is primary.
+
+Recommended desktop layout:
+
+```text
+Channels / conversations | Message timeline | Optional thread/details panel
+```
 
 Required UX:
 
-- search;
-- status/type/priority/scope/assignee filters;
-- operational queue shortcuts/counts where authorized;
-- pagination;
-- loading/empty/error/retry states;
-- clear overdue/awaiting response/scheduling indicators where current data supports them;
-- direct navigation to client/case/consultation context without widening access.
+- shared/internal audience labels;
+- unread badges;
+- selected channel;
+- message bubbles/rows with sender + timestamp;
+- load older history;
+- near-real-time new messages;
+- text composer;
+- Attach file;
+- attach existing document;
+- send/retry state;
+- reply/thread;
+- edit/delete/moderation controls;
+- attachment download;
+- clear loading/empty/error/reconnect states;
+- responsive mobile layout;
+- keyboard-accessible composer/actions.
 
-The normal employee view must respect server-side row scope.
-
----
-
-## 25. Angular Query detail
-
-Query detail should expose safe operational information and capability-aware actions:
-
-- client/context;
-- subject/description/type/status/priority;
-- assignment;
-- schedule/timezone;
-- response due;
-- client-visible response;
-- internal response;
-- resolution summary;
-- history;
-- updates/internal notes;
-- acknowledge/assign/schedule/start/answer/request clarification/no-show/cancel/close as permitted.
-
-Conflict responses must be visible and recoverable rather than silently lost.
+Do not introduce a new UI framework.
 
 ---
 
-## 26. Angular case Communications workspace
+## 26. Client portal chat UX
 
-Add a `Communications` surface to the case workspace.
+The existing client portal Messages pages must become a polished client chat experience.
 
-Recommended structure:
+Required UX:
 
-```text
-Communications
-├── Client Queries
-└── Channels
-```
+- case-level Chat navigation with unread badge;
+- visible client channels only;
+- conversation timeline;
+- employee/client/system sender distinction without exposing internal roles unnecessarily;
+- near-real-time incoming employee replies;
+- text composer;
+- direct Attach file action;
+- selected-file preview/name/size before send;
+- upload/send progress or clear pending state;
+- reply/thread interaction;
+- edit/delete own controls when allowed;
+- secure attachment download;
+- mobile-first responsive layout;
+- empty/loading/error/retry states;
+- no staff-only content leakage.
 
-Case queries load only case-scoped interactions the actor may access.
-
-Channels load only visible channels.
-
-The surface may use tabs/subnavigation but should reuse global query/channel components rather than duplicate business logic.
-
----
-
-## 27. Angular channel experience
-
-The first Angular channel UI should be operational and deterministic, not a fake realtime chat.
-
-Required behavior:
-
-- channel list with unread counts;
-- selected channel detail;
-- cursor pagination / load older messages;
-- send message;
-- one-level thread view;
-- reply;
-- edit own where allowed;
-- delete own/moderate where allowed;
-- restore where allowed;
-- mentions;
-- attach existing authorized case documents;
-- mark read;
-- restricted-members display/management where allowed;
-- create/update/reorder/archive channels where allowed.
-
-No websocket dependency is required.
+The client should not need to navigate to the separate Documents page merely to attach a new file to a conversation.
 
 ---
 
-## 28. Realtime decision
+## 27. Queries are secondary in Phase 07
 
-Phase 07 deliberately does **not** introduce Socket.IO/WebSocket/SSE infrastructure.
+`ConsultationInteraction` remains a valid structured workflow for formal questions, consultation requests, scheduling and tracked resolution.
 
-Reasons:
+Phase 07 must preserve it and its existing portal/admin behavior.
 
-- the existing domain is durable and request/response based;
-- migration risk should focus on authorization/DTO parity first;
-- realtime transport would add deployment, scaling, session and security complexity unrelated to canonicalization.
+However, the phase must not spend its main implementation budget rebuilding Queries while the two-way chat remains incomplete.
 
-Angular may refresh on navigation, manual refresh, mutation success, and optionally use a conservative polling interval for unread counts if justified and tested.
-
-A future ADR may add realtime delivery after the deterministic API is stable.
+If time/scope forces a choice, complete shared case chat first and defer Angular Queries canonicalization to a later execution phase.
 
 ---
 
-## 29. OpenAPI and Angular typing
+## 28. Testing requirements
 
-Every new endpoint must be documented in `server/openapi/v1.yaml`.
+Phase 07 requires automated coverage across both writers.
 
-Define explicit request/response/action schemas and cursor pagination fields.
+### Client ↔ employee end-to-end
 
-Angular uses typed interfaces/services and avoids `any` for new communication contracts.
+- client sends; employee staff API sees same message;
+- employee sends; client portal API sees same message;
+- replies appear on both sides;
+- deterministic ordering;
+- retry/double-submit does not duplicate messages.
 
-Message attachments reference safe document DTOs/IDs, never storage metadata.
+### Authorization
 
----
+- client only sees active authorized case channels;
+- client cannot see staff-only channel;
+- restricted membership enforced;
+- removed client/member loses access;
+- removed employee member loses access;
+- guessed IDs do not bypass access;
+- employee capabilities enforced per mutation.
 
-## 30. Audit and activity
+### Attachments
 
-Preserve existing `InteractionHistory`, `InteractionUpdate`, `MessageRevision`, case activity and notification/audit semantics.
+- client direct chat upload succeeds through secure document pipeline;
+- employee direct chat upload succeeds;
+- invalid extension/type/magic-byte mismatch rejected;
+- oversized upload rejected;
+- temp cleanup on failure;
+- same-case relation enforced;
+- staff-only document cannot be attached into client-visible channel;
+- attachment download re-authorizes actor;
+- no storage key/private path leakage;
+- retry does not create duplicate messages/documents where idempotency design prevents it.
 
-Do not duplicate history into a generic audit table simply because Angular needs a timeline.
+### Message lifecycle
 
-Mutation metadata must stay bounded and must not persist credentials, storage keys or whole model snapshots unnecessarily.
+- edit own works;
+- stale edit produces controlled conflict;
+- revision recorded;
+- delete own soft-deletes;
+- unauthorized delete denied;
+- staff moderation/restore works where allowed;
+- deleted thread continuity preserved.
 
----
+### Read/unread
 
-## 31. Testing requirements
+- unread increments for opposite-party message;
+- own message does not create own unread count;
+- mark-read updates count;
+- hidden channel never contributes leaked count.
 
-Phase 07 must include automated coverage for:
+### Synchronization
 
-### Queries
+- incremental fetch returns only accessible newer messages;
+- polling merge deduplicates messages;
+- reconnect/retry preserves conversation;
+- historical cursor pagination still works.
 
-- row-scoped list/detail;
-- `view_all` behavior;
-- case member removal revokes case-query access;
-- filters/queues/pagination;
-- acknowledge/assign/schedule/start/answer/clarification/no-show/cancel/close service transitions;
-- invalid transitions rejected;
-- optimistic concurrency conflict;
-- internal vs client-visible response separation;
-- history/update creation;
-- DTO sensitive-field rejection.
+### UI
 
-### Channels/messages
-
-- visible channel list;
-- restricted channel concealment;
-- workspace removal revokes channel access;
-- default provisioning idempotency;
-- create/update/reorder/archive;
-- restricted-member add/remove validation;
-- cursor pagination;
-- idempotent send/reply;
-- one-level thread normalization;
-- mention validation;
-- secure same-case document attachment validation;
-- edit conflict/revision behavior;
-- delete/restore authorization;
-- read state/unread counts;
-- DTO sensitive-field rejection.
-
-### Angular
-
-- query list/detail states and actions;
-- filters/pagination;
-- conflict handling;
-- case Communications navigation;
-- channel unread counts;
-- load older messages;
-- send/reply/edit/delete/restore;
-- mentions/attachments;
-- restricted channel/member controls;
-- loading/empty/error/retry/accessibility/responsive states.
-
-No skipped/weakened tests to force CI green.
+Test Angular staff chat and portal chat for send, receive-refresh, attachments, reply, edit/delete, unread, loading, error and responsive states.
 
 ---
 
-## 32. Security boundaries preserved
+## 29. Security controls preserved
 
-Phase 07 must preserve:
+Phase 07 preserves:
 
 ```text
 EmployeeSession authentication
-mustChangePassword enforcement
-trusted-origin / CSRF mutation protection
-capability checks
-case/workspace row-level policy
-restricted channel membership
-existence concealment
+ClientSession authentication
+mustChangePassword handling for employees
+trusted-origin / CSRF controls
+case/workspace row policy
+channel visibility/restricted membership
 optimistic concurrency
+idempotency
+secure document storage and validation
+DocumentAccessLog
 explicit DTO mapping
-secure document attachment/download policy
 SecurityEvent conventions
 ```
 
@@ -751,98 +701,56 @@ No broad CORS.
 
 No localStorage bearer tokens.
 
-No hidden-channel metadata leaks.
+No public chat attachment URLs.
 
-No raw document URLs/storage keys in message attachments.
-
----
-
-## 33. Migration/index impact
-
-Phase 07 primarily exposes existing domain models; a major destructive data migration should not be required.
-
-If existing cases need default channel provisioning, any backfill must remain idempotent and dry-run capable through existing channel provisioning/tooling.
-
-If new query patterns justify indexes, inspect existing indexes first and update repository index tooling only when necessary.
-
-Do not execute production migrations or index builds during Phase 07 implementation.
+No staff-only message sent to clients by client-side filtering mistakes.
 
 ---
 
-## 34. Legacy/client compatibility
+## 30. Out of scope
 
-The following remain operational during Phase 07:
+Phase 07 does not require:
 
-- Express/EJS queries UI;
-- Express/EJS collaboration UI;
-- Next.js client query flows;
-- Next.js client collaboration flows;
-- existing email and notification side effects.
-
-Do not retire legacy presentation routes in this phase.
-
-Do not migrate the client portal to Angular.
-
-Where shared helpers are extracted, legacy and canonical API paths must converge on the same service semantics.
-
----
-
-## 35. Out of scope
-
-Phase 07 does not include:
-
-- Slack/Teams integration;
-- external SMS/WhatsApp inbox;
-- Gmail/Outlook mailbox sync;
-- websocket/SSE realtime infrastructure;
-- video calling;
-- voice calling;
-- arbitrary file uploads inside messages;
-- rich-text/HTML message authoring;
-- nested multi-level threads;
-- AI reply generation;
-- AI legal advice;
-- full standalone notification-center redesign;
-- smart forms;
-- petition drafting;
-- filing packets;
+- WhatsApp/SMS integration;
+- Outlook/Gmail inbox synchronization;
+- video/voice calls;
+- typing indicators;
+- online presence;
+- emoji reactions;
+- rich text/HTML chat messages;
+- end-to-end encryption beyond current authenticated private application transport/storage controls;
+- external realtime SaaS/pub-sub infrastructure;
+- AI chatbot replies;
+- client portal migration to Angular;
+- legacy EJS retirement;
 - production deployment;
-- legacy route retirement.
+- production migration/index execution.
 
 ---
 
-## 36. Implementation gate
-
-Before substantive Phase 07 code changes:
-
-1. verify branch is `architecture/angular-enterprise-platform` and clean;
-2. verify Phase 06 implementation commit `4e344a8513716a57d7f8a97a7fefbc007fa7d024` is in ancestry;
-3. verify GitHub Actions run #57 (or the final Phase 06 run for that SHA) is green;
-4. preserve Phase 07 documentation commits;
-5. do not reset/rebase/amend/force-push completed history.
-
----
-
-## 37. Completion criteria
+## 31. Completion criteria
 
 Phase 07 is complete only when:
 
-- this ADR is implemented consistently;
-- existing query and collaboration domains are reused, not duplicated;
-- canonical `/api/v1/staff` query APIs exist;
-- canonical `/api/v1/staff` collaboration/message/read-state APIs exist;
-- authorization and restricted visibility are enforced server-side;
-- query lifecycle and optimistic concurrency remain correct;
-- message idempotency/thread/edit/delete/restore semantics remain correct;
-- mentions resolve valid visible workspace members;
-- document attachments reuse Phase 06 secure documents and do not leak storage metadata;
-- Angular global Queries and query detail are operational;
-- Angular case Communications/channels/thread UI is operational;
-- unread/read state works;
-- client portal/EJS compatibility is preserved;
-- OpenAPI and Angular types are updated;
-- root/server/Angular tests and builds pass;
-- no production deploy/migration/index execution occurs;
-- remote GitHub Actions for the final Phase 07 implementation SHA are green.
+- one authoritative shared workspace chat domain is used by client and employee surfaces;
+- client can send and receive employee messages from the portal;
+- employee can send and receive client messages from Angular;
+- messages update near-real-time without manual full-page refresh;
+- both sides can reply using the existing thread model;
+- client can edit/delete own eligible messages;
+- employee edit/moderation rules are operational;
+- client and employee can attach a new local file directly from the chat composer through secure document storage;
+- existing authorized documents can be attached where allowed;
+- secure downloads and visibility rules are preserved;
+- unread/read state works on both sides;
+- internal/staff-only channels remain invisible to clients;
+- notification/email side effects remain compatible;
+- client and staff DTOs do not leak sensitive/internal data;
+- OpenAPI documents the staff chat contract and multipart/binary relationships appropriately;
+- existing portal tests plus new cross-writer tests pass;
+- root/server/Angular tests pass;
+- lint/typecheck/build gates pass;
+- no production deployment/migration/index operation occurs;
+- the final Phase 07 SHA has green GitHub Actions.
 
-After completion, stop and report before beginning Phase 08.
+After this gate is green, stop and report Phase 07 before beginning Phase 08.
