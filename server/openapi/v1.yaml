@@ -398,3 +398,114 @@ paths:
       responses:
         '200':
           description: List of deadlines
+  /staff/cases/{id}/evidence/provision:
+    post:
+      summary: Provision an evidence checklist from a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [templateKey]
+              properties:
+                templateKey: { type: string }
+                version: { type: integer, nullable: true }
+      responses:
+        '200':
+          description: Success
+  /staff/cases/{id}/evidence:
+    get:
+      summary: Get case evidence summary and requirements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Evidence summary and checklist
+  /staff/cases/{id}/evidence/requirements:
+    post:
+      summary: Create a custom evidence requirement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                importance: { type: string }
+                section: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/evidence/requirements/{id}/status:
+    patch:
+      summary: Update requirement status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string }
+                reason: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Success
+  /staff/evidence/requirements/{id}/documents:
+    post:
+      summary: Link a document to a requirement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documentId]
+              properties:
+                documentId: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/evidence/requirements/{reqId}/documents/{docId}:
+    delete:
+      summary: Unlink a document from a requirement
+      parameters:
+        - name: reqId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: docId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success

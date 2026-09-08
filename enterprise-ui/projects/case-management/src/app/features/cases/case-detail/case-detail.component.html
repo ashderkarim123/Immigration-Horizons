@@ -90,6 +90,14 @@
         >
           Activity Timeline ({{ caseData().activities?.length || 0 }})
         </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'evidence'"
+          (click)="activeTab.set('evidence')"
+        >
+          Evidence
+        </button>
       </div>
     </div>
 
@@ -327,6 +335,11 @@
           </div>
         }
       </div>
+    }
+
+    <!-- Tab 5: Evidence -->
+    @if (activeTab() === 'evidence') {
+      <ih-evidence-tab [caseId]="caseId()" [canManage]="canManageEvidence()"></ih-evidence-tab>
     }
   </div>
 

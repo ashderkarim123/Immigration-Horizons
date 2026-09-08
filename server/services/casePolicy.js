@@ -117,10 +117,18 @@ async function canManageTask(req, workspaceId) {
 }
 
 async function canAssignTask(req, workspaceId) {
-  // Uses cases.assign semantics or task assignment capability if defined separately.
-  // The system relies on canAssignCase + tasks.manage typically, but we map it to tasks.manage for basic assignment.
-  // ADR-017 states: A manager must have the relevant task capability and case access unless explicit org-wide capability authorizes otherwise.
   return authorizeCaseAction(req, workspaceId, 'tasks.manage');
+}
+
+async function canManageEvidence(req, workspaceId) {
+  // Use cases.manage to authorize editing the case evidence checklist.
+  // Alternatively, we could define 'evidence.manage', but ADR-018 allows reusing case capabilities.
+  return authorizeCaseAction(req, workspaceId, 'cases.manage');
+}
+
+async function canViewEvidence(req, workspaceId) {
+  // Use cases.view to authorize viewing the case evidence checklist.
+  return authorizeCaseAction(req, workspaceId, 'cases.view');
 }
 
 module.exports = {
@@ -135,5 +143,7 @@ module.exports = {
   memberCaseIds,
   accessibleCaseIdFilter,
   canManageTask,
-  canAssignTask
+  canAssignTask,
+  canManageEvidence,
+  canViewEvidence
 };

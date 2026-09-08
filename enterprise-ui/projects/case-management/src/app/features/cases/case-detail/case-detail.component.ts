@@ -10,7 +10,8 @@ import { SkeletonComponent } from '../../../shared/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../../shared/error-state.component';
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog.component';
-import { IhIconComponent } from '../../../shared/icon/ih-icon.component'; // Let's also make sure ih-icon is imported since we use it
+import { IhIconComponent } from '../../../shared/icon/ih-icon.component';
+import { EvidenceTabComponent } from './evidence-tab/evidence-tab.component';
 
 @Component({
   selector: 'ih-case-detail',
@@ -25,7 +26,8 @@ import { IhIconComponent } from '../../../shared/icon/ih-icon.component'; // Let
     EmptyStateComponent,
     ErrorStateComponent,
     ConfirmDialogComponent,
-    IhIconComponent
+    IhIconComponent,
+    EvidenceTabComponent
   ],
   templateUrl: './case-detail.component.html',
   styleUrls: ['../../dashboard/dashboard.scss', './case-detail.component.scss']
@@ -45,7 +47,7 @@ export class CaseDetailComponent implements OnInit {
   isError = signal(false);
   errorMessage = signal('');
 
-  activeTab = signal<'overview' | 'team' | 'activity' | 'tasks'>('overview');
+  activeTab = signal<'overview' | 'team' | 'activity' | 'tasks' | 'evidence'>('overview');
   caseTasks = signal<any[]>([]);
   isTasksLoading = signal(false);
   // Capability signals
@@ -67,6 +69,11 @@ export class CaseDetailComponent implements OnInit {
     return roles.some((r: string) => ['admin', 'super_admin'].includes(r));
   });
   canPublishUpdate = computed(() => {
+    const roles = this.currentUser()?.roles || [];
+    return roles.some((r: string) => ['admin', 'super_admin', 'case_manager', 'paralegal', 'attorney'].includes(r));
+  });
+  canManageEvidence = computed(() => {
+    // Follows cases.manage semantics per casePolicy.js map
     const roles = this.currentUser()?.roles || [];
     return roles.some((r: string) => ['admin', 'super_admin', 'case_manager', 'paralegal', 'attorney'].includes(r));
   });

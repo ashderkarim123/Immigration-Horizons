@@ -35,5 +35,6 @@ router.use('/cases/:caseId', require('./case-mutations'));
 router.use('/clients', require('./clients'));
 router.use('/tasks', require('./tasks'));
 router.use('/deadlines', require('./deadlines'));
+router.use('/', require('./evidence'));
 
 module.exports = router;
