@@ -1,0 +1,67 @@
+@if (isLoading()) {
+  <ih-skeleton [rows]="6" rowHeight="4rem"></ih-skeleton>
+} @else if (isError()) {
+  <ih-error-state title="Documents Unavailable" message="The document center could not be loaded." (retry)="loadDocuments()"></ih-error-state>
+} @else if (center()) {
+  <section class="documents-tab">
+    <header class="documents-header">
+      <div>
+        <h3 class="card-title">Documents</h3>
+        <p class="text-secondary">Secure case files, collection requests, and review workflow.</p>
+      </div>
+      <div class="header-actions">
+        @if (capabilities()?.canManageCategories) { <button type="button" class="btn btn-secondary" (click)="openCategoryManager()">Manage categories</button> }
+        @if (capabilities()?.canManageRequests) { <button type="button" class="btn btn-secondary" (click)="openRequest()">Request document</button> }
+        @if (capabilities()?.canUpload) { <button type="button" class="btn btn-primary" (click)="openUpload()">Upload document</button> }
+      </div>
+    </header>
+
+    <div class="category-filters" aria-label="Document category filters">
+      <button type="button" [class.active]="selectedCategoryId() === 'all'" (click)="selectedCategoryId.set('all')">All documents</button>
+      @for (category of activeCategories(); track category.id) {
+        <button type="button" [class.active]="selectedCategoryId() === category.id" (click)="selectedCategoryId.set(category.id)">{{ category.name }}</button>
+      }
+    </div>
+
+    @if (filteredDocuments().length === 0) {
+      <ih-empty-state title="No documents found" description="Upload a secure case document or change the selected category."></ih-empty-state>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Document</th><th>Category</th><th>Status</th><th>Type / Size</th><th>Uploaded</th><th>Request</th><th>Actions</th></tr></thead>
+          <tbody>
+            @for (document of filteredDocuments(); track document.id) {
+              <tr>
+                <td><a [routerLink]="['/documents', document.id]" class="document-link">{{ document.displayName }}</a><small>{{ document.evidenceCount ? ('Used by ' + document.evidenceCount + ' evidence requirement(s)') : '' }}</small></td>
+                <td>{{ document.category?.name || 'Uncategorized' }}</td>
+                <td><ih-status-badge [status]="document.status"></ih-status-badge></td>
+                <td>{{ document.extension }} · {{ fileSize(document.size) }}</td>
+                <td>{{ document.uploadedBy?.displayName || 'Unknown' }}<small>{{ document.uploadedAt | date:'mediumDate' }}</small></td>
+                <td>{{ document.documentRequestId ? 'Linked request' : '—' }}</td>
+                <td class="action-cell"><button type="button" class="btn btn-sm btn-secondary" (click)="download(document)">Download</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <section class="request-section">
+      <h4>Document Requests</h4>
+      @if (center()!.requests.length === 0) { <p class="text-secondary">No document requests for this case.</p> }
+      @else { @for (request of center()!.requests; track request.id) {
+        <article class="request-row"><div><strong>{{ request.title }}</strong><span>{{ request.requestedFrom?.client?.displayName || 'Client' }} · {{ request.category?.name || 'No category' }} · {{ request.status }}</span></div>
+          @if (capabilities()?.canManageRequests && request.status !== 'cancelled' && request.status !== 'fulfilled') { <button type="button" class="btn btn-sm btn-outline-danger" (click)="confirmCancel(request)">Cancel</button> }
+        </article>
+      }}
+    </section>
+  </section>
+}
+
+@if (showUploadModal()) { <div class="modal-backdrop" (click)="showUploadModal.set(false)"><div class="modal-card" (click)="$event.stopPropagation()"><div class="modal-header"><h3>Upload document</h3><button type="button" class="btn-close" (click)="showUploadModal.set(false)" aria-label="Close">×</button></div><div class="modal-body"><label class="form-label" for="documentFile">File</label><input id="documentFile" type="file" class="form-control" (change)="selectFile($event)" accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.tif,.tiff"><p class="hint">PDF, DOCX, XLSX, JPEG, PNG, or TIFF up to 25 MB. The server verifies the real file type.</p><label class="form-label" for="uploadCategory">Category</label><select id="uploadCategory" class="form-select" [(ngModel)]="uploadCategoryId">@for (category of activeCategories(); track category.id) { <option [value]="category.id">{{ category.name }}</option> }</select><label class="form-label" for="uploadRequest">Request (optional)</label><select id="uploadRequest" class="form-select" [(ngModel)]="uploadRequestId"><option value="">No linked request</option>@for (request of center()!.requests; track request.id) { <option [value]="request.id">{{ request.title }}</option> }</select></div><div class="modal-footer"><button type="button" class="btn btn-secondary" (click)="showUploadModal.set(false)">Cancel</button><button type="button" class="btn btn-primary" [disabled]="isSubmitting() || !selectedFile()" (click)="submitUpload()">{{ isSubmitting() ? 'Uploading…' : 'Upload securely' }}</button></div></div></div> }
+
+@if (showRequestModal()) { <div class="modal-backdrop" (click)="showRequestModal.set(false)"><div class="modal-card" (click)="$event.stopPropagation()"><div class="modal-header"><h3>Request a document</h3><button type="button" class="btn-close" (click)="showRequestModal.set(false)" aria-label="Close">×</button></div><div class="modal-body"><label class="form-label" for="requestTitle">Title</label><input id="requestTitle" class="form-control" [(ngModel)]="requestTitle"><label class="form-label" for="requestClient">Client</label><select id="requestClient" class="form-select" [(ngModel)]="requestMemberId">@for (member of center()!.clientMembers; track member.id) { <option [value]="member.id">{{ member.client?.displayName }}</option> }</select><label class="form-label" for="requestCategory">Category</label><select id="requestCategory" class="form-select" [(ngModel)]="requestCategoryId">@for (category of activeCategories(); track category.id) { <option [value]="category.id">{{ category.name }}</option> }</select><label class="form-label" for="requestDue">Due date (optional)</label><input id="requestDue" type="date" class="form-control" [(ngModel)]="requestDueDate"><label class="form-label" for="requestInstructions">Instructions</label><textarea id="requestInstructions" class="form-control" rows="3" [(ngModel)]="requestInstructions"></textarea></div><div class="modal-footer"><button type="button" class="btn btn-secondary" (click)="showRequestModal.set(false)">Cancel</button><button type="button" class="btn btn-primary" [disabled]="isSubmitting()" (click)="submitRequest()">Create request</button></div></div></div> }
+
+@if (showCategoryModal()) { <div class="modal-backdrop" (click)="showCategoryModal.set(false)"><div class="modal-card" (click)="$event.stopPropagation()"><div class="modal-header"><h3>Manage categories</h3><button type="button" class="btn-close" (click)="showCategoryModal.set(false)" aria-label="Close">×</button></div><div class="modal-body"><button type="button" class="btn btn-secondary" [disabled]="isSubmitting()" (click)="initializeCategories()">Initialize defaults</button><div class="category-list">@for (category of categories(); track category.id) { <div><span>{{ category.name }} <small>({{ category.active ? 'active' : 'disabled' }})</small></span><button type="button" class="btn btn-sm btn-secondary" [disabled]="isSubmitting()" (click)="toggleCategory(category)">{{ category.active ? 'Disable' : 'Reactivate' }}</button></div> }</div><hr><label class="form-label" for="categoryName">New category</label><input id="categoryName" class="form-control" [(ngModel)]="categoryName"><label class="form-label" for="categoryDescription">Description</label><textarea id="categoryDescription" class="form-control" [(ngModel)]="categoryDescription"></textarea></div><div class="modal-footer"><button type="button" class="btn btn-secondary" (click)="showCategoryModal.set(false)">Cancel</button><button type="button" class="btn btn-primary" [disabled]="isSubmitting()" (click)="createCategory()">Create category</button></div></div></div> }
+
+<ih-confirm-dialog [isOpen]="!!requestToCancel()" title="Cancel document request" message="The client will be notified that this request is cancelled." confirmText="Cancel request" variant="danger" (confirmed)="cancelRequest()" (cancelled)="requestToCancel.set(null)"></ih-confirm-dialog>

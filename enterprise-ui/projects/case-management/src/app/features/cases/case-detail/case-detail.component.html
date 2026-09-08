@@ -98,6 +98,14 @@
         >
           Evidence
         </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'documents'"
+          (click)="activeTab.set('documents')"
+        >
+          Documents
+        </button>
       </div>
     </div>
 
@@ -340,6 +348,10 @@
     <!-- Tab 5: Evidence -->
     @if (activeTab() === 'evidence') {
       <ih-evidence-tab [caseId]="caseId()" [canManage]="canManageEvidence()"></ih-evidence-tab>
+    }
+
+    @if (activeTab() === 'documents') {
+      <ih-documents-tab [caseId]="caseId()"></ih-documents-tab>
     }
   </div>
 

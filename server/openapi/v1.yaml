@@ -509,3 +509,218 @@ paths:
       responses:
         '200':
           description: Success
+  /staff/cases/{caseId}/documents:
+    get:
+      summary: Get an authorized case document center
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Bounded document, category, request, member, and capability DTOs }
+        '404': { description: Case is missing or inaccessible }
+    post:
+      summary: Upload an employee document to a case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, categoryId]
+              properties:
+                file: { type: string, format: binary }
+                categoryId: { type: string }
+                documentRequestId: { type: string, nullable: true }
+                displayName: { type: string, nullable: true }
+      responses:
+        '201': { description: Secure document and first-version metadata }
+        '400': { description: Validation failed }
+        '413': { description: File too large }
+        '415': { description: Unsupported media type }
+  /staff/documents/{documentId}:
+    get:
+      summary: Get authorized staff document detail and version metadata
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Document DTO with safe version and evidence references }
+        '404': { description: Document is missing or inaccessible }
+  /staff/documents/{documentId}/versions:
+    post:
+      summary: Upload an immutable replacement version
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                changeNote: { type: string, nullable: true }
+      responses:
+        '200': { description: Updated document and new version metadata }
+        '409': { description: Concurrent replacement conflict }
+  /staff/documents/{documentId}/review:
+    patch:
+      summary: Review a document
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [accepted, needs_replacement, rejected] }
+                clientVisibleReviewComment: { type: string, nullable: true }
+                internalReviewComment: { type: string, nullable: true }
+      responses:
+        '200': { description: Reviewed document metadata }
+  /staff/documents/{documentId}/category:
+    patch:
+      summary: Move a document to an active category on the same case
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId]
+              properties:
+                categoryId: { type: string }
+      responses:
+        '200': { description: Updated document metadata }
+  /staff/documents/{documentId}/archive:
+    post:
+      summary: Archive a document without deleting version history
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Archived document metadata }
+  /staff/documents/{documentId}/download:
+    get:
+      summary: Stream the authorized current document version
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Binary download with private no-store headers, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+  /staff/documents/{documentId}/versions/{versionId}/download:
+    get:
+      summary: Stream an authorized historical document version
+      parameters:
+        - { name: documentId, in: path, required: true, schema: { type: string } }
+        - { name: versionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Binary download with private no-store headers, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+  /staff/cases/{caseId}/document-categories/initialize:
+    post:
+      summary: Idempotently provision default case document categories
+      parameters: [ { name: caseId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Provisioning result } }
+  /staff/cases/{caseId}/document-categories:
+    post:
+      summary: Create a custom case document category
+      parameters: [ { name: caseId, in: path, required: true, schema: { type: string } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, visibility, allowedUploaderTypes]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                visibility: { type: string, enum: [client_visible, employees_only] }
+                allowedUploaderTypes: { type: string, enum: [client, employee, both] }
+                required: { type: boolean }
+      responses: { '201': { description: Category metadata } }
+  /staff/document-categories/{categoryId}:
+    patch:
+      summary: Update a case document category
+      parameters: [ { name: categoryId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Category metadata } }
+  /staff/document-categories/{categoryId}/disable:
+    post:
+      summary: Disable a document category
+      parameters: [ { name: categoryId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Category metadata } }
+  /staff/document-categories/{categoryId}/reactivate:
+    post:
+      summary: Reactivate a document category
+      parameters: [ { name: categoryId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Category metadata } }
+  /staff/cases/{caseId}/document-categories/reorder:
+    post:
+      summary: Reorder all active document categories for a case
+      parameters: [ { name: caseId, in: path, required: true, schema: { type: string } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderedCategoryIds]
+              properties:
+                orderedCategoryIds: { type: array, items: { type: string } }
+      responses: { '200': { description: Categories reordered } }
+  /staff/cases/{caseId}/document-requests:
+    post:
+      summary: Create a document request for an eligible client workspace member
+      parameters: [ { name: caseId, in: path, required: true, schema: { type: string } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId, requestedFromMemberId, title]
+              properties:
+                categoryId: { type: string }
+                requestedFromMemberId: { type: string }
+                title: { type: string }
+                instructions: { type: string }
+                dueDate: { type: string, format: date, nullable: true }
+      responses: { '201': { description: Document request metadata } }
+  /staff/document-requests/{requestId}:
+    patch:
+      summary: Update allowed document request metadata
+      parameters: [ { name: requestId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Document request metadata } }
+  /staff/document-requests/{requestId}/cancel:
+    post:
+      summary: Cancel a document request without deleting it
+      parameters: [ { name: requestId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Document request metadata } }

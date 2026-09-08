@@ -32,6 +32,10 @@ export class ApiService {
     return this.http.post<ApiResponse<T>>(`${this.basePath}${endpoint}`, body);
   }
 
+  postForm<T>(endpoint: string, body: FormData): Observable<ApiResponse<T>> {
+    return this.http.post<ApiResponse<T>>(`${this.basePath}${endpoint}`, body);
+  }
+
   put<T>(endpoint: string, body: any): Observable<ApiResponse<T>> {
     return this.http.put<ApiResponse<T>>(`${this.basePath}${endpoint}`, body);
   }
@@ -42,5 +46,9 @@ export class ApiService {
 
   delete<T>(endpoint: string): Observable<ApiResponse<T>> {
     return this.http.delete<ApiResponse<T>>(`${this.basePath}${endpoint}`);
+  }
+
+  download(endpoint: string): Observable<Blob> {
+    return this.http.get(`${this.basePath}${endpoint}`, { responseType: 'blob' });
   }
 }
