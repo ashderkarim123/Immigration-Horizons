@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { ClickTracker } from "@/components/analytics/click-tracker";
+import { AnalyticsNoscript, AnalyticsScripts } from "@/components/analytics/site-analytics";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { WhatsAppFab } from "@/components/layout/whatsapp-fab";
@@ -34,12 +36,15 @@ export default function SiteLayout({
 }>) {
   return (
     <>
+      <AnalyticsNoscript />
       <Header />
       <main id="main" className="flex-1">
         {children}
       </main>
       <Footer />
       <WhatsAppFab />
+      <AnalyticsScripts />
+      <ClickTracker />
     </>
   );
 }

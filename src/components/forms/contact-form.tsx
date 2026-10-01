@@ -6,6 +6,7 @@ import { CheckCircle2, MessageCircle } from "lucide-react";
 
 import { submitContact } from "@/app/(site)/contact/actions";
 import type { FormState } from "@/app/(site)/consultation/actions";
+import { useFormTracking } from "@/components/analytics/use-form-tracking";
 import { Button } from "@/components/ui/button";
 import { contact, whatsappLink } from "@/lib/content/site";
 
@@ -24,6 +25,7 @@ function SubmitButton() {
 
 export function ContactForm() {
   const [state, formAction] = useActionState(submitContact, initialState);
+  useFormTracking("contact", state);
 
   if (state.status === "success") {
     return (
