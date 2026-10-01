@@ -6,7 +6,10 @@
 ## Commits
 
 - **Starting SHA:** `f47e950` (Phase 07 merge tip; no Phase 08 code existed before this session).
-- **Implementation commits:** see [Final status](#final-status) — filled in after the push, from the real log.
+- **Implementation commits:**
+  - `fc9fe72` feat(api): add Smart Forms domain and canonical staff API
+  - `621d643` feat(portal): add client Smart Forms with autosave and submit
+  - `df090f9` feat(angular): add case Forms tab for staff
 - **Ending SHA / CI:** see [Final status](#final-status).
 
 ## What shipped
@@ -107,7 +110,19 @@ Existing contract tests (`case-schema-contract`, `employee-capability-contract`)
 
 ## Verification
 
-Filled in from the real runs — see [Final status](#final-status).
+Local, run sequentially (never concurrently): root Unknown command: "test"
+
+
+Did you mean this?
+  npm test # Test a package
+To see a list of supported npm commands, run:
+  npm help **400/400**, Unknown command: "test"
+
+
+Did you mean this?
+  npm test # Test a package
+To see a list of supported npm commands, run:
+  npm help **540/540**, Angular  **29/29**,  clean, error TS5025: Unknown compiler option '--noEmit'. Did you mean 'noEmit'? clean,  clean,  and  succeed,  (server) lists the three new collections. A local  is blocked on this machine (Application Control blocks SWC);  compiled and served the portal pages, and the production build is covered by the CI  job.
 
 ## Explicitly out of scope (unchanged)
 
@@ -125,4 +140,4 @@ No Petition workflow, no official PDF / USCIS form generation, no form-builder U
 
 ## Final status
 
-_Filled in after the push._
+Implementation tip  — GitHub Actions **CI #69** (run id 36911437173): success. All four jobs green: Tests (Next.js app), Lint · types · build, Enterprise UI (Angular), Tests (admin CMS). Pushed only to ; not merged to . No production deploy, migration, index build or backfill was performed. This report was added in the follow-up docs commit; see  for its SHA and the CI run for it.
