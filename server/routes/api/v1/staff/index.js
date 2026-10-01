@@ -40,5 +40,6 @@ router.use('/', require('./chat'));
 router.use('/', require('./evidence'));
 router.use('/', require('./forms'));
 router.use('/', require('./petitions'));
+router.use('/', require('./filing-packets'));
 
 module.exports = router;

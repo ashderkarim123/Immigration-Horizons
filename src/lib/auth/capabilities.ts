@@ -136,6 +136,12 @@ export const CAPABILITIES: Record<string, string[]> = {
   "petitions.edit": ["super_admin", "admin", "pm", "petition_writer"],
   "petitions.review": ["super_admin", "admin", "pm", "reviewer"],
   "petitions.finalize": ["super_admin", "admin", "reviewer"],
+
+  // --- Filing Packets (Phase 10, ADR-023 §21) --- capability gates only; every use is also case-membership scoped.
+  "filing_packets.view": ["super_admin", "admin", "pm", "petition_writer", "uscis_forms_specialist", "reviewer"],
+  "filing_packets.manage": ["super_admin", "admin", "pm", "uscis_forms_specialist"],
+  "filing_packets.review": ["super_admin", "admin", "pm", "reviewer"],
+  "filing_packets.finalize": ["super_admin", "admin", "reviewer"],
 };
 
 /**

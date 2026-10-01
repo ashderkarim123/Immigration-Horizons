@@ -421,6 +421,31 @@
       "super_admin",
       "admin",
       "reviewer"
+    ],
+    "filing_packets.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "uscis_forms_specialist",
+      "reviewer"
+    ],
+    "filing_packets.manage": [
+      "super_admin",
+      "admin",
+      "pm",
+      "uscis_forms_specialist"
+    ],
+    "filing_packets.review": [
+      "super_admin",
+      "admin",
+      "pm",
+      "reviewer"
+    ],
+    "filing_packets.finalize": [
+      "super_admin",
+      "admin",
+      "reviewer"
     ]
   }
 }

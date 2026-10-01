@@ -250,6 +250,14 @@ const CAPABILITIES = {
   'petitions.edit': ['super_admin', 'admin', 'pm', 'petition_writer'],
   'petitions.review': ['super_admin', 'admin', 'pm', 'reviewer'],
   'petitions.finalize': ['super_admin', 'admin', 'reviewer'],
+
+  // Filing Packets (Phase 10, ADR-023 §21). Capability gates only — every use is
+  // ALSO scoped to case membership. Assembling, approving and locking the filing
+  // snapshot are three separate rights.
+  'filing_packets.view': ['super_admin', 'admin', 'pm', 'petition_writer', 'uscis_forms_specialist', 'reviewer'],
+  'filing_packets.manage': ['super_admin', 'admin', 'pm', 'uscis_forms_specialist'],
+  'filing_packets.review': ['super_admin', 'admin', 'pm', 'reviewer'],
+  'filing_packets.finalize': ['super_admin', 'admin', 'reviewer'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */

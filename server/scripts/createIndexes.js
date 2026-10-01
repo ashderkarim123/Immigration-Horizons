@@ -93,6 +93,9 @@ const MODELS = [
   // Phase 09 — Petition Work (ADR-022 §31). Staff-only: only this app reads/writes them.
   require('../models/CasePetition'),
   require('../models/PetitionVersion'),
+  // Phase 10 — Filing Packets (ADR-023 §33). Staff-only: only this app reads/writes them.
+  require('../models/FilingPacket'),
+  require('../models/FilingPacketVersion'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');

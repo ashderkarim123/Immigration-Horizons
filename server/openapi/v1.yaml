@@ -1532,3 +1532,326 @@ paths:
       responses:
         '200': { description: Version detail DTO }
         '404': { description: Version, petition or case not found / inaccessible }
+  /staff/cases/{caseId}/filing-packets:
+    get:
+      summary: List the case's filing packets (filing_packets.view)
+      description: Summary DTOs - id, sequence, kind, title, status, revision, itemCount, readiness, updatedAt, actions. A case owns many packets. Readiness is an operational fact per source, never a statement about legal sufficiency. Missing and inaccessible cases are the same 404.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "packets and canProvision (filing_packets.manage)" }
+        '403': { description: Missing filing_packets.view }
+        '404': { description: Case is missing or inaccessible }
+    post:
+      summary: Create an additional packet (filing_packets.manage)
+      description: Sequence is assigned by the server (a lost race retries). A packet is a manifest; creating one generates no files.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind: { type: string, enum: [initial_filing, rfe_response, noid_response, supplemental, other] }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+      responses:
+        '201': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/filing-packets/provision:
+    post:
+      summary: Idempotently provision the initial packet (filing_packets.manage)
+      description: kind=initial_filing, sequence=1. Returns the existing packet (200) or creates it (201). Never runs on read; there is no backfill.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '201': { description: Packet detail DTO (created) }
+        '200': { description: Packet detail DTO (already existed) }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/filing-packets/{packetId}:
+    get:
+      summary: One packet with petition source, ordered items, readiness and versions (filing_packets.view)
+      description: >
+        petitionSource states whether a finalized petition version is required for the packet kind
+        (all kinds except other), whether one is pinned, and whether it is ready. Each item carries
+        order, role, label, required, notes, ready, status, reason and a safe source summary. A
+        document item also carries downloadAction { documentId, versionId } pointing at the existing
+        secure route GET /staff/documents/{documentId}/versions/{versionId}/download - the packet itself
+        serves no file bytes, and the action is omitted for an actor without document_versions.view.
+        A Smart Form item is a provenance reference (template, revision, lockedRevision) and never has
+        a download action. Storage keys, checksums, paths, raw user records and session data are never returned.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Packet detail DTO }
+        '404': { description: Packet is missing, malformed, or on an inaccessible case }
+    patch:
+      summary: Update title / description (filing_packets.manage)
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: "conflict (stale revision) or invalid_state; fieldErrors = { revision, status }" }
+  /staff/filing-packets/{packetId}/petition-version:
+    post:
+      summary: Pin the exact finalized PetitionVersion, or clear it (filing_packets.manage)
+      description: The version must belong to the same case and workspace and be the finalization snapshot of its petition (an approval snapshot is a 400). A version from another case and a malformed id are the same 404. The packet stores the exact version id and safe title/number snapshots; a later petition version never replaces it.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                petitionVersionId: { type: string, nullable: true }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: Not a finalization version }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet or petition version not found in this case }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/candidates:
+    get:
+      summary: Same-case sources that can be added (filing_packets.view)
+      description: >
+        Bounded to 100 per type, same case and workspace only, safe metadata only. petition_version lists
+        finalization versions. document_version lists ACCEPTED documents with their current version
+        (documentId, versionId, displayName, versionNumber, categoryName, status, mimeType, size, linked);
+        staff may still pin an older immutable version of an accepted document by id through POST items.
+        smart_form lists approved and locked forms only.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+        - { name: type, in: query, required: true, schema: { type: string, enum: [petition_version, document_version, smart_form] } }
+      responses:
+        '200': { description: candidates }
+        '400': { description: Invalid type }
+        '404': { description: Packet is missing or inaccessible }
+  /staff/filing-packets/{packetId}/items:
+    post:
+      summary: Add a source to the manifest (filing_packets.manage)
+      description: >
+        type document_version pins { documentId, versionId }: the document must be in this case and workspace,
+        the version must belong to that document, and the document must not be archived, rejected, quarantined,
+        superseded or infected (a version of another document and a cross-case id are the same 404). It may be
+        added before it is accepted, but is then not ready. The packet never follows currentVersion afterwards.
+        type smart_form_reference pins { smartFormId } with its current revision as provenance. Adding the same
+        source twice changes nothing. role is one of cover_sheet, petition_letter, uscis_form, supporting_evidence,
+        recommendation_letter, expert_opinion_letter, business_plan, identity_civil, immigration_history, exhibit,
+        other; it is organizational only and grants no access. At most 200 items.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, type]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                type: { type: string, enum: [document_version, smart_form_reference] }
+                documentId: { type: string }
+                versionId: { type: string }
+                smartFormId: { type: string }
+                role: { type: string }
+                required: { type: boolean }
+                notes: { type: string, maxLength: 500 }
+      responses:
+        '201': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet or source not found in this case }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/items/{itemId}:
+    patch:
+      summary: Update an item's role, required flag or notes (filing_packets.manage)
+      description: Source ids are never editable here; replace a source with remove then add.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                role: { type: string }
+                required: { type: boolean }
+                notes: { type: string, maxLength: 500 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet or item not found }
+        '409': { description: conflict or invalid_state }
+    delete:
+      summary: Remove an item from the manifest (filing_packets.manage)
+      description: Removes only the manifest row, never the document or form. Remaining items are renumbered 1..N. The expected revision is the revision query parameter.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+        - { name: revision, in: query, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: Packet detail DTO }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet or item not found }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/reorder:
+    post:
+      summary: Reorder the manifest (filing_packets.manage)
+      description: orderedItemIds must be exactly the packet's item ids - no duplicates, none missing, none unknown (400 otherwise). The server renumbers 1..N and increments the revision atomically; the browser's array order is never authority.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, orderedItemIds]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                orderedItemIds: { type: array, items: { type: string } }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: Not exactly the packet's items }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/submit:
+    post:
+      summary: Submit for review (filing_packets.manage) - draft | needs_changes to review
+      description: Requires at least one item and, for every kind except other, a pinned petition version. Items need not be ready yet; readiness gates finalization.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/return:
+    post:
+      summary: Return for changes (filing_packets.review) - review | approved to needs_changes
+      description: internalReviewNote is required. Records a filing_packet_returned CaseActivity (no filenames).
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, internalReviewNote]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                internalReviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.review or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/approve:
+    post:
+      summary: Approve (filing_packets.review) - review to approved
+      description: The packet structure must be valid (petition source where required, at least one item, no source that no longer exists). Approval creates no binary package and does not require every item to be ready.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.review or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/finalize:
+    post:
+      summary: Finalize (filing_packets.finalize) - approved to finalized
+      description: >
+        Requires a ready petition source (where required) and every required item ready (accepted,
+        not archived/rejected/quarantined/superseded, not infected; Smart Forms approved or locked at
+        the pinned revision); a source that no longer exists blocks even when optional (fieldErrors keyed
+        item:{id}). Writes the immutable FilingPacketVersion - exact petition version, exact document
+        versions, Smart Form revisions, order, roles, required flags and a sha256 manifestHash - then flips
+        the status; if the snapshot cannot be written the status is restored and the response is a 409, so a
+        packet is never reported finalized without its snapshot. A finalized packet rejects every further
+        mutation (409 invalid_state). The hash is an audit fingerprint, not a signature. No file is generated.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error (unready required items or petition source) }
+        '403': { description: Missing filing_packets.finalize or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/versions:
+    get:
+      summary: Immutable finalized versions, newest first (filing_packets.view)
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "versions (id, versionNumber, manifestHash, createdByName, createdAt), max 100" }
+        '404': { description: Packet is missing or inaccessible }
+  /staff/filing-packets/{packetId}/versions/{versionId}:
+    get:
+      summary: One immutable version - the exact manifest as filed (filing_packets.view)
+      description: petitionSource, ordered items with safe source summaries and downloadAction for document items (existing secure route), sourceRevision and manifestHash. No storage keys, checksums or file bytes. Versions cannot be updated or deleted.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+        - { name: versionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Version detail DTO }
+        '404': { description: Version, packet or case not found / inaccessible }

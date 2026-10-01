@@ -94,7 +94,12 @@
     "petition_submitted",
     "petition_returned",
     "petition_approved",
-    "petition_finalized"
+    "petition_finalized",
+    "filing_packet_created",
+    "filing_packet_submitted",
+    "filing_packet_returned",
+    "filing_packet_approved",
+    "filing_packet_finalized"
   ],
   "caseActivityActorTypes": ["admin_user", "env_fallback", "system"]
 }

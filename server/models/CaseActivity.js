@@ -69,6 +69,13 @@ const ACTIVITY_TYPES = [
   'petition_returned',
   'petition_approved',
   'petition_finalized',
+  // Phase 10 — material filing-packet lifecycle events (ADR-023 §30). Never carry
+  // filenames or manifest contents; the history lives in FilingPacketVersion.
+  'filing_packet_created',
+  'filing_packet_submitted',
+  'filing_packet_returned',
+  'filing_packet_approved',
+  'filing_packet_finalized',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(
