@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 
 import { submitConsultation, type FormState } from "@/app/(site)/consultation/actions";
+import { useFormTracking } from "@/components/analytics/use-form-tracking";
 import { Button } from "@/components/ui/button";
 import { caseCategories, supportServices } from "@/lib/content/services";
 import { contact, whatsappLink } from "@/lib/content/site";
@@ -43,6 +44,8 @@ export function ConsultationForm({
   tracking?: Record<string, string>;
 }) {
   const [state, formAction] = useActionState(submitConsultation, initialState);
+  const service = useRef(defaultService ?? "");
+  useFormTracking("consultation", state, () => ({ service: service.current }));
 
   if (state.status === "success") {
     return (
@@ -67,7 +70,15 @@ export function ConsultationForm({
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-5" noValidate>
+    <form
+      action={formAction}
+      onChange={(e) => {
+        const { name, value } = e.target as unknown as HTMLSelectElement;
+        if (name === "service") service.current = value;
+      }}
+      className="flex flex-col gap-5"
+      noValidate
+    >
       <Honeypot />
       <TrackingFields params={tracking} />
 
