@@ -62,6 +62,13 @@ const ACTIVITY_TYPES = [
   'form_returned',
   'form_approved',
   'form_locked',
+  // Phase 09 — material petition lifecycle events (ADR-022 §25). Never carry
+  // petition text; the content history lives in PetitionVersion.
+  'petition_created',
+  'petition_submitted',
+  'petition_returned',
+  'petition_approved',
+  'petition_finalized',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(

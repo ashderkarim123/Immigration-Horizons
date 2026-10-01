@@ -240,6 +240,16 @@ const CAPABILITIES = {
   'forms.review': ['super_admin', 'admin', 'pm', 'reviewer', 'uscis_forms_specialist'],
   'forms.lock': ['super_admin', 'admin', 'reviewer'],
   'form_templates.manage': ['super_admin', 'admin'],
+
+  // Petition Work (Phase 09, ADR-022 §20). Capability gates only — every use is
+  // ALSO scoped to case membership, and petitions.edit is further limited to
+  // assigned sections for anyone without petitions.manage. A reviewer gets no
+  // drafting right from reviewing.
+  'petitions.view': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'petitions.manage': ['super_admin', 'admin', 'pm'],
+  'petitions.edit': ['super_admin', 'admin', 'pm', 'petition_writer'],
+  'petitions.review': ['super_admin', 'admin', 'pm', 'reviewer'],
+  'petitions.finalize': ['super_admin', 'admin', 'reviewer'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */

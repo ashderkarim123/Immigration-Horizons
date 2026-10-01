@@ -55,6 +55,11 @@ export const CASE_ACTIVITY_TYPES = [
   "form_returned",
   "form_approved",
   "form_locked",
+  "petition_created",
+  "petition_submitted",
+  "petition_returned",
+  "petition_approved",
+  "petition_finalized",
 ] as const;
 
 export type CaseActivityType = (typeof CASE_ACTIVITY_TYPES)[number];

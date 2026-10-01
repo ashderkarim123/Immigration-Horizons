@@ -388,6 +388,39 @@
     "form_templates.manage": [
       "super_admin",
       "admin"
+    ],
+    "petitions.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "petitions.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "petitions.edit": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer"
+    ],
+    "petitions.review": [
+      "super_admin",
+      "admin",
+      "pm",
+      "reviewer"
+    ],
+    "petitions.finalize": [
+      "super_admin",
+      "admin",
+      "reviewer"
     ]
   }
 }

@@ -90,6 +90,9 @@ const MODELS = [
   require('../models/SmartFormTemplate'),
   require('../models/CaseSmartForm'),
   require('../models/SmartFormAudit'),
+  // Phase 09 — Petition Work (ADR-022 §31). Staff-only: only this app reads/writes them.
+  require('../models/CasePetition'),
+  require('../models/PetitionVersion'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');

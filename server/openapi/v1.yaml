@@ -1175,3 +1175,360 @@ paths:
       responses:
         '200': { description: "events[] newest first (max 100)" }
         '404': { description: Form is missing or its case is inaccessible }
+  /staff/cases/{caseId}/petitions:
+    get:
+      summary: List the case's petitions (petitions.view)
+      description: Summary DTOs - id, sequence, kind, title, status, revision, sectionProgress, dependencyProgress, updatedAt, actions. A case owns many petitions. Progress counts are operational completion only, never a legal-strength score. Missing and inaccessible cases are the same 404.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "petitions[] and canProvision (petitions.manage)" }
+        '403': { description: Missing petitions.view }
+        '404': { description: Case is missing or inaccessible }
+    post:
+      summary: Create an additional petition (petitions.manage)
+      description: Sections come from the code-owned template for the kind and the case type (rfe_response and noid_response use the notice structure). Sequence is assigned by the server.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind: { type: string, enum: [primary, rfe_response, noid_response, supplemental, other] }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+      responses:
+        '201': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/petitions/provision:
+    post:
+      summary: Idempotently provision the primary petition (petitions.manage)
+      description: kind=primary, sequence=1. Returns the existing petition (200) when there is one, else creates it from the case-type template (201). A case type with no automatic petition (other) returns 400; create one explicitly instead. Never runs implicitly on read; there is no backfill.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '201': { description: Petition detail DTO (created) }
+        '200': { description: Petition detail DTO (already existed) }
+        '400': { description: No automatic petition for this case type }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/petitions/{petitionId}:
+    get:
+      summary: One petition with sections, dependencies and versions (petitions.view)
+      description: >
+        Sections carry plain-text body, review status, assignee (id, name only) and per-section
+        actions. Dependencies carry live readiness (ready, status, reason) from the one server-side
+        resolver. actions on the petition and on each section are computed from the actor's
+        capabilities, section ownership and status - the UI never infers authority. Storage keys,
+        checksums, raw user records and session data are never returned. Staff-only: there is no
+        client portal route for petitions.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Petition detail DTO }
+        '404': { description: Petition is missing, malformed, or on an inaccessible case }
+    patch:
+      summary: Update title / description (petitions.manage)
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: "conflict (stale revision) or invalid_state; fieldErrors = { revision, status }" }
+  /staff/petitions/{petitionId}/sections/{sectionKey}:
+    patch:
+      summary: Autosave a section's plain text (petitions.edit)
+      description: >
+        Body is { revision, body } (plain text, at most 50000 characters; never HTML). Anyone without
+        petitions.manage may only edit sections assigned to them (403 otherwise); petitions.review
+        grants no drafting right. Allowed only while the petition is drafting or needs_changes.
+        Editing a ready or approved section returns it to draft. An unchanged body does not bump
+        the revision. A stale revision is a 409 conflict and nothing is overwritten. Autosave writes no CaseActivity.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, body]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                body: { type: string, maxLength: 50000 }
+      responses:
+        '200': { description: Petition detail DTO (revision incremented unless unchanged) }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.edit, untrusted Origin, or the section is assigned to someone else }
+        '404': { description: Petition or section not found }
+        '409': { description: "conflict (stale revision) or invalid_state (petition is not a draft); fieldErrors = { revision, status }" }
+  /staff/petitions/{petitionId}/sections/{sectionKey}/assign:
+    post:
+      summary: Assign or clear a section's writer (petitions.manage)
+      description: The assignee must be an active employee, an active member of the case workspace, and hold a role that can draft or review petitions. Assignment never creates membership or grants access. A snapshot of the name is stored.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                assigneeId: { type: string, nullable: true }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: "validation_error (not a team member, inactive, or ineligible role)" }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Petition or section not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/sections/{sectionKey}/review:
+    post:
+      summary: Mark a section ready for review (petitions.edit; assigned writer or manager)
+      description: draft | changes_requested to ready_for_review. The section must have text.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Not permitted for this section }
+        '404': { description: Petition or section not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/sections/{sectionKey}/return:
+    post:
+      summary: Return a section for changes (petitions.review)
+      description: ready_for_review | approved to changes_requested. reviewNote is required.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, reviewNote]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                reviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.review or untrusted Origin }
+        '404': { description: Petition or section not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/sections/{sectionKey}/approve:
+    post:
+      summary: Approve a section (petitions.review)
+      description: ready_for_review to approved; records the reviewer name and time.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '403': { description: Missing petitions.review or untrusted Origin }
+        '404': { description: Petition or section not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/dependency-candidates:
+    get:
+      summary: Same-case records that can be linked as a dependency (petitions.view)
+      description: Bounded to 100 per type; case_document excludes archived, quarantined, rejected and superseded. Returns refId, label, status and whether it is already linked. Never returns storage metadata.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: type, in: query, required: true, schema: { type: string, enum: [evidence_requirement, smart_form, case_document, task] } }
+      responses:
+        '200': { description: "candidates (refId, label, status, linked)" }
+        '400': { description: Invalid type }
+        '404': { description: Petition is missing or inaccessible }
+  /staff/petitions/{petitionId}/dependencies:
+    post:
+      summary: Link an existing same-case record (petitions.edit)
+      description: >
+        type is evidence_requirement, smart_form, case_document or task; refId is the record id.
+        The server verifies the record belongs to the same case (and workspace) - a missing id
+        and another case's id are the same 404. Linking the same record twice changes nothing.
+        role is valid only for case_document. requiredForFinalization defaults to true.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, type, refId]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                type: { type: string, enum: [evidence_requirement, smart_form, case_document, task] }
+                refId: { type: string }
+                role: { type: string, enum: [business_plan, recommendation_letter, expert_opinion_letter, supporting_document, other] }
+                requiredForFinalization: { type: boolean }
+      responses:
+        '201': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.edit or untrusted Origin }
+        '404': { description: Petition or referenced record not found in this case }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/dependencies/{dependencyId}:
+    delete:
+      summary: Remove a dependency link (petitions.edit)
+      description: Removes only the link, never the linked record. The expected revision is the revision query parameter.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: dependencyId, in: path, required: true, schema: { type: string } }
+        - { name: revision, in: query, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: Petition detail DTO }
+        '403': { description: Missing petitions.edit or untrusted Origin }
+        '404': { description: Petition or dependency not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/submit:
+    post:
+      summary: Submit for internal review (petitions.manage) - drafting | needs_changes to internal_review
+      description: Every required section must have text and be ready_for_review or approved; otherwise 400 with fieldErrors keyed by section key.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/return:
+    post:
+      summary: Return for changes (petitions.review) - internal_review | approved to needs_changes
+      description: internalReviewNote is required. Records a petition_returned CaseActivity (no text).
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, internalReviewNote]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                internalReviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.review or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/approve:
+    post:
+      summary: Approve (petitions.review) - internal_review to approved
+      description: Every required section must be approved. Writes an immutable PetitionVersion with reason approval. Dependency readiness is not required yet (it gates finalization).
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.review or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/finalize:
+    post:
+      summary: Finalize (petitions.finalize) - approved to finalized
+      description: >
+        Requires approved status, every required section approved and every dependency marked
+        requiredForFinalization ready (fieldErrors key dependency:{id}). Writes the immutable final
+        PetitionVersion with dependency provenance, then flips the status; if the snapshot cannot be
+        written the status is restored and the response is a 409, so a petition is never reported
+        finalized without its snapshot. A finalized petition rejects every further mutation
+        (409 invalid_state). There is no hard-delete route.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error (unapproved sections or unready required dependencies) }
+        '403': { description: Missing petitions.finalize or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/versions:
+    get:
+      summary: Immutable versions, newest first (petitions.view)
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "versions[] (id, versionNumber, reason, sourceRevision, createdByName, createdAt), max 100" }
+        '404': { description: Petition is missing or inaccessible }
+  /staff/petitions/{petitionId}/versions/{versionId}:
+    get:
+      summary: One immutable version (petitions.view)
+      description: Section snapshots (text as reviewed) and per-dependency provenance - evidence status, Smart Form template/revision/lockedRevision, document id and version number, task status. No storage keys, checksums or file bytes. Versions cannot be updated or deleted.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: versionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Version detail DTO }
+        '404': { description: Version, petition or case not found / inaccessible }

@@ -57,7 +57,9 @@ EvidenceRequirementSchema.index(
 EvidenceRequirementSchema.index({ case: 1, section: 1, order: 1 });
 EvidenceRequirementSchema.index({ case: 1, status: 1, importance: 1 });
 
-EvidenceRequirementSchema.pre('save', function(next) {
+// Synchronous hook: Mongoose 9 no longer passes `next`, so the old callback
+// form threw "next is not a function" on every create/save of a requirement.
+EvidenceRequirementSchema.pre('save', function() {
   if (this.isModified('status')) {
     if (this.status !== 'waived') this.waivedReason = null;
     if (this.status !== 'not_applicable') this.notApplicableReason = null;
@@ -66,7 +68,6 @@ EvidenceRequirementSchema.pre('save', function(next) {
       this.satisfiedBy = null;
     }
   }
-  next();
 });
 
 EvidenceRequirementSchema.statics.STATUSES = REQUIREMENT_STATUSES;

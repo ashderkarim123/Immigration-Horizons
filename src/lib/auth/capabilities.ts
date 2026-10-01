@@ -129,6 +129,13 @@ export const CAPABILITIES: Record<string, string[]> = {
   "forms.review": ["super_admin", "admin", "pm", "reviewer", "uscis_forms_specialist"],
   "forms.lock": ["super_admin", "admin", "reviewer"],
   "form_templates.manage": ["super_admin", "admin"],
+
+  // --- Petition Work (Phase 09, ADR-022 §20) --- capability gates only; every use is also case-membership scoped.
+  "petitions.view": [...MANAGER_ROLES, ...SPECIALIST_ROLES, "reviewer"],
+  "petitions.manage": ["super_admin", "admin", "pm"],
+  "petitions.edit": ["super_admin", "admin", "pm", "petition_writer"],
+  "petitions.review": ["super_admin", "admin", "pm", "reviewer"],
+  "petitions.finalize": ["super_admin", "admin", "reviewer"],
 };
 
 /**
