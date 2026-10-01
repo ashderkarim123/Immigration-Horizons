@@ -38,5 +38,6 @@ router.use('/deadlines', require('./deadlines'));
 router.use('/', require('./documents'));
 router.use('/', require('./chat'));
 router.use('/', require('./evidence'));
+router.use('/', require('./forms'));
 
 module.exports = router;

@@ -16,7 +16,9 @@
     "documents:reconcile-storage": "node scripts/reconcileDocumentStorage.js",
     "collaboration:provision-channels": "node scripts/provisionChannels.js",
     "collaboration:provision-channels:apply": "node scripts/provisionChannels.js --apply",
-    "notifications:send-digests": "node scripts/sendNotificationDigests.js",
+    "forms:seed-templates": "node scripts/seedSmartFormTemplates.js",
+    "forms:seed-templates:apply": "node scripts/seedSmartFormTemplates.js --apply",
+    "notifications:send-digests":"node scripts/sendNotificationDigests.js",
     "notifications:send-digests:apply": "node scripts/sendNotificationDigests.js --apply",
     "mail:check": "node scripts/checkMail.js"
   },

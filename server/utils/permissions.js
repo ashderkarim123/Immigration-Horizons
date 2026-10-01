@@ -229,6 +229,17 @@ const CAPABILITIES = {
   'messages.edit_own': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
   'messages.moderate': ['super_admin', 'admin', 'pm'],
   'messages.view_revisions': ['super_admin', 'admin', 'pm'],
+
+  // Smart Forms (Phase 08, ADR-021 §15). Capability gates only — every use
+  // is ALSO scoped to case membership (services/smartFormPolicy.js), so a
+  // role grant never reaches a case the actor is not on. Editing and review
+  // are separate because the person preparing answers should not be the only
+  // one who can sign them off; locking is narrower still.
+  'forms.view': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'forms.edit': ['super_admin', 'admin', 'pm', 'uscis_forms_specialist'],
+  'forms.review': ['super_admin', 'admin', 'pm', 'reviewer', 'uscis_forms_specialist'],
+  'forms.lock': ['super_admin', 'admin', 'reviewer'],
+  'form_templates.manage': ['super_admin', 'admin'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */

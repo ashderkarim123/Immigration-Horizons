@@ -1014,3 +1014,164 @@ paths:
         '409': { description: Identical file already stored by someone else }
         '413': { description: File too large }
         '422': { description: File failed the security scan }
+  /staff/cases/{caseId}/forms:
+    get:
+      summary: List the case's Smart Forms (forms.view)
+      description: Summary DTOs only - no answers. canProvision is true when the actor holds forms.edit. Missing and inaccessible cases are the same 404.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "forms[] (id, title, templateKey, templateVersion, status, revision, progress, timestamps), canProvision" }
+        '403': { description: Missing forms.view }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/forms/provision:
+    post:
+      summary: Idempotently add the case's intake forms (forms.edit)
+      description: >
+        Creates one instance per eligible published template key that the case does
+        not already have, with deterministic prefill from the primary client (name,
+        email, phone) as a snapshot - never overwriting later edits. Publishes the
+        code-owned template catalog on first use (insert-only; a changed published
+        version fails loudly). Responds 201 when anything was created, else 200.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '201': { description: "created[], existing[], forms[]" }
+        '200': { description: Nothing to add }
+        '403': { description: Missing forms.edit or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/forms/{formId}:
+    get:
+      summary: One Smart Form with its template sections and answers (forms.view)
+      description: >
+        Includes staff-only fields, clientReviewNote and internalReviewNote, plus an
+        actions object (canEdit, canSubmit, canReturn, canApprove, canLock) computed
+        from the actor's capabilities and the form status - the UI never infers authority.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Smart form DTO }
+        '404': { description: Form is missing or its case is inaccessible }
+  /staff/forms/{formId}/answers:
+    patch:
+      summary: Autosave / staff edit (forms.edit)
+      description: >
+        Body is { revision, answers }, where answers is a partial object keyed by
+        stable field key (null clears an answer). Unknown keys are errors. Allowed
+        in draft, needs_changes and submitted; a locked or approved form is a 409
+        invalid_state. A stale revision is a 409 conflict whose fieldErrors carry
+        { revision, status } - nothing is overwritten. Writes are atomic on
+        (_id, revision, status). The audit trail records changed field KEYS, never values.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, answers]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                answers: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Updated smart form DTO (revision incremented) }
+        '400': { description: "validation_error with fieldErrors keyed by field key (group rows as key[index].child)" }
+        '403': { description: Missing forms.edit or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: "conflict (stale revision) or invalid_state; fieldErrors = { revision, status }" }
+  /staff/forms/{formId}/submit:
+    post:
+      summary: Submit for review (forms.edit) - draft | needs_changes to submitted
+      description: Runs the authoritative validation; an incomplete form stays in its current state with a 400.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Updated smart form DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing forms.edit or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/forms/{formId}/return:
+    post:
+      summary: Return for changes (forms.review) - submitted | approved to needs_changes
+      description: clientReviewNote is required and is shown to the client; internalReviewNote is staff-only and never reaches a client DTO.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, clientReviewNote]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                clientReviewNote: { type: string, maxLength: 2000 }
+                internalReviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Updated smart form DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing forms.review or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/forms/{formId}/approve:
+    post:
+      summary: Approve (forms.review) - submitted to approved
+      description: Re-validates the answers; clears the client-visible note.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                internalReviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Updated smart form DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing forms.review or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/forms/{formId}/lock:
+    post:
+      summary: Lock the reviewed revision as final (forms.lock) - approved to locked
+      description: Deliberate and audited. The locked revision is recorded as lockedRevision; a locked form is immutable for everyone and has no unlock endpoint.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Updated smart form DTO }
+        '403': { description: Missing forms.lock or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/forms/{formId}/audit:
+    get:
+      summary: Append-only history of the form (forms.view)
+      description: eventType, fromStatus, toStatus, revision, changedFieldKeys, actor and time - never answer values or review-note text.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "events[] newest first (max 100)" }
+        '404': { description: Form is missing or its case is inaccessible }

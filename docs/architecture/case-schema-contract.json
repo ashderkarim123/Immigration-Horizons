@@ -84,7 +84,12 @@
     "channel_reordered",
     "channel_member_added",
     "channel_member_removed",
-    "client_update_published"
+    "client_update_published",
+    "form_provisioned",
+    "form_submitted",
+    "form_returned",
+    "form_approved",
+    "form_locked"
   ],
   "caseActivityActorTypes": ["admin_user", "env_fallback", "system"]
 }

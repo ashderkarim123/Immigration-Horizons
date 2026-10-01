@@ -122,6 +122,13 @@ export const CAPABILITIES: Record<string, string[]> = {
   "messages.edit_own": CASE_WORKER_ROLES,
   "messages.moderate": ["super_admin", "admin", "pm"],
   "messages.view_revisions": ["super_admin", "admin", "pm"],
+
+  // --- Smart Forms (Phase 08, ADR-021 §15) --- capability gates only; every use is also case-membership scoped.
+  "forms.view": [...MANAGER_ROLES, ...SPECIALIST_ROLES, "reviewer"],
+  "forms.edit": ["super_admin", "admin", "pm", "uscis_forms_specialist"],
+  "forms.review": ["super_admin", "admin", "pm", "reviewer", "uscis_forms_specialist"],
+  "forms.lock": ["super_admin", "admin", "reviewer"],
+  "form_templates.manage": ["super_admin", "admin"],
 };
 
 /**

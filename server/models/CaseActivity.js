@@ -55,6 +55,13 @@ const ACTIVITY_TYPES = [
   // Cycle 8 — a deliberately published, client-visible case update
   // (ADR-007 §6). Distinct from the automatic system messages above.
   'client_update_published',
+  // Phase 08 — material Smart Forms lifecycle events (ADR-021 §18). Never
+  // carry answers; the field-level trail lives in SmartFormAudit.
+  'form_provisioned',
+  'form_submitted',
+  'form_returned',
+  'form_approved',
+  'form_locked',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(
