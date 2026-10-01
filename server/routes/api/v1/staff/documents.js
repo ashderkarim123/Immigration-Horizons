@@ -1,5 +1,4 @@
 const express = require('express');
-const multer = require('multer');
 
 const CaseDocument = require('../../../../models/CaseDocument');
 const DocumentCategory = require('../../../../models/DocumentCategory');
@@ -13,7 +12,8 @@ const requestService = require('../../../../services/documentRequestService');
 const reviewService = require('../../../../services/documentReviewService');
 const downloadService = require('../../../../services/documentDownloadService');
 const { provider, uploadDocument, replaceDocumentVersion } = require('../../../../services/documentUploadService');
-const { maxFileSizeBytes, extensionOf } = require('../../../../services/documentValidation');
+const { parseSingleFileUpload } = require('../../../../middleware/api/documentUpload');
+const { extensionOf } = require('../../../../services/documentValidation');
 const staffDocumentManagement = require('../../../../services/staffDocumentManagement');
 
 const router = express.Router();
@@ -39,40 +39,7 @@ function mapOutcome(result, req, res, mapper) {
   return response(res, req, mapper(result), result.outcome === 'created' ? 201 : 200);
 }
 
-function createDocumentUploadMiddleware() {
-  const parser = multer({
-    storage: multer.diskStorage({
-      destination: (req, file, callback) => {
-        provider.ensureDirs().then(() => callback(null, provider.tempDir)).catch(callback);
-      },
-      filename: (req, file, callback) => {
-        const storageKey = provider.generateStorageKey();
-        req.documentStorageKey = storageKey;
-        req.documentOriginalName = file.originalname;
-        req.documentDeclaredMimeType = file.mimetype;
-        callback(null, storageKey);
-      },
-    }),
-    limits: { fileSize: maxFileSizeBytes(), files: 1 },
-  }).single('file');
-
-  return (req, res, next) => parser(req, res, async (err) => {
-    if (!err) {
-      if (!req.file || !req.documentStorageKey) {
-        return next(createApiError(400, 'validation_error', 'A document file is required.', { file: 'A document file is required.' }));
-      }
-      return next();
-    }
-
-    if (req.documentStorageKey) await provider.deleteTemp(req.documentStorageKey).catch(() => {});
-    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
-      return next(createApiError(413, 'file_too_large', 'The uploaded file exceeds the maximum allowed size.'));
-    }
-    return next(createApiError(400, 'invalid_upload', 'The document upload could not be processed.'));
-  });
-}
-
-const parseDocumentUpload = createDocumentUploadMiddleware();
+const parseDocumentUpload = parseSingleFileUpload;
 
 function caseAccess(policyCheck) {
   return async (req, res, next) => {

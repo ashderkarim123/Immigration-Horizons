@@ -724,3 +724,293 @@ paths:
       summary: Cancel a document request without deleting it
       parameters: [ { name: requestId, in: path, required: true, schema: { type: string } } ]
       responses: { '200': { description: Document request metadata } }
+
+  # --- Unified case chat (ADR-020) -------------------------------------------
+  # One WorkspaceChannel / WorkspaceMessage domain shared with the client portal.
+  # Every "not yours" outcome is the same 404 as "does not exist". Messages are
+  # plain text, one thread level deep, and are only ever soft-deleted.
+  /staff/cases/{caseId}/channels:
+    get:
+      summary: Channels the actor may see on a case, with audience label and unread count
+      description: >
+        Each channel carries audience (client_and_team, staff_only or restricted),
+        clientVisible, unreadCount and canSend.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Visible channels (hidden channels never contribute names or counts) }
+        '404': { description: Case is missing or inaccessible }
+    post:
+      summary: Create a channel
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, visibility]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                channelType: { type: string, enum: [standard, documents, updates, private, internal] }
+                visibility: { type: string, enum: [all_members, clients_and_team, employees_only, restricted_members] }
+      responses:
+        '201': { description: Channel created }
+        '400': { description: Validation failed }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/channels/initialize:
+    post:
+      summary: Idempotently provision the default channels
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Lists created and skipped template keys; re-running creates nothing }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/channels/reorder:
+    post:
+      summary: Reorder the active channels
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderedChannelIds]
+              properties:
+                orderedChannelIds: { type: array, items: { type: string } }
+      responses:
+        '200': { description: Reordered or unchanged }
+        '400': { description: The full set of active channels was not provided }
+  /staff/channels/{channelId}:
+    get:
+      summary: One channel, with the actor's management capabilities
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Channel DTO plus canManage and canManageMembers }
+        '404': { description: Channel is missing, archived or inaccessible }
+    patch:
+      summary: Rename, re-describe or change visibility of a channel
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                visibility: { type: string, enum: [all_members, clients_and_team, employees_only, restricted_members] }
+      responses:
+        '200': { description: Updated channel }
+        '400': { description: Validation failed }
+  /staff/channels/{channelId}/archive:
+    post:
+      summary: Archive a channel (history is retained)
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Archived }
+  /staff/channels/{channelId}/members:
+    get:
+      summary: Workspace roster usable for mentions and restricted-channel membership
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Members; clients are omitted from staff-only channels }
+    post:
+      summary: Add a workspace member to a restricted channel
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspaceMemberId]
+              properties:
+                workspaceMemberId: { type: string }
+      responses:
+        '201': { description: Updated roster }
+  /staff/channels/{channelId}/members/{channelMemberId}:
+    delete:
+      summary: Remove a member from a restricted channel (access is lost immediately)
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+        - { name: channelMemberId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Updated roster }
+  /staff/channels/{channelId}/messages:
+    get:
+      summary: Newest page of root messages (oldest-first), cursor paginated
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+        - { name: before, in: query, schema: { type: string }, description: Opaque cursor from nextCursor }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50 } }
+      responses:
+        '200': { description: "messages, nextCursor (older history) and syncCursor (start polling /messages/newer from here)" }
+        '404': { description: Channel is missing or inaccessible }
+    post:
+      summary: Send a message
+      description: >
+        idempotencyKey is required: one deliberate send uses one key, reused only
+        when retrying that exact send. A repeat returns the original message with 200.
+        attachments are document ids already stored through POST /staff/channels/{channelId}/attachments
+        or chosen from /attachable-documents; the server re-checks same-case, state and
+        audience compatibility, so a staff-only document can never ride a client-visible channel.
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotencyKey]
+              properties:
+                body: { type: string, maxLength: 8000 }
+                idempotencyKey: { type: string, minLength: 8, maxLength: 100 }
+                mentions: { type: array, items: { type: string }, description: Workspace member ids }
+                attachments: { type: array, maxItems: 10, items: { type: string } }
+      responses:
+        '201': { description: Message created }
+        '200': { description: Idempotent replay of an earlier send }
+        '400': { description: Validation failed, including an ineligible attachment }
+        '404': { description: Channel is missing or inaccessible }
+  /staff/channels/{channelId}/messages/newer:
+    get:
+      summary: Incremental sync - messages created or changed after a cursor
+      description: >
+        Ascending on (updatedAt, id). Includes edits, soft deletes and reply-count
+        changes to older messages, roots and replies alike. Poll every few seconds
+        while the tab is visible and follow hasMore while true. A malformed cursor
+        behaves as "from the start".
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+        - { name: since, in: query, schema: { type: string }, description: Opaque syncCursor }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50 } }
+      responses:
+        '200': { description: "messages, syncCursor (store for the next poll), hasMore" }
+  /staff/channels/{channelId}/threads/{messageId}:
+    get:
+      summary: A thread root with its replies
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "root, replies, nextCursor" }
+        '404': { description: Not a root message of this channel }
+  /staff/messages/{messageId}/replies:
+    post:
+      summary: Reply in a thread (a reply to a reply is normalised to the thread root)
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotencyKey]
+              properties:
+                body: { type: string }
+                idempotencyKey: { type: string }
+                mentions: { type: array, items: { type: string } }
+                attachments: { type: array, items: { type: string } }
+      responses:
+        '201': { description: Reply created }
+        '200': { description: Idempotent replay }
+  /staff/messages/{messageId}:
+    patch:
+      summary: Edit a message the actor may edit
+      description: >
+        Send expectedUpdatedAt (the message updatedAt as last seen). If the stored
+        copy is newer the edit is refused with 409 and nothing is overwritten.
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string }
+                mentions: { type: array, items: { type: string } }
+                expectedUpdatedAt: { type: string, format: date-time }
+      responses:
+        '200': { description: Updated message, with a MessageRevision recorded }
+        '409': { description: Stale edit }
+  /staff/messages/{messageId}/delete:
+    post:
+      summary: Soft-delete a message (own, or any with messages.moderate). There is no hard delete.
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Message with placeholder body; thread continuity preserved }
+  /staff/messages/{messageId}/restore:
+    post:
+      summary: Restore a soft-deleted message (messages.moderate)
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Restored message }
+  /staff/channels/{channelId}/read:
+    post:
+      summary: Mark the channel read (monotonic) and return the new unread count
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lastReadMessageId: { type: string, nullable: true }
+      responses:
+        '200': { description: "outcome, unreadCount" }
+  /staff/channels/{channelId}/attachable-documents:
+    get:
+      summary: Existing case documents the actor may attach to this channel
+      description: Pre-filtered with the same rule the send endpoint enforces (client-visible only when a client can read the channel).
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Safe metadata only - id, display name, type, size }
+  /staff/channels/{channelId}/attachments:
+    post:
+      summary: Upload a new file from the chat composer through the secure document pipeline
+      description: >
+        Validates size, extension and magic bytes, stores privately and creates the
+        CaseDocument and DocumentVersion in the per-case "Chat Attachments" category
+        (provisioned on first use). A staff-only channel yields a staff-only document.
+        Never returns a storage key or path. The message is sent afterwards by id; if
+        that send fails, retry it with the same idempotency key - the document is not
+        uploaded again. Re-uploading identical bytes returns the actor's stored
+        document with reused true.
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201': { description: "attachment (documentId, displayName, mimeType, extension, size)" }
+        '200': { description: Same bytes already stored by this actor (reused) }
+        '400': { description: Rejected by validation (type, size or magic bytes) }
+        '404': { description: Channel is missing or inaccessible }
+        '409': { description: Identical file already stored by someone else }
+        '413': { description: File too large }
+        '422': { description: File failed the security scan }

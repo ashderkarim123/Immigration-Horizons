@@ -33,10 +33,23 @@ function cursorFilter(cursor) {
   };
 }
 
+/**
+ * Incremental-sync counterpart of cursorFilter: ascending on `(updatedAt, _id)`
+ * and strictly AFTER the cursor, so a poll returns new messages and also
+ * edits, deletes and reply-count bumps to older ones. The cursor's
+ * `createdAt` slot carries the updatedAt value (same encoding, one codec).
+ */
+function changedFilter(cursor) {
+  if (!cursor) return {};
+  return {
+    $or: [{ updatedAt: { $gt: cursor.createdAt } }, { updatedAt: cursor.createdAt, _id: { $gt: cursor.id } }],
+  };
+}
+
 function boundedLimit(requested) {
   const n = parseInt(requested, 10);
   if (!Number.isFinite(n) || n <= 0) return MAX_MESSAGE_PAGE_SIZE;
   return Math.min(n, MAX_MESSAGE_PAGE_SIZE);
 }
 
-module.exports = { encodeCursor, decodeCursor, cursorFilter, boundedLimit };
+module.exports = { encodeCursor, decodeCursor, cursorFilter, changedFilter, boundedLimit };

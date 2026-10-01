@@ -27,7 +27,7 @@ const DUMMY_HASH = '$2a$12$KIX0Y3FfTMBiP9oV4i1DcuUGSJOThsRBbwdB0hGimj63E2T8BYVJO
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 10,
+  limit: Number(process.env.LOGIN_RATE_LIMIT) || 10, // same knob as the admin login (routes/admin/index.js); tests raise it
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { code: 'rate_limited', message: 'Too many login attempts.' } }

@@ -36,6 +36,7 @@ router.use('/clients', require('./clients'));
 router.use('/tasks', require('./tasks'));
 router.use('/deadlines', require('./deadlines'));
 router.use('/', require('./documents'));
+router.use('/', require('./chat'));
 router.use('/', require('./evidence'));
 
 module.exports = router;

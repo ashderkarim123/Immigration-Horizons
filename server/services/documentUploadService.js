@@ -163,6 +163,7 @@ async function uploadDocument({
   uploaderClientId,
   uploaderAdminId,
   actorName,
+  visibility,
 }) {
   const category = await DocumentCategory.findOne({ _id: categoryId, case: caseId, active: true });
   if (!category) {
@@ -215,7 +216,9 @@ async function uploadDocument({
             size,
             checksum,
             status: quarantined ? 'quarantined' : 'uploaded',
-            visibility: category.visibility,
+            // A caller may only NARROW the category's visibility (a staff-only chat
+            // upload into the shared Chat Attachments category) — never widen it.
+            visibility: visibility === 'employees_only' ? 'employees_only' : category.visibility,
             scanStatus: scanResult.status,
             scanProvider: 'none',
             scanCompletedAt: new Date(),
