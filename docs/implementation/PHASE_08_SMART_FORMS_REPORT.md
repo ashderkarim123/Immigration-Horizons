@@ -110,19 +110,16 @@ Existing contract tests (`case-schema-contract`, `employee-capability-contract`)
 
 ## Verification
 
-Local, run sequentially (never concurrently): root Unknown command: "test"
+Local, run sequentially (never concurrently):
 
+- root `npm test`: **400/400**
+- `cd server && npm test`: **540/540**
+- Angular `ng test case-management`: **29/29**
+- `npm run lint`, `npx tsc --noEmit`, `git diff --check`: clean
+- `ng build case-management` and `ng build admin-console`: succeed
+- `cd server && npm run db:indexes:dry-run`: lists the three new collections
 
-Did you mean this?
-  npm test # Test a package
-To see a list of supported npm commands, run:
-  npm help **400/400**, Unknown command: "test"
-
-
-Did you mean this?
-  npm test # Test a package
-To see a list of supported npm commands, run:
-  npm help **540/540**, Angular  **29/29**,  clean, error TS5025: Unknown compiler option '--noEmit'. Did you mean 'noEmit'? clean,  clean,  and  succeed,  (server) lists the three new collections. A local  is blocked on this machine (Application Control blocks SWC);  compiled and served the portal pages, and the production build is covered by the CI  job.
+A local `next build` is blocked on this machine (Application Control blocks SWC). `next dev` compiled and served the portal pages (`/portal/login`, `/portal`, `/portal/cases/:id`, `/portal/cases/:id/forms`); the production build is covered by the CI `Lint · types · build` job.
 
 ## Explicitly out of scope (unchanged)
 
@@ -140,4 +137,6 @@ No Petition workflow, no official PDF / USCIS form generation, no form-builder U
 
 ## Final status
 
-Implementation tip  — GitHub Actions **CI #69** (run id 36911437173): success. All four jobs green: Tests (Next.js app), Lint · types · build, Enterprise UI (Angular), Tests (admin CMS). Pushed only to ; not merged to . No production deploy, migration, index build or backfill was performed. This report was added in the follow-up docs commit; see  for its SHA and the CI run for it.
+Implementation tip `df090f967be8a6b588673b5f59cda18a1294f03f` — GitHub Actions **CI #69** (run id 36911437173): success. All four jobs green: Tests (Next.js app), Lint · types · build, Enterprise UI (Angular), Tests (admin CMS).
+
+Pushed only to `architecture/angular-enterprise-platform`; not merged to `main`. No production deploy, migration, index build or backfill was performed. This report was added in follow-up docs commits (documentation only); see `git log` for their SHAs.
