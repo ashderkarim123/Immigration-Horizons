@@ -13,6 +13,7 @@ import { ConfirmDialogComponent } from '../../../shared/confirm-dialog.component
 import { IhIconComponent } from '../../../shared/icon/ih-icon.component';
 import { EvidenceTabComponent } from './evidence-tab/evidence-tab.component';
 import { DocumentsTabComponent } from './documents-tab/documents-tab.component';
+import { ChatTabComponent } from './chat-tab/chat-tab.component';
 
 @Component({
   selector: 'ih-case-detail',
@@ -29,7 +30,8 @@ import { DocumentsTabComponent } from './documents-tab/documents-tab.component';
     ConfirmDialogComponent,
     IhIconComponent,
     EvidenceTabComponent,
-    DocumentsTabComponent
+    DocumentsTabComponent,
+    ChatTabComponent
   ],
   templateUrl: './case-detail.component.html',
   styleUrls: ['../../dashboard/dashboard.scss', './case-detail.component.scss']
@@ -49,7 +51,7 @@ export class CaseDetailComponent implements OnInit {
   isError = signal(false);
   errorMessage = signal('');
 
-  activeTab = signal<'overview' | 'team' | 'activity' | 'tasks' | 'evidence' | 'documents'>('overview');
+  activeTab = signal<'overview' | 'team' | 'activity' | 'tasks' | 'evidence' | 'documents' | 'chat'>('overview');
   caseTasks = signal<any[]>([]);
   isTasksLoading = signal(false);
   // Capability signals
