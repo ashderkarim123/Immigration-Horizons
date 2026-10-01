@@ -41,6 +41,9 @@ import { NotificationPreference } from "../src/lib/models/NotificationPreference
 import { EmployeeSession } from "../src/lib/models/EmployeeSession";
 import { CaseActivity } from "../src/lib/models/CaseActivity";
 import { SecurityEvent } from "../src/lib/models/SecurityEvent";
+import { SmartFormTemplate } from "../src/lib/models/SmartFormTemplate";
+import { CaseSmartForm } from "../src/lib/models/CaseSmartForm";
+import { SmartFormAudit } from "../src/lib/models/SmartFormAudit";
 
 // Cycle 2 case/workspace/membership models are also declared here even
 // though server/ is their primary writer (see
@@ -93,6 +96,11 @@ const MODELS = [
   // this account, or from this host" answerable during an incident rather
   // than a collection scan.
   SecurityEvent,
+  // Phase 08 — Smart Forms (ADR-021 §30). Dual-writer with the admin CMS for
+  // case_smart_forms / smart_form_audits; templates are written only by its seeder.
+  SmartFormTemplate,
+  CaseSmartForm,
+  SmartFormAudit,
 ];
 
 const isDryRun = process.argv.includes("--dry-run");

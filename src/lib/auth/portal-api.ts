@@ -41,26 +41,33 @@ export type PortalApiGuard =
   | { ok: true; context: PortalApiContext }
   | { ok: false; response: Response };
 
+/**
+ * `readOnly` is for session-gated GETs: no Origin check (a GET changes
+ * nothing) and no per-IP ceiling (the editor re-reads after a conflict).
+ * `rateLimitMax` raises the per-minute ceiling for autosave-style traffic.
+ */
 export async function guardPortalRequest(
   request: Request,
-  options: { rateLimitBucket: string },
+  options: { rateLimitBucket: string; rateLimitMax?: number; readOnly?: boolean },
 ): Promise<PortalApiGuard> {
-  if (!verifyOrigin(request)) {
-    await recordSecurityEvent({
-      type: "csrf_rejected",
-      result: "denied",
-      surface: "portal",
-      actorType: "anonymous",
-      request,
-      meta: { bucket: options.rateLimitBucket },
-    });
-    return { ok: false, response: jsonError("forbidden", "Request rejected.") };
-  }
-  if (await isRateLimited(options.rateLimitBucket, request)) {
-    return {
-      ok: false,
-      response: jsonError("rate_limited", "Too many requests. Please try again later."),
-    };
+  if (!options.readOnly) {
+    if (!verifyOrigin(request)) {
+      await recordSecurityEvent({
+        type: "csrf_rejected",
+        result: "denied",
+        surface: "portal",
+        actorType: "anonymous",
+        request,
+        meta: { bucket: options.rateLimitBucket },
+      });
+      return { ok: false, response: jsonError("forbidden", "Request rejected.") };
+    }
+    if (await isRateLimited(options.rateLimitBucket, request, options.rateLimitMax)) {
+      return {
+        ok: false,
+        response: jsonError("rate_limited", "Too many requests. Please try again later."),
+      };
+    }
   }
 
   const db = getDb();
