@@ -164,4 +164,13 @@ All changes are additive or behavioural-narrowing and live on this branch only. 
 
 ## Final status
 
-_Filled in after the push — see below._
+GitHub Actions for the commit that contains the full implementation and this report (`bf1e92b`):
+
+- **Run number:** 62
+- **Run ID:** 36898988295
+- **Conclusion:** success
+- Jobs: Lint · types · build — success; Tests (admin CMS) — success; Enterprise UI (Angular) — success; Tests (Next.js app) — success.
+
+Local verification before the push: root `tsc --noEmit` and `npm run lint` clean; root `npm test` 339/339; server `npm test` 470/470; Angular `ng test case-management` 14/14 and `ng build case-management` succeeded (the pre-existing `case-detail.component.scss` budget warning is unchanged); `git diff --check` clean. `next build` could not run on the local machine (Application Control blocks the SWC binary) and was verified by the Linux CI job above. `admin-console` was not touched.
+
+A final docs-only commit records these CI details; its own run is the last CI check.
