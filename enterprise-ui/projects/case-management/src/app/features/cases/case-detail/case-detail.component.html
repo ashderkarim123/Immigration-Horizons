@@ -130,6 +130,14 @@
         >
           Petition
         </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'packet'"
+          (click)="activeTab.set('packet')"
+        >
+          Filing Packet
+        </button>
       </div>
     </div>
 
@@ -384,6 +392,10 @@
 
     @if (activeTab() === 'petition') {
       <ih-petition-tab [caseId]="caseId()"></ih-petition-tab>
+    }
+
+    @if (activeTab() === 'packet') {
+      <ih-packet-tab [caseId]="caseId()" [caseLabel]="caseData()?.caseNumber || ''"></ih-packet-tab>
     }
 
     @if (activeTab() === 'documents') {
