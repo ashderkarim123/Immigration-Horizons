@@ -8,11 +8,39 @@ import { isRateLimited } from "../../../../../../lib/rate-limit";
 import { jsonError, jsonOk } from "../../../../../../lib/auth/http";
 import { getAccessibleChannel } from "../../../../../../lib/auth/collaboration-policy";
 import { createMessage } from "../../../../../../lib/collaboration/message-service";
+import { loadClientMessagesPage, loadClientChanges } from "../../../../../../lib/collaboration/chat-queries";
+
+/**
+ * History page (`?before=`) or incremental sync (`?since=`) for a channel the client may see.
+ * Read-only and session-gated, so it is not IP rate-limited: the open chat polls it every few seconds.
+ */
+export async function GET(request: Request, { params }: { params: Promise<{ channelId: string }> }): Promise<Response> {
+  const actor = await getSessionActor(request);
+  if (!actor) return jsonError("unauthenticated", "Please log in.");
+
+  const db = getDb();
+  if (!db) return jsonError("server_error", "Service temporarily unavailable.");
+  await db;
+
+  const client = await ClientUser.findById(actor.clientUserId);
+  if (!client || client.status !== "active") return jsonError("unauthenticated", "Please log in.");
+
+  const { channelId } = await params;
+  const accessible = await getAccessibleChannel(channelId, String(client._id));
+  if (!accessible) return jsonError("not_found", "That channel could not be found.");
+
+  const query = new URL(request.url).searchParams;
+  const limit = query.get("limit");
+  if (query.has("since")) {
+    return jsonOk(await loadClientChanges(accessible.channel._id, String(client._id), { since: query.get("since"), limit }));
+  }
+  return jsonOk(await loadClientMessagesPage(accessible.channel._id, String(client._id), { before: query.get("before"), limit }));
+}
 
 /** Client message send — module doc §24, ADR-005 §1/§19. */
 export async function POST(request: Request, { params }: { params: Promise<{ channelId: string }> }): Promise<Response> {
   if (!verifyOrigin(request)) return jsonError("forbidden", "Request rejected.");
-  if (await isRateLimited("portal-message-send", request)) {
+  if (await isRateLimited("portal-message-send", request, 30)) {
     return jsonError("rate_limited", "Too many requests. Please try again later.");
   }
 

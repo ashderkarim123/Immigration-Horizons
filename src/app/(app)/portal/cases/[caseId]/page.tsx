@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/app/page-header";
 import { Badge, stageTone } from "@/components/app/badge";
 import { requireClient } from "@/lib/auth/current-client";
 import { getAccessibleCase } from "@/lib/auth/case-policy";
+import { getAccessibleMessageCenter } from "@/lib/auth/collaboration-policy";
+import { getUnreadCountsForChannels } from "@/lib/collaboration/read-state-service";
 import { AdminUser } from "@/lib/models/AdminUser";
 import { CASE_TYPES, CLIENT_STAGE_LABELS, type CaseStage } from "@/lib/content/case-constants";
 
@@ -33,6 +35,16 @@ export default async function PortalCaseDetailPage({
   const projectManager = caseDoc.projectManager
     ? await AdminUser.findById(caseDoc.projectManager).select("name").lean()
     : null;
+
+  const messageCenter = await getAccessibleMessageCenter(caseId, String(client._id));
+  const unreadByChannel = messageCenter
+    ? await getUnreadCountsForChannels({
+        channelIds: messageCenter.channels.map((c) => c._id),
+        workspaceMemberId: String(messageCenter.membership._id),
+        selfClientId: String(client._id),
+      })
+    : {};
+  const chatUnread = Object.values(unreadByChannel).reduce((sum, n) => sum + n, 0);
 
   const trail = [
     { name: "Portal", href: "/portal" },
@@ -94,7 +106,15 @@ export default async function PortalCaseDetailPage({
         </div>
 
         <div className="rounded-panel border-ink-200 flex flex-col gap-2 border bg-white p-6 shadow-subtle text-sm">
-          <h2 className="font-display text-navy-800 text-base font-semibold">Messages</h2>
+          <h2 className="font-display text-navy-800 text-base font-semibold">
+            Chat
+            {chatUnread > 0 ? (
+              <span className="bg-gold-500 text-navy-900 ml-2 rounded-full px-2.5 py-0.5 text-xs font-bold">
+                {chatUnread}
+                <span className="sr-only"> unread</span>
+              </span>
+            ) : null}
+          </h2>
           <p className="text-ink-500">
             Message your team, ask questions, and keep track of case updates.
           </p>
@@ -102,7 +122,7 @@ export default async function PortalCaseDetailPage({
             href={`/portal/cases/${caseId}/messages`}
             className="text-navy-700 mt-2 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
           >
-            View messages
+            Open chat
             <ArrowRight size={14} aria-hidden />
           </Link>
         </div>

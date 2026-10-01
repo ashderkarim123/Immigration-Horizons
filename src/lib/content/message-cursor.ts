@@ -30,6 +30,14 @@ export function cursorFilter(cursor: { createdAt: Date; id: string } | null) {
   };
 }
 
+/** Incremental-sync filter — ascending on `(updatedAt, _id)`, strictly after the cursor. Mirrors server/utils/messageCursor.js. */
+export function changedFilter(cursor: { createdAt: Date; id: string } | null) {
+  if (!cursor) return {};
+  return {
+    $or: [{ updatedAt: { $gt: cursor.createdAt } }, { updatedAt: cursor.createdAt, _id: { $gt: cursor.id } }],
+  };
+}
+
 export function boundedLimit(requested: unknown): number {
   const n = parseInt(String(requested), 10);
   if (!Number.isFinite(n) || n <= 0) return MAX_MESSAGE_PAGE_SIZE;

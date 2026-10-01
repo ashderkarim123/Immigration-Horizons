@@ -118,7 +118,8 @@ export async function getAccessibleMessage(messageId: string, clientUserId: stri
   await db;
 
   const message = await WorkspaceMessage.findById(messageId).lean();
-  if (!message) return null;
+  // A system row flagged staff-only can sit in a client-visible channel; its id must not be usable by a client.
+  if (!message || message.clientVisible === false) return null;
 
   const accessible = await getAccessibleChannel(String(message.channel), clientUserId);
   if (!accessible) return null;
