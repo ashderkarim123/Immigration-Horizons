@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../AK-Techsolutions"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "AK-Techsolutions"
+	}
+}
