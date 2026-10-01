@@ -1,0 +1,109 @@
+@let f = field();
+
+@switch (f.type) {
+  @case ('yes_no') {
+    <fieldset class="group" [attr.aria-describedby]="describedBy()">
+      <legend>{{ f.label }}@if (f.required) { <span class="req" aria-hidden="true"> *</span> }@if (f.staffOnly) { <span class="staff-only">Staff only</span> }</legend>
+      <label class="choice"><input type="radio" [name]="id()" [disabled]="disabled()" [checked]="value() === true" (change)="valueChange.emit(true)" /> Yes</label>
+      <label class="choice"><input type="radio" [name]="id()" [disabled]="disabled()" [checked]="value() === false" (change)="valueChange.emit(false)" /> No</label>
+      @if (f.helpText) { <p class="help">{{ f.helpText }}</p> }
+      @if (error()) { <p class="err" role="alert" [id]="errorId()">{{ error() }}</p> }
+    </fieldset>
+  }
+  @case ('multi_select') {
+    <fieldset class="group" [attr.aria-describedby]="describedBy()">
+      <legend>{{ f.label }}@if (f.required) { <span class="req" aria-hidden="true"> *</span> }@if (f.staffOnly) { <span class="staff-only">Staff only</span> }</legend>
+      @for (option of f.options; track option.value) {
+        <label class="choice">
+          <input type="checkbox" [disabled]="disabled()" [checked]="selected().includes(option.value)" (change)="toggle(option.value, $event)" />
+          {{ option.label }}
+        </label>
+      }
+      @if (error()) { <p class="err" role="alert" [id]="errorId()">{{ error() }}</p> }
+    </fieldset>
+  }
+  @case ('address') {
+    <fieldset class="group" [attr.aria-describedby]="describedBy()">
+      <legend>{{ f.label }}@if (f.required) { <span class="req" aria-hidden="true"> *</span> }@if (f.staffOnly) { <span class="staff-only">Staff only</span> }</legend>
+      <div class="address-grid">
+        @for (part of addressParts; track part.key) {
+          <div class="control" [class.wide]="part.wide">
+            <label [for]="id() + '-' + part.key">{{ part.label }}</label>
+            @if (part.key === 'country') {
+              <select class="form-select" [id]="id() + '-' + part.key" [disabled]="disabled()" [value]="address()['country'] ?? ''" (change)="setAddress('country', $event)">
+                <option value="">Choose a country…</option>
+                @for (c of countries; track c.code) { <option [value]="c.code" [selected]="address()['country'] === c.code">{{ c.name }}</option> }
+              </select>
+            } @else {
+              <input class="form-control" type="text" [id]="id() + '-' + part.key" [disabled]="disabled()" [value]="address()[part.key] ?? ''" (input)="setAddress(part.key, $event)" />
+            }
+          </div>
+        }
+      </div>
+      @if (error()) { <p class="err" role="alert" [id]="errorId()">{{ error() }}</p> }
+    </fieldset>
+  }
+  @case ('repeated_group') {
+    <fieldset class="group" [attr.aria-describedby]="describedBy()">
+      <legend>{{ f.label }}@if (f.required) { <span class="req" aria-hidden="true"> *</span> }@if (f.staffOnly) { <span class="staff-only">Staff only</span> }</legend>
+      @if (f.helpText) { <p class="help">{{ f.helpText }}</p> }
+      <ul class="rows">
+        @for (row of rows(); track $index; let i = $index) {
+          <li class="row">
+            <div class="row-head">
+              <strong>Entry {{ i + 1 }}</strong>
+              @if (!disabled()) {
+                <button type="button" class="link-btn danger" (click)="removeRow(i)">Remove<span class="sr-only"> entry {{ i + 1 }}</span></button>
+              }
+            </div>
+            <div class="row-fields">
+              @for (child of f.children; track child.key) {
+                @if (isVisibleChild(child, row)) {
+                  <ih-form-field
+                    [field]="child"
+                    [value]="row[child.key]"
+                    [error]="rowError(i, child.key)"
+                    [disabled]="disabled()"
+                    [idPrefix]="id() + '-' + i"
+                    (valueChange)="setRowValue(i, child.key, $event)"
+                  ></ih-form-field>
+                }
+              }
+            </div>
+          </li>
+        }
+      </ul>
+      @if (!disabled() && rows().length < maxRows()) {
+        <button type="button" class="btn btn-secondary btn-sm" (click)="addRow()">Add entry</button>
+      }
+      @if (error()) { <p class="err" role="alert" [id]="errorId()">{{ error() }}</p> }
+    </fieldset>
+  }
+  @default {
+    <div class="control">
+      <label [for]="id()">{{ f.label }}@if (f.required) { <span class="req" aria-hidden="true"> *</span> }@if (f.staffOnly) { <span class="staff-only">Staff only</span> }</label>
+      @switch (f.type) {
+        @case ('textarea') {
+          <textarea class="form-control" rows="4" [id]="id()" [disabled]="disabled()" [attr.aria-invalid]="error() ? 'true' : null" [attr.aria-describedby]="describedBy()" [value]="text()" (input)="onInput($event)"></textarea>
+        }
+        @case ('select') {
+          <select class="form-select" [id]="id()" [disabled]="disabled()" [attr.aria-invalid]="error() ? 'true' : null" [attr.aria-describedby]="describedBy()" (change)="onInput($event)">
+            <option value="">Choose…</option>
+            @for (option of f.options; track option.value) { <option [value]="option.value" [selected]="value() === option.value">{{ option.label }}</option> }
+          </select>
+        }
+        @case ('country') {
+          <select class="form-select" [id]="id()" [disabled]="disabled()" [attr.aria-invalid]="error() ? 'true' : null" [attr.aria-describedby]="describedBy()" (change)="onInput($event)">
+            <option value="">Choose a country…</option>
+            @for (c of countries; track c.code) { <option [value]="c.code" [selected]="value() === c.code">{{ c.name }}</option> }
+          </select>
+        }
+        @default {
+          <input class="form-control" [type]="inputType()" [id]="id()" [disabled]="disabled()" [attr.aria-invalid]="error() ? 'true' : null" [attr.aria-describedby]="describedBy()" [value]="text()" (input)="onInput($event)" />
+        }
+      }
+      @if (f.helpText && !error()) { <p class="help">{{ f.helpText }}</p> }
+      @if (error()) { <p class="err" role="alert" [id]="errorId()">{{ error() }}</p> }
+    </div>
+  }
+}

@@ -114,6 +114,14 @@
         >
           Chat
         </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'forms'"
+          (click)="activeTab.set('forms')"
+        >
+          Forms
+        </button>
       </div>
     </div>
 
@@ -360,6 +368,10 @@
 
     @if (activeTab() === 'chat') {
       <ih-chat-tab [caseId]="caseId()"></ih-chat-tab>
+    }
+
+    @if (activeTab() === 'forms') {
+      <ih-forms-tab [caseId]="caseId()"></ih-forms-tab>
     }
 
     @if (activeTab() === 'documents') {
