@@ -122,6 +122,14 @@
         >
           Forms
         </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'petition'"
+          (click)="activeTab.set('petition')"
+        >
+          Petition
+        </button>
       </div>
     </div>
 
@@ -372,6 +380,10 @@
 
     @if (activeTab() === 'forms') {
       <ih-forms-tab [caseId]="caseId()"></ih-forms-tab>
+    }
+
+    @if (activeTab() === 'petition') {
+      <ih-petition-tab [caseId]="caseId()"></ih-petition-tab>
     }
 
     @if (activeTab() === 'documents') {

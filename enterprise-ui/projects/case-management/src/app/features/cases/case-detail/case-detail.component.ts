@@ -15,6 +15,7 @@ import { EvidenceTabComponent } from './evidence-tab/evidence-tab.component';
 import { DocumentsTabComponent } from './documents-tab/documents-tab.component';
 import { ChatTabComponent } from './chat-tab/chat-tab.component';
 import { FormsTabComponent } from './forms-tab/forms-tab.component';
+import { PetitionTabComponent } from './petition-tab/petition-tab.component';
 
 @Component({
   selector: 'ih-case-detail',
@@ -33,7 +34,8 @@ import { FormsTabComponent } from './forms-tab/forms-tab.component';
     EvidenceTabComponent,
     DocumentsTabComponent,
     ChatTabComponent,
-    FormsTabComponent
+    FormsTabComponent,
+    PetitionTabComponent
   ],
   templateUrl: './case-detail.component.html',
   styleUrls: ['../../dashboard/dashboard.scss', './case-detail.component.scss']
@@ -53,7 +55,7 @@ export class CaseDetailComponent implements OnInit {
   isError = signal(false);
   errorMessage = signal('');
 
-  activeTab = signal<'overview' | 'team' | 'activity' | 'tasks' | 'evidence' | 'documents' | 'chat' | 'forms'>('overview');
+  activeTab = signal<'overview' | 'team' | 'activity' | 'tasks' | 'evidence' | 'documents' | 'chat' | 'forms' | 'petition'>('overview');
   caseTasks = signal<any[]>([]);
   isTasksLoading = signal(false);
   // Capability signals
