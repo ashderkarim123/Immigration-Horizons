@@ -6,7 +6,8 @@ const CaseDocument = require('../../../../models/CaseDocument');
 const DocumentRequest = require('../../../../models/DocumentRequest');
 const ConsultationInteraction = require('../../../../models/ConsultationInteraction');
 const Task = require('../../../../models/admin/Task');
-const { countUnreadClientMessages } = require('../../../../services/operationsQueues');
+const { loadInbox } = require('../../../../services/staffChatService');
+const { loadWorkQueues } = require('../../../../services/staffWorkQueues');
 const { accessibleCaseIdFilter } = require('../../../../services/casePolicy');
 const { ACTIVE_UNANSWERED_STATUSES } = require('../../../../utils/interactionConstants');
 const { can } = require('../../../../utils/permissions');
@@ -53,13 +54,15 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
     const caseFilter = canSeeCases ? await accessibleCaseIdFilter(req) : { _id: { $in: [] } };
     const caseScope = caseFilter ?? {};
     const caseIdScope = caseFilter ? { case: caseFilter._id } : {};
+    const taskScope = caseFilter
+      ? { $or: [{ case: null }, { case: caseFilter._id }] }
+      : {};
 
     // For queries, if they can't see queries, scope to empty. If they can but don't have view_all, they see all?
     // Wait, in Next.js `queryScopeFilter` is used. We don't have a `queryScopeFilter` in Express yet, 
     // but the Next.js one scopes queries to `assignee: actor.adminUserId` if they aren't queries.view_all.
-    const canViewAllQueries = can(req, 'queries.view_all');
     const queryScope = canSeeQueries
-      ? (canViewAllQueries ? null : { assignee: req.staff._id })
+      ? await require('../../../../services/interactionPolicy').accessibleInteractionFilter(req)
       : { _id: { $in: [] } };
 
     const scopedQuery = (filter) => (queryScope ? { $and: [filter, queryScope] } : filter);
@@ -95,6 +98,7 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
         : Promise.resolve(0),
 
       Task.countDocuments({
+        ...taskScope,
         assignee: req.staff._id,
         status: { $ne: 'completed' },
         dueDate: { $ne: null, $gte: new Date(), $lte: daysFromNow(UPCOMING_DEADLINE_DAYS) },
@@ -130,10 +134,11 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
           )
         : Promise.resolve(0),
 
-      canSeeChannels && canSeeCases ? countUnreadClientMessages(caseFilter) : Promise.resolve(0),
+      canSeeChannels && canSeeCases ? loadInbox(req, { filter: 'unread', limit: 1 }).then(inbox => inbox.unreadTotal) : Promise.resolve(0),
 
-      Task.countDocuments({ assignee: req.staff._id, status: { $ne: 'completed' } }),
+      Task.countDocuments({ ...taskScope, assignee: req.staff._id, status: { $ne: 'completed' } }),
       Task.countDocuments({
+        ...taskScope,
         assignee: req.staff._id,
         status: { $ne: 'completed' },
         dueDate: { $ne: null, $lt: new Date() },
@@ -150,7 +155,7 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
         .lean();
     }
 
-    const myTasks = await Task.find({ assignee: req.staff._id, status: { $ne: 'completed' } })
+    const myTasks = await Task.find({ ...taskScope, assignee: req.staff._id, status: { $ne: 'completed' } })
       .select('title type status priority dueDate')
       .sort({ dueDate: 1, createdAt: -1 })
       .limit(8)
@@ -161,6 +166,8 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
     res.json({
       data: {
         role: req.staff.role,
+        workspaceLabel: can(req, 'cases.view_all') ? 'Operations overview' : can(req, 'cases.manage') ? 'My case portfolio' : can(req, 'petitions.review') ? 'Review queue' : 'My assigned work',
+        workQueues: (await loadWorkQueues(req)).map(({ items, ...queue }) => ({ ...queue, items: items.slice(0, 5) })),
         myCases,
         unassignedCases,
         upcomingDeadlines,

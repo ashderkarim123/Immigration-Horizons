@@ -265,6 +265,12 @@ router.get('/:id', staffAuthMiddleware, requireApiCapability('cases.view'), asyn
       data: {
         ...serializeCaseDetail(caseDoc),
         workspaceId: workspace._id,
+        availableTabs: [
+          ['overview', 'cases.view'], ['documents', 'documents.view'], ['evidence', 'cases.view'],
+          ['forms', 'forms.view'], ['tasks', 'cases.view'], ['petition', 'petitions.view'],
+          ['packet', 'filing_packets.view'], ['chat', 'channels.view'], ['team', 'cases.view'], ['activity', 'cases.view'],
+        ].filter(([, capability]) => can(req, capability)).map(([tab]) => tab),
+        workSummary: await require('../../../../services/staffWorkQueues').loadWorkQueues(req, { caseId: caseDoc._id }),
         actions: {
           canManageCase: canManage,
           canAssignManager: canAssign,

@@ -1,6 +1,11 @@
 .page-header {
   margin-bottom: var(--ih-space-8);
 }
+.dashboard-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; margin-top: 2rem; }
+.queue-heading { margin-top: 2rem; margin-bottom: 1rem; }
+a.metric-card { text-decoration: none; }
+.section-card { min-width: 0; overflow-x: auto; }
+@media (max-width: 900px) { .dashboard-sections { grid-template-columns: 1fr; } }
 
 .metrics-grid {
   display: grid;

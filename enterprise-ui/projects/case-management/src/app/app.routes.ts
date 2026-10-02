@@ -26,10 +26,24 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },
+      { path: 'consultations', loadComponent: () => import('./features/consultations/consultations').then(m => m.Consultations) },
+      { path: 'consultations/:id', loadComponent: () => import('./features/consultations/consultations').then(m => m.Consultations) },
       {
         path: 'cases',
         loadComponent: () =>
           import('./features/cases/cases').then((m) => m.Cases),
+      },
+      {
+        path: 'cases/new',
+        loadComponent: () => import('./features/cases/create-case').then(m => m.CreateCase),
+      },
+      {
+        path: 'create',
+        loadComponent: () => import('./features/cases/create-work').then(m => m.CreateWork),
+      },
+      {
+        path: 'work-queues',
+        loadComponent: () => import('./features/dashboard/work-queue').then(m => m.WorkQueuePage),
       },
       {
         path: 'cases/:id',

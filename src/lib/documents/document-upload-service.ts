@@ -7,6 +7,8 @@ import { CaseDocument } from "../models/CaseDocument";
 import { DocumentVersion } from "../models/DocumentVersion";
 import { DocumentCategory } from "../models/DocumentCategory";
 import { DocumentRequest } from "../models/DocumentRequest";
+import { WorkspaceMember } from "../models/WorkspaceMember";
+import { documentTypesForCategory } from "../content/document-taxonomy";
 
 import { withOptionalTransaction } from "../transaction";
 import { LocalPrivateStorageProvider } from "./local-private-storage-provider";
@@ -134,6 +136,9 @@ async function validateAndCommit(params: {
 }
 
 export type UploadDocumentParams = {
+  title?: string;
+  description?: string;
+  documentType?: string;
   caseId: string;
   workspaceId: string;
   categoryId: string;
@@ -154,6 +159,10 @@ export async function uploadDocument(params: UploadDocumentParams) {
     await cleanupOnRejection(storageKey);
     return { outcome: "validation_error" as const, errors: { category: "This category is not available for this case." } };
   }
+  if (params.documentType && !documentTypesForCategory(category.templateKey || '').includes(params.documentType)) {
+    await cleanupOnRejection(storageKey);
+    return { outcome: "validation_error" as const, errors: { documentType: "Choose a document type for this category." } };
+  }
   if (category.allowedUploaderTypes !== "both" && category.allowedUploaderTypes !== "client") {
     await cleanupOnRejection(storageKey);
     return { outcome: "validation_error" as const, errors: { category: "This category does not accept client uploads." } };
@@ -166,6 +175,11 @@ export async function uploadDocument(params: UploadDocumentParams) {
       await cleanupOnRejection(storageKey);
       return { outcome: "validation_error" as const, errors: { documentRequest: "Request not found for this case." } };
     }
+    const owner = await WorkspaceMember.exists({ _id: request.requestedFrom, workspace: workspaceId, clientUser: clientUserId, memberType: 'client', status: 'active' });
+    if (!owner || !['open', 'replacement_required'].includes(request.status)) {
+      await cleanupOnRejection(storageKey);
+      return { outcome: "validation_error" as const, errors: { documentRequest: "This request is not available for upload." } };
+    }
     if (String(request.category) !== String(categoryId)) {
       await cleanupOnRejection(storageKey);
       return { outcome: "validation_error" as const, errors: { category: "This upload must use the requested category." } };
@@ -176,7 +190,7 @@ export async function uploadDocument(params: UploadDocumentParams) {
   if (validated.outcome !== "validated") return validated;
 
   const { size, checksum, quarantined, scanStatus, scanMessage, detectedMimeType } = validated;
-  const displayName = sanitizeDisplayName(originalName);
+  const displayName = sanitizeDisplayName(request?.title || params.title?.trim() || originalName);
 
   let document;
   let version;
@@ -193,6 +207,9 @@ export async function uploadDocument(params: UploadDocumentParams) {
               uploadedByClient: clientUserId,
               originalName,
               displayName,
+              description: (params.description || '').trim().slice(0, 2000),
+              documentType: params.documentType || '',
+              subjectClient: clientUserId,
               storageKey,
               mimeType: declaredMimeType,
               detectedMimeType,

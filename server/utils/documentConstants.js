@@ -113,6 +113,8 @@ const DEFAULT_CATEGORY_TEMPLATE = [
   { templateKey: 'uscis_receipts_notices', name: 'USCIS Receipts and Notices', slug: 'uscis-receipts-notices', order: 17, description: 'Official USCIS receipt notices and correspondence.', visibility: 'client_visible', allowedUploaderTypes: 'employee', required: false },
   { templateKey: 'final_decisions', name: 'Final Decisions', slug: 'final-decisions', order: 18, description: 'Final USCIS decision notices.', visibility: 'client_visible', allowedUploaderTypes: 'employee', required: false },
   { templateKey: 'other', name: 'Other', slug: 'other', order: 19, description: 'Documents that do not fit another category.', visibility: 'client_visible', allowedUploaderTypes: 'both', required: false },
+  { templateKey: 'personal_civil_records', name: 'Personal and Civil Documents', slug: 'personal-civil-records', order: 20, description: 'Personal and family civil records.', visibility: 'client_visible', allowedUploaderTypes: 'both', required: false },
+  { templateKey: 'business_financial_records', name: 'Business and Financial Documents', slug: 'business-financial-records', order: 21, description: 'Business registrations, financial statements, tax records, and supporting financial evidence.', visibility: 'client_visible', allowedUploaderTypes: 'both', required: false },
 ];
 
 module.exports = {

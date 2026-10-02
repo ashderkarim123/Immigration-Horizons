@@ -21,6 +21,8 @@ export interface DashboardTask {
 }
 
 export interface DashboardMetrics {
+  workspaceLabel?: string;
+  workQueues?: WorkQueue[];
   role: string;
   myCases: number;
   unassignedCases: number;
@@ -34,4 +36,12 @@ export interface DashboardMetrics {
   myOverdueTasks: number;
   recentCases: DashboardRecentCase[];
   myTasks: DashboardTask[];
+}
+
+export interface WorkQueue {
+  key: string;
+  label: string;
+  tab: string;
+  count: number;
+  items: { caseId: string; title: string; caseNumber: string; count: number }[];
 }

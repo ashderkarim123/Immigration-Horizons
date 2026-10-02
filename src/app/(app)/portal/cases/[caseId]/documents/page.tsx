@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/app/page-header";
 import { DocumentUploadForm } from "@/components/portal/document-upload-form";
 import { requireClient } from "@/lib/auth/current-client";
 import { getAccessibleDocumentCenter } from "@/lib/auth/document-policy";
+import { documentTypesForCategory } from "@/lib/content/document-taxonomy";
+import { maxFileSizeBytes } from "@/lib/documents/document-validation";
 
 export const metadata: Metadata = {
   title: "Case Documents",
@@ -66,7 +68,7 @@ export default async function PortalCaseDocumentsPage({
                 new Date(request.dueDate as unknown as string) < new Date() &&
                 request.status !== "fulfilled";
               return (
-                <li key={String(request._id)} className="border-ink-100 border-t pt-4 first:border-t-0 first:pt-0">
+                <li id={`request-${request._id}`} key={String(request._id)} className="border-ink-100 border-t pt-4 first:border-t-0 first:pt-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-navy-800 text-sm font-semibold">{request.title}</p>
                     {overdue ? (
@@ -78,12 +80,13 @@ export default async function PortalCaseDocumentsPage({
                   {request.instructions ? (
                     <p className="text-ink-500 mt-1 text-sm">{request.instructions}</p>
                   ) : null}
-                  {request.status !== "fulfilled" ? (
+                  {request.clientVisibleComment ? <p className="mt-2 text-sm font-medium text-red-700">{request.clientVisibleComment}</p> : null}
+                  {["open", "replacement_required"].includes(request.status) ? (
                     <div className="mt-3">
-                      <DocumentUploadForm caseId={caseId} requestId={String(request._id)} label="Fulfill request" />
+                      <DocumentUploadForm caseId={caseId} requestId={String(request._id)} maxFileBytes={maxFileSizeBytes()} label={request.status === 'replacement_required' ? 'Upload an updated document' : 'Upload requested document'} />
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm font-medium text-green-700">Fulfilled</p>
+                    <p className="mt-2 text-sm font-medium text-green-700">{request.status === 'fulfilled' ? 'Complete' : 'Received — your team is reviewing it'}</p>
                   )}
                 </li>
               );
@@ -93,9 +96,14 @@ export default async function PortalCaseDocumentsPage({
       ) : null}
 
       <div className="mt-8 flex flex-col gap-6">
+        {categories.some(category => ['both', 'client'].includes(category.allowedUploaderTypes)) ? <section className="rounded-panel border border-ink-200 bg-white p-6">
+          <h2 className="font-display text-base font-semibold text-navy-800">Upload a document</h2>
+          <p className="my-3 text-sm text-ink-500">Choose what you are sharing. Use the requested upload above when your team has asked for a specific document.</p>
+          <DocumentUploadForm caseId={caseId} subjectLabel={[client.firstName, client.lastName].filter(Boolean).join(' ') || 'You'} maxFileBytes={maxFileSizeBytes()}
+            categories={categories.filter(category => ['both', 'client'].includes(category.allowedUploaderTypes)).map(category => ({ id: String(category._id), name: category.name, documentTypes: documentTypesForCategory(category.templateKey || '') }))} />
+        </section> : null}
         {categories.map((category) => {
           const docs = documentsByCategory.get(String(category._id)) ?? [];
-          const canUpload = category.allowedUploaderTypes === "both" || category.allowedUploaderTypes === "client";
           return (
             <div key={String(category._id)} className="rounded-panel border-ink-200 border bg-white p-6 shadow-subtle">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -126,11 +134,6 @@ export default async function PortalCaseDocumentsPage({
                 <p className="text-ink-400 mt-3 text-sm">No documents yet.</p>
               )}
 
-              {canUpload ? (
-                <div className="mt-4">
-                  <DocumentUploadForm caseId={caseId} categoryId={String(category._id)} />
-                </div>
-              ) : null}
             </div>
           );
         })}

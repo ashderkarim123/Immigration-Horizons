@@ -7,10 +7,23 @@
     "DocumentRequest": "document_requests",
     "DocumentAccessLog": "document_access_logs"
   },
-  "categoryVisibilityValues": ["client_visible", "employees_only"],
-  "categoryAllowedUploaderTypeValues": ["client", "employee", "both"],
-  "uploadedByTypeValues": ["client", "employee"],
-  "documentVisibilityValues": ["client_visible", "employees_only"],
+  "categoryVisibilityValues": [
+    "client_visible",
+    "employees_only"
+  ],
+  "categoryAllowedUploaderTypeValues": [
+    "client",
+    "employee",
+    "both"
+  ],
+  "uploadedByTypeValues": [
+    "client",
+    "employee"
+  ],
+  "documentVisibilityValues": [
+    "client_visible",
+    "employees_only"
+  ],
   "documentStatusValues": [
     "uploaded",
     "quarantined",
@@ -21,7 +34,13 @@
     "superseded",
     "archived"
   ],
-  "scanStatusValues": ["clean", "infected", "error", "not_configured", "pending"],
+  "scanStatusValues": [
+    "clean",
+    "infected",
+    "error",
+    "not_configured",
+    "pending"
+  ],
   "documentRequestStatusValues": [
     "open",
     "uploaded",
@@ -30,7 +49,12 @@
     "replacement_required",
     "cancelled"
   ],
-  "activeRequestStatusValues": ["open", "uploaded", "under_review", "replacement_required"],
+  "activeRequestStatusValues": [
+    "open",
+    "uploaded",
+    "under_review",
+    "replacement_required"
+  ],
   "allowedMimeTypes": [
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -39,7 +63,16 @@
     "image/png",
     "image/tiff"
   ],
-  "allowedExtensions": [".pdf", ".docx", ".xlsx", ".jpg", ".jpeg", ".png", ".tif", ".tiff"],
+  "allowedExtensions": [
+    ".pdf",
+    ".docx",
+    ".xlsx",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".tif",
+    ".tiff"
+  ],
   "defaultMaxFileSizeBytes": 26214400,
   "defaultMaxFilesPerRequest": 5,
   "storageKeyPattern": "^[a-f0-9]{48}$",
@@ -62,6 +95,8 @@
     "filing_package",
     "uscis_receipts_notices",
     "final_decisions",
-    "other"
+    "other",
+    "personal_civil_records",
+    "business_financial_records"
   ]
 }

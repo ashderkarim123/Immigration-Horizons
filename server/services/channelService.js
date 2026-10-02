@@ -106,6 +106,12 @@ async function createChannel({ caseId, workspaceId, name, description, channelTy
     console.error('[collaboration] audit failed after channel creation:', err.message);
   }
 
+  // The creating manager must be able to open and manage a restricted
+  // conversation immediately. This grants only their own active case member.
+  if (visibility === 'restricted_members' && actor.type === 'admin_user' && actor.id) {
+    const creator = await WorkspaceMember.findOne({ workspace: workspaceId, adminUser: actor.id, memberType: 'employee', status: 'active' });
+    if (creator) await addChannelMember({ channelId: channel._id, workspaceMemberId: creator._id, actor });
+  }
   return { outcome: 'created', channel };
 }
 

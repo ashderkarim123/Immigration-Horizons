@@ -98,6 +98,10 @@ async function expectCmsDenied(agent, { email, password }) {
 async function loginStaffAs(agent, { email, password }) {
   const response = await agent.post('/api/v1/staff/session/login').set('Origin', 'http://localhost:4000').send({ email, password });
   assert.equal(response.status, 200);
+  for (const method of ['post', 'put', 'patch', 'delete']) {
+    const original = agent[method].bind(agent);
+    agent[method] = url => original(url).set('Origin', 'http://localhost:4000');
+  }
   return agent;
 }
 module.exports = { seedAdminUser, loginAs, expectCmsDenied, loginStaffAs, uniqueEmail, readCsrfToken, attachCsrf };

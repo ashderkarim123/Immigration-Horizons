@@ -98,8 +98,8 @@ async function resolvePrimaryClient(consultation) {
  * second case — enforced by ClientCase's unique-partial `consultation`
  * index as the final guard, not just the up-front existence check.
  */
-async function convertConsultationToCase({ consultationId, input, actor }) {
-  if (!mongoose.Types.ObjectId.isValid(consultationId)) {
+async function provisionCase({ consultationId = null, clientId = null, input, actor }) {
+  if (consultationId ? !mongoose.Types.ObjectId.isValid(consultationId) : !mongoose.Types.ObjectId.isValid(clientId)) {
     return { outcome: 'not_found' };
   }
 
@@ -108,17 +108,17 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
     return { outcome: 'validation_error', errors };
   }
 
-  const consultation = await Consultation.findById(consultationId);
-  if (!consultation) return { outcome: 'not_found' };
+  const consultation = consultationId ? await Consultation.findById(consultationId) : null;
+  if (consultationId && !consultation) return { outcome: 'not_found' };
 
-  if (consultation.convertedCase) {
+  if (consultation && consultation.convertedCase) {
     const existing = await ClientCase.findById(consultation.convertedCase);
     if (existing) return { outcome: 'already_converted', case: existing };
     // Dangling reference (should not happen) — fall through and let the
     // unique-consultation index be the authority below.
   }
 
-  const clientResolution = await resolvePrimaryClient(consultation);
+  const clientResolution = await resolvePrimaryClient(consultation || { clientUser: clientId });
   if (clientResolution.error) {
     return { outcome: 'validation_error', errors: { primaryClient: clientResolution.message } };
   }
@@ -164,7 +164,7 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
             title: input.title.trim(),
             caseType: input.caseType,
             currentStage: 'intake',
-            consultation: consultation._id,
+            consultation: consultation ? consultation._id : null,
             primaryClient: clientUser._id,
             projectManager: projectManager._id,
             createdBy: actor.id,
@@ -256,7 +256,7 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
 
       // Consultation is linked LAST — never marked converted before the
       // case and workspace genuinely exist.
-      await Consultation.updateOne(
+      if (consultation) await Consultation.updateOne(
         { _id: consultation._id, convertedCase: null },
         { $set: { convertedCase: createdCase._id, convertedAt: new Date() } },
         { session: session || undefined },
@@ -276,11 +276,11 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
       // atomicity. Worth a log line since it's a meaningfully different
       // guarantee than the production (Atlas replica-set) path.
       console.warn(
-        `[case-conversion] Ran without a transaction (deployment does not support one) for consultation ${consultation._id}.`,
+        `[case-conversion] Ran without a transaction (deployment does not support one) for case ${caseDoc._id}.`,
       );
     }
   } catch (err) {
-    if (err && err.code === 11000 && err.keyPattern && err.keyPattern.consultation) {
+    if (consultation && err && err.code === 11000 && err.keyPattern && err.keyPattern.consultation) {
       // Lost a race to a concurrent conversion of the same consultation —
       // the other request's case is authoritative; return it rather than
       // erroring.
@@ -296,7 +296,7 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
       caseId: caseDoc._id,
       workspaceId: workspace._id,
       type: 'case_created',
-      message: `Case ${caseDoc.caseNumber} created from consultation "${consultation.name}" by ${actor.name}.`,
+      message: `Case ${caseDoc.caseNumber} created${consultation ? ` from consultation "${consultation.name}"` : ''} by ${actor.name}.`,
       actor,
     });
     await CaseActivity.record({
@@ -348,7 +348,7 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
       });
     }
 
-    await ActivityLog.record(
+    if (consultation) await ActivityLog.record(
       consultation._id,
       'case_converted',
       `Converted to case ${caseDoc.caseNumber} by ${actor.name}.`,
@@ -386,4 +386,10 @@ async function convertConsultationToCase({ consultationId, input, actor }) {
   return { outcome: 'converted', case: caseDoc, workspace };
 }
 
-module.exports = { convertConsultationToCase, validateInput, resolvePrimaryClient };
+async function convertConsultationToCase(options) {
+  return provisionCase({ ...options, clientId: null });
+}
+async function createClientCase(options) {
+  return provisionCase({ ...options, consultationId: null });
+}
+module.exports = { convertConsultationToCase, createClientCase, validateInput, resolvePrimaryClient };

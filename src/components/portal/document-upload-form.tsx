@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, useId, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -16,25 +16,46 @@ export function DocumentUploadForm({
   categoryId,
   requestId,
   replaceDocumentId,
+  categories,
+  subjectLabel = "You",
+  maxFileBytes = 25 * 1024 * 1024,
   label = "Upload",
 }: {
   caseId: string;
   categoryId?: string;
   requestId?: string;
   replaceDocumentId?: string;
+  categories?: { id: string; name: string; documentTypes: string[] }[];
+  subjectLabel?: string;
+  maxFileBytes?: number;
   label?: string;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileId = useId();
+  const [file, setFile] = useState<File | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState(categoryId || "");
+  const general = !requestId && !replaceDocumentId;
+  const category = categories?.find(item => item.id === selectedCategory);
+  const chooseFile = (candidate: File | undefined) => {
+    if (!candidate) return;
+    setFile(null);
+    if (!/\.(pdf|docx|xlsx|jpe?g|png|tiff?)$/i.test(candidate.name)) { setError("Choose a PDF, Word, Excel, or image file."); return; }
+    if (candidate.size > maxFileBytes) { setError(`Choose a file smaller than ${Math.ceil(maxFileBytes / 1024 / 1024)} MB.`); return; }
+    setError(null); setFile(candidate);
+  };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
+    if (!file) { setError("Choose a file to upload."); return; }
     setPending(true);
     setError(null);
 
     const formData = new FormData(event.currentTarget);
+    formData.set("file", file);
     if (categoryId) formData.set("categoryId", categoryId);
     if (replaceDocumentId) formData.set("replaceDocumentId", replaceDocumentId);
 
@@ -51,25 +72,43 @@ export function DocumentUploadForm({
     }
 
     formRef.current?.reset();
+    setFile(null);
     setPending(false);
     router.push(result.redirectTo ?? `/portal/cases/${caseId}/documents`);
     router.refresh();
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-wrap items-center gap-3" noValidate>
+    <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-3" aria-busy={pending}>
       {error ? (
         <p className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert">
           {error}
         </p>
       ) : null}
+      {general ? <label className="text-sm font-medium">Document subject
+        <select name="subject" className="mt-1 block w-full rounded-lg border border-ink-200 p-2" disabled={pending}><option value="self">{subjectLabel}</option></select>
+      </label> : null}
+      {categories ? <>
+        <label className="text-sm font-medium">Category<select name="categoryId" value={selectedCategory} onChange={event => setSelectedCategory(event.target.value)} required disabled={pending} className="mt-1 block w-full rounded-lg border border-ink-200 p-2"><option value="">Choose a category</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label className="text-sm font-medium">Document type<select key={selectedCategory} name="documentType" required disabled={pending || !category} className="mt-1 block w-full rounded-lg border border-ink-200 p-2"><option value="">Choose a document type</option>{category?.documentTypes.map(type => <option key={type} value={type}>{type}</option>)}</select></label>
+      </> : null}
+      {general ? <>
+        <label className="text-sm font-medium">Document title<input name="title" required maxLength={255} disabled={pending} placeholder="For example, current passport" className="mt-1 block w-full rounded-lg border border-ink-200 p-2" /></label>
+        <label className="text-sm font-medium">Description (optional)<textarea name="description" maxLength={2000} disabled={pending} className="mt-1 block w-full rounded-lg border border-ink-200 p-2" /></label>
+      </> : null}
+      <div onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); if (!pending) chooseFile(event.dataTransfer.files[0]); }} className="rounded-lg border-2 border-dashed border-ink-200 p-4">
+      <label htmlFor={fileId} className="mb-2 block text-sm font-medium">Drag a file here, or choose a file</label>
       <input
+        id={fileId}
         type="file"
         name="file"
-        required
+        disabled={pending}
+        onChange={event => chooseFile(event.target.files?.[0])}
         accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.tif,.tiff"
         className="text-ink-600 text-sm"
       />
+      <p className="mt-2 text-xs text-ink-500" role="status">{file ? `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB` : `PDF, Word, Excel, or image. Maximum ${Math.ceil(maxFileBytes / 1024 / 1024)} MB.`}</p>
+      </div>
       <Button type="submit" variant="gold" size="sm" disabled={pending}>
         {pending ? "Uploading…" : label}
       </Button>

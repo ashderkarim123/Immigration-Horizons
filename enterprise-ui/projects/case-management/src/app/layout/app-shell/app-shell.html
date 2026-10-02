@@ -1,16 +1,19 @@
-<div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+<a class="skip-link" href="#staff-content">Skip to content</a>
+<div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()" [class.mobile-menu-open]="mobileMenuOpen()">
+  @if (mobileMenuOpen()) { <button type="button" class="menu-backdrop" aria-label="Close navigation" (click)="mobileMenuOpen.set(false)"></button> }
   <!-- Sidebar -->
-  <aside class="sidebar" role="navigation" aria-label="Main navigation">
+  <aside id="staff-navigation" class="sidebar" aria-label="Main navigation" (click)="navigationClick($event)">
     <div class="sidebar-header">
       <div class="logo">
         <img src="assets/images/logo-header.png" alt="Immigration Horizons" class="logo-icon" style="width: 32px; height: 32px;" />
-        @if (!sidebarCollapsed()) {
+        @if (!sidebarCollapsed() || mobileMenuOpen()) {
           <span class="logo-text">Immigration<br/>Horizons</span>
         }
       </div>
     </div>
 
-    <ih-navigation [collapsed]="sidebarCollapsed()" />
+    <ih-navigation [collapsed]="sidebarCollapsed() && !mobileMenuOpen()" />
+    <button type="button" class="mobile-menu-btn drawer-close" (click)="mobileMenuOpen.set(false)" aria-label="Close navigation">Close</button>
 
     <div class="sidebar-footer">
       <button
@@ -35,8 +38,10 @@
       <div class="header-left">
         <button
           class="mobile-menu-btn"
-          (click)="toggleSidebar()"
+          (click)="mobileMenuOpen.update(toggleMobile)"
           aria-label="Toggle menu"
+          [attr.aria-expanded]="mobileMenuOpen()"
+          aria-controls="staff-navigation"
           type="button"
           style="background: transparent; border: none; cursor: pointer; padding: 0.5rem;">
           <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width: 20px; height: 20px;">
@@ -44,6 +49,12 @@
           </svg>
         </button>
       </div>
+      @if (hasCreateActions()) {
+        <details class="create-menu"><summary class="btn btn-primary">Create New</summary><div class="create-menu-items">
+          @if (auth.capabilities().includes('cases.create')) { <a routerLink="/cases/new">Case</a> }
+          @for (action of createActions; track action.kind) { @if (auth.capabilities().includes(action.capability)) { <a routerLink="/create" [queryParams]="{ kind: action.kind }">{{ action.label }}</a> } }
+        </div></details>
+      }
       <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
         <span class="user-info" style="font-size: 0.875rem; font-weight: 500; color: var(--ih-text-primary);">
           {{ auth.user()?.name }} <span style="color: var(--ih-text-muted); font-weight: 400;">({{ auth.role()?.label }})</span>
@@ -54,7 +65,7 @@
       </div>
     </header>
 
-    <main class="content-area" style="padding: 1.5rem; overflow-y: auto; height: calc(100vh - var(--ih-header-height));">
+    <main id="staff-content" tabindex="-1" class="content-area">
       <router-outlet />
     </main>
   </div>

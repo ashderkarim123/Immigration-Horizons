@@ -98,23 +98,214 @@ export type DefaultCategoryTemplateEntry = {
 };
 
 export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
-  { templateKey: "identity_civil_documents", name: "Identity and Civil Documents", slug: "identity-civil-documents", order: 1, description: "Passports, birth/marriage certificates, and other civil-status records.", visibility: "client_visible", allowedUploaderTypes: "both", required: true },
-  { templateKey: "immigration_history", name: "Immigration History", slug: "immigration-history", order: 2, description: "Prior visas, petitions, status history, and related USCIS correspondence.", visibility: "client_visible", allowedUploaderTypes: "both", required: true },
-  { templateKey: "education_academic_records", name: "Education and Academic Records", slug: "education-academic-records", order: 3, description: "Degrees, transcripts, and academic credential evaluations.", visibility: "client_visible", allowedUploaderTypes: "both", required: false },
-  { templateKey: "employment_professional_experience", name: "Employment and Professional Experience", slug: "employment-professional-experience", order: 4, description: "Resumes, employment letters, and professional experience records.", visibility: "client_visible", allowedUploaderTypes: "both", required: false },
-  { templateKey: "proposed_endeavor_case_strategy", name: "Proposed Endeavor or Case Strategy", slug: "proposed-endeavor-case-strategy", order: 5, description: "Internal case strategy and proposed-endeavor drafting material.", visibility: "employees_only", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "awards_memberships_recognition", name: "Awards, Memberships, and Recognition", slug: "awards-memberships-recognition", order: 6, description: "Awards, honors, and professional membership evidence.", visibility: "client_visible", allowedUploaderTypes: "both", required: false },
-  { templateKey: "publications_citations_judging_media", name: "Publications, Citations, Judging, and Media", slug: "publications-citations-judging-media", order: 7, description: "Publications, citation records, judging evidence, and media coverage.", visibility: "client_visible", allowedUploaderTypes: "both", required: false },
-  { templateKey: "reference_materials", name: "Reference Materials", slug: "reference-materials", order: 8, description: "Supporting reference materials and contact information.", visibility: "client_visible", allowedUploaderTypes: "both", required: false },
-  { templateKey: "recommendation_letters", name: "Recommendation Letters", slug: "recommendation-letters", order: 9, description: "Drafted and finalized recommendation letters.", visibility: "client_visible", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "expert_opinion_letters", name: "Expert Opinion Letters", slug: "expert-opinion-letters", order: 10, description: "Drafted and finalized expert opinion letters.", visibility: "client_visible", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "business_professional_plan", name: "Business Plan or Professional Plan", slug: "business-professional-plan", order: 11, description: "Business plan or professional plan documents.", visibility: "client_visible", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "uscis_forms", name: "USCIS Forms", slug: "uscis-forms", order: 12, description: "Prepared USCIS forms for client review and signature.", visibility: "client_visible", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "petition_letter", name: "Petition Letter", slug: "petition-letter", order: 13, description: "Internal petition-letter drafting material.", visibility: "employees_only", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "exhibits_supporting_evidence", name: "Exhibits and Supporting Evidence", slug: "exhibits-supporting-evidence", order: 14, description: "Numbered exhibits and supporting evidence for the filing.", visibility: "client_visible", allowedUploaderTypes: "both", required: false },
-  { templateKey: "rfe_noid_materials", name: "RFE or NOID Materials", slug: "rfe-noid-materials", order: 15, description: "Requests for Evidence, Notices of Intent to Deny, and responsive materials.", visibility: "client_visible", allowedUploaderTypes: "both", required: false },
-  { templateKey: "filing_package", name: "Filing Package", slug: "filing-package", order: 16, description: "Internal assembled filing package.", visibility: "employees_only", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "uscis_receipts_notices", name: "USCIS Receipts and Notices", slug: "uscis-receipts-notices", order: 17, description: "Official USCIS receipt notices and correspondence.", visibility: "client_visible", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "final_decisions", name: "Final Decisions", slug: "final-decisions", order: 18, description: "Final USCIS decision notices.", visibility: "client_visible", allowedUploaderTypes: "employee", required: false },
-  { templateKey: "other", name: "Other", slug: "other", order: 19, description: "Documents that do not fit another category.", visibility: "client_visible", allowedUploaderTypes: "both", required: false },
+  {
+    "templateKey": "identity_civil_documents",
+    "name": "Identity and Civil Documents",
+    "slug": "identity-civil-documents",
+    "order": 1,
+    "description": "Passports, birth/marriage certificates, and other civil-status records.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": true
+  },
+  {
+    "templateKey": "immigration_history",
+    "name": "Immigration History",
+    "slug": "immigration-history",
+    "order": 2,
+    "description": "Prior visas, petitions, status history, and related USCIS correspondence.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": true
+  },
+  {
+    "templateKey": "education_academic_records",
+    "name": "Education and Academic Records",
+    "slug": "education-academic-records",
+    "order": 3,
+    "description": "Degrees, transcripts, and academic credential evaluations.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "employment_professional_experience",
+    "name": "Employment and Professional Experience",
+    "slug": "employment-professional-experience",
+    "order": 4,
+    "description": "Resumes, employment letters, and professional experience records.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "proposed_endeavor_case_strategy",
+    "name": "Proposed Endeavor or Case Strategy",
+    "slug": "proposed-endeavor-case-strategy",
+    "order": 5,
+    "description": "Internal case strategy and proposed-endeavor drafting material.",
+    "visibility": "employees_only",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "awards_memberships_recognition",
+    "name": "Awards, Memberships, and Recognition",
+    "slug": "awards-memberships-recognition",
+    "order": 6,
+    "description": "Awards, honors, and professional membership evidence.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "publications_citations_judging_media",
+    "name": "Publications, Citations, Judging, and Media",
+    "slug": "publications-citations-judging-media",
+    "order": 7,
+    "description": "Publications, citation records, judging evidence, and media coverage.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "reference_materials",
+    "name": "Reference Materials",
+    "slug": "reference-materials",
+    "order": 8,
+    "description": "Supporting reference materials and contact information.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "recommendation_letters",
+    "name": "Recommendation Letters",
+    "slug": "recommendation-letters",
+    "order": 9,
+    "description": "Drafted and finalized recommendation letters.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "expert_opinion_letters",
+    "name": "Expert Opinion Letters",
+    "slug": "expert-opinion-letters",
+    "order": 10,
+    "description": "Drafted and finalized expert opinion letters.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "business_professional_plan",
+    "name": "Business Plan or Professional Plan",
+    "slug": "business-professional-plan",
+    "order": 11,
+    "description": "Business plan or professional plan documents.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "uscis_forms",
+    "name": "USCIS Forms",
+    "slug": "uscis-forms",
+    "order": 12,
+    "description": "Prepared USCIS forms for client review and signature.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "petition_letter",
+    "name": "Petition Letter",
+    "slug": "petition-letter",
+    "order": 13,
+    "description": "Internal petition-letter drafting material.",
+    "visibility": "employees_only",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "exhibits_supporting_evidence",
+    "name": "Exhibits and Supporting Evidence",
+    "slug": "exhibits-supporting-evidence",
+    "order": 14,
+    "description": "Numbered exhibits and supporting evidence for the filing.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "rfe_noid_materials",
+    "name": "RFE or NOID Materials",
+    "slug": "rfe-noid-materials",
+    "order": 15,
+    "description": "Requests for Evidence, Notices of Intent to Deny, and responsive materials.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "filing_package",
+    "name": "Filing Package",
+    "slug": "filing-package",
+    "order": 16,
+    "description": "Internal assembled filing package.",
+    "visibility": "employees_only",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "uscis_receipts_notices",
+    "name": "USCIS Receipts and Notices",
+    "slug": "uscis-receipts-notices",
+    "order": 17,
+    "description": "Official USCIS receipt notices and correspondence.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "final_decisions",
+    "name": "Final Decisions",
+    "slug": "final-decisions",
+    "order": 18,
+    "description": "Final USCIS decision notices.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "employee",
+    "required": false
+  },
+  {
+    "templateKey": "other",
+    "name": "Other",
+    "slug": "other",
+    "order": 19,
+    "description": "Documents that do not fit another category.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "personal_civil_records",
+    "name": "Personal and Civil Documents",
+    "slug": "personal-civil-records",
+    "order": 20,
+    "description": "Personal and family civil records.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  },
+  {
+    "templateKey": "business_financial_records",
+    "name": "Business and Financial Documents",
+    "slug": "business-financial-records",
+    "order": 21,
+    "description": "Business registrations, financial statements, tax records, and supporting financial evidence.",
+    "visibility": "client_visible",
+    "allowedUploaderTypes": "both",
+    "required": false
+  }
 ];

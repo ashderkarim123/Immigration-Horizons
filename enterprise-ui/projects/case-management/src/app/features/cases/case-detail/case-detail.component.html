@@ -56,91 +56,27 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <div class="workspace-tabs">
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'overview'"
-          (click)="activeTab.set('overview')"
-        >
-          Overview
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'team'"
-          (click)="activeTab.set('team')"
-        >
-          Team ({{ members().length }})
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'tasks'"
-          (click)="activeTab.set('tasks')"
-        >
-          Tasks
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'activity'"
-          (click)="openActivityTab()"
-        >
-          Activity Timeline
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'evidence'"
-          (click)="activeTab.set('evidence')"
-        >
-          Evidence
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'documents'"
-          (click)="activeTab.set('documents')"
-        >
-          Documents
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'chat'"
-          (click)="activeTab.set('chat')"
-        >
-          Chat
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'forms'"
-          (click)="activeTab.set('forms')"
-        >
-          Forms
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'petition'"
-          (click)="activeTab.set('petition')"
-        >
-          Petition
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'packet'"
-          (click)="activeTab.set('packet')"
-        >
-          Filing Packet
-        </button>
-      </div>
+      <nav class="workflow-navigation" aria-label="Case workflow">
+        @for (group of workflowGroups; track group.label) {
+          <div class="workflow-group"><span class="workflow-group-label">{{ group.label }}</span><div>
+            @for (tab of group.tabs; track tab.key) {
+              @if (!c.availableTabs || c.availableTabs.includes(tab.key)) {
+                <button type="button" class="tab-btn" [class.active]="activeTab() === tab.key" [attr.aria-current]="activeTab() === tab.key ? 'page' : null" (click)="selectTab(tab.key)">{{ tab.label }}</button>
+              }
+            }
+          </div></div>
+        }
+      </nav>
+      <p class="case-sub">Target filing: {{ c.targetFilingDate ? (c.targetFilingDate | date:'mediumDate') : 'Not scheduled' }}</p>
     </div>
 
+    @if (activeTab() === 'overview' && c.workSummary?.length) {
+      <h2>Next actions</h2><div class="metrics-grid case-work-summary">
+        @for (work of c.workSummary; track work.key) {
+          <button type="button" class="metric-card" (click)="selectTab(work.tab)"><div class="metric-value">{{ work.count }}</div><div class="metric-label">{{ work.label }}</div></button>
+        }
+      </div>
+    }
     <!-- Tab 1: Overview -->
     @if (activeTab() === 'overview') {
       <div class="overview-grid">

@@ -17,6 +17,7 @@ import { SkeletonComponent } from '../../../../shared/skeleton.component';
 import { EmptyStateComponent } from '../../../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../../../shared/error-state.component';
 import { mergeMessages, pollDelay, sortMessages } from './chat-state';
+import { ChannelManagement } from './channel-management';
 
 const POLL_MS = 4000;
 const MAX_BACKOFF_MS = 60_000;
@@ -39,7 +40,7 @@ export const AUDIENCE_LABELS: Record<ChatAudience, string> = {
 @Component({
   selector: 'ih-chat-tab',
   standalone: true,
-  imports: [DatePipe, FormsModule, SkeletonComponent, EmptyStateComponent, ErrorStateComponent],
+  imports: [DatePipe, FormsModule, SkeletonComponent, EmptyStateComponent, ErrorStateComponent, ChannelManagement],
   templateUrl: './chat-tab.component.html',
   styleUrls: ['./chat-tab.component.scss'],
 })
@@ -55,6 +56,8 @@ export class ChatTabComponent implements OnInit {
   readonly audienceLabels = AUDIENCE_LABELS;
 
   channels = signal<ChatChannel[]>([]);
+  canCreateChannel = signal(false);
+  canReorderChannels = signal(false);
   selectedChannelId = signal<string | null>(null);
   isLoading = signal(true);
   isError = signal(false);
@@ -123,6 +126,8 @@ export class ChatTabComponent implements OnInit {
     this.api.get<ChatChannelList>(`/staff/cases/${this.caseId()}/channels`).subscribe({
       next: (res) => {
         this.channels.set(res.data.channels);
+        this.canCreateChannel.set(res.data.capabilities?.canCreateChannel ?? false);
+        this.canReorderChannels.set(res.data.capabilities?.canReorderChannels ?? false);
         this.isLoading.set(false);
         if (selectFirst && res.data.channels.length) {
           const preferred =

@@ -3,7 +3,8 @@ import { ApiService } from '../../../core/api/api.service';
 import { apiErrorMessage } from '../../../core/api/api-error';
 import { CaseActivityItem, CaseDetail, CaseMember, MemberOption, Paginated } from '../../../core/api/case.types';
 import { ToastService } from '../../../shared/toast.service';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CASE_STAGES } from '../../../core/api/case-catalog';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatusBadgeComponent } from '../../../shared/status-badge.component';
@@ -47,6 +48,20 @@ const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 
 export class CaseDetailComponent implements OnInit {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  workflowGroups = [
+    { label: 'Overview', tabs: [{ key: 'overview', label: 'Overview' }] },
+    { label: 'Client inputs', tabs: [{ key: 'documents', label: 'Documents' }, { key: 'evidence', label: 'Evidence' }, { key: 'forms', label: 'Smart forms' }] },
+    { label: 'Case work', tabs: [{ key: 'tasks', label: 'Tasks' }, { key: 'petition', label: 'Petition' }, { key: 'packet', label: 'Filing packet' }] },
+    { label: 'Communication', tabs: [{ key: 'chat', label: 'Messages' }] },
+    { label: 'Management', tabs: [{ key: 'team', label: 'Team' }, { key: 'activity', label: 'Activity' }] },
+  ];
+  selectTab(tab: string) {
+    if (!(TABS as readonly string[]).includes(tab)) return;
+    this.activeTab.set(tab as (typeof TABS)[number]);
+    this.router.navigate([], { relativeTo: this.route, queryParams: { tab, channel: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    if (tab === 'activity') this.openActivityTab();
+  }
   private toast = inject(ToastService);
 
   caseId = signal<string>('');
@@ -100,17 +115,7 @@ export class CaseDetailComponent implements OnInit {
   clientUpdateMessage = signal('');
   isSubmitting = signal(false);
 
-  validStages = [
-    { value: 'initial_review', label: 'Initial Review' },
-    { value: 'document_collection', label: 'Document Collection' },
-    { value: 'drafting', label: 'Drafting' },
-    { value: 'client_review', label: 'Client Review' },
-    { value: 'ready_to_file', label: 'Ready to File' },
-    { value: 'filed', label: 'Filed' },
-    { value: 'decision_received', label: 'Decision Received' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'archived', label: 'Archived' }
-  ];
+  validStages = CASE_STAGES;
 
   /** Employee-assignable subset of WORKSPACE_ROLES; project_manager is set via Change PM. */
   memberRoles = [

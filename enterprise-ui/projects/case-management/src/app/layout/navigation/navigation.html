@@ -6,6 +6,8 @@
           class="nav-link"
           [routerLink]="item.path"
           routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          [attr.aria-label]="item.label"
           [attr.title]="collapsed() ? item.label : null">
           <span class="nav-icon" aria-hidden="true">
             <ih-icon [name]="item.icon" [size]="20" />

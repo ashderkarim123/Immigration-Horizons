@@ -46,6 +46,8 @@ export interface CaseActions {
 }
 
 export interface CaseDetail extends Omit<CaseListItem, 'primaryClient'> {
+  availableTabs?: string[];
+  workSummary?: import('./dashboard.types').WorkQueue[];
   createdAt: string;
   workspaceId: string;
   primaryClient: (CaseClientRef & { firstName: string; lastName: string }) | null;
