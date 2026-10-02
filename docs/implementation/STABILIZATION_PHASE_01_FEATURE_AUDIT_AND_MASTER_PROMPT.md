@@ -8,6 +8,37 @@
 
 ---
 
+## Product target reference — read before UX or Smart Forms changes
+
+The long-term product target is defined in:
+
+~~~text
+docs/implementation/REFERENCE_UX_AND_USCIS_AUTOFILL_PRODUCT_SPEC.md
+~~~
+
+That specification is based on the user-supplied 8am DocketWise reference screenshots and the desired workflow:
+
+~~~text
+client enters information once
++ categorized/requested document collection
+-> normalized reusable immigration data
+-> staff review
+-> automatic population of supported official USCIS forms
+-> staff form review
+-> immutable approved form versions
+-> filing packet
+~~~
+
+During Stabilization Phase 01:
+
+- align the Staff/Client UX shell with that target;
+- preserve and repair current Smart Forms;
+- prefer stable canonical field keys for new questionnaire work;
+- do not build a throwaway UI architecture that will prevent participant-aware autofill later;
+- do not implement the full USCIS PDF mapping/generation engine inside stabilization unless separately approved;
+- do not copy third-party branding/assets/pixel-perfect UI; use Immigration Horizons branding with equivalent workflow clarity.
+
+---
 ## 1. Why this stabilization phase exists
 
 Do not begin Phase 11 USCIS Tracking yet.
