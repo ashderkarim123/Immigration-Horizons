@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <h1>Admin Users</h1>
-    <p class="page-subtitle"><%= users.length %> users</p>
+    <p class="page-subtitle"><%= users.length %> users — admins and employees share these accounts and sign in with the email shown here</p>
   </div>
   <div class="page-actions">
     <% if (can('users.manage')) { %>
@@ -9,6 +9,28 @@
     <% } %>
   </div>
 </div>
+
+<% if (notice) { %>
+  <div class="admin-card" role="status" style="border-left:4px solid <%= notice.type === 'error' ? '#b91c1c' : '#15803d' %>;margin-bottom:1rem">
+    <div class="admin-card-body"><%= notice.message %></div>
+  </div>
+<% } %>
+
+<% if (tempCredential) { %>
+  <div class="admin-card" role="alert" style="border-left:4px solid #b45309;margin-bottom:1rem">
+    <div class="admin-card-body">
+      <h3 style="margin-top:0"><%= tempCredential.purpose === 'reset' ? 'Password reset' : 'Account created' %> for <%= tempCredential.name %></h3>
+      <p>
+        Give <strong><%= tempCredential.email %></strong> this temporary password. <strong>It is shown only once</strong> and cannot be
+        retrieved later — if it is lost, use <em>Reset password</em> again. They will be asked to choose their own at first sign-in.
+      </p>
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <input id="temp-password" type="text" readonly value="<%= tempCredential.password %>" class="form-control" style="max-width:22rem;font-family:monospace" onclick="this.select()" aria-label="Temporary password">
+        <button type="button" class="btn btn-sm btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('temp-password').value).then(function(){this.textContent='Copied'}.bind(this))"><i class="fas fa-copy"></i> Copy</button>
+      </div>
+    </div>
+  </div>
+<% } %>
 
 <div class="admin-card">
   <div class="admin-card-body no-padding">
@@ -23,17 +45,35 @@
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
-            <tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th class="shrink">Actions</th></tr>
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th class="shrink">Actions</th></tr>
           </thead>
           <tbody>
             <% users.forEach(function(u) { %>
+              <% var isSelf = String(u._id) === String(adminUser.id || ''); %>
+              <% var locked = u.lockedUntil && new Date(u.lockedUntil) > now; %>
+              <% var canTouch = can('users.manage') && (u.role !== 'super_admin' || currentRole === 'super_admin'); %>
               <tr>
-                <td><span class="cell-title"><%= u.name %></span></td>
+                <td>
+                  <span class="cell-title"><%= u.name %></span>
+                  <% if (u.jobTitle) { %><div class="form-hint"><%= u.jobTitle %></div><% } %>
+                </td>
                 <td><%= u.email %></td>
                 <td><span class="badge badge-published"><%= (roleLabels && roleLabels[u.role]) || u.role %></span></td>
-                <td><%= u.isActive ? '<i class="fas fa-check" style="color:#15803d"></i>' : '—' %></td>
+                <td>
+                  <% if (!u.isActive) { %><span class="badge">Disabled</span>
+                  <% } else if (locked) { %><span class="badge" style="background:#fee2e2;color:#b91c1c">Locked</span>
+                  <% } else if (u.mustChangePassword) { %><span class="badge" style="background:#fef3c7;color:#b45309">Must set password</span>
+                  <% } else { %><span class="badge badge-published">Active</span><% } %>
+                </td>
                 <td class="cell-actions">
-                  <% if (can('users.delete') && String(u._id) !== String(adminUser.id || '')) { %>
+                  <% if (canTouch) { %>
+                    <a href="/admin/users/<%= u._id %>/edit" class="btn btn-sm btn-ghost" title="Edit name, email, role"><i class="fas fa-pen"></i> Edit</a>
+                    <form action="/admin/users/<%= u._id %>/reset-credentials" method="POST" onsubmit="return confirm('Reset the password for <%= u.name.replace(/[\\\'"]/g, '') %>? Their current password stops working and they are signed out.');" style="display:inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button type="submit" class="btn btn-sm btn-ghost" title="Reset password"><i class="fas fa-key"></i> Reset password</button>
+                    </form>
+                  <% } %>
+                  <% if (canTouch && can('users.delete') && !isSelf) { %>
                     <form action="/admin/users/<%= u._id %>?_method=DELETE" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline">
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                       <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>

@@ -1,41 +1,64 @@
 <div class="page-header">
   <div>
-    <h1>New Admin User</h1>
-    <p class="page-subtitle">Create a named, role-based admin account</p>
+    <h1><%= editMode ? 'Edit User' : 'New Admin User' %></h1>
+    <p class="page-subtitle">
+      <%= editMode ? 'Change the name, sign-in email, role or access. To change a password use Reset password on the Users list.'
+                   : 'Create a named, role-based account. A temporary password is generated and shown once after you save.' %>
+    </p>
   </div>
 </div>
 
+<% if (error) { %>
+  <div class="admin-card" role="alert" style="border-left:4px solid #b91c1c;margin-bottom:1rem">
+    <div class="admin-card-body"><%= error %></div>
+  </div>
+<% } %>
+
 <div class="admin-card">
   <div class="admin-card-body">
-    <form action="/admin/users" method="POST" class="admin-form">
+    <form action="<%= editMode ? '/admin/users/' + user._id + '?_method=PATCH' : '/admin/users' %>" method="POST" class="admin-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="admin-form-grid">
         <div class="admin-form-group">
-          <label>Name</label>
-          <input type="text" name="name" class="form-control" value="<%= user ? user.name : '' %>" required>
+          <label for="user-name">Name</label>
+          <input id="user-name" type="text" name="name" class="form-control" value="<%= user ? user.name : '' %>" required>
         </div>
         <div class="admin-form-group">
-          <label>Email</label>
-          <input type="email" name="email" class="form-control" value="<%= user ? user.email : '' %>" required>
+          <label for="user-email">Email (sign-in)</label>
+          <input id="user-email" type="email" name="email" class="form-control" value="<%= user ? user.email : '' %>" required>
+          <% if (editMode) { %><span class="form-hint">Changing this signs the person out; they sign in with the new address next time.</span><% } %>
         </div>
         <div class="admin-form-group">
-          <label>Password</label>
-          <input type="password" name="password" class="form-control" required>
-        </div>
-        <div class="admin-form-group">
-          <label>Role</label>
-          <select name="role" class="form-control">
+          <label for="user-role">Role</label>
+          <select id="user-role" name="role" class="form-control">
             <% Object.keys(roleLabels).forEach(function(r) { %>
               <% if (r === 'super_admin' && currentRole !== 'super_admin') return; %>
               <option value="<%= r %>" <%= user && user.role === r ? 'selected' : '' %>><%= roleLabels[r] %></option>
             <% }); %>
           </select>
-          <span class="form-hint">Petition-production roles (Petition Writer, Business Plan Specialist, etc.) are what appear in the lead Assignment panel.</span>
+          <span class="form-hint">Super Admin has every capability across the admin CMS and the staff app. Petition-production roles appear in the lead Assignment panel.</span>
         </div>
+        <div class="admin-form-group">
+          <label for="user-job">Job title</label>
+          <input id="user-job" type="text" name="jobTitle" class="form-control" value="<%= user && user.jobTitle ? user.jobTitle : '' %>">
+        </div>
+        <div class="admin-form-group">
+          <label for="user-dept">Department</label>
+          <input id="user-dept" type="text" name="department" class="form-control" value="<%= user && user.department ? user.department : '' %>">
+        </div>
+        <% if (editMode) { %>
+          <div class="admin-form-group">
+            <label for="user-active">Account</label>
+            <select id="user-active" name="isActive" class="form-control">
+              <option value="true" <%= user.isActive !== false && user.isActive !== 'false' ? 'selected' : '' %>>Active</option>
+              <option value="false" <%= user.isActive === false || user.isActive === 'false' ? 'selected' : '' %>>Disabled (cannot sign in)</option>
+            </select>
+          </div>
+        <% } %>
       </div>
       <div class="admin-form-actions">
         <a href="/admin/users" class="btn btn-ghost">Cancel</a>
-        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create User</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <%= editMode ? 'Save Changes' : 'Create User' %></button>
       </div>
     </form>
   </div>
