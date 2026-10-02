@@ -159,4 +159,15 @@ A local `next build` is blocked on this machine (Application Control blocks SWC)
 
 ## Final status
 
-_Filled in after the push._
+**Release candidate SHA: `96cf54970cb2b92fac7467d9cb5d441b557bdc03`** — GitHub Actions **CI #84**, run ID **36959316149**: **success**.
+
+| Job | Conclusion |
+|---|---|
+| Tests (Next.js app) | success (the full root suite, including the fixed release-gate test) |
+| Lint · types · build | success (the production Next.js build) |
+| Enterprise UI (Angular) | success — including the new *Verify the staff build is releasable under /staff/* step |
+| Tests (admin CMS) | success |
+
+Implementation commit: `96cf549` feat(release): prepare Angular staff production cutover (Release Gate 01) — authored as Ashder Karim. Green on the first push; no repair commit was needed.
+
+This report's final-status section is recorded in a follow-up docs-only commit; see `git log` for its SHA. **Production actions performed: none.** Nothing was merged to `main` or deployed, and Phase 11 (USCIS Tracking) was not started. **Next step: explicit release approval**, then the runbook from §1.
