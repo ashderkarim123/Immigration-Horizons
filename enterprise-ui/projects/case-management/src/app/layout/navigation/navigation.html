@@ -1,0 +1,20 @@
+<nav class="nav-menu" aria-label="Staff navigation">
+  <ul class="nav-list" role="list">
+    @for (item of navItems(); track item.path) {
+      <li>
+        <a
+          class="nav-link"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [attr.title]="collapsed() ? item.label : null">
+          <span class="nav-icon" aria-hidden="true">
+            <ih-icon [name]="item.icon" [size]="20" />
+          </span>
+          @if (!collapsed()) {
+            <span class="nav-label">{{ item.label }}</span>
+          }
+        </a>
+      </li>
+    }
+  </ul>
+</nav>

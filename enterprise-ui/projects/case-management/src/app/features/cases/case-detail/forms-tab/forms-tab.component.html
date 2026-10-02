@@ -1,0 +1,174 @@
+@if (isLoading() && !form()) {
+  <ih-skeleton [rows]="4" rowHeight="4rem"></ih-skeleton>
+} @else if (loadError() === 'forbidden') {
+  <ih-empty-state title="Forms aren’t available to you" description="You don’t have access to this case’s forms. Ask a project manager if you need it."></ih-empty-state>
+} @else if (loadError() === 'error') {
+  <ih-error-state title="Forms unavailable" message="The case forms could not be loaded." (retry)="loadList()"></ih-error-state>
+} @else if (form(); as current) {
+  <!-- ---------------------------------------------------------------- editor -->
+  <div class="editor">
+    <header class="editor-head">
+      <button type="button" class="link-btn" (click)="back()">← All forms</button>
+      <h3>{{ current.title }}</h3>
+      <ih-status-badge [status]="statusLabels[current.status]" [variant]="statusVariants[current.status]"></ih-status-badge>
+      <span class="muted">Revision {{ current.revision }}</span>
+      @if (current.actions.canEdit) {
+        <span role="status" aria-live="polite" class="save-state" [class.bad]="saveState() === 'error' || saveState() === 'conflict'">{{ saveLabels[saveState()] }}</span>
+      }
+    </header>
+
+    <div class="progress" role="progressbar" aria-label="Required questions answered" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="current.progress.percent">
+      <div class="progress-bar" [style.width.%]="current.progress.percent"></div>
+    </div>
+    <p class="muted">{{ current.progress.completedRequired }} of {{ current.progress.totalRequired }} client-required questions answered</p>
+
+    @if (banner()) {
+      <div class="banner error" role="alert">
+        <span>{{ banner() }}</span>
+        @if (saveState() === 'conflict') {
+          <button type="button" class="btn btn-primary btn-sm" (click)="reload()">Reload latest version</button>
+        }
+      </div>
+    }
+    @if (saveState() === 'error') {
+      <div class="banner warn" role="alert">
+        <span>Your latest changes are not saved yet.</span>
+        <button type="button" class="link-btn" (click)="retrySave()">Retry</button>
+      </div>
+    }
+
+    @if (current.clientReviewNote || current.internalReviewNote) {
+      <section class="notes" aria-label="Review notes">
+        @if (current.clientReviewNote) {
+          <div class="note client"><strong>Note shown to the client</strong><p>{{ current.clientReviewNote }}</p></div>
+        }
+        @if (current.internalReviewNote) {
+          <div class="note internal"><strong>Internal note (staff only)</strong><p>{{ current.internalReviewNote }}</p></div>
+        }
+      </section>
+    }
+
+    @if (current.status === 'locked') {
+      <p class="banner info">This form is locked at revision {{ current.lockedRevision }} and can no longer be changed.</p>
+    } @else if (current.status === 'approved') {
+      <p class="banner info">Approved. Return it for changes if it needs to be edited again, or lock it as final.</p>
+    }
+
+    <div class="editor-body">
+      <nav class="section-nav" aria-label="Form sections">
+        @for (section of visibleSections(); track section.key) {
+          <button type="button" class="link-btn" (click)="scrollTo(section.key)">{{ section.title }}</button>
+        }
+      </nav>
+
+      <form class="sections" (submit)="$event.preventDefault()" novalidate>
+        @for (section of visibleSections(); track section.key) {
+          <fieldset class="section" [id]="'form-section-' + section.key">
+            <legend>{{ section.title }}</legend>
+            @for (field of section.fields; track field.key) {
+              <ih-form-field
+                [field]="field"
+                [value]="answers()[field.key]"
+                [error]="errorFor(field.key)"
+                [errors]="errors()"
+                [disabled]="!editable()"
+                (valueChange)="setAnswer(field.key, $event)"
+              ></ih-form-field>
+            }
+          </fieldset>
+        }
+      </form>
+    </div>
+
+    <!-- review controls: shown only when the server says the actor may use them -->
+    <footer class="actions">
+      @if (current.actions.canSubmit) {
+        <button type="button" class="btn btn-primary" [disabled]="busy() || saveState() === 'conflict'" (click)="submit()">Submit for review</button>
+      }
+      @if (current.actions.canReturn) {
+        <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="startReview('return')">Return for changes</button>
+      }
+      @if (current.actions.canApprove) {
+        <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="startReview('approve')">Approve</button>
+      }
+      @if (current.actions.canLock) {
+        <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="showLockConfirm.set(true)">Lock as final</button>
+      }
+      <button type="button" class="link-btn" (click)="toggleAudit()" [attr.aria-expanded]="audit() !== null">{{ audit() ? 'Hide history' : 'Show history' }}</button>
+    </footer>
+
+    @if (reviewAction(); as action) {
+      <section class="review-panel" aria-label="Review">
+        <h4>{{ action === 'return' ? 'Return for changes' : 'Approve form' }}</h4>
+        @if (action === 'return') {
+          <label for="client-note">Note for the client <span class="req" aria-hidden="true">*</span></label>
+          <textarea id="client-note" class="form-control" rows="3" maxlength="2000" [ngModel]="clientNote()" (ngModelChange)="clientNote.set($event)" [attr.aria-invalid]="errorFor('clientReviewNote') ? 'true' : null"></textarea>
+          @if (errorFor('clientReviewNote')) { <p class="err" role="alert">{{ errorFor('clientReviewNote') }}</p> }
+          <p class="muted">The client will see this note. Don’t include internal comments.</p>
+        }
+        <label for="internal-note">Internal note (staff only, optional)</label>
+        <textarea id="internal-note" class="form-control" rows="2" maxlength="2000" [ngModel]="internalNote()" (ngModelChange)="internalNote.set($event)"></textarea>
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" (click)="reviewAction.set(null)">Cancel</button>
+          <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="confirmReview()">{{ action === 'return' ? 'Return to client' : 'Approve' }}</button>
+        </div>
+      </section>
+    }
+
+    @if (audit(); as events) {
+      <section class="history" aria-label="Form history">
+        <h4>History</h4>
+        <ol>
+          @for (event of events; track event.id) {
+            <li>
+              <strong>{{ auditLabel(event) }}</strong>
+              <span class="muted"> · {{ event.actorName || event.actorType }} · {{ event.createdAt | date: 'MMM d, y, h:mm a' }}</span>
+              @if (event.changedFieldKeys.length) { <span class="muted"> · {{ event.changedFieldKeys.length }} field(s)</span> }
+            </li>
+          }
+        </ol>
+      </section>
+    }
+  </div>
+
+  <ih-confirm-dialog
+    [isOpen]="showLockConfirm()"
+    title="Lock this form?"
+    message="Locking makes the reviewed answers final. Nobody, including the client, can edit a locked form."
+    confirmText="Lock form"
+    (confirmed)="lock()"
+    (cancelled)="showLockConfirm.set(false)"
+  ></ih-confirm-dialog>
+} @else {
+  <!-- ------------------------------------------------------------------ list -->
+  @let items = list()?.forms ?? [];
+  @if (items.length === 0) {
+    <ih-empty-state title="No forms on this case yet" description="Add the intake forms for this case so the client and team can start filling them in.">
+      @if (list()?.canProvision) {
+        <button type="button" class="btn btn-primary" [disabled]="isProvisioning()" (click)="provision()">{{ isProvisioning() ? 'Adding…' : 'Add case forms' }}</button>
+      }
+    </ih-empty-state>
+  } @else {
+    <ul class="form-list">
+      @for (item of items; track item.id) {
+        <li class="form-card">
+          <div class="card-head">
+            <h3>{{ item.title }}</h3>
+            <ih-status-badge [status]="statusLabels[item.status]" [variant]="statusVariants[item.status]"></ih-status-badge>
+          </div>
+          <div class="progress" role="progressbar" [attr.aria-label]="item.title + ' progress'" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="item.progress.percent">
+            <div class="progress-bar" [style.width.%]="item.progress.percent"></div>
+          </div>
+          <p class="muted">
+            {{ item.progress.completedRequired }} of {{ item.progress.totalRequired }} required answered
+            @if (item.updatedAt) { · updated {{ item.updatedAt | date: 'MMM d, y' }} }
+          </p>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="open(item)">Open form</button>
+        </li>
+      }
+    </ul>
+    @if (list()?.canProvision) {
+      <button type="button" class="link-btn" [disabled]="isProvisioning()" (click)="provision()">Add any missing case forms</button>
+    }
+  }
+}

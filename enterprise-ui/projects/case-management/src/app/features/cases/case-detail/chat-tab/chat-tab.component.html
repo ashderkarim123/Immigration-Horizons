@@ -1,0 +1,209 @@
+@if (isLoading()) {
+  <ih-skeleton [rows]="6" rowHeight="3rem"></ih-skeleton>
+} @else if (isError()) {
+  <ih-error-state title="Chat unavailable" message="The case conversations could not be loaded." (retry)="loadChannels(true)"></ih-error-state>
+} @else if (channels().length === 0) {
+  <ih-empty-state title="No chat channels yet" description="This case has no conversation channels. Set up the default channels to start chatting with the client and team."></ih-empty-state>
+  <button type="button" class="btn btn-primary" (click)="initializeChannels()">Set up chat channels</button>
+} @else {
+  <div class="chat-layout">
+    <!-- Channels -->
+    <nav class="chat-channels" aria-label="Chat channels">
+      @for (channel of channels(); track channel.id) {
+        <button
+          type="button"
+          class="channel-btn"
+          [class.active]="channel.id === selectedChannelId()"
+          [attr.aria-current]="channel.id === selectedChannelId() ? 'true' : null"
+          (click)="selectChannel(channel.id)"
+        >
+          <span class="channel-name">{{ channel.name }}</span>
+          @if (channel.unreadCount > 0) {
+            <span class="unread" [attr.aria-label]="channel.unreadCount + ' unread'">{{ channel.unreadCount }}</span>
+          }
+          <span class="audience" [class]="'audience audience-' + channel.audience">{{ audienceLabels[channel.audience] }}</span>
+        </button>
+      }
+    </nav>
+
+    <!-- Timeline -->
+    <section class="chat-main" aria-label="Conversation">
+      @if (selectedChannel(); as channel) {
+        <header class="chat-header">
+          <h3>{{ channel.name }}</h3>
+          <span [class]="'audience audience-' + channel.audience">{{ audienceLabels[channel.audience] }}</span>
+          @if (channel.description) {
+            <p class="muted">{{ channel.description }}</p>
+          }
+        </header>
+
+        @if (syncError()) {
+          <div class="sync-error" role="alert">
+            <span>{{ syncError() }}</span>
+            <button type="button" class="link-btn" (click)="retrySync()">Retry</button>
+          </div>
+        }
+
+        <div class="timeline" role="log" aria-live="polite" aria-label="Messages">
+          @if (nextCursor()) {
+            <button type="button" class="link-btn center" (click)="loadOlder()">Load earlier messages</button>
+          }
+          @for (message of rootMessages(); track message.id) {
+            <article class="msg" [class.own]="message.isOwn" [class.deleted]="message.deletedAt">
+              <header>
+                <strong>{{ message.isOwn ? 'You' : message.senderDisplayName }}</strong>
+                <span class="sender-type">{{ message.senderType === 'client' ? 'Client' : message.senderType === 'system' ? 'System' : 'Team' }}</span>
+                <time [attr.datetime]="message.createdAt">{{ message.createdAt | date: 'MMM d, h:mm a' }}</time>
+                @if (message.editedAt && !message.deletedAt) {
+                  <span class="muted">(edited)</span>
+                }
+              </header>
+
+              @if (editing()?.id === message.id) {
+                <textarea class="form-control" rows="3" maxlength="8000" aria-label="Edit message" [ngModel]="editing()!.body" (ngModelChange)="editing.set({ id: message.id, body: $event })"></textarea>
+                <div class="row-actions">
+                  <button type="button" class="btn btn-primary btn-sm" (click)="saveEdit(message)">Save</button>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="editing.set(null)">Cancel</button>
+                </div>
+              } @else {
+                <p class="body">{{ message.body }}</p>
+              }
+
+              @if (message.attachments.length) {
+                <ul class="attachments">
+                  @for (a of message.attachments; track a.documentId) {
+                    <li>
+                      @if (a.downloadable !== false) {
+                        <button type="button" class="link-btn" (click)="downloadAttachment(a)">{{ a.displayName }}</button>
+                      } @else {
+                        <span>{{ a.displayName }} (unavailable)</span>
+                      }
+                      <span class="muted">{{ a.extension?.toUpperCase() }} {{ fileSize(a.size) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+
+              <footer class="row-actions">
+                <button type="button" class="link-btn" (click)="openThread(message)">
+                  {{ message.replyCount ? message.replyCount + (message.replyCount === 1 ? ' reply' : ' replies') : 'Reply' }}
+                </button>
+                @if (message.canEdit && editing()?.id !== message.id) {
+                  <button type="button" class="link-btn" (click)="startEdit(message)">Edit</button>
+                }
+                @if (message.canDelete) {
+                  <button type="button" class="link-btn danger" (click)="remove(message)">Delete</button>
+                }
+                @if (message.canRestore) {
+                  <button type="button" class="link-btn" (click)="restore(message)">Restore</button>
+                }
+              </footer>
+            </article>
+          } @empty {
+            <p class="muted">No messages yet.</p>
+          }
+        </div>
+
+        @if (channel.canSend) {
+          <form class="composer" (ngSubmit)="send()">
+            @if (channel.clientVisible) {
+              <p class="audience-note" role="note"><strong>Client-visible.</strong> The client can read this message and any attachments.</p>
+            } @else {
+              <p class="audience-note internal" role="note">{{ audienceLabels[channel.audience] }} — clients cannot see this channel.</p>
+            }
+            @if (composeError()) {
+              <p class="compose-error" role="alert">{{ composeError() }}</p>
+            }
+            <textarea
+              class="form-control"
+              name="text"
+              rows="3"
+              maxlength="8000"
+              aria-label="Message"
+              placeholder="Write a message…"
+              [ngModel]="text()"
+              (ngModelChange)="text.set($event)"
+              (keydown.control.enter)="send()"
+              (keydown.meta.enter)="send()"
+            ></textarea>
+
+            @if (attachments().length || uploading()) {
+              <ul class="chips" aria-label="Attachments">
+                @for (a of attachments(); track a.documentId) {
+                  <li>
+                    {{ a.displayName }}
+                    <button type="button" [attr.aria-label]="'Remove ' + a.displayName" (click)="removeAttachment(a.documentId)">×</button>
+                  </li>
+                }
+                @if (uploading()) {
+                  <li class="muted">Uploading {{ uploading() }}…</li>
+                }
+              </ul>
+            }
+
+            <div class="composer-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="sending() || !!uploading()">
+                {{ sending() ? 'Sending…' : composeError() && text() ? 'Retry send' : 'Send' }}
+              </button>
+              <label class="link-btn file-label">
+                Attach file
+                <input type="file" class="sr-only" accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.tif,.tiff" [disabled]="!!uploading()" (change)="attachFile($event)" />
+              </label>
+              @if (attachableDocuments().length) {
+                <select class="form-select picker" aria-label="Attach an existing document" (change)="pickExisting($event)">
+                  <option value="">Attach existing document…</option>
+                  @for (d of attachableDocuments(); track d.documentId) {
+                    <option [value]="d.documentId">{{ d.displayName }}</option>
+                  }
+                </select>
+              }
+              <span class="muted">Ctrl+Enter to send</span>
+            </div>
+          </form>
+        } @else {
+          <p class="muted">You can read this channel but not post in it.</p>
+        }
+      }
+    </section>
+
+    <!-- Thread panel -->
+    @if (threadRoot(); as root) {
+      <aside class="chat-thread" aria-label="Thread">
+        <header class="chat-header">
+          <h3>Thread</h3>
+          <button type="button" class="link-btn" (click)="closeThread()">Close</button>
+        </header>
+        <article class="msg">
+          <header>
+            <strong>{{ root.isOwn ? 'You' : root.senderDisplayName }}</strong>
+            <time [attr.datetime]="root.createdAt">{{ root.createdAt | date: 'MMM d, h:mm a' }}</time>
+          </header>
+          <p class="body">{{ root.body }}</p>
+        </article>
+        @for (reply of threadReplies(); track reply.id) {
+          <article class="msg reply" [class.own]="reply.isOwn" [class.deleted]="reply.deletedAt">
+            <header>
+              <strong>{{ reply.isOwn ? 'You' : reply.senderDisplayName }}</strong>
+              <time [attr.datetime]="reply.createdAt">{{ reply.createdAt | date: 'MMM d, h:mm a' }}</time>
+            </header>
+            <p class="body">{{ reply.body }}</p>
+            <footer class="row-actions">
+              @if (reply.canDelete) {
+                <button type="button" class="link-btn danger" (click)="remove(reply)">Delete</button>
+              }
+              @if (reply.canRestore) {
+                <button type="button" class="link-btn" (click)="restore(reply)">Restore</button>
+              }
+            </footer>
+          </article>
+        }
+        @if (selectedChannel()?.canSend) {
+          <form class="composer" (ngSubmit)="send(true)">
+            <textarea class="form-control" name="reply" rows="2" maxlength="8000" aria-label="Reply" placeholder="Reply…" [ngModel]="replyText()" (ngModelChange)="replyText.set($event)"></textarea>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="sending()">{{ sending() ? 'Sending…' : 'Reply' }}</button>
+          </form>
+        }
+      </aside>
+    }
+  </div>
+}

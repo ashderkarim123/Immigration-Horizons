@@ -1,0 +1,1857 @@
+openapi: 3.0.0
+info:
+  title: Immigration Horizons Staff API
+  version: "1.0"
+  description: Canonical JSON API for the Angular Enterprise UI.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /staff/session/login:
+    post:
+      summary: Authenticate employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Success
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401':
+          description: Invalid email or password
+  /staff/session/logout:
+    post:
+      summary: Revoke session
+      responses:
+        '200':
+          description: Success
+  /staff/me:
+    get:
+      summary: Get current employee profile and capabilities
+      responses:
+        '200':
+          description: Profile data
+  /staff/account/initial-password:
+    post:
+      summary: Set initial permanent password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, confirmPassword]
+              properties:
+                password: { type: string, minLength: 12 }
+                confirmPassword: { type: string }
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Validation error
+  /staff/dashboard:
+    get:
+      summary: Get dashboard metrics
+      responses:
+        '200':
+          description: Metrics data
+  /staff/cases:
+    get:
+      summary: List cases with search and stage filters
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: stage
+          in: query
+          schema: { type: string }
+        - name: priority
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Paginated cases
+  /staff/cases/{id}:
+    get:
+      summary: Get case details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Case details
+        '404':
+          description: Case not found or inaccessible
+  /staff/cases/{caseId}/stage:
+    patch:
+      summary: Advance or update case stage
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stage]
+              properties:
+                stage: { type: string }
+      responses:
+        '200':
+          description: Updated case details
+        '403':
+          description: Permission denied
+  /staff/cases/{caseId}/project-manager:
+    patch:
+      summary: Assign or change Project Manager for case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employeeId: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Updated case details
+  /staff/cases/{caseId}/members:
+    post:
+      summary: Add employee team member to case workspace
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeId]
+              properties:
+                employeeId: { type: string }
+                role: { type: string, default: contributor }
+      responses:
+        '200':
+          description: Updated case details
+  /staff/cases/{caseId}/members/{memberId}:
+    delete:
+      summary: Remove member from case workspace
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: memberId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated case details
+  /staff/cases/{caseId}/archive:
+    post:
+      summary: Archive case (non-destructive)
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Updated case details
+  /staff/cases/{caseId}/client-updates:
+    post:
+      summary: Publish client update message for case portal
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string, maxLength: 1000 }
+      responses:
+        '201':
+          description: Published update message document
+  /staff/cases/{caseId}/member-options:
+    get:
+      summary: Get active employees selectable for team assignment
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Array of active employees
+  /staff/clients:
+    get:
+      summary: List clients
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Paginated clients
+  /staff/clients/{id}:
+    get:
+      summary: Get client details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Client details
+  /staff/tasks:
+    get:
+      summary: List assigned tasks
+      parameters:
+        - name: scope
+          in: query
+          schema: { type: string, default: mine }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: priority
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: due
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 25 }
+      responses:
+        '200':
+          description: Paginated tasks
+  /staff/tasks/{id}:
+    get:
+      summary: Get task details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Task details
+    patch:
+      summary: Update task details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                priority: { type: string }
+                dueDate: { type: string, format: date-time, nullable: true }
+                type: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/tasks/{id}/status:
+    patch:
+      summary: Update task status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/tasks/{id}/assignee:
+    patch:
+      summary: Update task assignee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignee: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Success
+  /staff/cases/{id}/tasks:
+    get:
+      summary: List tasks for a case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of tasks
+    post:
+      summary: Create a case-native task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                type: { type: string }
+                priority: { type: string }
+                dueDate: { type: string, format: date-time, nullable: true }
+                assignee: { type: string, nullable: true }
+                description: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/deadlines:
+    get:
+      summary: List deadlines (case target filing and task due dates)
+      parameters:
+        - name: due
+          in: query
+          schema: { type: string, default: all }
+        - name: scope
+          in: query
+          schema: { type: string, default: mine }
+      responses:
+        '200':
+          description: List of deadlines
+  /staff/cases/{id}/evidence/provision:
+    post:
+      summary: Provision an evidence checklist from a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [templateKey]
+              properties:
+                templateKey: { type: string }
+                version: { type: integer, nullable: true }
+      responses:
+        '200':
+          description: Success
+  /staff/cases/{id}/evidence:
+    get:
+      summary: Get case evidence summary and requirements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Evidence summary and checklist
+  /staff/cases/{id}/evidence/requirements:
+    post:
+      summary: Create a custom evidence requirement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+                importance: { type: string }
+                section: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/evidence/requirements/{id}/status:
+    patch:
+      summary: Update requirement status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string }
+                reason: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Success
+  /staff/evidence/requirements/{id}/documents:
+    post:
+      summary: Link a document to a requirement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documentId]
+              properties:
+                documentId: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/evidence/requirements/{reqId}/documents/{docId}:
+    delete:
+      summary: Unlink a document from a requirement
+      parameters:
+        - name: reqId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: docId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Success
+  /staff/cases/{caseId}/documents:
+    get:
+      summary: Get an authorized case document center
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Bounded document, category, request, member, and capability DTOs }
+        '404': { description: Case is missing or inaccessible }
+    post:
+      summary: Upload an employee document to a case
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, categoryId]
+              properties:
+                file: { type: string, format: binary }
+                categoryId: { type: string }
+                documentRequestId: { type: string, nullable: true }
+                displayName: { type: string, nullable: true }
+      responses:
+        '201': { description: Secure document and first-version metadata }
+        '400': { description: Validation failed }
+        '413': { description: File too large }
+        '415': { description: Unsupported media type }
+  /staff/documents/{documentId}:
+    get:
+      summary: Get authorized staff document detail and version metadata
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Document DTO with safe version and evidence references }
+        '404': { description: Document is missing or inaccessible }
+  /staff/documents/{documentId}/versions:
+    post:
+      summary: Upload an immutable replacement version
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                changeNote: { type: string, nullable: true }
+      responses:
+        '200': { description: Updated document and new version metadata }
+        '409': { description: Concurrent replacement conflict }
+  /staff/documents/{documentId}/review:
+    patch:
+      summary: Review a document
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [accepted, needs_replacement, rejected] }
+                clientVisibleReviewComment: { type: string, nullable: true }
+                internalReviewComment: { type: string, nullable: true }
+      responses:
+        '200': { description: Reviewed document metadata }
+  /staff/documents/{documentId}/category:
+    patch:
+      summary: Move a document to an active category on the same case
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId]
+              properties:
+                categoryId: { type: string }
+      responses:
+        '200': { description: Updated document metadata }
+  /staff/documents/{documentId}/archive:
+    post:
+      summary: Archive a document without deleting version history
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Archived document metadata }
+  /staff/documents/{documentId}/download:
+    get:
+      summary: Stream the authorized current document version
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Binary download with private no-store headers, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+  /staff/documents/{documentId}/versions/{versionId}/download:
+    get:
+      summary: Stream an authorized historical document version
+      parameters:
+        - { name: documentId, in: path, required: true, schema: { type: string } }
+        - { name: versionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Binary download with private no-store headers, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+  /staff/cases/{caseId}/document-categories/initialize:
+    post:
+      summary: Idempotently provision default case document categories
+      parameters: [ { name: caseId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Provisioning result } }
+  /staff/cases/{caseId}/document-categories:
+    post:
+      summary: Create a custom case document category
+      parameters: [ { name: caseId, in: path, required: true, schema: { type: string } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, visibility, allowedUploaderTypes]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                visibility: { type: string, enum: [client_visible, employees_only] }
+                allowedUploaderTypes: { type: string, enum: [client, employee, both] }
+                required: { type: boolean }
+      responses: { '201': { description: Category metadata } }
+  /staff/document-categories/{categoryId}:
+    patch:
+      summary: Update a case document category
+      parameters: [ { name: categoryId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Category metadata } }
+  /staff/document-categories/{categoryId}/disable:
+    post:
+      summary: Disable a document category
+      parameters: [ { name: categoryId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Category metadata } }
+  /staff/document-categories/{categoryId}/reactivate:
+    post:
+      summary: Reactivate a document category
+      parameters: [ { name: categoryId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Category metadata } }
+  /staff/cases/{caseId}/document-categories/reorder:
+    post:
+      summary: Reorder all active document categories for a case
+      parameters: [ { name: caseId, in: path, required: true, schema: { type: string } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderedCategoryIds]
+              properties:
+                orderedCategoryIds: { type: array, items: { type: string } }
+      responses: { '200': { description: Categories reordered } }
+  /staff/cases/{caseId}/document-requests:
+    post:
+      summary: Create a document request for an eligible client workspace member
+      parameters: [ { name: caseId, in: path, required: true, schema: { type: string } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId, requestedFromMemberId, title]
+              properties:
+                categoryId: { type: string }
+                requestedFromMemberId: { type: string }
+                title: { type: string }
+                instructions: { type: string }
+                dueDate: { type: string, format: date, nullable: true }
+      responses: { '201': { description: Document request metadata } }
+  /staff/document-requests/{requestId}:
+    patch:
+      summary: Update allowed document request metadata
+      parameters: [ { name: requestId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Document request metadata } }
+  /staff/document-requests/{requestId}/cancel:
+    post:
+      summary: Cancel a document request without deleting it
+      parameters: [ { name: requestId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Document request metadata } }
+
+  # --- Unified case chat (ADR-020) -------------------------------------------
+  # One WorkspaceChannel / WorkspaceMessage domain shared with the client portal.
+  # Every "not yours" outcome is the same 404 as "does not exist". Messages are
+  # plain text, one thread level deep, and are only ever soft-deleted.
+  /staff/cases/{caseId}/channels:
+    get:
+      summary: Channels the actor may see on a case, with audience label and unread count
+      description: >
+        Each channel carries audience (client_and_team, staff_only or restricted),
+        clientVisible, unreadCount and canSend.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Visible channels (hidden channels never contribute names or counts) }
+        '404': { description: Case is missing or inaccessible }
+    post:
+      summary: Create a channel
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, visibility]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                channelType: { type: string, enum: [standard, documents, updates, private, internal] }
+                visibility: { type: string, enum: [all_members, clients_and_team, employees_only, restricted_members] }
+      responses:
+        '201': { description: Channel created }
+        '400': { description: Validation failed }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/channels/initialize:
+    post:
+      summary: Idempotently provision the default channels
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Lists created and skipped template keys; re-running creates nothing }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/channels/reorder:
+    post:
+      summary: Reorder the active channels
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderedChannelIds]
+              properties:
+                orderedChannelIds: { type: array, items: { type: string } }
+      responses:
+        '200': { description: Reordered or unchanged }
+        '400': { description: The full set of active channels was not provided }
+  /staff/channels/{channelId}:
+    get:
+      summary: One channel, with the actor's management capabilities
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Channel DTO plus canManage and canManageMembers }
+        '404': { description: Channel is missing, archived or inaccessible }
+    patch:
+      summary: Rename, re-describe or change visibility of a channel
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                visibility: { type: string, enum: [all_members, clients_and_team, employees_only, restricted_members] }
+      responses:
+        '200': { description: Updated channel }
+        '400': { description: Validation failed }
+  /staff/channels/{channelId}/archive:
+    post:
+      summary: Archive a channel (history is retained)
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Archived }
+  /staff/channels/{channelId}/members:
+    get:
+      summary: Workspace roster usable for mentions and restricted-channel membership
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Members; clients are omitted from staff-only channels }
+    post:
+      summary: Add a workspace member to a restricted channel
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspaceMemberId]
+              properties:
+                workspaceMemberId: { type: string }
+      responses:
+        '201': { description: Updated roster }
+  /staff/channels/{channelId}/members/{channelMemberId}:
+    delete:
+      summary: Remove a member from a restricted channel (access is lost immediately)
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+        - { name: channelMemberId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Updated roster }
+  /staff/channels/{channelId}/messages:
+    get:
+      summary: Newest page of root messages (oldest-first), cursor paginated
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+        - { name: before, in: query, schema: { type: string }, description: Opaque cursor from nextCursor }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50 } }
+      responses:
+        '200': { description: "messages, nextCursor (older history) and syncCursor (start polling /messages/newer from here)" }
+        '404': { description: Channel is missing or inaccessible }
+    post:
+      summary: Send a message
+      description: >
+        idempotencyKey is required: one deliberate send uses one key, reused only
+        when retrying that exact send. A repeat returns the original message with 200.
+        attachments are document ids already stored through POST /staff/channels/{channelId}/attachments
+        or chosen from /attachable-documents; the server re-checks same-case, state and
+        audience compatibility, so a staff-only document can never ride a client-visible channel.
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotencyKey]
+              properties:
+                body: { type: string, maxLength: 8000 }
+                idempotencyKey: { type: string, minLength: 8, maxLength: 100 }
+                mentions: { type: array, items: { type: string }, description: Workspace member ids }
+                attachments: { type: array, maxItems: 10, items: { type: string } }
+      responses:
+        '201': { description: Message created }
+        '200': { description: Idempotent replay of an earlier send }
+        '400': { description: Validation failed, including an ineligible attachment }
+        '404': { description: Channel is missing or inaccessible }
+  /staff/channels/{channelId}/messages/newer:
+    get:
+      summary: Incremental sync - messages created or changed after a cursor
+      description: >
+        Ascending on (updatedAt, id). Includes edits, soft deletes and reply-count
+        changes to older messages, roots and replies alike. Poll every few seconds
+        while the tab is visible and follow hasMore while true. A malformed cursor
+        behaves as "from the start".
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+        - { name: since, in: query, schema: { type: string }, description: Opaque syncCursor }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50 } }
+      responses:
+        '200': { description: "messages, syncCursor (store for the next poll), hasMore" }
+  /staff/channels/{channelId}/threads/{messageId}:
+    get:
+      summary: A thread root with its replies
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "root, replies, nextCursor" }
+        '404': { description: Not a root message of this channel }
+  /staff/messages/{messageId}/replies:
+    post:
+      summary: Reply in a thread (a reply to a reply is normalised to the thread root)
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotencyKey]
+              properties:
+                body: { type: string }
+                idempotencyKey: { type: string }
+                mentions: { type: array, items: { type: string } }
+                attachments: { type: array, items: { type: string } }
+      responses:
+        '201': { description: Reply created }
+        '200': { description: Idempotent replay }
+  /staff/messages/{messageId}:
+    patch:
+      summary: Edit a message the actor may edit
+      description: >
+        Send expectedUpdatedAt (the message updatedAt as last seen). If the stored
+        copy is newer the edit is refused with 409 and nothing is overwritten.
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string }
+                mentions: { type: array, items: { type: string } }
+                expectedUpdatedAt: { type: string, format: date-time }
+      responses:
+        '200': { description: Updated message, with a MessageRevision recorded }
+        '409': { description: Stale edit }
+  /staff/messages/{messageId}/delete:
+    post:
+      summary: Soft-delete a message (own, or any with messages.moderate). There is no hard delete.
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Message with placeholder body; thread continuity preserved }
+  /staff/messages/{messageId}/restore:
+    post:
+      summary: Restore a soft-deleted message (messages.moderate)
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Restored message }
+  /staff/channels/{channelId}/read:
+    post:
+      summary: Mark the channel read (monotonic) and return the new unread count
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lastReadMessageId: { type: string, nullable: true }
+      responses:
+        '200': { description: "outcome, unreadCount" }
+  /staff/channels/{channelId}/attachable-documents:
+    get:
+      summary: Existing case documents the actor may attach to this channel
+      description: Pre-filtered with the same rule the send endpoint enforces (client-visible only when a client can read the channel).
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Safe metadata only - id, display name, type, size }
+  /staff/channels/{channelId}/attachments:
+    post:
+      summary: Upload a new file from the chat composer through the secure document pipeline
+      description: >
+        Validates size, extension and magic bytes, stores privately and creates the
+        CaseDocument and DocumentVersion in the per-case "Chat Attachments" category
+        (provisioned on first use). A staff-only channel yields a staff-only document.
+        Never returns a storage key or path. The message is sent afterwards by id; if
+        that send fails, retry it with the same idempotency key - the document is not
+        uploaded again. Re-uploading identical bytes returns the actor's stored
+        document with reused true.
+      parameters:
+        - { name: channelId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '201': { description: "attachment (documentId, displayName, mimeType, extension, size)" }
+        '200': { description: Same bytes already stored by this actor (reused) }
+        '400': { description: Rejected by validation (type, size or magic bytes) }
+        '404': { description: Channel is missing or inaccessible }
+        '409': { description: Identical file already stored by someone else }
+        '413': { description: File too large }
+        '422': { description: File failed the security scan }
+  /staff/cases/{caseId}/forms:
+    get:
+      summary: List the case's Smart Forms (forms.view)
+      description: Summary DTOs only - no answers. canProvision is true when the actor holds forms.edit. Missing and inaccessible cases are the same 404.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "forms[] (id, title, templateKey, templateVersion, status, revision, progress, timestamps), canProvision" }
+        '403': { description: Missing forms.view }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/forms/provision:
+    post:
+      summary: Idempotently add the case's intake forms (forms.edit)
+      description: >
+        Creates one instance per eligible published template key that the case does
+        not already have, with deterministic prefill from the primary client (name,
+        email, phone) as a snapshot - never overwriting later edits. Publishes the
+        code-owned template catalog on first use (insert-only; a changed published
+        version fails loudly). Responds 201 when anything was created, else 200.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '201': { description: "created[], existing[], forms[]" }
+        '200': { description: Nothing to add }
+        '403': { description: Missing forms.edit or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/forms/{formId}:
+    get:
+      summary: One Smart Form with its template sections and answers (forms.view)
+      description: >
+        Includes staff-only fields, clientReviewNote and internalReviewNote, plus an
+        actions object (canEdit, canSubmit, canReturn, canApprove, canLock) computed
+        from the actor's capabilities and the form status - the UI never infers authority.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Smart form DTO }
+        '404': { description: Form is missing or its case is inaccessible }
+  /staff/forms/{formId}/answers:
+    patch:
+      summary: Autosave / staff edit (forms.edit)
+      description: >
+        Body is { revision, answers }, where answers is a partial object keyed by
+        stable field key (null clears an answer). Unknown keys are errors. Allowed
+        in draft, needs_changes and submitted; a locked or approved form is a 409
+        invalid_state. A stale revision is a 409 conflict whose fieldErrors carry
+        { revision, status } - nothing is overwritten. Writes are atomic on
+        (_id, revision, status). The audit trail records changed field KEYS, never values.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, answers]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                answers: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Updated smart form DTO (revision incremented) }
+        '400': { description: "validation_error with fieldErrors keyed by field key (group rows as key[index].child)" }
+        '403': { description: Missing forms.edit or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: "conflict (stale revision) or invalid_state; fieldErrors = { revision, status }" }
+  /staff/forms/{formId}/submit:
+    post:
+      summary: Submit for review (forms.edit) - draft | needs_changes to submitted
+      description: Runs the authoritative validation; an incomplete form stays in its current state with a 400.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Updated smart form DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing forms.edit or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/forms/{formId}/return:
+    post:
+      summary: Return for changes (forms.review) - submitted | approved to needs_changes
+      description: clientReviewNote is required and is shown to the client; internalReviewNote is staff-only and never reaches a client DTO.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, clientReviewNote]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                clientReviewNote: { type: string, maxLength: 2000 }
+                internalReviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Updated smart form DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing forms.review or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/forms/{formId}/approve:
+    post:
+      summary: Approve (forms.review) - submitted to approved
+      description: Re-validates the answers; clears the client-visible note.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                internalReviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Updated smart form DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing forms.review or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/forms/{formId}/lock:
+    post:
+      summary: Lock the reviewed revision as final (forms.lock) - approved to locked
+      description: Deliberate and audited. The locked revision is recorded as lockedRevision; a locked form is immutable for everyone and has no unlock endpoint.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Updated smart form DTO }
+        '403': { description: Missing forms.lock or untrusted Origin }
+        '404': { description: Form is missing or its case is inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/forms/{formId}/audit:
+    get:
+      summary: Append-only history of the form (forms.view)
+      description: eventType, fromStatus, toStatus, revision, changedFieldKeys, actor and time - never answer values or review-note text.
+      parameters:
+        - { name: formId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "events[] newest first (max 100)" }
+        '404': { description: Form is missing or its case is inaccessible }
+  /staff/cases/{caseId}/petitions:
+    get:
+      summary: List the case's petitions (petitions.view)
+      description: Summary DTOs - id, sequence, kind, title, status, revision, sectionProgress, dependencyProgress, updatedAt, actions. A case owns many petitions. Progress counts are operational completion only, never a legal-strength score. Missing and inaccessible cases are the same 404.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "petitions[] and canProvision (petitions.manage)" }
+        '403': { description: Missing petitions.view }
+        '404': { description: Case is missing or inaccessible }
+    post:
+      summary: Create an additional petition (petitions.manage)
+      description: Sections come from the code-owned template for the kind and the case type (rfe_response and noid_response use the notice structure). Sequence is assigned by the server.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind: { type: string, enum: [primary, rfe_response, noid_response, supplemental, other] }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+      responses:
+        '201': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/petitions/provision:
+    post:
+      summary: Idempotently provision the primary petition (petitions.manage)
+      description: kind=primary, sequence=1. Returns the existing petition (200) when there is one, else creates it from the case-type template (201). A case type with no automatic petition (other) returns 400; create one explicitly instead. Never runs implicitly on read; there is no backfill.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '201': { description: Petition detail DTO (created) }
+        '200': { description: Petition detail DTO (already existed) }
+        '400': { description: No automatic petition for this case type }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/petitions/{petitionId}:
+    get:
+      summary: One petition with sections, dependencies and versions (petitions.view)
+      description: >
+        Sections carry plain-text body, review status, assignee (id, name only) and per-section
+        actions. Dependencies carry live readiness (ready, status, reason) from the one server-side
+        resolver. actions on the petition and on each section are computed from the actor's
+        capabilities, section ownership and status - the UI never infers authority. Storage keys,
+        checksums, raw user records and session data are never returned. Staff-only: there is no
+        client portal route for petitions.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Petition detail DTO }
+        '404': { description: Petition is missing, malformed, or on an inaccessible case }
+    patch:
+      summary: Update title / description (petitions.manage)
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: "conflict (stale revision) or invalid_state; fieldErrors = { revision, status }" }
+  /staff/petitions/{petitionId}/sections/{sectionKey}:
+    patch:
+      summary: Autosave a section's plain text (petitions.edit)
+      description: >
+        Body is { revision, body } (plain text, at most 50000 characters; never HTML). Anyone without
+        petitions.manage may only edit sections assigned to them (403 otherwise); petitions.review
+        grants no drafting right. Allowed only while the petition is drafting or needs_changes.
+        Editing a ready or approved section returns it to draft. An unchanged body does not bump
+        the revision. A stale revision is a 409 conflict and nothing is overwritten. Autosave writes no CaseActivity.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, body]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                body: { type: string, maxLength: 50000 }
+      responses:
+        '200': { description: Petition detail DTO (revision incremented unless unchanged) }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.edit, untrusted Origin, or the section is assigned to someone else }
+        '404': { description: Petition or section not found }
+        '409': { description: "conflict (stale revision) or invalid_state (petition is not a draft); fieldErrors = { revision, status }" }
+  /staff/petitions/{petitionId}/sections/{sectionKey}/assign:
+    post:
+      summary: Assign or clear a section's writer (petitions.manage)
+      description: The assignee must be an active employee, an active member of the case workspace, and hold a role that can draft or review petitions. Assignment never creates membership or grants access. A snapshot of the name is stored.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                assigneeId: { type: string, nullable: true }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: "validation_error (not a team member, inactive, or ineligible role)" }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Petition or section not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/sections/{sectionKey}/review:
+    post:
+      summary: Mark a section ready for review (petitions.edit; assigned writer or manager)
+      description: draft | changes_requested to ready_for_review. The section must have text.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Not permitted for this section }
+        '404': { description: Petition or section not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/sections/{sectionKey}/return:
+    post:
+      summary: Return a section for changes (petitions.review)
+      description: ready_for_review | approved to changes_requested. reviewNote is required.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, reviewNote]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                reviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.review or untrusted Origin }
+        '404': { description: Petition or section not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/sections/{sectionKey}/approve:
+    post:
+      summary: Approve a section (petitions.review)
+      description: ready_for_review to approved; records the reviewer name and time.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: sectionKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '403': { description: Missing petitions.review or untrusted Origin }
+        '404': { description: Petition or section not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/dependency-candidates:
+    get:
+      summary: Same-case records that can be linked as a dependency (petitions.view)
+      description: Bounded to 100 per type; case_document excludes archived, quarantined, rejected and superseded. Returns refId, label, status and whether it is already linked. Never returns storage metadata.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: type, in: query, required: true, schema: { type: string, enum: [evidence_requirement, smart_form, case_document, task] } }
+      responses:
+        '200': { description: "candidates (refId, label, status, linked)" }
+        '400': { description: Invalid type }
+        '404': { description: Petition is missing or inaccessible }
+  /staff/petitions/{petitionId}/dependencies:
+    post:
+      summary: Link an existing same-case record (petitions.edit)
+      description: >
+        type is evidence_requirement, smart_form, case_document or task; refId is the record id.
+        The server verifies the record belongs to the same case (and workspace) - a missing id
+        and another case's id are the same 404. Linking the same record twice changes nothing.
+        role is valid only for case_document. requiredForFinalization defaults to true.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, type, refId]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                type: { type: string, enum: [evidence_requirement, smart_form, case_document, task] }
+                refId: { type: string }
+                role: { type: string, enum: [business_plan, recommendation_letter, expert_opinion_letter, supporting_document, other] }
+                requiredForFinalization: { type: boolean }
+      responses:
+        '201': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.edit or untrusted Origin }
+        '404': { description: Petition or referenced record not found in this case }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/dependencies/{dependencyId}:
+    delete:
+      summary: Remove a dependency link (petitions.edit)
+      description: Removes only the link, never the linked record. The expected revision is the revision query parameter.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: dependencyId, in: path, required: true, schema: { type: string } }
+        - { name: revision, in: query, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: Petition detail DTO }
+        '403': { description: Missing petitions.edit or untrusted Origin }
+        '404': { description: Petition or dependency not found }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/submit:
+    post:
+      summary: Submit for internal review (petitions.manage) - drafting | needs_changes to internal_review
+      description: Every required section must have text and be ready_for_review or approved; otherwise 400 with fieldErrors keyed by section key.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.manage or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/return:
+    post:
+      summary: Return for changes (petitions.review) - internal_review | approved to needs_changes
+      description: internalReviewNote is required. Records a petition_returned CaseActivity (no text).
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, internalReviewNote]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                internalReviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.review or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/approve:
+    post:
+      summary: Approve (petitions.review) - internal_review to approved
+      description: Every required section must be approved. Writes an immutable PetitionVersion with reason approval. Dependency readiness is not required yet (it gates finalization).
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing petitions.review or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/finalize:
+    post:
+      summary: Finalize (petitions.finalize) - approved to finalized
+      description: >
+        Requires approved status, every required section approved and every dependency marked
+        requiredForFinalization ready (fieldErrors key dependency:{id}). Writes the immutable final
+        PetitionVersion with dependency provenance, then flips the status; if the snapshot cannot be
+        written the status is restored and the response is a 409, so a petition is never reported
+        finalized without its snapshot. A finalized petition rejects every further mutation
+        (409 invalid_state). There is no hard-delete route.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Petition detail DTO }
+        '400': { description: validation_error (unapproved sections or unready required dependencies) }
+        '403': { description: Missing petitions.finalize or untrusted Origin }
+        '404': { description: Petition is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/petitions/{petitionId}/versions:
+    get:
+      summary: Immutable versions, newest first (petitions.view)
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "versions[] (id, versionNumber, reason, sourceRevision, createdByName, createdAt), max 100" }
+        '404': { description: Petition is missing or inaccessible }
+  /staff/petitions/{petitionId}/versions/{versionId}:
+    get:
+      summary: One immutable version (petitions.view)
+      description: Section snapshots (text as reviewed) and per-dependency provenance - evidence status, Smart Form template/revision/lockedRevision, document id and version number, task status. No storage keys, checksums or file bytes. Versions cannot be updated or deleted.
+      parameters:
+        - { name: petitionId, in: path, required: true, schema: { type: string } }
+        - { name: versionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Version detail DTO }
+        '404': { description: Version, petition or case not found / inaccessible }
+  /staff/cases/{caseId}/filing-packets:
+    get:
+      summary: List the case's filing packets (filing_packets.view)
+      description: Summary DTOs - id, sequence, kind, title, status, revision, itemCount, readiness, updatedAt, actions. A case owns many packets. Readiness is an operational fact per source, never a statement about legal sufficiency. Missing and inaccessible cases are the same 404.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "packets and canProvision (filing_packets.manage)" }
+        '403': { description: Missing filing_packets.view }
+        '404': { description: Case is missing or inaccessible }
+    post:
+      summary: Create an additional packet (filing_packets.manage)
+      description: Sequence is assigned by the server (a lost race retries). A packet is a manifest; creating one generates no files.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind: { type: string, enum: [initial_filing, rfe_response, noid_response, supplemental, other] }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+      responses:
+        '201': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/cases/{caseId}/filing-packets/provision:
+    post:
+      summary: Idempotently provision the initial packet (filing_packets.manage)
+      description: kind=initial_filing, sequence=1. Returns the existing packet (200) or creates it (201). Never runs on read; there is no backfill.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '201': { description: Packet detail DTO (created) }
+        '200': { description: Packet detail DTO (already existed) }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Case is missing or inaccessible }
+  /staff/filing-packets/{packetId}:
+    get:
+      summary: One packet with petition source, ordered items, readiness and versions (filing_packets.view)
+      description: >
+        petitionSource states whether a finalized petition version is required for the packet kind
+        (all kinds except other), whether one is pinned, and whether it is ready. Each item carries
+        order, role, label, required, notes, ready, status, reason and a safe source summary. A
+        document item also carries downloadAction { documentId, versionId } pointing at the existing
+        secure route GET /staff/documents/{documentId}/versions/{versionId}/download - the packet itself
+        serves no file bytes, and the action is omitted for an actor without document_versions.view.
+        A Smart Form item is a provenance reference (template, revision, lockedRevision) and never has
+        a download action. Storage keys, checksums, paths, raw user records and session data are never returned.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Packet detail DTO }
+        '404': { description: Packet is missing, malformed, or on an inaccessible case }
+    patch:
+      summary: Update title / description (filing_packets.manage)
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: "conflict (stale revision) or invalid_state; fieldErrors = { revision, status }" }
+  /staff/filing-packets/{packetId}/petition-version:
+    post:
+      summary: Pin the exact finalized PetitionVersion, or clear it (filing_packets.manage)
+      description: The version must belong to the same case and workspace and be the finalization snapshot of its petition (an approval snapshot is a 400). A version from another case and a malformed id are the same 404. The packet stores the exact version id and safe title/number snapshots; a later petition version never replaces it.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                petitionVersionId: { type: string, nullable: true }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: Not a finalization version }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet or petition version not found in this case }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/candidates:
+    get:
+      summary: Same-case sources that can be added (filing_packets.view)
+      description: >
+        Bounded to 100 per type, same case and workspace only, safe metadata only. petition_version lists
+        finalization versions. document_version lists ACCEPTED documents with their current version
+        (documentId, versionId, displayName, versionNumber, categoryName, status, mimeType, size, linked);
+        staff may still pin an older immutable version of an accepted document by id through POST items.
+        smart_form lists approved and locked forms only.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+        - { name: type, in: query, required: true, schema: { type: string, enum: [petition_version, document_version, smart_form] } }
+      responses:
+        '200': { description: candidates }
+        '400': { description: Invalid type }
+        '404': { description: Packet is missing or inaccessible }
+  /staff/filing-packets/{packetId}/items:
+    post:
+      summary: Add a source to the manifest (filing_packets.manage)
+      description: >
+        type document_version pins { documentId, versionId }: the document must be in this case and workspace,
+        the version must belong to that document, and the document must not be archived, rejected, quarantined,
+        superseded or infected (a version of another document and a cross-case id are the same 404). It may be
+        added before it is accepted, but is then not ready. The packet never follows currentVersion afterwards.
+        type smart_form_reference pins { smartFormId } with its current revision as provenance. Adding the same
+        source twice changes nothing. role is one of cover_sheet, petition_letter, uscis_form, supporting_evidence,
+        recommendation_letter, expert_opinion_letter, business_plan, identity_civil, immigration_history, exhibit,
+        other; it is organizational only and grants no access. At most 200 items.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, type]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                type: { type: string, enum: [document_version, smart_form_reference] }
+                documentId: { type: string }
+                versionId: { type: string }
+                smartFormId: { type: string }
+                role: { type: string }
+                required: { type: boolean }
+                notes: { type: string, maxLength: 500 }
+      responses:
+        '201': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet or source not found in this case }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/items/{itemId}:
+    patch:
+      summary: Update an item's role, required flag or notes (filing_packets.manage)
+      description: Source ids are never editable here; replace a source with remove then add.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                role: { type: string }
+                required: { type: boolean }
+                notes: { type: string, maxLength: 500 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet or item not found }
+        '409': { description: conflict or invalid_state }
+    delete:
+      summary: Remove an item from the manifest (filing_packets.manage)
+      description: Removes only the manifest row, never the document or form. Remaining items are renumbered 1..N. The expected revision is the revision query parameter.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+        - { name: itemId, in: path, required: true, schema: { type: string } }
+        - { name: revision, in: query, required: true, schema: { type: integer, minimum: 1 } }
+      responses:
+        '200': { description: Packet detail DTO }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet or item not found }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/reorder:
+    post:
+      summary: Reorder the manifest (filing_packets.manage)
+      description: orderedItemIds must be exactly the packet's item ids - no duplicates, none missing, none unknown (400 otherwise). The server renumbers 1..N and increments the revision atomically; the browser's array order is never authority.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, orderedItemIds]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                orderedItemIds: { type: array, items: { type: string } }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: Not exactly the packet's items }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/submit:
+    post:
+      summary: Submit for review (filing_packets.manage) - draft | needs_changes to review
+      description: Requires at least one item and, for every kind except other, a pinned petition version. Items need not be ready yet; readiness gates finalization.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.manage or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/return:
+    post:
+      summary: Return for changes (filing_packets.review) - review | approved to needs_changes
+      description: internalReviewNote is required. Records a filing_packet_returned CaseActivity (no filenames).
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, internalReviewNote]
+              properties:
+                revision: { type: integer, minimum: 1 }
+                internalReviewNote: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.review or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/approve:
+    post:
+      summary: Approve (filing_packets.review) - review to approved
+      description: The packet structure must be valid (petition source where required, at least one item, no source that no longer exists). Approval creates no binary package and does not require every item to be ready.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error }
+        '403': { description: Missing filing_packets.review or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/finalize:
+    post:
+      summary: Finalize (filing_packets.finalize) - approved to finalized
+      description: >
+        Requires a ready petition source (where required) and every required item ready (accepted,
+        not archived/rejected/quarantined/superseded, not infected; Smart Forms approved or locked at
+        the pinned revision); a source that no longer exists blocks even when optional (fieldErrors keyed
+        item:{id}). Writes the immutable FilingPacketVersion - exact petition version, exact document
+        versions, Smart Form revisions, order, roles, required flags and a sha256 manifestHash - then flips
+        the status; if the snapshot cannot be written the status is restored and the response is a 409, so a
+        packet is never reported finalized without its snapshot. A finalized packet rejects every further
+        mutation (409 invalid_state). The hash is an audit fingerprint, not a signature. No file is generated.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              properties:
+                revision: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Packet detail DTO }
+        '400': { description: validation_error (unready required items or petition source) }
+        '403': { description: Missing filing_packets.finalize or untrusted Origin }
+        '404': { description: Packet is missing or inaccessible }
+        '409': { description: conflict or invalid_state }
+  /staff/filing-packets/{packetId}/versions:
+    get:
+      summary: Immutable finalized versions, newest first (filing_packets.view)
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "versions (id, versionNumber, manifestHash, createdByName, createdAt), max 100" }
+        '404': { description: Packet is missing or inaccessible }
+  /staff/filing-packets/{packetId}/versions/{versionId}:
+    get:
+      summary: One immutable version - the exact manifest as filed (filing_packets.view)
+      description: petitionSource, ordered items with safe source summaries and downloadAction for document items (existing secure route), sourceRevision and manifestHash. No storage keys, checksums or file bytes. Versions cannot be updated or deleted.
+      parameters:
+        - { name: packetId, in: path, required: true, schema: { type: string } }
+        - { name: versionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Version detail DTO }
+        '404': { description: Version, packet or case not found / inaccessible }

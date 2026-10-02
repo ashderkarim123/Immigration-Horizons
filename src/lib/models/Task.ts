@@ -16,7 +16,8 @@ import mongoose, { Schema } from "mongoose";
  */
 const TaskSchema = new Schema(
   {
-    lead: { type: Schema.Types.ObjectId, ref: "Consultation", required: true },
+    lead: { type: Schema.Types.ObjectId, ref: "Consultation", required: false },
+    case: { type: Schema.Types.ObjectId, ref: "ClientCase", default: null },
     title: { type: String, required: true },
     type: { type: String, default: "Other" },
     description: { type: String, default: "" },

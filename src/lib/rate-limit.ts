@@ -34,10 +34,13 @@ function extractIp(h: { get(name: string): string | null }): string {
  * integration tests, which never populate `next/headers`'s request-scoped
  * storage) — pass the handler's own `Request` there. Server Actions keep
  * calling this with no `request` argument and fall back to `next/headers`.
+ * `max` overrides the per-minute ceiling for buckets (chat) where the
+ * default of 5 is too tight for a legitimate conversation.
  */
 export async function isRateLimited(
   bucket: string,
   request?: Request,
+  max: number = MAX_PER_WINDOW,
 ): Promise<boolean> {
   const ip = request ? extractIp(request.headers) : extractIp(await headers());
   const key = `${bucket}:${ip}`;
@@ -47,7 +50,7 @@ export async function isRateLimited(
   pruneOld();
 
   const existing = (hits.get(key) ?? []).filter((t) => t > cutoff);
-  if (existing.length >= MAX_PER_WINDOW) {
+  if (existing.length >= max) {
     hits.set(key, existing);
     return true;
   }

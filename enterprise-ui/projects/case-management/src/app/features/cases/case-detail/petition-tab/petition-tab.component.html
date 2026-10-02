@@ -1,0 +1,273 @@
+@if (isLoading() && !petition()) {
+  <ih-skeleton [rows]="4" rowHeight="4rem"></ih-skeleton>
+} @else if (loadError() === 'forbidden') {
+  <ih-empty-state title="Petition work isn’t available to you" description="You don’t have access to this case’s petitions. Ask a project manager if you need it."></ih-empty-state>
+} @else if (loadError() === 'error') {
+  <ih-error-state title="Petitions unavailable" message="The case petitions could not be loaded." (retry)="loadList()"></ih-error-state>
+} @else if (petition(); as p) {
+  <!-- ---------------------------------------------------------------- workspace -->
+  <div class="workspace">
+    <header class="head">
+      @if ((list()?.petitions?.length ?? 0) > 1) {
+        <button type="button" class="link-btn" (click)="back()">← All petitions</button>
+      }
+      <h3>{{ p.title }}</h3>
+      <ih-status-badge [status]="petitionLabels[p.status]" [variant]="petitionVariants[p.status]"></ih-status-badge>
+      <span class="muted">Revision {{ p.revision }}</span>
+      @if (section()?.actions?.canEdit) {
+        <span role="status" aria-live="polite" class="save-state" [class.bad]="saveState() === 'error' || saveState() === 'conflict'">{{ saveLabels[saveState()] }}</span>
+      }
+    </header>
+
+    <p class="muted metrics">
+      Sections approved: {{ p.sectionProgress.approved }} of {{ p.sectionProgress.total }} required ·
+      Required items ready: {{ p.dependencyProgress.ready }} of {{ p.dependencyProgress.total }}.
+      These are operational counts, not an assessment of the case.
+    </p>
+
+    @if (banner()) {
+      <div class="banner error" role="alert">
+        <span>{{ banner() }}</span>
+        @if (saveState() === 'conflict') {
+          <button type="button" class="btn btn-primary btn-sm" (click)="reload()">Reload latest version</button>
+        }
+      </div>
+    }
+    @if (saveState() === 'error' && !banner()) {
+      <div class="banner warn" role="alert">
+        <span>Your latest text is not saved yet.</span>
+        <button type="button" class="link-btn" (click)="retrySave()">Retry</button>
+      </div>
+    }
+    @if (sectionErrors().length) {
+      <ul class="banner error list" role="alert" aria-label="Problems to fix">
+        @for (entry of sectionErrors(); track entry[0]) { <li>{{ entry[1] }}</li> }
+      </ul>
+    }
+    @if (p.internalReviewNote) {
+      <div class="note"><strong>Internal review note</strong><p>{{ p.internalReviewNote }}</p></div>
+    }
+    @if (p.status === 'finalized') {
+      <p class="banner info">This petition is finalized and read-only. The final version below is the immutable record.</p>
+    } @else if (p.status === 'approved') {
+      <p class="banner info">Approved. Finalizing needs every required item below to be ready.</p>
+    }
+
+    <div class="columns">
+      <!-- sections -->
+      <nav class="sections" aria-label="Petition sections">
+        @for (s of p.sections; track s.key) {
+          <button type="button" class="section-btn" [class.active]="s.key === sectionKey()" [attr.aria-current]="s.key === sectionKey() ? 'true' : null" (click)="selectSection(s.key)">
+            <span class="section-title">{{ s.title }}@if (!s.required) { <span class="muted"> (optional)</span> }</span>
+            <ih-status-badge [status]="sectionLabels[s.reviewStatus]" [variant]="sectionVariants[s.reviewStatus]"></ih-status-badge>
+            <span class="muted">{{ s.assignee ? s.assignee.name : 'Unassigned' }}</span>
+          </button>
+        }
+      </nav>
+
+      <!-- editor -->
+      <section class="editor" aria-label="Section editor">
+        @if (section(); as s) {
+          <label class="label" for="section-body">{{ s.title }}</label>
+          <textarea
+            id="section-body"
+            class="form-control body"
+            rows="18"
+            maxlength="50000"
+            [disabled]="!editable()"
+            [value]="body()"
+            (input)="onBodyEvent($event)"
+            [attr.aria-describedby]="'section-help'"
+          ></textarea>
+          <p id="section-help" class="muted">
+            Plain text. @if (!s.actions.canEdit) { {{ p.status === 'finalized' ? 'Finalized petitions cannot be edited.' : 'You can’t edit this section right now.' }} }
+            @if (s.lastEditedAt) { Last edited by {{ s.lastEditedByName || 'someone' }} · {{ s.lastEditedAt | date: 'MMM d, y, h:mm a' }} }
+          </p>
+          @if (s.reviewNote && s.reviewStatus === 'changes_requested') {
+            <div class="note"><strong>Reviewer note — {{ s.reviewedByName }}</strong><p>{{ s.reviewNote }}</p></div>
+          }
+
+          <div class="actions">
+            @if (s.actions.canMarkReady) {
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="busy() || saveState() === 'conflict'" (click)="markReady()">Mark ready for review</button>
+            }
+            @if (s.actions.canApprove) {
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="busy()" (click)="approveSection()">Approve section</button>
+            }
+          </div>
+
+          @if (s.actions.canReturn) {
+            <div class="review-box">
+              <label class="label" for="review-note">Return this section for changes</label>
+              <textarea id="review-note" class="form-control" rows="2" maxlength="2000" [ngModel]="reviewNote()" (ngModelChange)="reviewNote.set($event)" [attr.aria-invalid]="errorFor('reviewNote') ? 'true' : null"></textarea>
+              @if (errorFor('reviewNote')) { <p class="err" role="alert">{{ errorFor('reviewNote') }}</p> }
+              <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy()" (click)="returnSection()">Return with note</button>
+            </div>
+          }
+
+          @if (s.actions.canAssign) {
+            <div class="assign">
+              <label class="label" for="assignee">Assigned to</label>
+              <div class="row">
+                <select id="assignee" class="form-select" [ngModel]="assigneeChoice()" (ngModelChange)="assigneeChoice.set($event)">
+                  <option value="">Unassigned</option>
+                  @for (emp of employees(); track emp._id) { <option [value]="emp._id">{{ emp.name }}</option> }
+                </select>
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy()" (click)="assign()">Save assignee</button>
+              </div>
+              @if (errorFor('assigneeId')) { <p class="err" role="alert">{{ errorFor('assigneeId') }}</p> }
+            </div>
+          }
+        }
+      </section>
+
+      <!-- dependencies / versions -->
+      <aside class="side" aria-label="Dependencies and versions">
+        <h4>Dependencies</h4>
+        @if (groupedDependencies().length === 0) {
+          <p class="muted">Nothing linked yet. Link the evidence, forms, documents and tasks this petition relies on.</p>
+        }
+        @for (group of groupedDependencies(); track group.type) {
+          <h5>{{ dependencyLabels[group.type] }}</h5>
+          <ul class="deps">
+            @for (dep of group.items; track dep.id) {
+              <li [class.unready]="!dep.ready">
+                <span class="dep-label">{{ dep.label }}</span>
+                <span class="chip" [class.ok]="dep.ready" [class.no]="!dep.ready">{{ dep.ready ? 'Ready' : 'Not ready' }}</span>
+                <span class="muted">{{ dep.requiredForFinalization ? 'Required' : 'Optional' }}@if (dep.reason) { · {{ dep.reason }} }</span>
+                @if (p.actions.canLink) { <button type="button" class="link-btn danger" (click)="removeDependency(dep.id)">Remove<span class="sr-only"> {{ dep.label }}</span></button> }
+              </li>
+            }
+          </ul>
+        }
+
+        @if (p.actions.canLink) {
+          <div class="picker">
+            <label class="label" for="dep-type">Link an item</label>
+            <select id="dep-type" class="form-select" [ngModel]="pickerType()" (ngModelChange)="setPickerType($event)">
+              @for (type of dependencyTypes; track type) { <option [value]="type">{{ dependencyLabels[type] }}</option> }
+            </select>
+            <button type="button" class="link-btn" (click)="loadCandidates()">Show {{ dependencyLabels[pickerType()].toLowerCase() }}</button>
+            @if (candidates().length) {
+              <select id="dep-ref" class="form-select" aria-label="Item to link" [ngModel]="pickerRef()" (ngModelChange)="pickerRef.set($event)">
+                <option value="">Choose…</option>
+                @for (c of candidates(); track c.refId) { <option [value]="c.refId" [disabled]="c.linked">{{ c.label }} ({{ c.status.replace('_', ' ') }}){{ c.linked ? ' — linked' : '' }}</option> }
+              </select>
+              @if (pickerType() === 'case_document') {
+                <select class="form-select" aria-label="Document role" [ngModel]="pickerRole()" (ngModelChange)="pickerRole.set($event)">
+                  @for (role of documentRoles; track role.value) { <option [value]="role.value">{{ role.label }}</option> }
+                </select>
+              }
+              <label class="choice"><input type="checkbox" [checked]="pickerRequired()" (change)="onRequiredChange($event)" /> Required for finalization</label>
+              <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy() || !pickerRef()" (click)="addDependency()">Link</button>
+            }
+          </div>
+        }
+
+        <h4>Versions</h4>
+        @if (p.versions.length === 0) {
+          <p class="muted">Immutable versions are created when the petition is approved and finalized.</p>
+        }
+        <ul class="versions">
+          @for (v of p.versions; track v.id) {
+            <li>
+              <button type="button" class="link-btn" [attr.aria-expanded]="version()?.id === v.id" (click)="openVersion(v.id)">
+                Version {{ v.versionNumber }} — {{ v.reason === 'finalization' ? 'Final' : 'Approved' }}
+              </button>
+              <span class="muted"> {{ v.createdByName }} · {{ v.createdAt | date: 'MMM d, y, h:mm a' }}</span>
+            </li>
+          }
+        </ul>
+        @if (version(); as v) {
+          <section class="version" aria-label="Version detail">
+            <h5>Version {{ v.versionNumber }} (read-only, revision {{ v.sourceRevision }})</h5>
+            @for (s of v.sections; track s.key) {
+              <details>
+                <summary>{{ s.title }} — {{ sectionLabels[s.reviewStatus] }}</summary>
+                <pre class="snapshot">{{ s.body }}</pre>
+              </details>
+            }
+            @if (v.dependencies.length) {
+              <h5>Linked items at this version</h5>
+              <ul class="deps">
+                @for (d of v.dependencies; track d.refId) {
+                  <li><span class="dep-label">{{ d.label }}</span> <span class="chip" [class.ok]="d.ready" [class.no]="!d.ready">{{ d.ready ? 'Ready' : 'Not ready' }}</span> <span class="muted">{{ d.status }}</span></li>
+                }
+              </ul>
+            }
+          </section>
+        }
+      </aside>
+    </div>
+
+    <!-- petition actions: shown only when the server granted them -->
+    <footer class="actions bar">
+      @if (p.actions.canSubmit) {
+        <button type="button" class="btn btn-primary" [disabled]="busy() || saveState() === 'conflict'" (click)="run('submit')">Submit for internal review</button>
+      }
+      @if (p.actions.canApprove) {
+        <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="run('approve')">Approve petition</button>
+      }
+      @if (p.actions.canReturn) {
+        <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="returningPetition.set(!returningPetition())">Return for changes</button>
+      }
+      @if (p.actions.canFinalize) {
+        <button type="button" class="btn btn-primary" [disabled]="busy() || unreadyRequired() > 0" [attr.aria-describedby]="unreadyRequired() > 0 ? 'finalize-block' : null" (click)="showFinalizeConfirm.set(true)">Finalize petition</button>
+        @if (unreadyRequired() > 0) {
+          <span id="finalize-block" class="muted">{{ unreadyRequired() }} required {{ unreadyRequired() === 1 ? 'item is' : 'items are' }} not ready.</span>
+        }
+      }
+    </footer>
+
+    @if (returningPetition()) {
+      <section class="review-box" aria-label="Return petition">
+        <label class="label" for="petition-note">Why is this petition being returned? <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="petition-note" class="form-control" rows="3" maxlength="2000" [ngModel]="petitionNote()" (ngModelChange)="petitionNote.set($event)" [attr.aria-invalid]="errorFor('internalReviewNote') ? 'true' : null"></textarea>
+        @if (errorFor('internalReviewNote')) { <p class="err" role="alert">{{ errorFor('internalReviewNote') }}</p> }
+        <div class="actions">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="returningPetition.set(false)">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="busy()" (click)="run('return')">Return petition</button>
+        </div>
+      </section>
+    }
+  </div>
+
+  <ih-confirm-dialog
+    [isOpen]="showFinalizeConfirm()"
+    title="Finalize this petition?"
+    message="Finalizing writes the final immutable version and locks the petition. Nobody can edit it afterwards."
+    confirmText="Finalize"
+    (confirmed)="run('finalize')"
+    (cancelled)="showFinalizeConfirm.set(false)"
+  ></ih-confirm-dialog>
+} @else {
+  <!-- ------------------------------------------------------------------ list -->
+  @let items = list()?.petitions ?? [];
+  @if (items.length === 0) {
+    <ih-empty-state title="No petition on this case yet" description="Create the primary petition to start drafting, assigning and reviewing its sections.">
+      @if (list()?.canProvision) {
+        <button type="button" class="btn btn-primary" [disabled]="isProvisioning()" (click)="provision()">{{ isProvisioning() ? 'Creating…' : 'Create primary petition' }}</button>
+      }
+    </ih-empty-state>
+  } @else {
+    <ul class="petition-list">
+      @for (item of items; track item.id) {
+        <li class="card">
+          <div class="card-head">
+            <h3>#{{ item.sequence }} · {{ item.title }}</h3>
+            <ih-status-badge [status]="petitionLabels[item.status]" [variant]="petitionVariants[item.status]"></ih-status-badge>
+          </div>
+          <p class="muted">{{ kindLabel(item.kind) }} · sections approved {{ item.sectionProgress.approved }}/{{ item.sectionProgress.total }} · required items ready {{ item.dependencyProgress.ready }}/{{ item.dependencyProgress.total }}</p>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="open(item)">Open petition</button>
+        </li>
+      }
+    </ul>
+    @if (list()?.canProvision) {
+      <div class="actions">
+        <button type="button" class="link-btn" (click)="createAdditional('supplemental')">Add a supplemental petition</button>
+        <button type="button" class="link-btn" (click)="createAdditional('rfe_response')">Add an RFE response</button>
+        <button type="button" class="link-btn" (click)="createAdditional('noid_response')">Add a NOID response</button>
+      </div>
+    }
+  }
+}

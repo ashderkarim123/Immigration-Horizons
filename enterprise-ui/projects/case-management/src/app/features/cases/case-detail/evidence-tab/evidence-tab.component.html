@@ -1,0 +1,157 @@
+@if (isLoading()) {
+  <ih-skeleton [rows]="4" rowHeight="4rem"></ih-skeleton>
+} @else if (isError()) {
+  <ih-error-state
+    title="Failed to Load Evidence"
+    message="There was an error loading the evidence checklist."
+    (retry)="loadEvidence()"
+  ></ih-error-state>
+} @else {
+  <div class="evidence-header">
+    <div class="header-left">
+      <h3 class="card-title m-0">Evidence Checklist</h3>
+      @if (summary() && summary()!.total > 0) {
+        <span class="completion-text">
+          {{ summary()!.completionPercent }}% Complete ({{ summary()!.requiredSatisfied }} / {{ summary()!.requiredTotal }} required)
+        </span>
+      }
+    </div>
+    <div class="header-right">
+      @if (canManage()) {
+        <button type="button" class="btn btn-primary" (click)="openProvisionModal()">
+          Provision Template
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (requirements().length === 0) {
+    <ih-empty-state
+      title="No Evidence Requirements"
+      description="No evidence template has been provisioned for this case yet."
+    ></ih-empty-state>
+  } @else {
+    <div class="evidence-list">
+      @for (group of groupedRequirements(); track group.section) {
+        <div class="evidence-section">
+          <h4 class="section-title">{{ group.section }}</h4>
+          
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Importance</th>
+                  <th>Status</th>
+                  <th>Last Updated</th>
+                  @if (canManage()) {
+                    <th class="action-cell">Actions</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (req of group.items; track req._id) {
+                  <tr>
+                    <td>
+                      <div class="fw-medium">{{ req.title }}</div>
+                      <div class="text-secondary small doc-desc">{{ req.description }}</div>
+                    </td>
+                    <td>
+                      <span class="badge" 
+                            [class.badge-warning]="req.importance === 'required'"
+                            [class.badge-info]="req.importance === 'recommended'"
+                            [class.badge-neutral]="req.importance === 'optional'">
+                        {{ req.importance }}
+                      </span>
+                    </td>
+                    <td>
+                      <ih-status-badge [status]="req.status"></ih-status-badge>
+                    </td>
+                    <td class="text-secondary">
+                      {{ req.updatedAt | date:'shortDate' }}
+                    </td>
+                    @if (canManage()) {
+                      <td class="action-cell">
+                        <button type="button" class="btn btn-sm btn-secondary" (click)="openStatusModal(req)">
+                          Update
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Provision Modal -->
+  @if (showProvisionModal()) {
+    <div class="modal-backdrop" (click)="showProvisionModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Provision Evidence Template</h3>
+          <button type="button" class="btn-close" (click)="showProvisionModal.set(false)">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-3">Applying a template will add standard required items to this case's checklist. Existing items will not be overwritten.</p>
+          <div class="form-group">
+            <label class="form-label">Template</label>
+            <select class="form-select" [(ngModel)]="templateKeyToProvision">
+              <option value="eb2_niw_base">EB-2 NIW Canonical Evidence</option>
+              <option value="eb1a_base">EB-1A Extraordinary Ability</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="showProvisionModal.set(false)">Cancel</button>
+          <button type="button" class="btn btn-primary" [disabled]="isProvisioning()" (click)="submitProvision()">
+            Provision Checklist
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Status Update Modal -->
+  @if (showStatusModal() && activeRequirement()) {
+    <div class="modal-backdrop" (click)="showStatusModal.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Update Requirement Status</h3>
+          <button type="button" class="btn-close" (click)="showStatusModal.set(false)">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <strong>{{ activeRequirement()?.title }}</strong>
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label">New Status</label>
+            <select class="form-select" [(ngModel)]="newStatus">
+              <option value="missing">Missing</option>
+              <option value="in_progress">In Progress</option>
+              <option value="satisfied">Satisfied</option>
+              <option value="waived">Waived</option>
+              <option value="not_applicable">Not Applicable</option>
+            </select>
+          </div>
+          
+          @if (newStatus() === 'waived' || newStatus() === 'not_applicable') {
+            <div class="form-group">
+              <label class="form-label">Reason <span class="text-danger">*</span></label>
+              <textarea class="form-control" rows="3" [(ngModel)]="statusReason" placeholder="Provide a reason..."></textarea>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="showStatusModal.set(false)">Cancel</button>
+          <button type="button" class="btn btn-primary" [disabled]="isUpdating()" (click)="submitStatusUpdate()">
+            Save Status
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+}

@@ -10,7 +10,7 @@ const AdminUser = require('../models/admin/User');
 const CaseDocument = require('../models/CaseDocument');
 const ClientCase = require('../models/ClientCase');
 
-const { canAttachDocument } = require('./collaborationPolicy');
+const { canAttachDocument, channelHasClientAudience } = require('./collaborationPolicy');
 const { notify } = require('../utils/notify');
 const { notifyClient } = require('./notificationService');
 const { sendMentionEmail } = require('./collaborationEmail');
@@ -112,9 +112,10 @@ async function resolveAttachments({ channel, documentIds }) {
     return { outcome: 'validation_error', errors: { attachments: 'One or more documents were not found.' } };
   }
 
+  const clientAudience = await channelHasClientAudience(channel);
   const value = [];
   for (const document of documents) {
-    if (!canAttachDocument(channel, document)) {
+    if (!canAttachDocument(channel, document, { clientAudience })) {
       return { outcome: 'validation_error', errors: { attachments: `"${document.displayName}" cannot be attached to this channel.` } };
     }
     if (!document.currentVersion) {
@@ -330,9 +331,14 @@ async function createMessage({
  * Edits a message's body/mentions in place, recording a revision. Creates
  * no revision when nothing actually changed (module doc §18 point 6).
  */
-async function editMessage({ messageId, newBody, mentionWorkspaceMemberIds, actor }) {
+async function editMessage({ messageId, newBody, mentionWorkspaceMemberIds, actor, expectedUpdatedAt }) {
   const message = await WorkspaceMessage.findById(messageId);
   if (!message || message.deletedAt) return { outcome: 'not_found' };
+  // Optimistic concurrency across requests (ADR-020 §16): the editor saw an older
+  // copy than what is stored. saveGuarded below only catches races inside one request.
+  if (expectedUpdatedAt && new Date(expectedUpdatedAt).getTime() !== message.updatedAt.getTime()) {
+    return { outcome: 'conflict', message };
+  }
 
   const channel = await WorkspaceChannel.findById(message.channel);
   if (!channel) return { outcome: 'not_found' };

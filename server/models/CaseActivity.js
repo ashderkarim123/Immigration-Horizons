@@ -55,6 +55,27 @@ const ACTIVITY_TYPES = [
   // Cycle 8 — a deliberately published, client-visible case update
   // (ADR-007 §6). Distinct from the automatic system messages above.
   'client_update_published',
+  // Phase 08 — material Smart Forms lifecycle events (ADR-021 §18). Never
+  // carry answers; the field-level trail lives in SmartFormAudit.
+  'form_provisioned',
+  'form_submitted',
+  'form_returned',
+  'form_approved',
+  'form_locked',
+  // Phase 09 — material petition lifecycle events (ADR-022 §25). Never carry
+  // petition text; the content history lives in PetitionVersion.
+  'petition_created',
+  'petition_submitted',
+  'petition_returned',
+  'petition_approved',
+  'petition_finalized',
+  // Phase 10 — material filing-packet lifecycle events (ADR-023 §30). Never carry
+  // filenames or manifest contents; the history lives in FilingPacketVersion.
+  'filing_packet_created',
+  'filing_packet_submitted',
+  'filing_packet_returned',
+  'filing_packet_approved',
+  'filing_packet_finalized',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(

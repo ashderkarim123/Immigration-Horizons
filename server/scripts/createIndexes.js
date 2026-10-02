@@ -85,6 +85,17 @@ const MODELS = [
   // writes (revoke/re-issue, session revocation) — ADR-007 §1.
   require('../models/PortalInvitation'),
   require('../models/ClientSession'),
+  // Phase 08 — Smart Forms (ADR-021 §30). Dual-writer with the Next.js app for
+  // case_smart_forms / smart_form_audits; templates are written only by the seeder.
+  require('../models/SmartFormTemplate'),
+  require('../models/CaseSmartForm'),
+  require('../models/SmartFormAudit'),
+  // Phase 09 — Petition Work (ADR-022 §31). Staff-only: only this app reads/writes them.
+  require('../models/CasePetition'),
+  require('../models/PetitionVersion'),
+  // Phase 10 — Filing Packets (ADR-023 §33). Staff-only: only this app reads/writes them.
+  require('../models/FilingPacket'),
+  require('../models/FilingPacketVersion'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');

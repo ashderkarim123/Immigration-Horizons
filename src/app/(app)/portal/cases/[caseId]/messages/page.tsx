@@ -9,7 +9,7 @@ import { getAccessibleMessageCenter } from "@/lib/auth/collaboration-policy";
 import { getUnreadCountsForChannels } from "@/lib/collaboration/read-state-service";
 
 export const metadata: Metadata = {
-  title: "Case Messages",
+  title: "Case Chat",
   robots: { index: false, follow: false },
 };
 
@@ -35,13 +35,13 @@ export default async function PortalCaseMessagesPage({
     { name: "Portal", href: "/portal" },
     { name: "Cases", href: "/portal/cases" },
     { name: caseDoc.caseNumber, href: `/portal/cases/${caseId}` },
-    { name: "Messages", href: `/portal/cases/${caseId}/messages` },
+    { name: "Chat", href: `/portal/cases/${caseId}/messages` },
   ];
 
   return (
     <Container width="default" className="py-10 sm:py-14">
       <PageHeader
-        title="Messages"
+        title="Chat"
         description={`Conversations with your team about ${caseDoc.caseNumber}.`}
         breadcrumbs={trail}
       />

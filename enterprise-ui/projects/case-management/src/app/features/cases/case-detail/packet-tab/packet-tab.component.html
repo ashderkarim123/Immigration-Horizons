@@ -1,0 +1,250 @@
+@if (isLoading() && !packet()) {
+  <ih-skeleton [rows]="4" rowHeight="4rem"></ih-skeleton>
+} @else if (loadError() === 'forbidden') {
+  <ih-empty-state title="Filing packets aren’t available to you" description="You don’t have access to this case’s filing packets. Ask a project manager if you need it."></ih-empty-state>
+} @else if (loadError() === 'error') {
+  <ih-error-state title="Filing packets unavailable" message="The case filing packets could not be loaded." (retry)="loadList()"></ih-error-state>
+} @else if (packet(); as p) {
+  <!-- ---------------------------------------------------------------- workspace -->
+  <div class="workspace">
+    <header class="head">
+      @if ((list()?.packets?.length ?? 0) > 1) {
+        <button type="button" class="link-btn" (click)="back()">← All packets</button>
+      }
+      <h3>{{ p.title }}</h3>
+      <ih-status-badge [status]="statusLabels[p.status]" [variant]="statusVariants[p.status]"></ih-status-badge>
+      <span class="muted">Revision {{ p.revision }} · {{ kindLabel(p.kind) }}</span>
+      <button type="button" class="link-btn push" (click)="printManifest()">Print manifest</button>
+    </header>
+
+    <p class="muted">
+      @if (p.petitionSource.required) { Petition source: {{ p.readiness.petitionReady ? 'ready' : 'not ready' }} · }
+      Required items ready: {{ p.readiness.requiredReady }} of {{ p.readiness.requiredTotal }}.
+      Readiness describes the sources only; it is not an assessment of the case. This packet is a manifest — no combined file is created.
+    </p>
+
+    @if (banner()) {
+      <div class="banner error" role="alert">
+        <span>{{ banner() }}</span>
+        @if (conflict()) { <button type="button" class="btn btn-primary btn-sm" (click)="reload()">Reload latest version</button> }
+      </div>
+    }
+    @if (problems().length) {
+      <ul class="banner error list" role="alert" aria-label="Problems to fix">
+        @for (entry of problems(); track entry[0]) { <li>{{ entry[1] }}</li> }
+      </ul>
+    }
+    @if (p.internalReviewNote) {
+      <div class="note"><strong>Review note</strong><p>{{ p.internalReviewNote }}</p></div>
+    }
+    @if (p.status === 'finalized') {
+      <p class="banner info">Finalized on {{ p.finalizedAt | date: 'MMM d, y, h:mm a' }} by {{ p.finalizedByName }}. This manifest is read-only; the immutable version below is the record.</p>
+    } @else if (p.status === 'approved') {
+      <p class="banner info">Approved by {{ p.approvedByName }}. Finalizing needs every required item to be ready.</p>
+    }
+
+    <!-- petition source -->
+    <section class="panel" aria-label="Petition source">
+      <h4>Petition source</h4>
+      @if (p.petitionSource.present) {
+        <p>
+          {{ p.petitionSource.title }} — version {{ p.petitionSource.versionNumber }}
+          <span class="chip" [class.ok]="p.petitionSource.ready" [class.no]="!p.petitionSource.ready">{{ p.petitionSource.ready ? 'Ready' : 'Not ready' }}</span>
+        </p>
+        @if (p.petitionSource.reason) { <p class="muted">{{ p.petitionSource.reason }}</p> }
+      } @else {
+        <p class="muted">{{ p.petitionSource.required ? 'Choose the finalized petition version this packet files.' : 'This packet kind does not need a petition source.' }}</p>
+      }
+      @if (p.actions.canManage) {
+        <div class="row">
+          <select class="form-select" aria-label="Finalized petition version" [ngModel]="petitionPick()" (ngModelChange)="petitionPick.set($event)">
+            <option value="">Choose a finalized petition version…</option>
+            @for (c of petitionCandidates(); track c.petitionVersionId) { <option [value]="c.petitionVersionId">{{ c.title }} — version {{ c.versionNumber }}{{ c.linked ? ' (current)' : '' }}</option> }
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy() || !petitionPick() || conflict()" (click)="usePetitionVersion()">Use this version</button>
+          @if (p.petitionSource.present) { <button type="button" class="link-btn danger" [disabled]="busy()" (click)="clearPetitionVersion()">Clear</button> }
+        </div>
+        @if (petitionCandidates().length === 0) { <p class="muted">No finalized petition versions exist on this case yet.</p> }
+      }
+    </section>
+
+    <!-- items -->
+    <section class="panel" aria-label="Packet items">
+      <h4>Items in filing order</h4>
+      @if (p.items.length === 0) {
+        <p class="muted">No items yet. Add the accepted documents and approved forms that make up the filing.</p>
+      }
+      <ol class="items">
+        @for (item of p.items; track item.id; let first = $first; let last = $last) {
+          <li class="item" [class.unready]="!item.ready">
+            <div class="item-main">
+              <span class="num" aria-hidden="true">{{ item.order }}</span>
+              <div class="item-text">
+                <strong>{{ item.label }}</strong>
+                <span class="chip" [class.ok]="item.ready" [class.no]="!item.ready">{{ item.ready ? 'Ready' : 'Not ready' }}</span>
+                <span class="muted">
+                  {{ item.type === 'document_version' ? 'Document' : 'Smart Form reference' }}
+                  @if (item.source?.versionNumber) { · version {{ item.source?.versionNumber }} }
+                  @if (item.source?.categoryName) { · {{ item.source?.categoryName }} }
+                  @if (item.source?.mimeType) { · {{ item.source?.mimeType }} }
+                  @if (item.source?.size) { · {{ formatSize(item.source?.size) }} }
+                  @if (item.source?.templateKey) { · revision {{ item.source?.revision }}@if (item.source?.lockedRevision) { (locked {{ item.source?.lockedRevision }}) } }
+                </span>
+                @if (item.reason) { <span class="reason">{{ item.reason }}</span> }
+                @if (hasNewerVersion(item)) {
+                  <span class="muted">A newer version ({{ item.source?.currentVersionNumber }}) exists; this packet keeps version {{ item.source?.versionNumber }}.</span>
+                }
+              </div>
+            </div>
+            <div class="item-controls">
+              <label class="sr-only" [for]="'role-' + item.id">Role for {{ item.label }}</label>
+              <select class="form-select" [id]="'role-' + item.id" [disabled]="!editable()" [ngModel]="item.role" (ngModelChange)="setRole(item, roleOf($event))">
+                @for (r of roles; track r.value) { <option [value]="r.value">{{ r.label }}</option> }
+              </select>
+              <label class="choice"><input type="checkbox" [disabled]="!editable()" [checked]="item.required" (change)="onRequiredChange(item, $event)" /> Required</label>
+              @if (item.downloadAction; as action) {
+                <button type="button" class="btn btn-secondary btn-sm" (click)="download(action, item.label)">Download<span class="sr-only"> {{ item.label }}</span></button>
+              }
+              @if (p.actions.canManage) {
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="!editable() || first" (click)="move(item, -1)">Move up<span class="sr-only"> {{ item.label }}</span></button>
+                <button type="button" class="btn btn-secondary btn-sm" [disabled]="!editable() || last" (click)="move(item, 1)">Move down<span class="sr-only"> {{ item.label }}</span></button>
+                <button type="button" class="link-btn danger" [disabled]="!editable()" (click)="removeItem(item)">Remove<span class="sr-only"> {{ item.label }}</span></button>
+              }
+            </div>
+          </li>
+        }
+      </ol>
+
+      @if (p.actions.canManage) {
+        <div class="picker">
+          <label class="label" for="packet-type">Add to the packet</label>
+          <div class="row">
+            <select id="packet-type" class="form-select" [ngModel]="pickerType()" (ngModelChange)="setPickerType($event)">
+              <option value="document_version">Accepted document (current version)</option>
+              <option value="smart_form">Approved / locked Smart Form (reference)</option>
+            </select>
+            <button type="button" class="link-btn" (click)="loadCandidates()">Show available</button>
+          </div>
+          @if (pickerType() === 'smart_form') { <p class="muted">A Smart Form is recorded as a reviewed reference, not as a filing PDF. Add the accepted form PDF as a document to file it.</p> }
+          @if (candidates().length) {
+            <div class="row">
+              <select class="form-select" aria-label="Item to add" [ngModel]="pickerRef()" (ngModelChange)="pickerRef.set($event)">
+                <option value="">Choose…</option>
+                @for (c of candidates(); track candidateKey(c)) { <option [value]="candidateKey(c)" [disabled]="c.linked">{{ candidateLabel(c) }}</option> }
+              </select>
+              <select class="form-select" aria-label="Role" [ngModel]="pickerRole()" (ngModelChange)="pickerRole.set($event)">
+                @for (r of roles; track r.value) { <option [value]="r.value">{{ r.label }}</option> }
+              </select>
+              <label class="choice"><input type="checkbox" [checked]="pickerRequired()" (change)="onPickerRequired($event)" /> Required</label>
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="busy() || !pickerRef() || conflict()" (click)="addItem()">Add</button>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- actions -->
+    <footer class="actions bar">
+      @if (p.actions.canSubmit) { <button type="button" class="btn btn-primary" [disabled]="busy() || conflict()" (click)="run('submit')">Submit for review</button> }
+      @if (p.actions.canApprove) { <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="run('approve')">Approve packet</button> }
+      @if (p.actions.canReturn) { <button type="button" class="btn btn-secondary" [disabled]="busy()" (click)="returning.set(!returning())">Return for changes</button> }
+      @if (p.actions.canFinalize) {
+        <button type="button" class="btn btn-primary" [disabled]="busy() || !!finalizeBlock()" [attr.aria-describedby]="finalizeBlock() ? 'finalize-block' : null" (click)="showFinalizeConfirm.set(true)">Finalize packet</button>
+        @if (finalizeBlock()) { <span id="finalize-block" class="muted">{{ finalizeBlock() }}</span> }
+      }
+    </footer>
+
+    @if (returning()) {
+      <section class="panel" aria-label="Return packet">
+        <label class="label" for="return-note">Why is this packet being returned? <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="return-note" class="form-control" rows="3" maxlength="2000" [ngModel]="returnNote()" (ngModelChange)="returnNote.set($event)" [attr.aria-invalid]="errorFor('internalReviewNote') ? 'true' : null"></textarea>
+        @if (errorFor('internalReviewNote')) { <p class="err" role="alert">{{ errorFor('internalReviewNote') }}</p> }
+        <div class="actions">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="returning.set(false)">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="busy()" (click)="run('return')">Return packet</button>
+        </div>
+      </section>
+    }
+
+    <!-- versions -->
+    <section class="panel" aria-label="Versions">
+      <h4>Finalized versions</h4>
+      @if (p.versions.length === 0) { <p class="muted">An immutable version is created when the packet is finalized.</p> }
+      <ul class="versions">
+        @for (v of p.versions; track v.id) {
+          <li>
+            <button type="button" class="link-btn" [attr.aria-expanded]="version()?.id === v.id" (click)="openVersion(v.id)">Version {{ v.versionNumber }}</button>
+            <span class="muted"> {{ v.createdByName }} · {{ v.createdAt | date: 'MMM d, y, h:mm a' }}</span>
+          </li>
+        }
+      </ul>
+      @if (version(); as v) {
+        <section class="version" aria-label="Version detail">
+          <h5>Version {{ v.versionNumber }} — exact manifest as filed (read-only)</h5>
+          <p class="muted">Source revision {{ v.sourceRevision }} · manifest hash <span class="hash">{{ v.manifestHash }}</span> (an audit fingerprint, not a signature)</p>
+          @if (v.petitionSource) { <p>Petition: {{ v.petitionSource.petitionTitle }}, version {{ v.petitionSource.versionNumber }}</p> }
+          <ol class="items">
+            @for (i of v.items; track i.order) {
+              <li class="item">
+                <div class="item-main">
+                  <span class="num" aria-hidden="true">{{ i.order }}</span>
+                  <div class="item-text">
+                    <strong>{{ i.label }}</strong>
+                    <span class="muted">
+                      {{ roleLabel(i.role) }} · {{ i.required ? 'Required' : 'Optional' }}
+                      @if (i.source.versionNumber) { · version {{ i.source.versionNumber }} }
+                      @if (i.source.templateKey) { · Smart Form revision {{ i.source.revision }} }
+                      · {{ i.status }}
+                    </span>
+                  </div>
+                </div>
+                @if (i.downloadAction; as action) {
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="download(action, i.label)">Download<span class="sr-only"> {{ i.label }}</span></button>
+                }
+              </li>
+            }
+          </ol>
+        </section>
+      }
+    </section>
+  </div>
+
+  <ih-confirm-dialog
+    [isOpen]="showFinalizeConfirm()"
+    title="Finalize this packet?"
+    message="Finalizing writes the immutable manifest of these exact sources, in this order, and locks the packet. Nobody can edit it afterwards."
+    confirmText="Finalize"
+    (confirmed)="run('finalize')"
+    (cancelled)="showFinalizeConfirm.set(false)"
+  ></ih-confirm-dialog>
+} @else {
+  <!-- ------------------------------------------------------------------ list -->
+  @let items = list()?.packets ?? [];
+  @if (items.length === 0) {
+    <ih-empty-state title="No filing packet on this case yet" description="Create the initial packet to assemble the petition version and documents into an ordered, reviewable filing manifest.">
+      @if (list()?.canProvision) {
+        <button type="button" class="btn btn-primary" [disabled]="isProvisioning()" (click)="provision()">{{ isProvisioning() ? 'Creating…' : 'Create initial packet' }}</button>
+      }
+    </ih-empty-state>
+  } @else {
+    <ul class="packet-list">
+      @for (item of items; track item.id) {
+        <li class="card">
+          <div class="card-head">
+            <h3>#{{ item.sequence }} · {{ item.title }}</h3>
+            <ih-status-badge [status]="statusLabels[item.status]" [variant]="statusVariants[item.status]"></ih-status-badge>
+          </div>
+          <p class="muted">{{ kindLabel(item.kind) }} · {{ item.itemCount }} {{ item.itemCount === 1 ? 'item' : 'items' }} · required items ready {{ item.readiness.requiredReady }}/{{ item.readiness.requiredTotal }}</p>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="open(item)">Open packet</button>
+        </li>
+      }
+    </ul>
+    @if (list()?.canProvision) {
+      <div class="actions">
+        <button type="button" class="link-btn" (click)="createAdditional('rfe_response')">Add an RFE response packet</button>
+        <button type="button" class="link-btn" (click)="createAdditional('noid_response')">Add a NOID response packet</button>
+        <button type="button" class="link-btn" (click)="createAdditional('supplemental')">Add a supplemental packet</button>
+      </div>
+    }
+  }
+}

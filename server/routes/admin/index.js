@@ -21,6 +21,7 @@ const Sprint = require('../../models/admin/Sprint');
 const Notification = require('../../models/admin/Notification');
 const DeliveryRecord = require('../../models/admin/DeliveryRecord');
 const ActivityLog = require('../../models/admin/ActivityLog');
+const EmployeeSession = require('../../models/EmployeeSession');
 
 const { requireAdmin } = require('../../middleware/auth');
 const { uploadSingle } = require('../../middleware/upload');
@@ -1489,16 +1490,25 @@ router.get('/admin/contact-form', async (req, res) => {
 });
 
 // ========================================================================
-// USER MANAGEMENT
+// USER MANAGEMENT (ADR-016 employee credential lifecycle)
 // ========================================================================
+
+/** Generates a cryptographically strong temporary password (24 hex chars = 96 bits). */
+function generateTempPassword() {
+  return crypto.randomBytes(20).toString('base64url').slice(0, 24);
+}
 
 router.get('/admin/users', requireCapability('users.manage'), async (req, res) => {
   try {
     const users = await AdminUser.find().select('-password').sort({ createdAt: -1 }).lean();
+    // One-time temp credential display: passed via session flash, cleared immediately
+    const tempCredential = req.session.tempCredential || null;
+    delete req.session.tempCredential;
     res.render('admin/users/index', {
       title: 'Users | Admin',
       users,
       roleLabels: ROLE_LABELS,
+      tempCredential,
       error: null,
       currentPage: 'users',
     });
@@ -1511,34 +1521,206 @@ router.get('/admin/users/new', requireCapability('users.manage'), (req, res) => 
   res.render('admin/users/form', {
     title: 'New User | Admin',
     user: null,
+    editMode: false,
     roleLabels: ROLE_LABELS,
     error: null,
     currentPage: 'users',
   });
 });
 
+router.get('/admin/users/:id/edit', requireCapability('users.manage'), async (req, res) => {
+  try {
+    const user = await AdminUser.findById(req.params.id).select('-password').lean();
+    if (!user) return res.redirect('/admin/users');
+    res.render('admin/users/form', {
+      title: `Edit User: ${user.name} | Admin`,
+      user,
+      editMode: true,
+      roleLabels: ROLE_LABELS,
+      error: null,
+      currentPage: 'users',
+    });
+  } catch (err) {
+    res.redirect('/admin/users');
+  }
+});
+
+/**
+ * POST /admin/users — create employee account (ADR-016)
+ *
+ * The administrator provides name/email/role/jobTitle/department.
+ * The server generates a strong temporary password.
+ * mustChangePassword=true is set — the employee is forced to change on first login.
+ * The temporary credential is shown ONCE in the next page view.
+ * It is NEVER stored in plaintext, logs, or audit events.
+ */
 router.post('/admin/users', requireCapability('users.manage'), async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    if (!name || !email || !password) {
-      throw new Error('Name, email, and password are required');
+    const { name, email, role, jobTitle, department } = req.body;
+    if (!name || !email || !role) {
+      throw new Error('Name, email, and role are required.');
     }
-    // A lower-privileged administrator must not be able to mint a
-    // super_admin account for themselves or anyone else — only an existing
-    // super_admin may create one.
+    // Privilege escalation guard: only super_admin can create super_admin
     if (role === 'super_admin' && getRole(req) !== 'super_admin') {
       throw new Error('Only a Super Admin can create another Super Admin account.');
     }
-    await AdminUser.create({ name, email, password, role: role || 'editor' });
+    const validRoles = Object.keys(ROLE_LABELS);
+    if (!validRoles.includes(role)) {
+      throw new Error('Invalid role.');
+    }
+
+    const tempPassword = generateTempPassword();
+
+    const newUser = await AdminUser.create({
+      name,
+      email,
+      password: tempPassword, // pre-save hook hashes it
+      role,
+      jobTitle: jobTitle || '',
+      department: department || '',
+      mustChangePassword: true,
+      credentialIssuedAt: new Date(),
+      passwordChangedAt: null,
+      isActive: true,
+    });
+
+    // Record provisioning event — never write the credential itself
+    await recordSecurityEvent({
+      type: 'login_succeeded', // closest existing type; extend contract additively if needed
+      result: 'success',
+      surface: 'admin_cms',
+      actorType: req.session.adminUser && req.session.adminUser.id ? 'admin_user' : 'env_fallback',
+      actorAdminId: req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null,
+      actorName: req.session.adminUser && req.session.adminUser.name ? req.session.adminUser.name : 'Admin',
+      subjectEmail: newUser.email,
+      req,
+      meta: { action: 'employee_account_created', role },
+    });
+
+    // Store temp credential in session — shown once, then cleared
+    // NEVER write it to any log, analytics, or ActivityLog
+    req.session.tempCredential = {
+      userId: String(newUser._id),
+      name: newUser.name,
+      email: newUser.email,
+      password: tempPassword, // cleared from session after one view
+    };
+
     res.redirect('/admin/users');
   } catch (err) {
     res.render('admin/users/form', {
       title: 'New User | Admin',
       user: req.body,
+      editMode: false,
       roleLabels: ROLE_LABELS,
       error: err.message,
       currentPage: 'users',
     });
+  }
+});
+
+/**
+ * PATCH /admin/users/:id — update name/role/jobTitle/department/isActive.
+ * When isActive is set to false, all EmployeeSession rows are revoked immediately.
+ */
+router.patch('/admin/users/:id', requireCapability('users.manage'), async (req, res) => {
+  try {
+    const target = await AdminUser.findById(req.params.id);
+    if (!target) return res.redirect('/admin/users');
+
+    const { name, role, jobTitle, department, isActive } = req.body;
+
+    // Privilege guard: only super_admin may promote/demote super_admin
+    if (target.role === 'super_admin' && getRole(req) !== 'super_admin') {
+      return res.status(403).send('Only a Super Admin can modify another Super Admin account.');
+    }
+    if (role === 'super_admin' && getRole(req) !== 'super_admin') {
+      return res.status(403).send('Only a Super Admin can assign the Super Admin role.');
+    }
+
+    const wasActive = target.isActive;
+    const becomingInactive = wasActive && isActive === 'false';
+
+    if (name) target.name = name;
+    if (role) target.role = role;
+    if (jobTitle !== undefined) target.jobTitle = jobTitle;
+    if (department !== undefined) target.department = department;
+    if (isActive !== undefined) target.isActive = isActive !== 'false';
+
+    await target.save();
+
+    // Revoke all EmployeeSession rows when account is deactivated (ADR-016)
+    if (becomingInactive) {
+      await EmployeeSession.deleteMany({ adminUser: target._id });
+      await recordSecurityEvent({
+        type: 'session_revoked',
+        result: 'success',
+        surface: 'admin_cms',
+        actorType: req.session.adminUser && req.session.adminUser.id ? 'admin_user' : 'env_fallback',
+        actorAdminId: req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null,
+        actorName: req.session.adminUser && req.session.adminUser.name || 'Admin',
+        subjectEmail: target.email,
+        req,
+        meta: { action: 'account_deactivated' },
+      });
+    }
+
+    res.redirect('/admin/users');
+  } catch (err) {
+    console.error('[admin/users/patch]', err.message);
+    res.redirect('/admin/users');
+  }
+});
+
+/**
+ * POST /admin/users/:id/reset-credentials — generate new temp password,
+ * revoke all existing EmployeeSession rows, force first-login setup again.
+ */
+router.post('/admin/users/:id/reset-credentials', requireCapability('users.manage'), async (req, res) => {
+  try {
+    const target = await AdminUser.findById(req.params.id);
+    if (!target) return res.redirect('/admin/users');
+
+    // Privilege guard
+    if (target.role === 'super_admin' && getRole(req) !== 'super_admin') {
+      return res.status(403).send('Only a Super Admin can reset another Super Admin\'s credentials.');
+    }
+
+    const tempPassword = generateTempPassword();
+    target.password = tempPassword; // pre-save hook hashes
+    target.mustChangePassword = true;
+    target.credentialIssuedAt = new Date();
+    target.passwordChangedAt = null;
+    await target.save();
+
+    // Revoke all existing sessions — employee must log in fresh with new temp
+    await EmployeeSession.deleteMany({ adminUser: target._id });
+
+    // Audit reset — never record the credential
+    await recordSecurityEvent({
+      type: 'password_reset_completed',
+      result: 'success',
+      surface: 'admin_cms',
+      actorType: req.session.adminUser && req.session.adminUser.id ? 'admin_user' : 'env_fallback',
+      actorAdminId: req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null,
+      actorName: req.session.adminUser && req.session.adminUser.name || 'Admin',
+      subjectEmail: target.email,
+      req,
+      meta: { action: 'admin_credential_reset' },
+    });
+
+    // Show temp credential once
+    req.session.tempCredential = {
+      userId: String(target._id),
+      name: target.name,
+      email: target.email,
+      password: tempPassword,
+    };
+
+    res.redirect('/admin/users');
+  } catch (err) {
+    console.error('[admin/users/reset-credentials]', err.message);
+    res.redirect('/admin/users');
   }
 });
 
@@ -1563,6 +1745,8 @@ router.delete('/admin/users/:id', requireCapability('users.delete'), async (req,
       }
     }
 
+    // Revoke sessions before deleting
+    await EmployeeSession.deleteMany({ adminUser: target._id });
     await AdminUser.findByIdAndDelete(req.params.id);
     res.redirect('/admin/users');
   } catch (err) {

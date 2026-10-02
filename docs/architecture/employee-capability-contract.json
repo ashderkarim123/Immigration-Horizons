@@ -355,6 +355,97 @@
       "super_admin",
       "admin",
       "pm"
+    ],
+    "forms.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "forms.edit": [
+      "super_admin",
+      "admin",
+      "pm",
+      "uscis_forms_specialist"
+    ],
+    "forms.review": [
+      "super_admin",
+      "admin",
+      "pm",
+      "reviewer",
+      "uscis_forms_specialist"
+    ],
+    "forms.lock": [
+      "super_admin",
+      "admin",
+      "reviewer"
+    ],
+    "form_templates.manage": [
+      "super_admin",
+      "admin"
+    ],
+    "petitions.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "petitions.manage": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
+    "petitions.edit": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer"
+    ],
+    "petitions.review": [
+      "super_admin",
+      "admin",
+      "pm",
+      "reviewer"
+    ],
+    "petitions.finalize": [
+      "super_admin",
+      "admin",
+      "reviewer"
+    ],
+    "filing_packets.view": [
+      "super_admin",
+      "admin",
+      "pm",
+      "petition_writer",
+      "uscis_forms_specialist",
+      "reviewer"
+    ],
+    "filing_packets.manage": [
+      "super_admin",
+      "admin",
+      "pm",
+      "uscis_forms_specialist"
+    ],
+    "filing_packets.review": [
+      "super_admin",
+      "admin",
+      "pm",
+      "reviewer"
+    ],
+    "filing_packets.finalize": [
+      "super_admin",
+      "admin",
+      "reviewer"
     ]
   }
 }

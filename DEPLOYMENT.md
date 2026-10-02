@@ -9,6 +9,8 @@ Both apps share one MongoDB Atlas cluster/database (`immigration-horizons`, coll
 
 The legacy Express+EJS site (a separate repo, port 3000) is **out of scope** — it has its own `DEPLOYMENT.md` and stays live until an explicit cutover decision is made.
 
+> **Angular staff app (Release Gate 01, ADR-024).** Releases now also build the Angular case-management app into `<release>/static/staff/`. It receives **no traffic** until the app-host nginx routing is switched (`/staff/*` → Angular static, `/api/v1/*` → Express). That switch, the backup/index/migration/env checklists and both rollback procedures are in [`docs/deployment/ANGULAR_STAFF_CUTOVER_RUNBOOK.md`](docs/deployment/ANGULAR_STAFF_CUTOVER_RUNBOOK.md).
+
 ---
 
 ## Part 0 — Recommended topology

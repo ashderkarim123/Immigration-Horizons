@@ -1,0 +1,61 @@
+<div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <!-- Sidebar -->
+  <aside class="sidebar" role="navigation" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="logo">
+        <img src="assets/images/logo-header.png" alt="Immigration Horizons" class="logo-icon" style="width: 32px; height: 32px;" />
+        @if (!sidebarCollapsed()) {
+          <span class="logo-text">Immigration<br/>Horizons</span>
+        }
+      </div>
+    </div>
+
+    <ih-navigation [collapsed]="sidebarCollapsed()" />
+
+    <div class="sidebar-footer">
+      <button
+        class="collapse-btn"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+        type="button">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          @if (sidebarCollapsed()) {
+            <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
+          } @else {
+            <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd"/>
+          }
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main content area -->
+  <div class="main-area">
+    <header class="top-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; border-bottom: 1px solid var(--ih-border-light); background: var(--ih-bg-header); height: var(--ih-header-height);">
+      <div class="header-left">
+        <button
+          class="mobile-menu-btn"
+          (click)="toggleSidebar()"
+          aria-label="Toggle menu"
+          type="button"
+          style="background: transparent; border: none; cursor: pointer; padding: 0.5rem;">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width: 20px; height: 20px;">
+            <path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+      <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+        <span class="user-info" style="font-size: 0.875rem; font-weight: 500; color: var(--ih-text-primary);">
+          {{ auth.user()?.name }} <span style="color: var(--ih-text-muted); font-weight: 400;">({{ auth.role()?.label }})</span>
+        </span>
+        <button (click)="logout()" style="background: transparent; border: 1px solid var(--ih-border-medium); border-radius: var(--ih-radius-sm); padding: 0.25rem 0.75rem; cursor: pointer; font-size: 0.875rem;">
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <main class="content-area" style="padding: 1.5rem; overflow-y: auto; height: calc(100vh - var(--ih-header-height));">
+      <router-outlet />
+    </main>
+  </div>
+</div>

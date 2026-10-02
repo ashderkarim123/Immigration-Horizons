@@ -87,3 +87,20 @@ jobs:
             code=$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 20 "$host")
             echo "$code  $host"
           done
+
+      # Informational only (never fails the deploy). Release Gate 01 deploys code FIRST
+      # (Step A) and switches app-host routing LATER (Step B, a deliberate operator action),
+      # so these two answer differently before and after the switch:
+      #   before Step B: /staff/login -> legacy Next staff UI, /api/v1/health -> redirect/404
+      #   after  Step B: /staff/login -> Angular shell (200), /api/v1/health -> 200 JSON
+      # The full Angular staff smoke is in docs/deployment/ANGULAR_STAFF_CUTOVER_RUNBOOK.md.
+      - name: Report staff routing state (informational)
+        continue-on-error: true
+        run: |
+          for url in \
+            https://app.immigrationhorizons.com/staff/login \
+            https://app.immigrationhorizons.com/api/v1/health
+          do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 20 "$url" || true)
+            echo "$code  $url"
+          done

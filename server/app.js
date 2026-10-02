@@ -18,6 +18,7 @@ const expressLayouts = require('express-ejs-layouts');
 const helmet = require('helmet');
 
 const adminRoutes = require('./routes/admin/index');
+const apiRoutes = require('./routes/api/v1/index');
 const { csrfProtection } = require('./middleware/csrf');
 
 function createApp() {
@@ -134,6 +135,11 @@ function createApp() {
   app.locals.hasPersistentSessionStore = !!sessionConfig.store;
 
   app.use(session(sessionConfig));
+
+  // ----- JSON API Mount -----
+  // Mounted before CSRF so that the API handles its own CSRF/origin checks 
+  // via the trustedOrigin middleware and is not required to submit an EJS token.
+  app.use('/api/v1', apiRoutes);
 
   // ----- CSRF -----
   // After the session (it stores the token there) and after the body

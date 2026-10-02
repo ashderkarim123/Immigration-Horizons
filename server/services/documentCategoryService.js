@@ -260,7 +260,45 @@ async function reorderCategories({ caseId, orderedCategoryIds, actor }) {
   return { outcome: 'updated' };
 }
 
+const CHAT_ATTACHMENTS = {
+  templateKey: 'chat_attachments',
+  name: 'Chat Attachments',
+  slug: 'chat-attachments',
+  description: 'Files attached directly from case chat.',
+};
+
+/**
+ * Idempotently provisions the per-case "Chat Attachments" category the first
+ * time a file is attached from chat (ADR-020 §10) — a normal
+ * DocumentCategory, not evidence-required, open to both uploader types.
+ * Lazy rather than part of DEFAULT_CATEGORY_TEMPLATE so existing cases need
+ * no backfill and the template contract fixtures stay unchanged. A
+ * concurrent first use loses the unique-index race and re-reads the winner.
+ */
+async function ensureChatAttachmentsCategory({ caseId, workspaceId }) {
+  const find = () => DocumentCategory.findOne({ case: caseId, templateKey: CHAT_ATTACHMENTS.templateKey, active: true });
+  const existing = await find();
+  if (existing) return existing;
+  try {
+    return await DocumentCategory.create({
+      case: caseId,
+      workspace: workspaceId,
+      ...CHAT_ATTACHMENTS,
+      order: await nextOrderFor(caseId),
+      visibility: 'client_visible',
+      allowedUploaderTypes: 'both',
+      required: false,
+      active: true,
+      createdBy: null,
+    });
+  } catch (err) {
+    if (err && err.code === 11000) return find();
+    throw err;
+  }
+}
+
 module.exports = {
+  ensureChatAttachmentsCategory,
   provisionDefaultCategories,
   previewProvisioning,
   createCategory,

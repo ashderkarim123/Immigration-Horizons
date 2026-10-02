@@ -50,6 +50,21 @@ export const CASE_ACTIVITY_TYPES = [
   "channel_member_added",
   "channel_member_removed",
   "client_update_published",
+  "form_provisioned",
+  "form_submitted",
+  "form_returned",
+  "form_approved",
+  "form_locked",
+  "petition_created",
+  "petition_submitted",
+  "petition_returned",
+  "petition_approved",
+  "petition_finalized",
+  "filing_packet_created",
+  "filing_packet_submitted",
+  "filing_packet_returned",
+  "filing_packet_approved",
+  "filing_packet_finalized",
 ] as const;
 
 export type CaseActivityType = (typeof CASE_ACTIVITY_TYPES)[number];

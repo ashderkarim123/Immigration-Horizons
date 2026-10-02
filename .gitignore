@@ -44,3 +44,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Angular enterprise UI
+enterprise-ui/node_modules/
+enterprise-ui/.angular/
+enterprise-ui/dist/

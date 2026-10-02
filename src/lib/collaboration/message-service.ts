@@ -132,17 +132,17 @@ export async function resolveAttachments(params: {
     return { outcome: "validation_error", errors: { attachments: "One or more documents were not found." } };
   }
 
-  const channelIsClientAccessible = channel.visibility === "all_members" || channel.visibility === "clients_and_team";
-
+  // The sender here is always a client, so every attachment must be client-visible — in
+  // a restricted channel too (the old check only covered the two client-wide visibilities).
   const value: AttachmentValue[] = [];
   for (const document of documents) {
     if (String(document.case) !== String(channel.case)) {
       return { outcome: "validation_error", errors: { attachments: `"${document.displayName}" cannot be attached to this channel.` } };
     }
-    if (document.status === "quarantined") {
+    if (["quarantined", "archived", "rejected"].includes(document.status)) {
       return { outcome: "validation_error", errors: { attachments: `"${document.displayName}" cannot be attached to this channel.` } };
     }
-    if (channelIsClientAccessible && document.visibility !== "client_visible") {
+    if (document.visibility !== "client_visible") {
       return { outcome: "validation_error", errors: { attachments: `"${document.displayName}" cannot be attached to this channel.` } };
     }
     if (!document.currentVersion) {
@@ -357,11 +357,16 @@ export async function editMessage(params: {
   newBody: string;
   mentionWorkspaceMemberIds?: string[];
   actorClientId: string;
+  expectedUpdatedAt?: string;
 }) {
-  const { messageId, newBody, mentionWorkspaceMemberIds, actorClientId } = params;
+  const { messageId, newBody, mentionWorkspaceMemberIds, actorClientId, expectedUpdatedAt } = params;
 
   const message = await WorkspaceMessage.findById(messageId);
   if (!message || message.deletedAt) return { outcome: "not_found" as const };
+  // Optimistic concurrency across requests (ADR-020 §16); mirrors server/services/messageService.js.
+  if (expectedUpdatedAt && new Date(expectedUpdatedAt).getTime() !== new Date(message.updatedAt as unknown as string).getTime()) {
+    return { outcome: "conflict" as const };
+  }
 
   const channel = await WorkspaceChannel.findById(message.channel);
   if (!channel) return { outcome: "not_found" as const };

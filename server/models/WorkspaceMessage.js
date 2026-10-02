@@ -134,6 +134,7 @@ WorkspaceMessageSchema.pre('validate', function () {
 WorkspaceMessageSchema.index({ channel: 1, createdAt: -1, _id: -1 });
 WorkspaceMessageSchema.index({ channel: 1, parentMessage: 1, createdAt: 1, _id: 1 });
 WorkspaceMessageSchema.index({ threadRoot: 1, createdAt: 1, _id: 1 });
+WorkspaceMessageSchema.index({ channel: 1, updatedAt: 1, _id: 1 }); // incremental chat sync (ADR-020 §14)
 WorkspaceMessageSchema.index({ workspace: 1, createdAt: -1 });
 WorkspaceMessageSchema.index({ senderClient: 1, createdAt: -1 });
 WorkspaceMessageSchema.index({ senderAdmin: 1, createdAt: -1 });

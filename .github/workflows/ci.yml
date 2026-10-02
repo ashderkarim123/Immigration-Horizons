@@ -114,3 +114,35 @@ jobs:
           # them run in parallel at all.
           TEST_MONGODB_URI: mongodb://127.0.0.1:27017/ih-ci-server
           LOGIN_RATE_LIMIT: '1000'
+
+  enterprise-ui:
+    name: Enterprise UI (Angular)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: enterprise-ui/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+        working-directory: enterprise-ui
+
+      - name: Run tests
+        run: npm test
+        working-directory: enterprise-ui
+
+      - name: Build case-management
+        run: npx ng build case-management
+        working-directory: enterprise-ui
+
+      # Release Gate 01 (ADR-024): the build deploy.sh will ship. Fails on a wrong
+      # base href, a missing entry bundle, or a bundle that talks to another origin.
+      - name: Verify the staff build is releasable under /staff/
+        run: node scripts/deploy/verify-staff-build.js enterprise-ui/dist/case-management/browser
+
+      - name: Build admin-console
+        run: npx ng build admin-console
+        working-directory: enterprise-ui

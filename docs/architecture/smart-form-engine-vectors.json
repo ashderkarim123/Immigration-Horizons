@@ -1,0 +1,74 @@
+{
+  "_comment": "Shared test vectors for the Smart Forms engine (ADR-021). server/services/smartForms/engine.js and src/lib/forms/engine.ts are both asserted against this file — change the behaviour of one and both suites fail. `value: null` in an expectation means the engine returned `undefined` (empty / clear).",
+  "normalizeValue": [
+    { "name": "text trims", "field": { "key": "a", "label": "A", "type": "text" }, "raw": "  hello  ", "strict": false, "value": "hello" },
+    { "name": "text blank clears", "field": { "key": "a", "label": "A", "type": "text" }, "raw": "   ", "strict": false, "value": null },
+    { "name": "text rejects non-string", "field": { "key": "a", "label": "A", "type": "text" }, "raw": 5, "strict": false, "error": true },
+    { "name": "text over maxLength", "field": { "key": "a", "label": "A", "type": "text", "validation": { "maxLength": 3 } }, "raw": "abcd", "strict": false, "error": true },
+    { "name": "email half-typed is kept on autosave", "field": { "key": "a", "label": "A", "type": "email" }, "raw": "me@", "strict": false, "value": "me@" },
+    { "name": "email half-typed fails on submit", "field": { "key": "a", "label": "A", "type": "email" }, "raw": "me@", "strict": true, "error": true },
+    { "name": "email valid on submit", "field": { "key": "a", "label": "A", "type": "email" }, "raw": "me@example.com", "strict": true, "value": "me@example.com" },
+    { "name": "phone too short on submit", "field": { "key": "a", "label": "A", "type": "phone" }, "raw": "123", "strict": true, "error": true },
+    { "name": "number from string", "field": { "key": "a", "label": "A", "type": "number" }, "raw": "42", "strict": false, "value": 42 },
+    { "name": "number not numeric", "field": { "key": "a", "label": "A", "type": "number" }, "raw": "abc", "strict": false, "error": true },
+    { "name": "number below min on submit", "field": { "key": "a", "label": "A", "type": "number", "validation": { "min": 5 } }, "raw": 1, "strict": true, "error": true },
+    { "name": "number below min is kept on autosave", "field": { "key": "a", "label": "A", "type": "number", "validation": { "min": 5 } }, "raw": 1, "strict": false, "value": 1 },
+    { "name": "date valid", "field": { "key": "a", "label": "A", "type": "date" }, "raw": "2024-02-29", "strict": false, "value": "2024-02-29" },
+    { "name": "date impossible", "field": { "key": "a", "label": "A", "type": "date" }, "raw": "2023-02-29", "strict": false, "error": true },
+    { "name": "yes_no true string", "field": { "key": "a", "label": "A", "type": "yes_no" }, "raw": "yes", "strict": false, "value": true },
+    { "name": "yes_no false is a real answer", "field": { "key": "a", "label": "A", "type": "yes_no" }, "raw": false, "strict": false, "value": false },
+    { "name": "yes_no junk", "field": { "key": "a", "label": "A", "type": "yes_no" }, "raw": "maybe", "strict": false, "error": true },
+    { "name": "select known option", "field": { "key": "a", "label": "A", "type": "select", "options": [{ "value": "x", "label": "X" }] }, "raw": "x", "strict": false, "value": "x" },
+    { "name": "select unknown option", "field": { "key": "a", "label": "A", "type": "select", "options": [{ "value": "x", "label": "X" }] }, "raw": "y", "strict": false, "error": true },
+    { "name": "multi_select de-duplicates", "field": { "key": "a", "label": "A", "type": "multi_select", "options": [{ "value": "x", "label": "X" }, { "value": "y", "label": "Y" }] }, "raw": ["x", "x", "y"], "strict": false, "value": ["x", "y"] },
+    { "name": "country upper-cases", "field": { "key": "a", "label": "A", "type": "country" }, "raw": "us", "strict": false, "value": "US" },
+    { "name": "country must be 2 letters", "field": { "key": "a", "label": "A", "type": "country" }, "raw": "USA", "strict": false, "error": true },
+    { "name": "address trims and keeps known parts", "field": { "key": "a", "label": "A", "type": "address" }, "raw": { "line1": " 1 Main St ", "city": "Austin", "country": "us", "line2": "" }, "strict": false, "value": { "line1": "1 Main St", "city": "Austin", "country": "US" } },
+    { "name": "address rejects unknown part", "field": { "key": "a", "label": "A", "type": "address" }, "raw": { "line1": "x", "planet": "mars" }, "strict": false, "error": true },
+    { "name": "group keeps scalar rows", "field": { "key": "g", "label": "G", "type": "repeated_group", "children": [{ "key": "n", "label": "N", "type": "text" }] }, "raw": [{ "n": " a " }], "strict": false, "value": [{ "n": "a" }] },
+    { "name": "group rejects unknown child", "field": { "key": "g", "label": "G", "type": "repeated_group", "children": [{ "key": "n", "label": "N", "type": "text" }] }, "raw": [{ "z": "a" }], "strict": false, "error": true },
+    { "name": "group row cap", "field": { "key": "g", "label": "G", "type": "repeated_group", "validation": { "maxItems": 1 }, "children": [{ "key": "n", "label": "N", "type": "text" }] }, "raw": [{}, {}], "strict": false, "error": true }
+  ],
+  "isVisible": [
+    { "name": "no condition", "field": { "key": "a" }, "scope": {}, "visible": true },
+    { "name": "equals true", "field": { "key": "a", "visibilityCondition": { "field": "b", "op": "equals", "value": true } }, "scope": { "b": true }, "visible": true },
+    { "name": "equals false (unanswered)", "field": { "key": "a", "visibilityCondition": { "field": "b", "op": "equals", "value": true } }, "scope": {}, "visible": false },
+    { "name": "notEquals unanswered", "field": { "key": "a", "visibilityCondition": { "field": "b", "op": "notEquals", "value": true } }, "scope": {}, "visible": true },
+    { "name": "equals against a multi_select", "field": { "key": "a", "visibilityCondition": { "field": "b", "op": "equals", "value": "x" } }, "scope": { "b": ["x", "y"] }, "visible": true },
+    { "name": "isTruthy empty list", "field": { "key": "a", "visibilityCondition": { "field": "b", "op": "isTruthy" } }, "scope": { "b": [] }, "visible": false },
+    { "name": "isFalsy false answer", "field": { "key": "a", "visibilityCondition": { "field": "b", "op": "isFalsy" } }, "scope": { "b": false }, "visible": true },
+    { "name": "unknown operator never reveals", "field": { "key": "a", "visibilityCondition": { "field": "b", "op": "eval", "value": 1 } }, "scope": { "b": 1 }, "visible": false }
+  ],
+  "template": {
+    "key": "vector_form",
+    "version": 1,
+    "title": "Vector form",
+    "sections": [
+      {
+        "key": "main",
+        "title": "Main",
+        "fields": [
+          { "key": "name", "label": "Name", "type": "text", "required": true },
+          { "key": "has_other", "label": "Has other", "type": "yes_no", "required": true },
+          { "key": "other_detail", "label": "Detail", "type": "textarea", "required": true, "visibilityCondition": { "field": "has_other", "op": "equals", "value": true } },
+          { "key": "home", "label": "Home", "type": "address", "required": true },
+          { "key": "trips", "label": "Trips", "type": "repeated_group", "required": true, "children": [{ "key": "when", "label": "When", "type": "date", "required": true }, { "key": "why", "label": "Why", "type": "text" }] },
+          { "key": "staff_note", "label": "Staff note", "type": "textarea", "staffOnly": true }
+        ]
+      }
+    ]
+  },
+  "validateForSubmit": [
+    { "name": "empty form", "answers": {}, "errorKeys": ["has_other", "home", "name", "trips"], "progress": { "completedRequired": 0, "totalRequired": 4, "percent": 0 } },
+    { "name": "hidden required field is skipped", "answers": { "name": "A", "has_other": false, "home": { "line1": "1", "city": "C", "country": "US" }, "trips": [{ "when": "2024-01-01" }] }, "errorKeys": [], "progress": { "completedRequired": 4, "totalRequired": 4, "percent": 100 } },
+    { "name": "revealed required field blocks", "answers": { "name": "A", "has_other": true, "home": { "line1": "1", "city": "C", "country": "US" }, "trips": [{ "when": "2024-01-01" }] }, "errorKeys": ["other_detail"], "progress": { "completedRequired": 4, "totalRequired": 5, "percent": 80 } },
+    { "name": "incomplete address", "answers": { "name": "A", "has_other": false, "home": { "line1": "1" }, "trips": [{ "when": "2024-01-01" }] }, "errorKeys": ["home"], "progress": { "completedRequired": 3, "totalRequired": 4, "percent": 75 } },
+    { "name": "group row missing required child", "answers": { "name": "A", "has_other": false, "home": { "line1": "1", "city": "C", "country": "US" }, "trips": [{ "why": "x" }] }, "errorKeys": ["trips", "trips[0].when"], "progress": { "completedRequired": 3, "totalRequired": 4, "percent": 75 } },
+    { "name": "staff-only field never blocks", "answers": { "name": "A", "has_other": false, "home": { "line1": "1", "city": "C", "country": "US" }, "trips": [{ "when": "2024-01-01" }], "staff_note": "" }, "errorKeys": [], "progress": { "completedRequired": 4, "totalRequired": 4, "percent": 100 } },
+    { "name": "hidden answer is retained but ignored", "answers": { "name": "A", "has_other": false, "other_detail": "stale", "home": { "line1": "1", "city": "C", "country": "US" }, "trips": [{ "when": "2024-01-01" }] }, "errorKeys": [], "progress": { "completedRequired": 4, "totalRequired": 4, "percent": 100 } }
+  ],
+  "writableKeys": {
+    "client": ["name", "has_other", "other_detail", "home", "trips"],
+    "employee": ["name", "has_other", "other_detail", "home", "trips", "staff_note"]
+  }
+}

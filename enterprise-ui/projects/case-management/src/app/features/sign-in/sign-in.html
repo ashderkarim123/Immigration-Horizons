@@ -1,0 +1,47 @@
+<div class="auth-layout">
+  <div class="auth-panel form-panel">
+    <div class="auth-header">
+      <img src="assets/images/logo-header.png" alt="Immigration Horizons" class="auth-logo" />
+      <h1>Staff Portal</h1>
+      <p>Sign in with your employee account.</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+      @if (errorMessage()) {
+        <div class="alert alert-error">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input 
+          id="email" 
+          type="email" 
+          formControlName="email" 
+          class="form-control" 
+          autocomplete="username" 
+          placeholder="name@immigrationhorizons.com"
+          autofocus />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          id="password" 
+          type="password" 
+          formControlName="password" 
+          class="form-control" 
+          autocomplete="current-password" />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="loginForm.invalid || isSubmitting()">
+        {{ isSubmitting() ? 'Signing in...' : 'Sign in' }}
+      </button>
+    </form>
+  </div>
+
+  <div class="auth-panel visual-panel">
+    <!-- Blank/Branded area for layout -->
+  </div>
+</div>

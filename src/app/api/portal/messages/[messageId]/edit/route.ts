@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mes
 
   const { messageId } = await params;
 
-  let body: { body?: unknown; mentions?: unknown };
+  let body: { body?: unknown; mentions?: unknown; expectedUpdatedAt?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -55,7 +55,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ mes
       newBody: body.body,
       mentionWorkspaceMemberIds: Array.isArray(body.mentions) ? (body.mentions as string[]) : [],
       actorClientId: String(client._id),
+      expectedUpdatedAt: typeof body.expectedUpdatedAt === "string" ? body.expectedUpdatedAt : undefined,
     });
+    if (result.outcome === "conflict") return jsonError("conflict", "This message was updated by someone else. Please reload and try again.");
     if (result.outcome === "validation_error") return jsonError("unprocessable", Object.values(result.errors)[0]);
     if (result.outcome === "not_found") return jsonError("not_found", "That message could not be found.");
     return jsonOk({ messageId: String(result.message._id) });

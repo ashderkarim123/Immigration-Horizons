@@ -122,6 +122,26 @@ export const CAPABILITIES: Record<string, string[]> = {
   "messages.edit_own": CASE_WORKER_ROLES,
   "messages.moderate": ["super_admin", "admin", "pm"],
   "messages.view_revisions": ["super_admin", "admin", "pm"],
+
+  // --- Smart Forms (Phase 08, ADR-021 §15) --- capability gates only; every use is also case-membership scoped.
+  "forms.view": [...MANAGER_ROLES, ...SPECIALIST_ROLES, "reviewer"],
+  "forms.edit": ["super_admin", "admin", "pm", "uscis_forms_specialist"],
+  "forms.review": ["super_admin", "admin", "pm", "reviewer", "uscis_forms_specialist"],
+  "forms.lock": ["super_admin", "admin", "reviewer"],
+  "form_templates.manage": ["super_admin", "admin"],
+
+  // --- Petition Work (Phase 09, ADR-022 §20) --- capability gates only; every use is also case-membership scoped.
+  "petitions.view": [...MANAGER_ROLES, ...SPECIALIST_ROLES, "reviewer"],
+  "petitions.manage": ["super_admin", "admin", "pm"],
+  "petitions.edit": ["super_admin", "admin", "pm", "petition_writer"],
+  "petitions.review": ["super_admin", "admin", "pm", "reviewer"],
+  "petitions.finalize": ["super_admin", "admin", "reviewer"],
+
+  // --- Filing Packets (Phase 10, ADR-023 §21) --- capability gates only; every use is also case-membership scoped.
+  "filing_packets.view": ["super_admin", "admin", "pm", "petition_writer", "uscis_forms_specialist", "reviewer"],
+  "filing_packets.manage": ["super_admin", "admin", "pm", "uscis_forms_specialist"],
+  "filing_packets.review": ["super_admin", "admin", "pm", "reviewer"],
+  "filing_packets.finalize": ["super_admin", "admin", "reviewer"],
 };
 
 /**

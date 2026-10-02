@@ -67,7 +67,9 @@ const TASK_OWNERSHIP_ROLES = [...SPECIALIST_ROLES, 'reviewer'];
  * malformed.
  */
 function getRole(req) {
-  return (req.session && req.session.adminUser && req.session.adminUser.role) || null;
+  if (req.session && req.session.adminUser && req.session.adminUser.role) return req.session.adminUser.role;
+  if (req.staff && req.staff.role) return req.staff.role;
+  return null;
 }
 
 function isManager(req) {
@@ -227,6 +229,35 @@ const CAPABILITIES = {
   'messages.edit_own': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
   'messages.moderate': ['super_admin', 'admin', 'pm'],
   'messages.view_revisions': ['super_admin', 'admin', 'pm'],
+
+  // Smart Forms (Phase 08, ADR-021 §15). Capability gates only — every use
+  // is ALSO scoped to case membership (services/smartFormPolicy.js), so a
+  // role grant never reaches a case the actor is not on. Editing and review
+  // are separate because the person preparing answers should not be the only
+  // one who can sign them off; locking is narrower still.
+  'forms.view': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'forms.edit': ['super_admin', 'admin', 'pm', 'uscis_forms_specialist'],
+  'forms.review': ['super_admin', 'admin', 'pm', 'reviewer', 'uscis_forms_specialist'],
+  'forms.lock': ['super_admin', 'admin', 'reviewer'],
+  'form_templates.manage': ['super_admin', 'admin'],
+
+  // Petition Work (Phase 09, ADR-022 §20). Capability gates only — every use is
+  // ALSO scoped to case membership, and petitions.edit is further limited to
+  // assigned sections for anyone without petitions.manage. A reviewer gets no
+  // drafting right from reviewing.
+  'petitions.view': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'petitions.manage': ['super_admin', 'admin', 'pm'],
+  'petitions.edit': ['super_admin', 'admin', 'pm', 'petition_writer'],
+  'petitions.review': ['super_admin', 'admin', 'pm', 'reviewer'],
+  'petitions.finalize': ['super_admin', 'admin', 'reviewer'],
+
+  // Filing Packets (Phase 10, ADR-023 §21). Capability gates only — every use is
+  // ALSO scoped to case membership. Assembling, approving and locking the filing
+  // snapshot are three separate rights.
+  'filing_packets.view': ['super_admin', 'admin', 'pm', 'petition_writer', 'uscis_forms_specialist', 'reviewer'],
+  'filing_packets.manage': ['super_admin', 'admin', 'pm', 'uscis_forms_specialist'],
+  'filing_packets.review': ['super_admin', 'admin', 'pm', 'reviewer'],
+  'filing_packets.finalize': ['super_admin', 'admin', 'reviewer'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */
@@ -274,7 +305,7 @@ function requireCapability(capability) {
 
 /** True if `req`'s user is the assignee on `task` (Task.assignee, a real ObjectId ref — not a guess). */
 function isTaskOwner(req, task) {
-  const userId = req.session && req.session.adminUser && req.session.adminUser.id;
+  const userId = (req.session && req.session.adminUser && req.session.adminUser.id) || (req.staff && req.staff._id);
   if (!userId || !task || !task.assignee) return false;
   return String(task.assignee) === String(userId);
 }

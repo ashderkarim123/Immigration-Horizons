@@ -29,6 +29,8 @@ const eslintConfig = defineConfig([
     // server/ is a separate, standalone CommonJS Express app (its own
     // package.json/node_modules) — not part of this Next.js TypeScript app.
     "server/**",
+    // enterprise-ui/ is a separate Angular application.
+    "enterprise-ui/**",
   ]),
 ]);
 

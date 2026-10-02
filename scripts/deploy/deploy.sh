@@ -110,7 +110,7 @@ chmod 700 "$SHARED/private-documents"
 # ---------------------------------------------------------------------------
 # Install and build
 # ---------------------------------------------------------------------------
-log "Installing dependencies (npm ci, both apps)"
+log "Installing dependencies (npm ci: Next.js app, admin/API, Angular staff)"
 # --include=dev is required here, not optional: `next build` needs
 # tailwindcss, @tailwindcss/postcss, and typescript, all devDependencies.
 # npm's own docs warn that a bare `npm ci` silently omits devDependencies
@@ -123,6 +123,9 @@ log "Installing dependencies (npm ci, both apps)"
 # build step, so its devDependencies (mocha, etc.) are never needed here.
 ( cd "$RELEASE"        && npm ci --no-audit --no-fund --include=dev )
 ( cd "$RELEASE/server" && npm ci --no-audit --no-fund --omit=dev )
+# The Angular app is built here and only its static output ships, so it needs its
+# devDependencies (@angular/build) for the same reason the root does. Never `npm install`.
+( cd "$RELEASE/enterprise-ui" && npm ci --no-audit --no-fund --include=dev )
 
 log "Building the Next.js app"
 ( cd "$RELEASE" && npm run build )
@@ -131,6 +134,32 @@ log "Building the Next.js app"
 # rather than as a PM2 crash loop after the symlink has already moved.
 log "Smoke-checking the admin CMS entrypoint"
 ( cd "$RELEASE/server" && node --check server.js && node --check app.js )
+
+# ---------------------------------------------------------------------------
+# Angular staff app (Release Gate 01, ADR-024)
+# ---------------------------------------------------------------------------
+# Built in this release, copied INTO this release (static/staff/) and never
+# symlinked to a shared path, so rolling `current` back rolls the staff UI back
+# with it. This only puts the files on disk — it does NOT change nginx. Until the
+# operator switches the app-host routing (runbook Step B) they receive no traffic.
+log "Building the Angular staff app (case-management, base href /staff/)"
+( cd "$RELEASE/enterprise-ui" && NG_CLI_ANALYTICS=false npx --no-install ng build case-management )
+
+STAFF_DIST="$RELEASE/enterprise-ui/dist/case-management/browser"
+STAFF_STATIC="$RELEASE/static/staff"
+[[ -f "$STAFF_DIST/index.html" ]] || die "Angular build produced no index.html at $STAFF_DIST."
+
+rm -rf "$RELEASE/static"
+mkdir -p "$STAFF_STATIC"
+cp -R "$STAFF_DIST/." "$STAFF_STATIC/"
+[[ -f "$STAFF_STATIC/index.html" ]] || die "static/staff/index.html is missing after the copy."
+# Wrong base href, missing entry bundle, or a bundle pointing at another origin fails HERE,
+# before the symlink moves.
+node "$RELEASE/scripts/deploy/verify-staff-build.js" "$STAFF_STATIC"
+# nginx's worker user must be able to read these through the `current` symlink.
+chmod -R a+rX "$RELEASE/static"
+# The static output is all that ships; the toolchain would only cost disk per release.
+rm -rf "$RELEASE/enterprise-ui/node_modules" "$RELEASE/enterprise-ui/dist" "$RELEASE/enterprise-ui/.angular"
 
 # ---------------------------------------------------------------------------
 # Swap
@@ -169,7 +198,9 @@ check() {
 
 HEALTHY=0
 check "http://127.0.0.1:3000/"      "web (marketing)" && \
-check "http://127.0.0.1:4000/admin/login" "admin CMS" && HEALTHY=1
+check "http://127.0.0.1:4000/admin/login" "admin CMS" && \
+check "http://127.0.0.1:4000/api/v1/health" "canonical staff API" && \
+[[ -f "$CURRENT/static/staff/index.html" ]] && echo "    OK   Angular staff files in the active release" && HEALTHY=1
 
 if [[ "$HEALTHY" -ne 1 ]]; then
   warn "The new release is not serving."
@@ -201,4 +232,5 @@ git -C "$CACHE" worktree prune
 
 trap - ERR
 log "Deployed ${TIMESTAMP}-${SHA} — $SUBJECT"
+echo "    Angular staff files: $CURRENT/static/staff (not served until the app-host routing cutover — the proxy config was NOT changed)"
 echo "    rollback: ln -sfn <previous-release> $CURRENT && pm2 reload all"

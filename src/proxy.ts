@@ -68,15 +68,25 @@ export function proxy(request: NextRequest) {
 
   if (kind === "app") {
     // The SaaS host has no marketing surface. `/` is whichever dashboard
-    // fits the visitor: staff land on /staff, everyone else on /portal.
+    // fits the visitor: staff land on /staff/, everyone else on /portal.
     //
     // This reads only the PRESENCE of the staff cookie, never its value —
     // it is a routing hint, not a login. A forged or expired cookie simply
-    // lands on /staff, which then redirects to /staff/login like any other
-    // unauthenticated request (ADR-009 §3).
+    // lands on /staff/, which then sends the visitor to the staff login like
+    // any other unauthenticated request (ADR-009 §3).
+    //
+    // Staff get a browser REDIRECT, not a rewrite (Release Gate 01, ADR-024
+    // §12). A rewrite is resolved inside this Next process and never goes
+    // back through nginx, so once nginx serves /staff/ from the Angular
+    // build it would still render the legacy Next staff UI. A redirect makes
+    // the browser issue a fresh request that nginx routes. 307, not 308: a
+    // permanent redirect would be cached and outlive an nginx rollback. The
+    // host is explicit because behind nginx request.url is the upstream.
     if (pathname === "/") {
-      const target = request.cookies.has(EMPLOYEE_SESSION_COOKIE) ? "/staff" : "/portal";
-      return markPrivate(NextResponse.rewrite(new URL(target, request.url)));
+      if (request.cookies.has(EMPLOYEE_SESSION_COOKIE)) {
+        return markPrivate(NextResponse.redirect(new URL(`https://${APP_HOST}/staff/`), 307));
+      }
+      return markPrivate(NextResponse.rewrite(new URL("/portal", request.url)));
     }
 
     // /robots.txt must be answered by THIS host, not forwarded. robots.ts

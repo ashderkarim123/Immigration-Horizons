@@ -12,7 +12,7 @@ import { createMessage } from "../../../../../../lib/collaboration/message-servi
 /** Client reply — one-level threading, a reply-to-a-reply normalizes to the thread root (ADR-005 §9). */
 export async function POST(request: Request, { params }: { params: Promise<{ messageId: string }> }): Promise<Response> {
   if (!verifyOrigin(request)) return jsonError("forbidden", "Request rejected.");
-  if (await isRateLimited("portal-message-send", request)) {
+  if (await isRateLimited("portal-message-send", request, 30)) {
     return jsonError("rate_limited", "Too many requests. Please try again later.");
   }
 
@@ -28,7 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mes
 
   const { messageId } = await params;
 
-  let body: { body?: unknown; mentions?: unknown; idempotencyKey?: unknown };
+  let body: { body?: unknown; mentions?: unknown; attachments?: unknown; idempotencyKey?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -48,6 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mes
     body: body.body,
     parentMessageId: messageId,
     mentionWorkspaceMemberIds: Array.isArray(body.mentions) ? (body.mentions as string[]) : [],
+    attachmentDocumentIds: Array.isArray(body.attachments) ? (body.attachments as string[]) : [],
     idempotencyKey: typeof body.idempotencyKey === "string" ? body.idempotencyKey : undefined,
   });
 

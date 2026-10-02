@@ -1,0 +1,139 @@
+{
+  "_comment": "Cross-app contract for the Smart Forms domain (ADR-021). server/test/smart-form-schema-contract.test.js and test/smart-form-schema-contract.test.ts both assert their models and constants against this file. Add a field or enum value on one side only and both suites fail — that is the point.",
+  "collections": {
+    "SmartFormTemplate": "smart_form_templates",
+    "CaseSmartForm": "case_smart_forms",
+    "SmartFormAudit": "smart_form_audits"
+  },
+  "templateStatuses": [
+    "draft",
+    "published",
+    "retired"
+  ],
+  "formStatuses": [
+    "draft",
+    "submitted",
+    "needs_changes",
+    "approved",
+    "locked"
+  ],
+  "clientEditableStatuses": [
+    "draft",
+    "needs_changes"
+  ],
+  "staffEditableStatuses": [
+    "draft",
+    "needs_changes",
+    "submitted"
+  ],
+  "fieldTypes": [
+    "text",
+    "textarea",
+    "email",
+    "phone",
+    "number",
+    "date",
+    "yes_no",
+    "select",
+    "multi_select",
+    "country",
+    "address",
+    "repeated_group"
+  ],
+  "conditionOperators": [
+    "equals",
+    "notEquals",
+    "isTruthy",
+    "isFalsy"
+  ],
+  "addressParts": [
+    "line1",
+    "line2",
+    "city",
+    "region",
+    "postalCode",
+    "country"
+  ],
+  "auditEventTypes": [
+    "form_provisioned",
+    "answers_saved",
+    "submitted",
+    "returned_for_changes",
+    "approved",
+    "locked"
+  ],
+  "auditActorTypes": [
+    "client",
+    "employee",
+    "system"
+  ],
+  "saveActorTypes": [
+    "client",
+    "employee",
+    "system"
+  ],
+  "limits": {
+    "maxTextLength": 500,
+    "maxTextareaLength": 5000,
+    "maxRepeatedRows": 25,
+    "maxReviewNoteLength": 2000
+  },
+  "fields": {
+    "SmartFormTemplate": [
+      "audience",
+      "caseTypes",
+      "contentHash",
+      "createdAt",
+      "createdBy",
+      "description",
+      "key",
+      "publishedAt",
+      "schemaVersion",
+      "sections",
+      "status",
+      "title",
+      "updatedAt",
+      "version"
+    ],
+    "CaseSmartForm": [
+      "answers",
+      "approvedAt",
+      "case",
+      "clientReviewNote",
+      "createdAt",
+      "internalReviewNote",
+      "lastSavedAt",
+      "lastSavedById",
+      "lastSavedByName",
+      "lastSavedByType",
+      "lockedAt",
+      "lockedRevision",
+      "progress",
+      "returnedAt",
+      "reviewedBy",
+      "revision",
+      "status",
+      "submittedAt",
+      "template",
+      "templateKey",
+      "templateTitleSnapshot",
+      "templateVersion",
+      "updatedAt",
+      "workspace"
+    ],
+    "SmartFormAudit": [
+      "actorId",
+      "actorName",
+      "actorType",
+      "case",
+      "caseSmartForm",
+      "changedFieldKeys",
+      "createdAt",
+      "eventType",
+      "fromStatus",
+      "revision",
+      "toStatus",
+      "workspace"
+    ]
+  }
+}

@@ -701,6 +701,13 @@ pm2 save
 sudo cp /srv/immigration-horizons/current/scripts/deploy/nginx/*.conf \
         /etc/nginx/sites-available/
 
+# The app-host config includes this snippet (Release Gate 01, ADR-024):
+# /api/v1 -> Express and /staff -> the Angular static build. nginx -t fails
+# without it. Cutover procedure: docs/deployment/ANGULAR_STAFF_CUTOVER_RUNBOOK.md.
+sudo mkdir -p /etc/nginx/snippets
+sudo cp /srv/immigration-horizons/current/scripts/deploy/nginx/snippets/*.conf \
+        /etc/nginx/snippets/
+
 cd /etc/nginx/sites-enabled
 sudo ln -sf ../sites-available/immigrationhorizons.com.conf .
 sudo ln -sf ../sites-available/app.immigrationhorizons.com.conf .
