@@ -63,7 +63,21 @@ test("missing and malformed keys are reported distinctly", () => {
 test("the server needs a strong session secret and a strong break-glass password", () => {
   assert.equal(status(audit("server", { ...goodServer, SESSION_SECRET: "short" }), "SESSION_SECRET"), "INVALID SHAPE");
   assert.equal(status(audit("server", { ...goodServer, SESSION_SECRET: "change-me-change-me-change-me-change-me" }), "SESSION_SECRET"), "INVALID SHAPE");
-  assert.equal(status(audit("server", { ...goodServer, ADMIN_PASSWORD: "password" }), "ADMIN_PASSWORD"), "INVALID SHAPE");
+  assert.equal(status(audit("server", { ...goodServer, ADMIN_PASSWORD: "password" }), "ADMIN credential"), "INVALID SHAPE");
+});
+
+test("the admin credential mirrors the server boot guard: a bcrypt hash alone is enough", () => {
+  const { ADMIN_PASSWORD: _drop, ...hashOnly } = goodServer;
+  const hash = "$2b$12$" + "a".repeat(53);
+  assert.deepEqual(failed(audit("server", { ...hashOnly, ADMIN_PASSWORD_HASH: hash })), []);
+  assert.equal(status(audit("server", { ...hashOnly, ADMIN_PASSWORD_HASH: hash.slice(0, 40) }), "ADMIN credential"), "INVALID SHAPE");
+  assert.equal(status(audit("server", hashOnly), "ADMIN credential"), "MISSING");
+});
+
+test("CONTACT_RECEIVER_EMAIL is required by the site but optional for the admin CMS", () => {
+  const { CONTACT_RECEIVER_EMAIL: _drop, ...noContact } = goodServer;
+  assert.deepEqual(failed(audit("server", noContact)), []);
+  assert.equal(status(audit("root", noContact), "CONTACT_RECEIVER_EMAIL"), "MISSING");
 });
 
 test("mail needs one working transport; analytics ids are optional but must be well formed", () => {

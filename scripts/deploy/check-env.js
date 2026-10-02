@@ -59,13 +59,13 @@ const COMMON = [
   ['MONGODB_URI', 'mongoUri', true],
   ['PRIVATE_DOCUMENT_ROOT', 'documentRoot', true],
   ['EMAIL_FROM', 'email', true], // "Name <addr@host>" is the normal form, so it is not run through the placeholder check
-  ['CONTACT_RECEIVER_EMAIL', 'email', true],
   ['APP_TIMEZONE', 'timezone', false],
 ];
 
 const PROFILES = {
   root: [
     ...COMMON,
+    ['CONTACT_RECEIVER_EMAIL', 'email', true],
     // Both are load-bearing: SITE_URL drives the CSRF Origin check for every portal AND staff write and the
     // activation / reset links; a wrong value makes every write fail with 403.
     ['SITE_URL', 'appUrl', true],
@@ -77,11 +77,23 @@ const PROFILES = {
     ...COMMON,
     ['SESSION_SECRET', 'sessionSecret', true],
     ['SITE_URL', 'httpsUrl', true],
-    // Break-glass fallback credential policy: the pair must be present together and strong.
     ['ADMIN_USERNAME', 'nonEmpty', true],
-    ['ADMIN_PASSWORD', 'adminPassword', true],
+    ['CONTACT_RECEIVER_EMAIL', 'email', false], // the admin CMS reads it only in scripts/seed.js
   ],
 };
+
+// Same rule as server/utils/startupChecks.js: ADMIN_PASSWORD_HASH wins when present, else a strong ADMIN_PASSWORD.
+const BCRYPT_HASH_RE = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
+function adminCredential(env) {
+  if (env.ADMIN_PASSWORD_HASH) {
+    return BCRYPT_HASH_RE.test(env.ADMIN_PASSWORD_HASH)
+      ? { status: 'SET', detail: 'hash' }
+      : { status: 'INVALID SHAPE', detail: 'ADMIN_PASSWORD_HASH must be a full 60-character bcrypt hash' };
+  }
+  if (!env.ADMIN_PASSWORD) return { status: 'MISSING', detail: 'set ADMIN_PASSWORD_HASH (preferred) or ADMIN_PASSWORD' };
+  const problem = rules.adminPassword(env.ADMIN_PASSWORD);
+  return { status: problem ? 'INVALID SHAPE' : 'SET', detail: problem || 'plaintext' };
+}
 
 /** Mail needs ONE working transport: Resend key, or SMTP host. Reported as a single pseudo-key. */
 function mailTransport(env) {
@@ -103,6 +115,7 @@ function audit(profile, env) {
   });
   const mail = mailTransport(env);
   rows.push({ key: 'MAIL transport', required: true, status: mail.status, detail: mail.detail });
+  if (profile === 'server') rows.push({ key: 'ADMIN credential', required: true, ...adminCredential(env) });
   return rows;
 }
 
