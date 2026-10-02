@@ -125,9 +125,7 @@ router.post('/login', trustedOriginMiddleware, loginLimiter, async (req, res, ne
     }
 
     // Valid role check — must have a recognized role to log in
-    const validRoles = ['super_admin', 'admin', 'editor', 'pm', 'petition_writer',
-      'business_plan_specialist', 'recommendation_letter_specialist',
-      'uscis_forms_specialist', 'evidence_collector', 'reviewer', 'viewer'];
+    const validRoles = require('../../../../utils/permissions').ALL_ROLES;
     if (!user.role || !validRoles.includes(user.role)) {
       await recordSecurityEvent({
         type: 'login_failed',

@@ -54,7 +54,7 @@ async function events(filter = {}) {
 // ---------------------------------------------------------------------------
 
 test('a successful admin login is recorded against the AdminUser', async () => {
-  const { user, email, password } = await seedAdminUser({ role: 'pm' });
+  const { user, email, password } = await seedAdminUser({ role: 'admin' });
 
   const res = await attemptLogin(request.agent(app), { username: email, password });
   assert.equal(res.status, 302);
@@ -64,7 +64,7 @@ test('a successful admin login is recorded against the AdminUser', async () => {
   assert.equal(event.actorType, 'admin_user');
   assert.equal(String(event.actorAdmin), String(user._id));
   assert.equal(event.subjectEmail, email.toLowerCase());
-  assert.equal(event.meta.role, 'pm');
+  assert.equal(event.meta.role, 'admin');
 });
 
 test('the break-glass env credential is recorded as env_fallback, not as a person', async () => {
@@ -167,10 +167,10 @@ test('a lock applied in the admin CMS is honoured by the SaaS staff app, and vic
   // Clearing the lock the way a successful sign-in on either app would.
   await AdminUser.updateOne({ _id: user._id }, { $set: { lockedUntil: null, failedLoginCount: 0 } });
   const res = await attemptLogin(request.agent(app), { username: email, password });
-  assert.equal(res.status, 302);
+  assert.equal(res.status, 200);
 });
 
-test('a legacy row with an off-enum role can still sign in and be locked', async () => {
+test('a legacy row with an off-enum role is refused CMS access and can still be locked', async () => {
   // Regression: writing the lockout counters with document.save() would
   // re-validate the whole document, so one legacy row with a role outside
   // the enum would stop being able to log in at all. The counters are
@@ -191,7 +191,7 @@ test('a legacy row with an off-enum role can still sign in and be locked', async
   });
 
   const ok = await attemptLogin(request.agent(app), { username: email, password });
-  assert.equal(ok.status, 302, 'an off-enum role must not break authentication itself');
+  assert.equal(ok.status, 200, 'an off-enum role must not enter CMS');
 
   const bad = await attemptLogin(request.agent(app), { username: email, password: 'wrong' });
   assert.equal(bad.status, 200);

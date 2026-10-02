@@ -10,7 +10,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 
 const { startTestDb, stopTestDb, clearCollections } = require('../helpers/testDb');
-const { seedAdminUser, loginAs, uniqueEmail } = require('../helpers/auth');
+const { seedAdminUser, loginAs, uniqueEmail, expectCmsDenied, loginStaffAs } = require('../helpers/auth');
 
 const { createApp } = require('../../app');
 const AdminUser = require('../../models/admin/User');
@@ -61,7 +61,7 @@ async function seedLead(overrides = {}) {
 async function loggedInAs(role) {
   const agent = request.agent(app);
   const creds = await seedAdminUser({ role });
-  await loginAs(agent, creds);
+  await (['super_admin', 'admin', 'editor'].includes(role) ? loginAs(agent, creds) : expectCmsDenied(agent, creds));
   return agent;
 }
 
@@ -106,7 +106,7 @@ test('viewer: real request is denied for every restricted mutation, and the DB i
 
   for (const attempt of attempts) {
     const res = await attempt();
-    assert.equal(res.status, 403, `expected 403, got ${res.status} for ${res.request.method} ${res.request.url}`);
+    assert.equal(res.status, 302, `expected 302, got ${res.status} for ${res.request.method} ${res.request.url}`);
   }
 
   const stillNew = await Consultation.findById(lead._id);
@@ -144,8 +144,8 @@ test('super_admin: deleting a lead removes it (and its notes) from MongoDB', asy
   assert.equal(await InternalNote.countDocuments({ leadId: lead._id }), 0);
 });
 
-test('pm: assigning a lead persists owner and stage advance to MongoDB', async () => {
-  const agent = await loggedInAs('pm');
+test('CMS recovery admin: assigning a lead persists owner and stage advance to MongoDB', async () => {
+  const agent = await loggedInAs('admin');
   const lead = await seedLead();
   const owner = await AdminUser.create({ name: 'Owner Person', email: uniqueEmail('owner'), password: 'x', role: 'admin' });
 
@@ -157,10 +157,10 @@ test('pm: assigning a lead persists owner and stage advance to MongoDB', async (
   assert.equal(updated.ownerName, 'Owner Person');
 });
 
-test('pm: cannot manage users even though pm can assign leads', async () => {
+test('pm: cannot manage users because the staff role cannot enter CMS', async () => {
   const agent = await loggedInAs('pm');
   const res = await agent.get('/admin/users');
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 302);
 });
 
 test('editor: creating a FAQ is persisted to MongoDB', async () => {
@@ -237,11 +237,11 @@ async function seedRawRoleUser(role) {
 test('fail-closed: a real login with a missing role is denied every protected action, never treated as super_admin', async () => {
   const agent = request.agent(app);
   const creds = await seedRawRoleUser(null);
-  await loginAs(agent, creds);
+  await expectCmsDenied(agent, creds);
   const lead = await seedLead();
 
   const res = await agent.post(`/admin/leads/${lead._id}/status`).send({ status: 'contacted' });
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 302);
   const unchanged = await Consultation.findById(lead._id);
   assert.equal(unchanged.status, 'new');
 });
@@ -249,8 +249,8 @@ test('fail-closed: a real login with a missing role is denied every protected ac
 test('fail-closed: a real login with an unrecognized role string is denied, not treated as any known role', async () => {
   const agent = request.agent(app);
   const creds = await seedRawRoleUser('database_administrator_typo');
-  await loginAs(agent, creds);
+  await expectCmsDenied(agent, creds);
 
   const res = await agent.get('/admin/leads/export/csv');
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 302);
 });

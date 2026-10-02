@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 
 const { startTestDb, stopTestDb, clearCollections } = require('../helpers/testDb');
-const { seedAdminUser, loginAs } = require('../helpers/auth');
+const { seedAdminUser, loginAs, expectCmsDenied, loginStaffAs } = require('../helpers/auth');
 
 const { createApp } = require('../../app');
 const Consultation = require('../../models/Consultation');
@@ -34,7 +34,7 @@ test.beforeEach(async () => {
 async function loggedInAs(role) {
   const agent = request.agent(app);
   const creds = await seedAdminUser({ role });
-  await loginAs(agent, creds);
+  await (['super_admin', 'admin', 'editor'].includes(role) ? loginAs(agent, creds) : expectCmsDenied(agent, creds));
   return { agent, user: creds.user };
 }
 
@@ -79,7 +79,7 @@ function convertBody(overrides = {}) {
 // ---------------------------------------------------------------------------
 
 test('conversion: an authorized manager (pm) converts a consultation with an active client', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const client = await seedActiveClient();
   const lead = await seedLead({ clientUser: client._id });
 
@@ -124,7 +124,7 @@ test('conversion: an authorized manager (pm) converts a consultation with an act
 });
 
 test('conversion: a pending client gets an invited (not active) membership', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const client = await seedActiveClient({ email: 'pending@example.com', status: 'pending' });
   const lead = await seedLead({ clientUser: client._id, email: 'pending@example.com' });
 
@@ -141,7 +141,7 @@ test('conversion: a pending client gets an invited (not active) membership', asy
 });
 
 test('conversion: a consultation with no linked client is rejected with a controlled validation error, no case created', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const lead = await seedLead();
 
   const res = await agent
@@ -156,7 +156,7 @@ test('conversion: a consultation with no linked client is rejected with a contro
 });
 
 test('conversion: an invalid project manager id is rejected', async () => {
-  const { agent } = await loggedInAs('pm');
+  const { agent } = await loggedInAs('admin');
   const client = await seedActiveClient();
   const lead = await seedLead({ clientUser: client._id });
 
@@ -170,7 +170,7 @@ test('conversion: an invalid project manager id is rejected', async () => {
 });
 
 test('conversion: a disabled (isActive: false) employee cannot be selected as project manager', async () => {
-  const { agent } = await loggedInAs('pm');
+  const { agent } = await loggedInAs('admin');
   const disabled = await seedAdminUser({ role: 'pm', isActive: false });
   const client = await seedActiveClient();
   const lead = await seedLead({ clientUser: client._id });
@@ -194,13 +194,13 @@ test('conversion: viewer cannot convert a lead to a case', async () => {
     .type('form')
     .send(convertBody({ projectManagerId: String(pm._id) }));
 
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 302);
   assert.equal(await ClientCase.countDocuments({}), 0);
 });
 
 test('conversion: an unauthorized specialist (reviewer, no cases.create) cannot convert', async () => {
   const { agent } = await loggedInAs('reviewer');
-  const { user: pm } = await loggedInAs('pm'); // just to get a valid pm id, unrelated session
+  const { user: pm } = await loggedInAs('admin'); // just to get a valid pm id, unrelated session
   const client = await seedActiveClient();
   const lead = await seedLead({ clientUser: client._id });
 
@@ -209,12 +209,12 @@ test('conversion: an unauthorized specialist (reviewer, no cases.create) cannot 
     .type('form')
     .send(convertBody({ projectManagerId: String(pm._id) }));
 
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 302);
   assert.equal(await ClientCase.countDocuments({}), 0);
 });
 
 test('conversion: a duplicate conversion attempt creates no additional case, workspace, or memberships', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const client = await seedActiveClient();
   const lead = await seedLead({ clientUser: client._id });
 
@@ -238,7 +238,7 @@ test('conversion: a duplicate conversion attempt creates no additional case, wor
 });
 
 test('conversion: invalid consultation id returns a controlled 404, not a 500', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const res = await agent
     .post('/admin/leads/not-a-valid-object-id/convert-to-case')
     .type('form')
@@ -287,7 +287,7 @@ async function convertedCase(pmId, clientId) {
 }
 
 test('membership: a manager adds an employee member', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const { caseDoc } = await convertedCase(pm._id);
   const { user: specialist } = await seedAdminUser({ role: 'petition_writer' });
 
@@ -304,7 +304,7 @@ test('membership: a manager adds an employee member', async () => {
 });
 
 test('membership: adding the same employee twice does not create a duplicate row', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const { caseDoc, workspace } = await convertedCase(pm._id);
   const { user: specialist } = await seedAdminUser({ role: 'petition_writer' });
 
@@ -319,7 +319,7 @@ test('membership: adding the same employee twice does not create a duplicate row
 });
 
 test('membership: a removed member can be safely reactivated', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const { caseDoc, workspace } = await convertedCase(pm._id);
   const { user: specialist } = await seedAdminUser({ role: 'petition_writer' });
 
@@ -344,7 +344,7 @@ test('membership: a removed member can be safely reactivated', async () => {
 });
 
 test('membership: unauthorized member management is rejected', async () => {
-  const { user: pm } = await loggedInAs('pm');
+  const { user: pm } = await loggedInAs('admin');
   const { caseDoc } = await convertedCase(pm._id);
   const { agent } = await loggedInAs('viewer');
   const { user: specialist } = await seedAdminUser({ role: 'petition_writer' });
@@ -354,7 +354,7 @@ test('membership: unauthorized member management is rejected', async () => {
     .type('form')
     .send({ memberType: 'employee', adminUserId: String(specialist._id) });
 
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 302);
 });
 
 // ---------------------------------------------------------------------------
@@ -384,7 +384,7 @@ test('project manager change updates both the case and the membership roles', as
 });
 
 test('stage update validates the destination and audits the change', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAs('admin');
   const { caseDoc } = await convertedCase(pm._id);
 
   const invalid = await agent.post(`/admin/cases/${caseDoc._id}/stage`).type('form').send({ stage: 'not-a-real-stage' });
@@ -433,37 +433,43 @@ test('a case detail request with an invalid id returns a controlled response, no
 test('an employee with cases.view but no workspace membership cannot see a case they are not a member of', async () => {
   const { user: casePm } = await seedAdminUser({ role: 'pm' });
   const { caseDoc } = await convertedCase(casePm._id);
-  const { agent } = await loggedInAs('pm'); // a different pm, no membership on this case
+  const { agent } = await loggedInAsStaff('pm'); // a different pm, no membership on this case
 
-  const res = await agent.get(`/admin/cases/${caseDoc._id}`);
-  assert.equal(res.status, 403);
+  const res = await agent.get(`/api/v1/staff/cases/${caseDoc._id}`);
+  assert.equal(res.status, 404);
 });
 
 test('cases.view_all (admin) can view a case without any workspace membership', async () => {
   const { user: casePm } = await seedAdminUser({ role: 'pm' });
   const { caseDoc } = await convertedCase(casePm._id);
-  const { agent } = await loggedInAs('admin');
+  const { agent } = await loggedInAsStaff('admin');
 
-  const res = await agent.get(`/admin/cases/${caseDoc._id}`);
+  const res = await agent.get(`/api/v1/staff/cases/${caseDoc._id}`);
   assert.equal(res.status, 200);
 });
 
 test('the assigned project manager can view their own case', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const { agent, user: pm } = await loggedInAsStaff('pm');
   const { caseDoc } = await convertedCase(pm._id);
 
-  const res = await agent.get(`/admin/cases/${caseDoc._id}`);
+  const res = await agent.get(`/api/v1/staff/cases/${caseDoc._id}`);
   assert.equal(res.status, 200);
 });
 
 test('cases list only shows cases the pm has active membership for, unless cases.view_all', async () => {
-  const { agent: pmAgent, user: pm } = await loggedInAs('pm');
+  const { agent: pmAgent, user: pm } = await loggedInAsStaff('pm');
   const { user: otherPm } = await seedAdminUser({ role: 'pm' });
   const mine = await convertedCase(pm._id);
   const notMine = await convertedCase(otherPm._id);
 
-  const res = await pmAgent.get('/admin/cases');
+  const res = await pmAgent.get('/api/v1/staff/cases');
   assert.equal(res.status, 200);
-  assert.ok(res.text.includes(mine.caseDoc.caseNumber));
-  assert.ok(!res.text.includes(notMine.caseDoc.caseNumber));
+  assert.ok(JSON.stringify(res.body).includes(mine.caseDoc.caseNumber));
+  assert.ok(!JSON.stringify(res.body).includes(notMine.caseDoc.caseNumber));
 });
+
+async function loggedInAsStaff(role) {
+  const creds = await seedAdminUser({ role });
+  const agent = await loginStaffAs(request.agent(app), creds);
+  return { agent, user: creds.user };
+}

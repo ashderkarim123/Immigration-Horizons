@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 
 const { startTestDb, stopTestDb, clearCollections } = require('../helpers/testDb');
-const { seedAdminUser, loginAs } = require('../helpers/auth');
+const { seedAdminUser, loginAs, expectCmsDenied, loginStaffAs } = require('../helpers/auth');
 
 const { createApp } = require('../../app');
 const Consultation = require('../../models/Consultation');
@@ -30,7 +30,7 @@ test.beforeEach(async () => {
 async function loggedInAs(role) {
   const agent = request.agent(app);
   const creds = await seedAdminUser({ role });
-  await loginAs(agent, creds);
+  await (['super_admin', 'admin', 'editor'].includes(role) ? loginAs(agent, creds) : expectCmsDenied(agent, creds));
   return agent;
 }
 
@@ -98,7 +98,7 @@ test('viewer attempting to delete a lead is denied and the record survives', asy
   const lead = await Consultation.create({ name: 'Survivor', email: 'a@b.com', message: 'x', service: 'EB-2 NIW' });
 
   const res = await agent.delete(`/admin/leads/${lead._id}`);
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 302);
   assert.ok(await Consultation.findById(lead._id));
 });
 

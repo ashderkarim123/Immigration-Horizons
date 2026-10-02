@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 
 const { startTestDb, stopTestDb, clearCollections } = require('../helpers/testDb');
-const { seedAdminUser, loginAs } = require('../helpers/auth');
+const { seedAdminUser, loginAs, expectCmsDenied, loginStaffAs } = require('../helpers/auth');
 
 const { createApp } = require('../../app');
 const ClientUser = require('../../models/ClientUser');
@@ -37,7 +37,7 @@ test.beforeEach(clearCollections);
 async function loggedInAs(role) {
   const agent = request.agent(app);
   const creds = await seedAdminUser({ role });
-  await loginAs(agent, creds);
+  await (['super_admin', 'admin', 'editor'].includes(role) ? loginAs(agent, creds) : expectCmsDenied(agent, creds));
   return { agent, user: creds.user };
 }
 
@@ -306,7 +306,7 @@ test('the dashboard renders operational counts for a manager and omits them for 
 
   const viewer = await loggedInAs('viewer');
   const viewerRes = await viewer.agent.get('/admin');
-  assert.equal(viewerRes.status, 200);
+  assert.equal(viewerRes.status, 302);
   assert.ok(!viewerRes.text.includes('Filing within 30 days'), 'a viewer has no cases.view and sees no operational queues');
 });
 
@@ -351,7 +351,7 @@ test('publishing is refused without the capability', async () => {
     .post(`/admin/cases/${caseDoc._id}/client-update`)
     .type('form')
     .send({ body: 'Should never post' });
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 302);
   assert.equal(await WorkspaceMessage.countDocuments({ case: caseDoc._id }), 0);
 });
 

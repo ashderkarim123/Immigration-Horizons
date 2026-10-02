@@ -96,7 +96,7 @@ test('leads list: limit is clamped to the maximum page size regardless of what i
 // ---------------------------------------------------------------------------
 
 test('assignment: reassigning the same owner does not send a second notification', async () => {
-  const agent = await loggedInAs('pm');
+  const agent = await loggedInAs('admin');
   const lead = await seedLead();
   const owner = await AdminUser.create({ name: 'Stable Owner', email: uniqueEmail('owner'), password: 'x', role: 'admin' });
 
@@ -108,7 +108,7 @@ test('assignment: reassigning the same owner does not send a second notification
 });
 
 test('assignment: changing the owner logs previous and new owner in ActivityLog.meta', async () => {
-  const agent = await loggedInAs('pm');
+  const agent = await loggedInAs('admin');
   const lead = await seedLead();
   const ownerA = await AdminUser.create({ name: 'Owner A', email: uniqueEmail('owner'), password: 'x', role: 'admin' });
   const ownerB = await AdminUser.create({ name: 'Owner B', email: uniqueEmail('owner'), password: 'x', role: 'admin' });
@@ -123,7 +123,7 @@ test('assignment: changing the owner logs previous and new owner in ActivityLog.
 });
 
 test('assignment: a deactivated user cannot be assigned as owner even with a valid id', async () => {
-  const agent = await loggedInAs('pm');
+  const agent = await loggedInAs('admin');
   const lead = await seedLead();
   const inactiveOwner = await AdminUser.create({ name: 'Inactive Owner', email: uniqueEmail('owner'), password: 'x', role: 'admin', isActive: false });
 

@@ -201,6 +201,17 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
           return renderFailure();
         }
 
+        if (!can({ staff: user }, 'admin.cms.access')) {
+          await recordSecurityEvent({
+            type: 'permission_denied', result: 'denied', surface: 'admin_cms',
+            actorType: 'admin_user', actorAdminId: user._id, actorName: user.name,
+            subjectEmail, req, meta: { reason: 'cms_access_denied', role: user.role },
+          });
+          // A correct credential on the wrong surface is not a password guess.
+          // Do not reset or increment shared staff lockout counters.
+          return renderFailure();
+        }
+
         await AdminUser.updateOne({ _id: user._id }, { $set: successfulLoginUpdate() });
 
         await recordSecurityEvent({
