@@ -1,159 +1,122 @@
+/**
+ * Staff API: case evidence checklist (ADR-018).
+ *
+ * Authorization is derived from the case's primary CaseWorkspace, never from a
+ * field on ClientCase. A missing, malformed, inaccessible or removed-member
+ * target is one identical 404 (no existence oracle); an actor who may view a
+ * case's evidence but not change it gets 403 on mutations. The domain lives in
+ * services/evidenceManagement.js — handlers authorize, delegate and map outcomes.
+ */
 const express = require('express');
-const router = express.Router();
+
 const evidenceManagement = require('../../../../services/evidenceManagement');
-const { staffAuthMiddleware } = require('../../../../middleware/api/staffAuth');
-const { can, requireCapability } = require('../../../../utils/permissions');
+const { loadCaseAndWorkspace } = require('../../../../services/caseManagement');
 const { canViewEvidence, canManageEvidence } = require('../../../../services/casePolicy');
+const { createApiError } = require('../../../../middleware/api/apiError');
+const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedOrigin');
 
-// Apply staff auth middleware
-router.use(staffAuthMiddleware);
+const router = express.Router();
 
-/**
- * Provision evidence checklist for a case
- * POST /api/v1/staff/cases/:caseId/evidence/provision
- */
-router.post('/cases/:caseId/evidence/provision', async (req, res, next) => {
+const respond = (res, req, data, status = 200) => res.status(status).json({ data, meta: { requestId: req.id } });
+const route = (handler) => async (req, res, next) => {
   try {
-    const { caseId } = req.params;
-    const { templateKey, version } = req.body;
-
-    if (!templateKey) {
-      return res.status(400).json({ error: 'templateKey is required' });
-    }
-
-    // Require case management permission
-    const isAuthorized = await canManageEvidence(req, null); // We need the workspace ID to check correctly
-    // Wait, let's fetch the case first or adapt to use accessibleCaseIdFilter
-    const ClientCase = require('../../../../models/ClientCase');
-    const clientCase = await ClientCase.findById(caseId).lean();
-    if (!clientCase) return res.status(404).json({ error: 'Case not found' });
-    
-    if (!(await canManageEvidence(req, clientCase.workspace))) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    const result = await evidenceManagement.provisionChecklist(caseId, templateKey, version);
-    res.json({ data: result, meta: { requestId: req.id } });
+    await handler(req, res, next);
   } catch (err) {
     next(err);
   }
-});
+};
+const notFound = (what) => createApiError(404, 'not_found', `${what} not found.`);
 
-/**
- * Get case evidence summary and requirements
- * GET /api/v1/staff/cases/:caseId/evidence
- */
-router.get('/cases/:caseId/evidence', async (req, res, next) => {
-  try {
-    const { caseId } = req.params;
-    
-    const ClientCase = require('../../../../models/ClientCase');
-    const clientCase = await ClientCase.findById(caseId).lean();
-    if (!clientCase) return res.status(404).json({ error: 'Case not found' });
-    
-    if (!(await canViewEvidence(req, clientCase.workspace))) {
-      return res.status(404).json({ error: 'Case not found' }); // Conceal existence
-    }
-
-    const result = await evidenceManagement.listCaseRequirements(caseId);
-    res.json({ data: result, meta: { requestId: req.id } });
-  } catch (err) {
-    next(err);
+/** Maps a service outcome that is not a success onto the API error envelope. */
+function failOnOutcome(result) {
+  switch (result.outcome) {
+    case 'validation_error':
+      throw createApiError(422, 'validation_error', 'Please correct the highlighted fields.', Object.entries(result.errors).map(([field, message]) => ({ field, message })));
+    case 'not_found':
+      throw notFound('Evidence requirement');
+    case 'document_not_found':
+      throw notFound('Document');
+    default:
   }
+}
+
+/** Resolves the case + primary workspace the actor may view into req.evidence, else the one 404. */
+const caseContext = route(async (req, res, next) => {
+  const loaded = await loadCaseAndWorkspace(req.params.caseId);
+  if (!loaded || !(await canViewEvidence(req, loaded.workspace._id))) return next(notFound('Case'));
+  req.evidence = loaded;
+  return next();
 });
 
-/**
- * Create custom requirement
- * POST /api/v1/staff/cases/:caseId/evidence/requirements
- */
-router.post('/cases/:caseId/evidence/requirements', async (req, res, next) => {
-  try {
-    const { caseId } = req.params;
-    
-    const ClientCase = require('../../../../models/ClientCase');
-    const clientCase = await ClientCase.findById(caseId).lean();
-    if (!clientCase) return res.status(404).json({ error: 'Case not found' });
-    
-    if (!(await canManageEvidence(req, clientCase.workspace))) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    const requirement = await evidenceManagement.createCustomRequirement(caseId, req.staff._id, req.body);
-    res.json({ data: requirement, meta: { requestId: req.id } });
-  } catch (err) {
-    next(err);
-  }
+/** Same for a requirement: authorize against the requirement's own workspace. */
+const requirementContext = route(async (req, res, next) => {
+  const requirement = await evidenceManagement.findRequirementForAuth(req.params.requirementId);
+  if (!requirement || !(await canViewEvidence(req, requirement.workspace))) return next(notFound('Evidence requirement'));
+  req.evidence = { requirement, workspaceId: requirement.workspace };
+  return next();
 });
 
-/**
- * Update requirement status
- * PATCH /api/v1/staff/evidence/requirements/:requirementId/status
- */
-router.patch('/evidence/requirements/:requirementId/status', async (req, res, next) => {
-  try {
-    const { requirementId } = req.params;
-    const { status, reason } = req.body;
-
-    const EvidenceRequirement = require('../../../../models/EvidenceRequirement');
-    const requirement = await EvidenceRequirement.findById(requirementId).populate('case').lean();
-    if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
-    
-    if (!(await canManageEvidence(req, requirement.workspace))) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    const updated = await evidenceManagement.updateRequirementStatus(requirementId, status, req.staff._id, reason);
-    res.json({ data: updated, meta: { requestId: req.id } });
-  } catch (err) {
-    next(err);
-  }
+/** Mutations additionally need the manage action on the resolved workspace. */
+const requireManage = route(async (req, res, next) => {
+  const workspaceId = req.evidence.workspace ? req.evidence.workspace._id : req.evidence.workspaceId;
+  if (!(await canManageEvidence(req, workspaceId))) return next(createApiError(403, 'forbidden', 'Insufficient capability.'));
+  return next();
 });
 
-/**
- * Link document
- * POST /api/v1/staff/evidence/requirements/:requirementId/documents
- */
-router.post('/evidence/requirements/:requirementId/documents', async (req, res, next) => {
-  try {
-    const { requirementId } = req.params;
-    const { documentId } = req.body;
+const actorOf = (req) => ({ id: req.staff._id, name: req.staff.name || 'Employee' });
 
-    const EvidenceRequirement = require('../../../../models/EvidenceRequirement');
-    const requirement = await EvidenceRequirement.findById(requirementId).lean();
-    if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
-    
-    if (!(await canManageEvidence(req, requirement.workspace))) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
+// GET /api/v1/staff/cases/:caseId/evidence
+router.get('/cases/:caseId/evidence', caseContext, route(async (req, res) => {
+  const result = await evidenceManagement.listCaseRequirements(req.evidence);
+  const canManage = await canManageEvidence(req, req.evidence.workspace._id);
+  respond(res, req, { ...result, actions: { canManage } });
+}));
 
-    const updated = await evidenceManagement.linkDocument(requirementId, documentId);
-    res.json({ data: updated, meta: { requestId: req.id } });
-  } catch (err) {
-    next(err);
-  }
-});
+// GET /api/v1/staff/cases/:caseId/evidence/templates — active templates for this case's type
+router.get('/cases/:caseId/evidence/templates', caseContext, route(async (req, res) => {
+  respond(res, req, { templates: await evidenceManagement.listActiveTemplates(req.evidence) });
+}));
 
-/**
- * Unlink document
- * DELETE /api/v1/staff/evidence/requirements/:requirementId/documents/:documentId
- */
-router.delete('/evidence/requirements/:requirementId/documents/:documentId', async (req, res, next) => {
-  try {
-    const { requirementId, documentId } = req.params;
+// GET /api/v1/staff/cases/:caseId/evidence/eligible-documents
+router.get('/cases/:caseId/evidence/eligible-documents', caseContext, requireManage, route(async (req, res) => {
+  respond(res, req, { documents: await evidenceManagement.listEligibleDocuments(req.evidence) });
+}));
 
-    const EvidenceRequirement = require('../../../../models/EvidenceRequirement');
-    const requirement = await EvidenceRequirement.findById(requirementId).lean();
-    if (!requirement) return res.status(404).json({ error: 'Requirement not found' });
-    
-    if (!(await canManageEvidence(req, requirement.workspace))) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
+// POST /api/v1/staff/cases/:caseId/evidence/provision
+router.post('/cases/:caseId/evidence/provision', trustedOriginMiddleware, caseContext, requireManage, route(async (req, res) => {
+  const { templateKey, version } = req.body;
+  const result = await evidenceManagement.provisionChecklist({ ...req.evidence, templateKey, version, actor: actorOf(req) });
+  failOnOutcome(result);
+  respond(res, req, { created: result.created, skipped: result.skipped, template: result.template });
+}));
 
-    const updated = await evidenceManagement.unlinkDocument(requirementId, documentId);
-    res.json({ data: updated, meta: { requestId: req.id } });
-  } catch (err) {
-    next(err);
-  }
-});
+// POST /api/v1/staff/cases/:caseId/evidence/requirements
+router.post('/cases/:caseId/evidence/requirements', trustedOriginMiddleware, caseContext, requireManage, route(async (req, res) => {
+  const result = await evidenceManagement.createCustomRequirement({ ...req.evidence, data: req.body || {}, actor: actorOf(req) });
+  failOnOutcome(result);
+  respond(res, req, result.requirement, 201);
+}));
+
+// PATCH /api/v1/staff/evidence/requirements/:requirementId/status
+router.patch('/evidence/requirements/:requirementId/status', trustedOriginMiddleware, requirementContext, requireManage, route(async (req, res) => {
+  const { status, reason } = req.body || {};
+  const result = await evidenceManagement.updateRequirementStatus({ requirementId: req.params.requirementId, status, reason, actor: actorOf(req) });
+  failOnOutcome(result);
+  respond(res, req, result.requirement);
+}));
+
+// POST /api/v1/staff/evidence/requirements/:requirementId/documents
+router.post('/evidence/requirements/:requirementId/documents', trustedOriginMiddleware, requirementContext, requireManage, route(async (req, res) => {
+  const result = await evidenceManagement.linkDocument({ requirementId: req.params.requirementId, documentId: (req.body || {}).documentId });
+  failOnOutcome(result);
+  respond(res, req, result.requirement);
+}));
+
+// DELETE /api/v1/staff/evidence/requirements/:requirementId/documents/:documentId
+router.delete('/evidence/requirements/:requirementId/documents/:documentId', trustedOriginMiddleware, requirementContext, requireManage, route(async (req, res) => {
+  const result = await evidenceManagement.unlinkDocument({ requirementId: req.params.requirementId, documentId: req.params.documentId });
+  failOnOutcome(result);
+  respond(res, req, result.requirement);
+}));
 
 module.exports = router;

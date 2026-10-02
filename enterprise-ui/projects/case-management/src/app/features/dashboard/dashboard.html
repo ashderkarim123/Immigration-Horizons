@@ -7,22 +7,22 @@
   <div class="loading-state">Loading dashboard...</div>
 } @else if (error()) {
   <div class="alert alert-error">{{ error() }}</div>
-} @else {
+} @else if (metrics(); as m) {
   <div class="metrics-grid">
     <div class="metric-card">
-      <div class="metric-value">{{ metrics()?.myCases ?? '-' }}</div>
+      <div class="metric-value">{{ m.myCases }}</div>
       <div class="metric-label">Active Cases</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value">{{ metrics()?.unreadClientMessages ?? '-' }}</div>
+      <div class="metric-value">{{ m.unreadClientMessages }}</div>
       <div class="metric-label">Unread Messages</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value">{{ metrics()?.upcomingDeadlines ?? '-' }}</div>
+      <div class="metric-value">{{ m.upcomingDeadlines }}</div>
       <div class="metric-label">Upcoming Deadlines</div>
     </div>
     <div class="metric-card">
-      <div class="metric-value">{{ metrics()?.myOpenTasks ?? '-' }}</div>
+      <div class="metric-value">{{ m.myOpenTasks }}</div>
       <div class="metric-label">Open Tasks</div>
     </div>
   </div>
@@ -31,7 +31,7 @@
     <!-- Recent Cases -->
     <div class="section-card">
       <h3>Recent Cases</h3>
-      @if (metrics()?.recentCases?.length) {
+      @if (m.recentCases.length) {
         <table class="data-table">
           <thead>
             <tr>
@@ -41,9 +41,9 @@
             </tr>
           </thead>
           <tbody>
-            @for (c of metrics().recentCases; track c._id) {
+            @for (c of m.recentCases; track c.id) {
               <tr>
-                <td><a [href]="'/cases/' + c._id">{{ c.caseNumber }}</a></td>
+                <td><a [routerLink]="['/cases', c.id]">{{ c.caseNumber }}</a></td>
                 <td>{{ c.caseType }}</td>
                 <td><span class="badge">{{ c.currentStage }}</span></td>
               </tr>
@@ -58,7 +58,7 @@
     <!-- My Tasks -->
     <div class="section-card">
       <h3>My Tasks</h3>
-      @if (metrics()?.myTasks?.length) {
+      @if (m.myTasks.length) {
         <table class="data-table">
           <thead>
             <tr>
@@ -68,7 +68,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (t of metrics().myTasks; track t._id) {
+            @for (t of m.myTasks; track t.id) {
               <tr>
                 <td>{{ t.title }}</td>
                 <td><span class="badge">{{ t.status }}</span></td>

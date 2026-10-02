@@ -1,5 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
+import { Paginated } from '../../core/api/case.types';
+import { ClientListItem } from '../../core/api/client.types';
+import { apiErrorMessage } from '../../core/api/api-error';
 import { DatePipe } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -86,7 +89,7 @@ import { ErrorStateComponent } from '../../shared/error-state.component';
                 <tr>
                   <td class="font-medium">
                     <a [routerLink]="['/clients', c.id]" class="client-link">
-                      {{ c.displayName || c.email }}
+                      {{ c.displayName }}
                     </a>
                   </td>
                   <td>{{ c.email }}</td>
@@ -121,7 +124,7 @@ export class ClientsComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  clients = signal<any[]>([]);
+  clients = signal<ClientListItem[]>([]);
   isLoading = signal(true);
   isError = signal(false);
   errorMessage = signal('');
@@ -139,9 +142,9 @@ export class ClientsComponent implements OnInit {
   statuses = [
     { label: 'All Statuses', value: '' },
     { label: 'Active', value: 'active' },
-    { label: 'Pending Password Setup', value: 'pending_initial_setup' },
-    { label: 'Locked Out', value: 'locked' },
-    { label: 'Deactivated', value: 'deactivated' }
+    { label: 'Pending', value: 'pending' },
+    { label: 'Locked', value: 'locked' },
+    { label: 'Disabled', value: 'disabled' }
   ];
 
   ngOnInit() {
@@ -162,20 +165,19 @@ export class ClientsComponent implements OnInit {
       limit: this.pageSize(),
     };
 
-    if (this.searchQuery()) queryParams['q'] = this.searchQuery();
+    if (this.searchQuery()) queryParams['search'] = this.searchQuery();
     if (this.selectedStatus()) queryParams['status'] = this.selectedStatus();
 
-    this.api.get('/staff/clients', queryParams).subscribe({
-      next: (res: any) => {
-        const data = res.data || {};
-        this.clients.set(data.items || []);
-        this.totalItems.set(data.pagination?.total || data.items?.length || 0);
-        this.totalPages.set(data.pagination?.pages || 1);
+    this.api.get<Paginated<ClientListItem>>('/staff/clients', queryParams).subscribe({
+      next: ({ data }) => {
+        this.clients.set(data.items);
+        this.totalItems.set(data.total);
+        this.totalPages.set(Math.max(1, data.totalPages));
         this.isLoading.set(false);
       },
       error: (err) => {
         this.isError.set(true);
-        this.errorMessage.set(err?.error?.message || 'Failed to load clients.');
+        this.errorMessage.set(apiErrorMessage(err, 'Failed to load clients.'));
         this.isLoading.set(false);
       }
     });

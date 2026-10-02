@@ -1,5 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
+import { CaseListItem, Paginated } from '../../core/api/case.types';
+import { apiErrorMessage } from '../../core/api/api-error';
 import { DatePipe } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -30,7 +32,7 @@ export class Cases implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
-  cases = signal<any[]>([]);
+  cases = signal<CaseListItem[]>([]);
   isLoading = signal(true);
   isError = signal(false);
   errorMessage = signal('');
@@ -92,24 +94,23 @@ export class Cases implements OnInit {
       limit: this.pageSize(),
     };
 
-    if (this.searchQuery()) queryParams['q'] = this.searchQuery();
+    if (this.searchQuery()) queryParams['search'] = this.searchQuery();
     if (this.selectedStage()) queryParams['stage'] = this.selectedStage();
     if (this.selectedCaseType()) queryParams['caseType'] = this.selectedCaseType();
     if (this.selectedPriority()) queryParams['priority'] = this.selectedPriority();
     if (this.selectedScope()) queryParams['scope'] = this.selectedScope();
-    if (this.includeArchived()) queryParams['includeArchived'] = 'true';
+    if (this.includeArchived()) queryParams['archived'] = 'true';
 
-    this.api.get('/staff/cases', queryParams).subscribe({
-      next: (res: any) => {
-        const data = res.data || {};
-        this.cases.set(data.items || []);
-        this.totalItems.set(data.pagination?.total || data.items?.length || 0);
-        this.totalPages.set(data.pagination?.pages || 1);
+    this.api.get<Paginated<CaseListItem>>('/staff/cases', queryParams).subscribe({
+      next: ({ data }) => {
+        this.cases.set(data.items);
+        this.totalItems.set(data.total);
+        this.totalPages.set(Math.max(1, data.totalPages));
         this.isLoading.set(false);
       },
       error: (err) => {
         this.isError.set(true);
-        this.errorMessage.set(err?.error?.message || 'Failed to load cases.');
+        this.errorMessage.set(apiErrorMessage(err, 'Failed to load cases.'));
         this.isLoading.set(false);
       }
     });
@@ -143,12 +144,7 @@ export class Cases implements OnInit {
     });
   }
 
-  getClientDisplayName(c: any): string {
-    if (!c.primaryClient) return 'Unassigned';
-    if (c.primaryClient.displayName) return c.primaryClient.displayName;
-    const first = c.primaryClient.firstName || '';
-    const last = c.primaryClient.lastName || '';
-    const name = [first, last].filter(Boolean).join(' ');
-    return name || c.primaryClient.email || 'Client';
+  getClientDisplayName(c: CaseListItem): string {
+    return c.primaryClient?.displayName || 'Unassigned';
   }
 }

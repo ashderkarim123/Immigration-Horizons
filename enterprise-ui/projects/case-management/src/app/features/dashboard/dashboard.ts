@@ -1,23 +1,25 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { DashboardMetrics } from '../../core/api/dashboard.types';
 
 @Component({
   selector: 'ih-dashboard',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, RouterLink],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
 export class Dashboard implements OnInit {
   private api = inject(ApiService);
   
-  metrics = signal<any>(null);
+  metrics = signal<DashboardMetrics | null>(null);
   isLoading = signal(true);
   error = signal<string | null>(null);
 
   ngOnInit() {
-    this.api.get('/staff/dashboard').subscribe({
+    this.api.get<DashboardMetrics>('/staff/dashboard').subscribe({
       next: (res) => {
         this.metrics.set(res.data);
         this.isLoading.set(false);

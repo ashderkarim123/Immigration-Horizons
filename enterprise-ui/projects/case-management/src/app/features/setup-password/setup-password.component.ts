@@ -3,6 +3,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { apiErrorMessage } from '../../core/api/api-error';
+
+/** Mirrors MIN_PASSWORD_LENGTH in server/routes/api/v1/staff/account.js; the server stays authoritative. */
+export const MIN_PASSWORD_LENGTH = 12;
 
 @Component({
   selector: 'ih-setup-password',
@@ -43,7 +47,20 @@ import { AuthService } from '../../core/auth/auth.service';
               formControlName="newPassword" 
               class="form-control" 
               autocomplete="new-password" />
-            <small style="color: var(--ih-text-muted); font-size: var(--ih-font-size-xs); display: block; margin-top: 4px;">Must be at least 8 characters.</small>
+            <small style="color: var(--ih-text-muted); font-size: var(--ih-font-size-xs); display: block; margin-top: 4px;">Must be at least 12 characters.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm New Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              formControlName="confirmPassword"
+              class="form-control"
+              autocomplete="new-password" />
+            @if (pwdForm.hasError('mismatch') && pwdForm.controls.confirmPassword.dirty) {
+              <small class="field-error" role="alert">Passwords do not match.</small>
+            }
           </div>
 
           <button type="submit" class="btn btn-primary btn-block" [disabled]="pwdForm.invalid || isSubmitting()">
@@ -66,8 +83,9 @@ export class SetupPasswordComponent {
 
   pwdForm = this.fb.group({
     currentPassword: ['', Validators.required],
-    newPassword: ['', [Validators.required, Validators.minLength(8)]]
-  });
+    newPassword: ['', [Validators.required, Validators.minLength(MIN_PASSWORD_LENGTH)]],
+    confirmPassword: ['', Validators.required]
+  }, { validators: (g) => g.get('newPassword')?.value === g.get('confirmPassword')?.value ? null : { mismatch: true } });
 
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
@@ -87,7 +105,7 @@ export class SetupPasswordComponent {
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        this.errorMessage.set(err.error?.error?.message || 'An error occurred.');
+        this.errorMessage.set(apiErrorMessage(err, 'An error occurred.'));
       }
     });
   }

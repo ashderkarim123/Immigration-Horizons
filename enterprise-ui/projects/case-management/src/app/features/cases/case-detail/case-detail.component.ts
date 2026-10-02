@@ -1,16 +1,17 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ApiService } from '../../../core/api/api.service';
-import { AuthService } from '../../../core/auth/auth.service';
+import { apiErrorMessage } from '../../../core/api/api-error';
+import { CaseActivityItem, CaseDetail, CaseMember, MemberOption, Paginated } from '../../../core/api/case.types';
 import { ToastService } from '../../../shared/toast.service';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { DatePipe, JsonPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatusBadgeComponent } from '../../../shared/status-badge.component';
 import { SkeletonComponent } from '../../../shared/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../../shared/error-state.component';
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog.component';
-import { IhIconComponent } from '../../../shared/icon/ih-icon.component';
+import { PaginationComponent } from '../../../shared/pagination.component';
 import { EvidenceTabComponent } from './evidence-tab/evidence-tab.component';
 import { DocumentsTabComponent } from './documents-tab/documents-tab.component';
 import { ChatTabComponent } from './chat-tab/chat-tab.component';
@@ -23,7 +24,6 @@ import { PacketTabComponent } from './packet-tab/packet-tab.component';
   standalone: true,
   imports: [
     DatePipe,
-    JsonPipe,
     RouterLink,
     FormsModule,
     StatusBadgeComponent,
@@ -31,7 +31,7 @@ import { PacketTabComponent } from './packet-tab/packet-tab.component';
     EmptyStateComponent,
     ErrorStateComponent,
     ConfirmDialogComponent,
-    IhIconComponent,
+    PaginationComponent,
     EvidenceTabComponent,
     DocumentsTabComponent,
     ChatTabComponent,
@@ -44,49 +44,43 @@ import { PacketTabComponent } from './packet-tab/packet-tab.component';
 })
 export class CaseDetailComponent implements OnInit {
   private api = inject(ApiService);
-  private auth = inject(AuthService);
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
 
   caseId = signal<string>('');
-  caseData = signal<any>(null);
-  activities = signal<any[]>([]);
-  memberOptions = signal<any[]>([]);
+  caseData = signal<CaseDetail | null>(null);
+  members = signal<CaseMember[]>([]);
+  memberOptions = signal<MemberOption[]>([]);
 
   isLoading = signal(true);
   isError = signal(false);
   errorMessage = signal('');
 
   activeTab = signal<'overview' | 'team' | 'activity' | 'tasks' | 'evidence' | 'documents' | 'chat' | 'forms' | 'petition' | 'packet'>('overview');
+
+  // Team tab
+  membersLoading = signal(false);
+  membersError = signal(false);
+
+  // Activity tab: its own endpoint, paginated independently of the case
+  activity = signal<CaseActivityItem[]>([]);
+  activityLoading = signal(false);
+  activityError = signal(false);
+  activityPage = signal(1);
+  activityTotal = signal(0);
+  activityTotalPages = signal(1);
+  private activityLoaded = false;
+
   caseTasks = signal<any[]>([]);
   isTasksLoading = signal(false);
-  // Capability signals
-  currentUser = computed(() => this.auth.user());
-  canManageStage = computed(() => {
-    const roles = this.currentUser()?.roles || [];
-    return roles.some((r: string) => ['admin', 'super_admin', 'case_manager', 'paralegal'].includes(r));
-  });
-  canAssignPM = computed(() => {
-    const roles = this.currentUser()?.roles || [];
-    return roles.some((r: string) => ['admin', 'super_admin', 'case_manager'].includes(r));
-  });
-  canManageMembers = computed(() => {
-    const roles = this.currentUser()?.roles || [];
-    return roles.some((r: string) => ['admin', 'super_admin', 'case_manager'].includes(r));
-  });
-  canArchiveCase = computed(() => {
-    const roles = this.currentUser()?.roles || [];
-    return roles.some((r: string) => ['admin', 'super_admin'].includes(r));
-  });
-  canPublishUpdate = computed(() => {
-    const roles = this.currentUser()?.roles || [];
-    return roles.some((r: string) => ['admin', 'super_admin', 'case_manager', 'paralegal', 'attorney'].includes(r));
-  });
-  canManageEvidence = computed(() => {
-    // Follows cases.manage semantics per casePolicy.js map
-    const roles = this.currentUser()?.roles || [];
-    return roles.some((r: string) => ['admin', 'super_admin', 'case_manager', 'paralegal', 'attorney'].includes(r));
-  });
+
+  // UI visibility comes from the server's per-case action flags, never from role names.
+  // The server re-checks every mutation.
+  canManageStage = computed(() => this.caseData()?.actions.canManageCase ?? false);
+  canAssignPM = computed(() => this.caseData()?.actions.canAssignManager ?? false);
+  canManageMembers = computed(() => this.caseData()?.actions.canManageMembers ?? false);
+  canArchiveCase = computed(() => this.caseData()?.actions.canArchive ?? false);
+  canPublishUpdate = computed(() => this.caseData()?.actions.canPublishClientUpdate ?? false);
 
   // Modal visibility flags
   showStageModal = signal(false);
@@ -101,7 +95,7 @@ export class CaseDetailComponent implements OnInit {
   selectedNewPmId = signal('');
   newMemberUserId = signal('');
   newMemberRole = signal('contributor');
-  memberToRemove = signal<any>(null);
+  memberToRemove = signal<CaseMember | null>(null);
   clientUpdateMessage = signal('');
   isSubmitting = signal(false);
 
@@ -117,11 +111,12 @@ export class CaseDetailComponent implements OnInit {
     { value: 'archived', label: 'Archived' }
   ];
 
+  /** Employee-assignable subset of WORKSPACE_ROLES; project_manager is set via Change PM. */
   memberRoles = [
-    { value: 'lead', label: 'Lead' },
+    { value: 'case_manager', label: 'Case Manager' },
     { value: 'contributor', label: 'Contributor' },
     { value: 'reviewer', label: 'Reviewer' },
-    { value: 'viewer', label: 'Viewer' }
+    { value: 'observer', label: 'Observer' }
   ];
 
   ngOnInit() {
@@ -129,45 +124,90 @@ export class CaseDetailComponent implements OnInit {
     if (id) {
       this.caseId.set(id);
       this.loadCaseDetail();
-      this.loadMemberOptions();
+      this.loadMembers();
     }
   }
 
-  loadCaseDetail(): void {
-    this.isLoading.set(true);
-    this.isError.set(false);
+  /** silent = background refresh after a mutation: keeps the page, tab and modal state intact. */
+  loadCaseDetail(silent = false): void {
+    if (!silent) {
+      this.isLoading.set(true);
+      this.isError.set(false);
+    }
 
-    this.api.get(`/staff/cases/${this.caseId()}`).subscribe({
-      next: (res: any) => {
-        const d = res.data || {};
-        this.caseData.set(d);
-        this.selectedNewStage.set(d.currentStage || '');
-        this.selectedNewPmId.set(d.projectManager?._id || '');
+    this.api.get<CaseDetail>(`/staff/cases/${this.caseId()}`).subscribe({
+      next: ({ data }) => {
+        this.caseData.set(data);
+        this.selectedNewStage.set(data.currentStage);
+        this.selectedNewPmId.set(data.projectManager?.id ?? '');
         this.isLoading.set(false);
+        // member-options 404s for anyone who can neither add members nor assign a PM
+        if (data.actions.canManageMembers || data.actions.canAssignManager) this.loadMemberOptions();
       },
       error: (err) => {
+        if (silent) {
+          this.toast.error('Saved, but the case could not be refreshed. Reload the page.');
+          return;
+        }
         this.isError.set(true);
-        this.errorMessage.set(err?.error?.message || 'Case not found or access denied.');
+        this.errorMessage.set(apiErrorMessage(err, 'Case not found or access denied.'));
         this.isLoading.set(false);
       }
     });
   }
 
-  loadMemberOptions(): void {
-    this.api.get(`/staff/cases/${this.caseId()}/member-options`).subscribe({
-      next: (res: any) => {
-        this.memberOptions.set(res.data?.employees || []);
+  loadMembers(): void {
+    this.membersLoading.set(true);
+    this.membersError.set(false);
+    this.api.get<{ members: CaseMember[] }>(`/staff/cases/${this.caseId()}/members`).subscribe({
+      next: ({ data }) => {
+        this.members.set(data.members);
+        this.membersLoading.set(false);
       },
-      error: () => {}
+      error: () => {
+        this.membersError.set(true);
+        this.membersLoading.set(false);
+      }
+    });
+  }
+
+  loadMemberOptions(): void {
+    this.api.get<{ employees: MemberOption[] }>(`/staff/cases/${this.caseId()}/member-options`).subscribe({
+      next: ({ data }) => this.memberOptions.set(data.employees),
+      error: () => this.memberOptions.set([])
+    });
+  }
+
+  openActivityTab(): void {
+    this.activeTab.set('activity');
+    if (!this.activityLoaded) this.loadActivity(1);
+  }
+
+  loadActivity(page: number): void {
+    this.activityLoading.set(true);
+    this.activityError.set(false);
+    this.api.get<Paginated<CaseActivityItem>>(`/staff/cases/${this.caseId()}/activity`, { page, limit: 20 }).subscribe({
+      next: ({ data }) => {
+        this.activity.set(data.items);
+        this.activityPage.set(data.page);
+        this.activityTotal.set(data.total);
+        this.activityTotalPages.set(Math.max(1, data.totalPages));
+        this.activityLoaded = true;
+        this.activityLoading.set(false);
+      },
+      error: () => {
+        this.activityError.set(true);
+        this.activityLoading.set(false);
+      }
     });
   }
 
   loadCaseTasks(): void {
     if (this.caseTasks().length > 0) return; // already loaded
     this.isTasksLoading.set(true);
-    this.api.get(`/staff/cases/${this.caseId()}/tasks`).subscribe({
-      next: (res: any) => {
-        this.caseTasks.set(res.data?.tasks || []);
+    this.api.get<{ tasks: any[] }>(`/staff/cases/${this.caseId()}/tasks`).subscribe({
+      next: ({ data }) => {
+        this.caseTasks.set(data.tasks);
         this.isTasksLoading.set(false);
       },
       error: () => {
@@ -175,6 +215,16 @@ export class CaseDetailComponent implements OnInit {
         this.isTasksLoading.set(false);
       }
     });
+  }
+
+  /**
+   * Mutation endpoints return a compact { outcome, caseId, ... } result, not the case DTO, so
+   * every successful mutation re-reads the canonical state instead of trusting the response.
+   */
+  private refreshAfterMutation(): void {
+    this.loadCaseDetail(true);
+    this.loadMembers();
+    if (this.activityLoaded) this.loadActivity(1);
   }
 
   // --- Actions ---
@@ -186,35 +236,35 @@ export class CaseDetailComponent implements OnInit {
     this.api.patch(`/staff/cases/${this.caseId()}/stage`, {
       stage: this.selectedNewStage()
     }).subscribe({
-      next: (res: any) => {
-        this.caseData.set(res.data);
+      next: () => {
         this.showStageModal.set(false);
         this.isSubmitting.set(false);
         this.toast.success('Case stage updated successfully.');
+        this.refreshAfterMutation();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.isSubmitting.set(false);
-        this.toast.error(err?.error?.message || 'Failed to update stage.');
+        this.toast.error(apiErrorMessage(err, 'Failed to update stage.'));
       }
     });
   }
 
   submitPmChange(): void {
-    if (this.isSubmitting()) return;
+    if (!this.selectedNewPmId() || this.isSubmitting()) return;
     this.isSubmitting.set(true);
 
     this.api.patch(`/staff/cases/${this.caseId()}/project-manager`, {
-      employeeId: this.selectedNewPmId() || null
+      projectManagerId: this.selectedNewPmId()
     }).subscribe({
-      next: (res: any) => {
-        this.caseData.set(res.data);
+      next: () => {
         this.showPmModal.set(false);
         this.isSubmitting.set(false);
         this.toast.success('Project Manager updated.');
+        this.refreshAfterMutation();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.isSubmitting.set(false);
-        this.toast.error(err?.error?.message || 'Failed to update Project Manager.');
+        this.toast.error(apiErrorMessage(err, 'Failed to update Project Manager.'));
       }
     });
   }
@@ -224,24 +274,25 @@ export class CaseDetailComponent implements OnInit {
     this.isSubmitting.set(true);
 
     this.api.post(`/staff/cases/${this.caseId()}/members`, {
-      employeeId: this.newMemberUserId(),
-      role: this.newMemberRole()
+      adminUserId: this.newMemberUserId(),
+      workspaceRole: this.newMemberRole(),
+      clientVisible: true
     }).subscribe({
-      next: (res: any) => {
-        this.caseData.set(res.data);
+      next: () => {
         this.showAddMemberModal.set(false);
         this.newMemberUserId.set('');
         this.isSubmitting.set(false);
         this.toast.success('Team member added.');
+        this.refreshAfterMutation();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.isSubmitting.set(false);
-        this.toast.error(err?.error?.message || 'Failed to add member.');
+        this.toast.error(apiErrorMessage(err, 'Failed to add member.'));
       }
     });
   }
 
-  confirmRemoveMember(member: any): void {
+  confirmRemoveMember(member: CaseMember): void {
     this.memberToRemove.set(member);
     this.showRemoveMemberModal.set(true);
   }
@@ -251,18 +302,18 @@ export class CaseDetailComponent implements OnInit {
     if (!mem || this.isSubmitting()) return;
     this.isSubmitting.set(true);
 
-    const memberId = mem._id || mem.id;
-    this.api.delete(`/staff/cases/${this.caseId()}/members/${memberId}`).subscribe({
-      next: (res: any) => {
-        this.caseData.set(res.data);
+    this.api.delete(`/staff/cases/${this.caseId()}/members/${mem.id}`).subscribe({
+      next: () => {
         this.showRemoveMemberModal.set(false);
         this.memberToRemove.set(null);
         this.isSubmitting.set(false);
         this.toast.success('Team member removed.');
+        this.refreshAfterMutation();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.isSubmitting.set(false);
-        this.toast.error(err?.error?.message || 'Failed to remove member.');
+        this.showRemoveMemberModal.set(false);
+        this.toast.error(apiErrorMessage(err, 'Failed to remove member.'));
       }
     });
   }
@@ -272,15 +323,15 @@ export class CaseDetailComponent implements OnInit {
     this.isSubmitting.set(true);
 
     this.api.post(`/staff/cases/${this.caseId()}/archive`, {}).subscribe({
-      next: (res: any) => {
-        this.caseData.set(res.data);
+      next: () => {
         this.showArchiveModal.set(false);
         this.isSubmitting.set(false);
         this.toast.success('Case archived.');
+        this.refreshAfterMutation();
       },
-      error: (err: any) => {
+      error: (err) => {
         this.isSubmitting.set(false);
-        this.toast.error(err?.error?.message || 'Failed to archive case.');
+        this.toast.error(apiErrorMessage(err, 'Failed to archive case.'));
       }
     });
   }
@@ -298,10 +349,11 @@ export class CaseDetailComponent implements OnInit {
         this.clientUpdateMessage.set('');
         this.isSubmitting.set(false);
         this.toast.success('Client update published.');
+        if (this.activityLoaded) this.loadActivity(1);
       },
-      error: (err: any) => {
+      error: (err) => {
         this.isSubmitting.set(false);
-        this.toast.error(err?.error?.message || 'Failed to publish client update.');
+        this.toast.error(apiErrorMessage(err, 'Failed to publish client update.'));
       }
     });
   }
