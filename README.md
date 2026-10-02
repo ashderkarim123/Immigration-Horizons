@@ -49,8 +49,8 @@ CI (`.github/workflows/ci.yml`) runs all of these on every push. **Merging to `m
 
 ## Database operations
 
-Migrations, index builds and retention purges are explicit commands that dry-run by default
-(`npm run db:migrate`, `npm run db:indexes:dry-run`, `npm run db:purge`). Never apply them to production without a backup.
+Migrations (`npm run db:migrate`) and retention purges (`npm run db:purge`) dry-run by default; index builds apply unless you use
+`npm run db:indexes:dry-run`. Never apply any of them to production without a backup.
 To create or recover a Super Admin when the password is lost, see `server/scripts/seedStaffUser.js`.
 
 ## Business rules that affect code and copy
