@@ -14,6 +14,30 @@ const { staffAuthMiddleware } = require('../../../../middleware/api/staffAuth');
 
 const UPCOMING_DEADLINE_DAYS = 30;
 
+function serializeRecentCase(c) {
+  return {
+    id: c._id,
+    caseNumber: c.caseNumber,
+    title: c.title,
+    caseType: c.caseType,
+    currentStage: c.currentStage,
+    priority: c.priority,
+    targetFilingDate: c.targetFilingDate || null,
+    updatedAt: c.updatedAt,
+  };
+}
+
+function serializeMyTask(t) {
+  return {
+    id: t._id,
+    title: t.title,
+    type: t.type,
+    status: t.status,
+    priority: t.priority,
+    dueDate: t.dueDate || null,
+  };
+}
+
 function daysFromNow(days) {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 }
@@ -127,7 +151,7 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
     }
 
     const myTasks = await Task.find({ assignee: req.staff._id, status: { $ne: 'completed' } })
-      .select('title type status priority dueDate lead')
+      .select('title type status priority dueDate')
       .sort({ dueDate: 1, createdAt: -1 })
       .limit(8)
       .lean();
@@ -147,8 +171,8 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
         unreadClientMessages,
         myOpenTasks,
         myOverdueTasks,
-        recentCases,
-        myTasks
+        recentCases: recentCases.map(serializeRecentCase),
+        myTasks: myTasks.map(serializeMyTask),
       },
       meta: { requestId: req.id }
     });

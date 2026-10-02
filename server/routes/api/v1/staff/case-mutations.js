@@ -34,7 +34,12 @@ const {
 const { can } = require('../../../../utils/permissions');
 const { createApiError } = require('../../../../middleware/api/apiError');
 const { staffAuthMiddleware, requireApiCapability } = require('../../../../middleware/api/staffAuth');
+const { WORKSPACE_ROLES } = require('../../../../utils/caseConstants');
 const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedOrigin');
+
+// Roles an employee can be added under; 'client' is a client membership and
+// 'project_manager' is only ever set through the project-manager mutation.
+const EMPLOYEE_WORKSPACE_ROLES = WORKSPACE_ROLES.filter((r) => r !== 'client' && r !== 'project_manager');
 
 // ─── Actor snapshot helper ────────────────────────────────────────────────
 
@@ -197,6 +202,12 @@ router.post('/members',
       if (!adminUserId) {
         return next(createApiError(400, 'invalid_input', null, [
           { field: 'adminUserId', message: 'Team member ID is required.' },
+        ]));
+      }
+
+      if (workspaceRole !== undefined && !EMPLOYEE_WORKSPACE_ROLES.includes(workspaceRole)) {
+        return next(createApiError(422, 'validation_error', null, [
+          { field: 'workspaceRole', message: 'Invalid workspace role.' },
         ]));
       }
 

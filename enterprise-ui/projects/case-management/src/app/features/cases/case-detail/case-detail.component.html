@@ -10,25 +10,25 @@
       (retry)="loadCaseDetail()"
     ></ih-error-state>
   </div>
-} @else if (caseData()) {
+} @else if (caseData(); as c) {
   <div class="page-container">
     <!-- Header -->
     <div class="workspace-header card">
       <div class="header-main">
         <div class="header-titles">
           <div class="case-meta-line">
-            <span class="case-number">{{ caseData().caseNumber }}</span>
-            <ih-status-badge [status]="caseData().currentStage"></ih-status-badge>
-            <ih-status-badge [status]="caseData().priority"></ih-status-badge>
-            @if (caseData().archivedAt) {
+            <span class="case-number">{{ c.caseNumber }}</span>
+            <ih-status-badge [status]="c.currentStage"></ih-status-badge>
+            <ih-status-badge [status]="c.priority"></ih-status-badge>
+            @if (c.archivedAt) {
               <span class="badge badge-danger">ARCHIVED</span>
             }
           </div>
-          <h1 class="case-title">{{ caseData().title }}</h1>
+          <h1 class="case-title">{{ c.title }}</h1>
           <p class="case-sub">
-            Type: <strong>{{ caseData().caseType }}</strong> &bull;
-            Client: <strong>{{ caseData().primaryClient?.displayName || caseData().primaryClient?.name || 'Unassigned' }}</strong> &bull;
-            PM: <strong>{{ caseData().projectManager?.name || 'Unassigned' }}</strong>
+            Type: <strong>{{ c.caseType }}</strong> &bull;
+            Client: <strong>{{ c.primaryClient?.displayName || 'Unassigned' }}</strong> &bull;
+            PM: <strong>{{ c.projectManager?.name || 'Unassigned' }}</strong>
           </p>
         </div>
 
@@ -48,7 +48,7 @@
               Publish Client Update
             </button>
           }
-          @if (canArchiveCase() && !caseData().archivedAt) {
+          @if (canArchiveCase() && !c.archivedAt) {
             <button type="button" class="btn btn-outline-danger" (click)="showArchiveModal.set(true)">
               Archive
             </button>
@@ -72,7 +72,7 @@
           [class.active]="activeTab() === 'team'"
           (click)="activeTab.set('team')"
         >
-          Team ({{ caseData().team?.length || 0 }})
+          Team ({{ members().length }})
         </button>
         <button
           type="button"
@@ -86,9 +86,9 @@
           type="button"
           class="tab-btn"
           [class.active]="activeTab() === 'activity'"
-          (click)="activeTab.set('activity')"
+          (click)="openActivityTab()"
         >
-          Activity Timeline ({{ caseData().activities?.length || 0 }})
+          Activity Timeline
         </button>
         <button
           type="button"
@@ -149,22 +149,22 @@
           <div class="info-grid">
             <div>
               <span class="info-label">Case Number</span>
-              <span class="info-value">{{ caseData().caseNumber }}</span>
+              <span class="info-value">{{ c.caseNumber }}</span>
             </div>
             <div>
               <span class="info-label">Case Type</span>
-              <span class="info-value">{{ caseData().caseType }}</span>
+              <span class="info-value">{{ c.caseType }}</span>
             </div>
             <div>
               <span class="info-label">Current Stage</span>
               <span class="info-value">
-                <ih-status-badge [status]="caseData().currentStage"></ih-status-badge>
+                <ih-status-badge [status]="c.currentStage"></ih-status-badge>
               </span>
             </div>
             <div>
               <span class="info-label">Priority</span>
               <span class="info-value">
-                <ih-status-badge [status]="caseData().priority"></ih-status-badge>
+                <ih-status-badge [status]="c.priority"></ih-status-badge>
               </span>
             </div>
           </div>
@@ -176,25 +176,19 @@
             <div>
               <span class="info-label">Target Filing Date</span>
               <span class="info-value">
-                {{ caseData().targetFilingDate ? (caseData().targetFilingDate | date:'mediumDate') : 'Not set' }}
-              </span>
-            </div>
-            <div>
-              <span class="info-label">Actual Filing Date</span>
-              <span class="info-value">
-                {{ caseData().actualFilingDate ? (caseData().actualFilingDate | date:'mediumDate') : 'Not filed yet' }}
+                {{ c.targetFilingDate ? (c.targetFilingDate | date:'mediumDate') : 'Not set' }}
               </span>
             </div>
             <div>
               <span class="info-label">Created Date</span>
               <span class="info-value">
-                {{ caseData().createdAt ? (caseData().createdAt | date:'mediumDate') : '—' }}
+                {{ c.createdAt ? (c.createdAt | date:'mediumDate') : '—' }}
               </span>
             </div>
             <div>
               <span class="info-label">Last Updated</span>
               <span class="info-value">
-                {{ caseData().updatedAt ? (caseData().updatedAt | date:'mediumDate') : '—' }}
+                {{ c.updatedAt ? (c.updatedAt | date:'mediumDate') : '—' }}
               </span>
             </div>
           </div>
@@ -202,17 +196,14 @@
 
         <div class="section-card card">
           <h3 class="card-title">Primary Client Summary</h3>
-          @if (caseData().primaryClient) {
+          @if (c.primaryClient) {
             <div class="client-card-body">
               <div class="client-name">
-                {{ caseData().primaryClient.displayName || caseData().primaryClient.name }}
+                {{ c.primaryClient.displayName }}
               </div>
-              <div class="client-email">{{ caseData().primaryClient.email }}</div>
-              <div class="client-status">
-                Status: <ih-status-badge [status]="caseData().primaryClient.status || 'active'"></ih-status-badge>
-              </div>
+              <div class="client-email">{{ c.primaryClient.email }}</div>
               <div class="client-link-row">
-                <a [routerLink]="['/clients', caseData().primaryClient._id || caseData().primaryClient.id]" class="link-btn">
+                <a [routerLink]="['/clients', c.primaryClient.id]" class="link-btn">
                   View Full Client Profile &rarr;
                 </a>
               </div>
@@ -221,23 +212,7 @@
             <p class="text-secondary">No primary client assigned to this case.</p>
           }
         </div>
-
-        <div class="section-card card">
-          <h3 class="card-title">Recent Documents ({{ caseData().documents?.length || 0 }})</h3>
-          @if (caseData().documents?.length) {
-            <ul class="doc-list">
-              @for (doc of caseData().documents; track doc._id) {
-                <li class="doc-item">
-                  <span class="doc-name">{{ doc.displayName || doc.originalName }}</span>
-                  <span class="doc-meta">{{ doc.category }} &bull; {{ doc.status }}</span>
-                </li>
-              }
-            </ul>
-          } @else {
-            <p class="text-secondary">No documents uploaded to this case yet.</p>
-          }
         </div>
-      </div>
     }
 
     <!-- Tab 2: Team -->
@@ -252,7 +227,15 @@
           }
         </div>
 
-        @if (caseData().team?.length) {
+        @if (membersLoading()) {
+          <ih-skeleton [rows]="3" rowHeight="2rem"></ih-skeleton>
+        } @else if (membersError()) {
+          <ih-error-state
+            title="Failed to load team"
+            message="The case team could not be loaded."
+            (retry)="loadMembers()"
+          ></ih-error-state>
+        } @else if (members().length) {
           <div class="table-responsive">
             <table class="data-table">
               <thead>
@@ -260,33 +243,42 @@
                   <th>Member Name</th>
                   <th>Type</th>
                   <th>Role</th>
-                  <th>Assigned Date</th>
+                  <th>Status</th>
+                  <th>Client Visible</th>
+                  <th>Joined</th>
                   @if (canManageMembers()) {
                     <th>Actions</th>
                   }
                 </tr>
               </thead>
               <tbody>
-                @for (m of caseData().team; track m._id || m.id) {
+                @for (m of members(); track m.id) {
                   <tr>
                     <td class="font-medium">
-                      {{ m.adminUser?.name || m.clientUser?.displayName || m.clientUser?.name || 'Member' }}
+                      {{ m.employee?.name || m.client?.displayName || 'Member' }}
+                      @if (m.employee?.jobTitle) {
+                        <div class="text-secondary small">{{ m.employee?.jobTitle }}</div>
+                      }
                     </td>
                     <td><span class="badge badge-neutral">{{ m.memberType }}</span></td>
-                    <td><span class="badge badge-info">{{ m.role }}</span></td>
+                    <td><span class="badge badge-info">{{ m.workspaceRole }}</span></td>
+                    <td><ih-status-badge [status]="m.status"></ih-status-badge></td>
+                    <td>{{ m.clientVisible ? 'Yes' : 'No' }}</td>
                     <td class="text-secondary">
-                      {{ m.createdAt ? (m.createdAt | date:'mediumDate') : '—' }}
+                      {{ m.joinedAt ? (m.joinedAt | date:'mediumDate') : '—' }}
                     </td>
                     @if (canManageMembers()) {
                       <td>
-                        <button
-                          type="button"
-                          class="btn-icon-danger"
-                          (click)="confirmRemoveMember(m)"
-                          title="Remove member"
-                        >
-                          Remove
-                        </button>
+                        @if (m.memberType === 'employee' && m.status !== 'removed') {
+                          <button
+                            type="button"
+                            class="btn-icon-danger"
+                            (click)="confirmRemoveMember(m)"
+                            title="Remove member"
+                          >
+                            Remove
+                          </button>
+                        }
                       </td>
                     }
                   </tr>
@@ -304,26 +296,38 @@
     @if (activeTab() === 'activity') {
       <div class="section-card card">
         <h3 class="card-title">Case Activity Timeline</h3>
-        @if (caseData().activities?.length) {
+        @if (activityLoading()) {
+          <ih-skeleton [rows]="4" rowHeight="2rem"></ih-skeleton>
+        } @else if (activityError()) {
+          <ih-error-state
+            title="Failed to load activity"
+            message="The activity timeline could not be loaded."
+            (retry)="loadActivity(activityPage())"
+          ></ih-error-state>
+        } @else if (activity().length) {
           <div class="timeline">
-            @for (act of caseData().activities; track act._id) {
+            @for (act of activity(); track act.id) {
               <div class="timeline-item">
                 <div class="timeline-badge"></div>
                 <div class="timeline-content">
                   <div class="timeline-header">
-                    <span class="timeline-action">{{ act.action || act.type }}</span>
+                    <span class="timeline-action">{{ act.type }}</span>
                     <span class="timeline-time">{{ act.createdAt | date:'short' }}</span>
                   </div>
-                  <div class="timeline-actor">
-                    By: {{ act.actor?.name || act.actor?.type || 'System' }}
-                  </div>
-                  @if (act.details || act.message) {
-                    <div class="timeline-details">{{ act.message || (act.details | json) }}</div>
+                  <div class="timeline-actor">By: {{ act.actorName }}</div>
+                  @if (act.message) {
+                    <div class="timeline-details">{{ act.message }}</div>
                   }
                 </div>
               </div>
             }
           </div>
+          <ih-pagination
+            [page]="activityPage()"
+            [totalPages]="activityTotalPages()"
+            [totalItems]="activityTotal()"
+            (pageChange)="loadActivity($event)"
+          ></ih-pagination>
         } @else {
           <p class="text-secondary">No recorded activity for this case yet.</p>
         }
@@ -395,7 +399,7 @@
     }
 
     @if (activeTab() === 'packet') {
-      <ih-packet-tab [caseId]="caseId()" [caseLabel]="caseData()?.caseNumber || ''"></ih-packet-tab>
+      <ih-packet-tab [caseId]="caseId()" [caseLabel]="c.caseNumber || ''"></ih-packet-tab>
     }
 
     @if (activeTab() === 'documents') {
@@ -453,9 +457,9 @@
             [ngModel]="selectedNewPmId()"
             (ngModelChange)="selectedNewPmId.set($event)"
           >
-            <option value="">Unassigned</option>
-            @for (emp of memberOptions(); track emp._id) {
-              <option [value]="emp._id">{{ emp.name }} ({{ emp.email }})</option>
+            <option value="" disabled>Select a project manager...</option>
+            @for (emp of memberOptions(); track emp.id) {
+              <option [value]="emp.id">{{ emp.name }} ({{ emp.email }})</option>
             }
           </select>
         </div>
@@ -464,7 +468,7 @@
           <button
             type="button"
             class="btn btn-primary"
-            [disabled]="isSubmitting()"
+            [disabled]="!selectedNewPmId() || isSubmitting()"
             (click)="submitPmChange()"
           >
             Save PM
@@ -491,8 +495,8 @@
               (ngModelChange)="newMemberUserId.set($event)"
             >
               <option value="">Choose employee...</option>
-              @for (emp of memberOptions(); track emp._id) {
-                <option [value]="emp._id">{{ emp.name }} ({{ emp.email }})</option>
+              @for (emp of memberOptions(); track emp.id) {
+                <option [value]="emp.id">{{ emp.name }} ({{ emp.email }})</option>
               }
             </select>
           </div>

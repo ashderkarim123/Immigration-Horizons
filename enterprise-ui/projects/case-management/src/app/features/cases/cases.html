@@ -81,10 +81,10 @@
           </tr>
         </thead>
         <tbody>
-          @for (c of cases(); track c._id) {
+          @for (c of cases(); track c.id) {
             <tr>
               <td class="font-medium">
-                <a [routerLink]="['/cases', c._id]" class="case-link">{{ c.caseNumber }}</a>
+                <a [routerLink]="['/cases', c.id]" class="case-link">{{ c.caseNumber }}</a>
               </td>
               <td>
                 <div class="case-title">{{ c.title }}</div>
