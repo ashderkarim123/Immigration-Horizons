@@ -263,6 +263,500 @@ This is P0 and must be completed before treating the staff/admin split as produc
 
 ---
 
+
+## 1B. P0/P1 UX architecture — role-based dashboards and guided workflows
+
+Immigration Horizons is being built for clients and staff who may be non-technical and unfamiliar with case-management software.
+
+UX is therefore a functional requirement, not decoration.
+
+A user should not need to understand the underlying architecture, collections, case/workspace/channel terminology, or which historical application owns a feature.
+
+The product must answer three questions immediately on every major screen:
+
+~~~text
+Where am I?
+What needs my attention?
+What should I do next?
+~~~
+
+### Global UX principles
+
+Apply these consistently across Public Website, Client Portal, Staff Portal and Admin CMS:
+
+- plain-language labels instead of internal/domain jargon where possible;
+- icon + text labels, never icon-only primary navigation;
+- clear page title and short explanation of the page's purpose;
+- obvious primary action;
+- breadcrumbs or other strong location context on deep pages;
+- consistent back navigation;
+- loading, empty, success and error states written for non-technical users;
+- progressive disclosure: show common actions first, advanced controls second;
+- avoid exposing raw enum values, Mongo IDs, API language or implementation terms;
+- use human labels such as "Waiting on Client" rather than "waiting";
+- destructive actions require explicit confirmation;
+- mobile/tablet behavior must remain usable;
+- keyboard/focus/accessibility behavior is part of acceptance;
+- do not hide critical workflows only in overflow menus;
+- do not force users to remember a URL to reach a normal feature;
+- preserve server-authoritative permissions and hide actions the current user cannot perform.
+
+### Public Website navigation
+
+The public website should make the user journey obvious.
+
+Recommended primary navigation:
+
+~~~text
+Home
+Immigration Services
+How It Works
+Resources
+About
+Contact
+Book Consultation
+Client Login
+~~~
+
+Do not make Staff Portal or Admin CMS prominent consumer navigation destinations.
+
+Staff and administrators should normally use their direct organizational URLs/bookmarks.
+
+The public homepage should clearly separate:
+
+~~~text
+I need immigration help
+I am an existing client
+~~~
+
+with obvious actions.
+
+### Staff Portal navigation
+
+The Staff Portal should become the complete operational workplace.
+
+Recommended primary navigation:
+
+~~~text
+Dashboard
+Cases
+Clients
+Tasks
+Messages
+Deadlines
+~~~
+
+Role/capability may add operational administration such as:
+
+~~~text
+Intake / Consultations
+Team / Staff Operations
+Operational Reports
+~~~
+
+when those modules are actually implemented.
+
+Case-specific specialist work remains inside the case rather than overcrowding the global sidebar.
+
+### Simplify the Case workspace
+
+Do not present ten equal-weight tabs with no hierarchy if it overwhelms users.
+
+Prefer a case home plus grouped workflow navigation.
+
+Recommended mental model:
+
+~~~text
+Case Home
+
+Communication
+  Chat / Messages
+
+Client Inputs
+  Documents
+  Evidence
+  Forms
+
+Case Work
+  Tasks
+  Petition
+  Filing Packet
+
+Management
+  Team
+  Activity
+~~~
+
+The exact visual implementation may use grouped tabs, a case sidebar, or a responsive secondary navigation, but the grouping must be obvious and stable.
+
+Case Home should answer:
+
+~~~text
+Current stage
+Next milestone
+Project Manager
+Important deadline
+Open tasks
+Unread messages
+Documents waiting
+Forms waiting
+Evidence completeness
+Recent activity
+Primary next actions
+~~~
+
+### Role-specific Staff dashboards
+
+Do not show the same operational dashboard to every staff role if the role's actual work differs.
+
+Use capabilities and assignments, not duplicated apps.
+
+#### Staff Operations Admin dashboard
+
+Primary purpose: run the operation.
+
+Show high-signal queues such as:
+
+~~~text
+Unassigned / newly created cases
+Cases without PM
+Team assignment issues
+Overdue tasks
+Upcoming deadlines
+Unread/unhandled client communications
+Documents awaiting review
+Forms awaiting review
+Cases blocked by missing evidence
+Petitions awaiting review/finalization
+Filing packets awaiting review/finalization
+Operational workload by employee where authorized
+~~~
+
+Quick actions can include:
+
+~~~text
+Create / convert case
+Assign PM
+Add case team member
+Create task
+Open communications
+Initialize/manage case channels
+~~~
+
+Do not expose detached manual workspace creation when Case -> primary CaseWorkspace is a system invariant.
+
+#### PM / Project Manager dashboard
+
+Primary purpose: manage assigned cases.
+
+Show:
+
+~~~text
+My active cases
+Cases needing attention
+Today's / overdue tasks
+Upcoming deadlines
+Unread client messages
+Documents awaiting my review
+Forms awaiting my review
+Evidence gaps
+Petitions / packets needing action
+Recently updated cases
+~~~
+
+Quick actions should lead into the correct case, not create parallel workflows.
+
+#### Specialist dashboard
+
+Examples: petition writer, forms specialist, evidence collector.
+
+Primary purpose: complete assigned work.
+
+Show:
+
+~~~text
+My assigned tasks
+My assigned cases
+Work waiting for me
+Due soon / overdue
+Returned-for-changes items
+Messages on cases I belong to
+Relevant documents/evidence needed to complete my work
+~~~
+
+Do not show organization-wide operational controls.
+
+#### Reviewer / QA dashboard
+
+Primary purpose: review and approve assigned work.
+
+Show:
+
+~~~text
+Forms awaiting review
+Petition sections awaiting review
+Petitions ready to finalize when authorized
+Filing packets awaiting review/finalization
+Documents requiring review when authorized
+Overdue review tasks
+~~~
+
+### Client Portal dashboard
+
+The Client Portal must be action-oriented, not system-oriented.
+
+The first view should prioritize:
+
+~~~text
+What you need to do next
+~~~
+
+Recommended dashboard hierarchy:
+
+~~~text
+Welcome / case status
+
+Action Required
+  Upload requested documents
+  Complete forms
+  Respond to a returned form
+  Read/reply to new message
+  Complete another client-visible request
+
+Your Cases
+  current status
+  next milestone
+  project manager
+  important date if client-visible
+
+Messages
+  unread count + latest conversation
+
+Documents
+  pending requests
+  recently uploaded
+  review/replacement status
+
+Forms
+  to complete
+  submitted
+  needs changes
+  approved
+
+Recent Updates / Timeline
+~~~
+
+Avoid asking the client to understand internal staff concepts such as Workspace, ChannelReadState, EvidenceRequirement IDs, packet versions or internal review states.
+
+### Client document UX
+
+Document handling must be especially simple.
+
+For a requested document, the ideal client flow is:
+
+~~~text
+Action Required
+  -> "Upload Passport"
+  -> choose/drop file
+  -> category/request already selected
+  -> optional description if needed
+  -> upload
+  -> clear success state
+  -> visible review status
+~~~
+
+Do not make a client manually choose a category if a DocumentRequest already determines the correct category.
+
+For general uploads:
+
+~~~text
+Upload Document
+  -> choose clear human category
+  -> choose/drop file
+  -> optional description
+  -> upload
+~~~
+
+Useful client-facing document states include:
+
+~~~text
+Requested
+Uploaded
+Under Review
+Accepted
+Replacement Needed
+Rejected
+~~~
+
+If replacement is required, place the reason and the replacement action together.
+
+Document pages should support:
+
+- drag/drop plus normal file picker;
+- clear allowed file type/size guidance;
+- category grouping;
+- search/filter where volume warrants it;
+- obvious download;
+- upload progress/disabled duplicate-submit state;
+- client-visible review comments;
+- replacement flow;
+- no exposure of internal comments;
+- no exposure of storage paths/checksums/private metadata.
+
+### Staff document UX
+
+Within Case -> Documents, organize around actual work:
+
+~~~text
+Needs Review
+Open Requests
+All Documents
+Categories
+Recent Uploads
+~~~
+
+High-priority document review should not be hidden in a long undifferentiated table.
+
+### Messages UX
+
+Global Messages should behave like an inbox for non-technical staff:
+
+~~~text
+Unread
+All
+Search
+~~~
+
+Each row must make the context clear:
+
+~~~text
+Client / sender
+Case number + title
+Channel / audience
+Message preview
+Time
+Unread count
+~~~
+
+Inside a conversation, clearly distinguish:
+
+~~~text
+Client-visible
+Staff-only
+Restricted
+~~~
+
+Do not rely on technical channel names to communicate privacy.
+
+### Admin CMS dashboard
+
+After the Admin/Staff separation, Admin CMS should have a deliberately different dashboard.
+
+It should focus on:
+
+~~~text
+Website content
+Blog / drafts / publishing
+SEO
+FAQs / testimonials / services
+Media
+System settings
+User / role administration
+Security / audit administration
+~~~
+
+Do not show Cases, Tasks, Channels, Evidence, Petition or Filing Packet operational cards after their Staff Portal equivalents are production-verified.
+
+### Consistent dashboard card behavior
+
+Dashboard cards should be actionable.
+
+Bad:
+
+~~~text
+Unread Messages: 7
+~~~
+
+Better:
+
+~~~text
+7 unread client messages
+[Review messages]
+~~~
+
+Bad:
+
+~~~text
+Documents Awaiting Review: 4
+~~~
+
+Better:
+
+~~~text
+4 documents need review
+[Review documents]
+~~~
+
+Metrics without a next action should be used only when the metric is genuinely informational.
+
+### Empty-state guidance
+
+For inexperienced users, an empty screen must explain the next step.
+
+Examples:
+
+~~~text
+No tasks assigned to you.
+When a PM assigns work, it will appear here.
+
+No evidence checklist yet.
+[Set up evidence checklist]
+
+No document requests.
+[Request a document]  // only when authorized
+
+No unread messages.
+You're caught up.
+~~~
+
+### Onboarding and help
+
+Provide lightweight contextual onboarding rather than a separate technical manual as the only solution.
+
+Consider:
+
+- first-login orientation for Staff Portal;
+- short descriptions under major page titles;
+- tooltips for uncommon/legal workflow concepts;
+- "What is this?" help on Evidence, Petition and Filing Packet;
+- consistent terminology across Staff and Client surfaces;
+- optional dismissible onboarding checklist for new staff.
+
+Do not overload experienced users with permanent tutorial banners.
+
+### UX acceptance testing
+
+For every redesigned dashboard, test with the question:
+
+~~~text
+Can a first-time non-technical user identify the next action in under 10 seconds?
+~~~
+
+Manual QA must include:
+
+- desktop;
+- tablet-width;
+- mobile client portal;
+- keyboard navigation for primary workflows;
+- screen-reader-friendly labels for primary controls;
+- no inaccessible color-only status meaning;
+- loading/empty/error/success state review;
+- PM, specialist, reviewer, Operations Admin and Client perspectives.
+
+This UX/UI work is part of stabilization and must not be treated as a final cosmetic polish after functionality is complete.
+
+---
+
 ## 2. Audit summary
 
 Use these statuses:
@@ -278,6 +772,8 @@ Use these statuses:
 |---|---|
 | Production routing/deployment | GREEN |
 | Admin CMS vs Staff Portal authentication boundary | RED |
+| Role-based dashboard/navigation clarity | RED/YELLOW |
+| Client action-oriented dashboard/document UX | YELLOW |
 | Operational modules still exposed in Admin CMS | RED |
 | Existing staff login/session | GREEN |
 | First-login permanent-password setup | RED |
@@ -1062,9 +1558,21 @@ Suggested commit boundary:
 feat(chat): add global staff communications inbox
 ~~~
 
-### Batch E — Existing advanced-module production QA
+### Batch E — UX/UI simplification + existing advanced-module production QA
 
-Audit/fix only verified defects in:
+Before final E2E signoff:
+
+1. implement role-aware dashboard information architecture from Section 1B;
+2. simplify Staff global navigation and Case workspace hierarchy;
+3. make Client Portal action-oriented;
+4. improve requested-document upload and replacement UX;
+5. ensure Messages and operational counters lead to actionable queues;
+6. strip migrated case operations from Admin CMS navigation after Staff parity is proven;
+7. verify terminology, empty states, loading/error states, responsive behavior and accessibility;
+
+Then audit the existing advanced modules.
+
+Audit/fix verified defects and usability blockers in:
 
 - Documents
 - Smart Forms
@@ -1192,6 +1700,53 @@ Database             = MongoDB
 ~~~
 
 Do not replace those boundaries during this task.
+
+
+## UX/UI redesign requirements
+
+Treat UX as part of functional stabilization.
+
+Do not merely reskin the current screens.
+
+Before declaring a module complete, redesign the information architecture for a non-technical user.
+
+Required role dashboards:
+
+~~~text
+Staff Operations Admin
+PM / Project Manager
+Specialist
+Reviewer / QA
+Client
+Admin CMS
+~~~
+
+Use the same Staff application with capability-driven content for staff roles; do not create separate duplicated applications.
+
+Staff global navigation should remain small and clear:
+
+~~~text
+Dashboard
+Cases
+Clients
+Tasks
+Messages
+Deadlines
+~~~
+
+Add other top-level items only when they represent a true cross-case workflow.
+
+Simplify the Case workspace by grouping communication, client inputs, case work and management rather than presenting every technical module as an equal concept.
+
+Client dashboard must lead with "Action Required" and make requested document upload, Forms and Messages obvious.
+
+Client requested-document upload must preselect the request/category where possible.
+
+Admin CMS visual language and navigation must clearly communicate that it is for website/system administration, not normal case operations.
+
+Every dashboard metric that represents work should link to the relevant queue.
+
+Add manual UX acceptance criteria from Section 1B to the final stabilization report.
 
 ## Non-negotiable engineering rules
 
@@ -1489,26 +2044,30 @@ Stabilization Phase 01 is complete only when:
 1. PM/specialist/reviewer/viewer cannot authenticate to Admin CMS; admin/editor/super_admin access follows explicit CMS capability
 2. Staff Operations Admin can administer case operations from the Staff Portal with an individually attributable account
 3. Admin CMS no longer serves as the documented normal case-operations workspace
-4. first-login staff password setup works
-5. Cases list/search/filter/pagination/navigation works
-6. Clients list/detail works
-7. PM sees case actions permitted by the server
-8. Team loads real members and add/remove/PM change works
-9. Activity timeline loads real CaseActivity
-10. case mutations do not corrupt local case state
-11. Evidence works on a real CaseWorkspace and has integration coverage
-12. Evidence custom/link/unlink workflow is usable
-13. Tasks can be operated, not merely listed
-14. staff has a discoverable global Messages inbox
-15. case Chat remains interoperable with Client Portal Chat
-16. Documents, Forms, Petition and Filing Packet core flows pass regression verification
-17. removed workspace members lose access immediately
-18. Angular tests use canonical DTO-shaped fixtures for touched workflows
-19. root tests are green
-20. server tests are green
-21. Angular case-management tests are green
-22. lint/typecheck/build are green
-23. final GitHub CI for the exact final SHA has all required jobs successful
+4. Staff Operations Admin, PM, Specialist and Reviewer dashboards prioritize their own actionable work
+5. Client dashboard clearly shows Action Required, cases, messages, documents and forms
+6. requested client document upload preselects its request/category where applicable and replacement actions are obvious
+7. first-login staff password setup works
+8. Cases list/search/filter/pagination/navigation works
+9. Clients list/detail works
+10. PM sees case actions permitted by the server
+11. Team loads real members and add/remove/PM change works
+12. Activity timeline loads real CaseActivity
+13. case mutations do not corrupt local case state
+14. Evidence works on a real CaseWorkspace and has integration coverage
+15. Evidence custom/link/unlink workflow is usable
+16. Tasks can be operated, not merely listed
+17. staff has a discoverable global Messages inbox
+18. case Chat remains interoperable with Client Portal Chat
+19. Documents, Forms, Petition and Filing Packet core flows pass regression verification
+20. removed workspace members lose access immediately
+21. Angular tests use canonical DTO-shaped fixtures for touched workflows
+22. role-specific dashboards and Client action-oriented UX pass the manual UX acceptance criteria
+23. root tests are green
+24. server tests are green
+25. Angular case-management tests are green
+26. lint/typecheck/build are green
+27. final GitHub CI for the exact final SHA has all required jobs successful
 
 ## Final report
 
