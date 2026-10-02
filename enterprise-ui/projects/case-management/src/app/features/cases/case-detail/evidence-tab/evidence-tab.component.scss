@@ -51,4 +51,37 @@
   text-align: right;
 }
 
-// Modal styles are global or inherited from case-detail if we rely on .modal-backdrop
+.header-right { display: flex; gap: 0.5rem; }
+.action-cell { white-space: nowrap; }
+.detail-row td { background: #f9fafb; }
+.guidance { margin: 0 0 0.5rem; font-size: 0.875rem; }
+.linked-title { margin: 0.75rem 0 0.375rem; font-size: 0.875rem; }
+.linked-list { list-style: none; margin: 0 0 0.75rem; padding: 0; display: grid; gap: 0.375rem; }
+.linked-list li { display: flex; align-items: center; gap: 0.75rem; }
+.link-row { display: flex; align-items: flex-end; gap: 0.5rem; flex-wrap: wrap; }
+.link-row .form-label { flex-basis: 100%; margin: 0; }
+.link-row .form-select { min-width: 16rem; }
+
+// Component styles are encapsulated, so the modal rules in case-detail do not reach this child.
+.modal-backdrop {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-card {
+  background: white; border-radius: 0.5rem; width: 100%; max-width: 28rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid #e5e7eb;
+}
+.modal-header h3 { margin: 0; font-size: 1.125rem; font-weight: 600; }
+.btn-close { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #6b7280; }
+.modal-body { padding: 1.25rem; }
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 0.5rem;
+  padding: 1rem 1.25rem; background: #f9fafb; border-top: 1px solid #e5e7eb;
+}
+.form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: #374151; }

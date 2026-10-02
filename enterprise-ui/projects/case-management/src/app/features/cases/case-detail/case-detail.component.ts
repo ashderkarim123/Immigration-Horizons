@@ -81,7 +81,6 @@ export class CaseDetailComponent implements OnInit {
   canManageMembers = computed(() => this.caseData()?.actions.canManageMembers ?? false);
   canArchiveCase = computed(() => this.caseData()?.actions.canArchive ?? false);
   canPublishUpdate = computed(() => this.caseData()?.actions.canPublishClientUpdate ?? false);
-  canManageEvidence = computed(() => this.caseData()?.actions.canManageCase ?? false);
 
   // Modal visibility flags
   showStageModal = signal(false);

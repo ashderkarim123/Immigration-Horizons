@@ -13,6 +13,8 @@ import { hashPassword } from "../src/lib/auth/crypto";
 
 import { migration as recipientIdentity } from "../scripts/migrations/001-notification-recipient-identity";
 import { migration as linkConsultations } from "../scripts/migrations/002-link-consultations-to-clients";
+import { migration as seedEvidenceTemplates } from "../scripts/migrations/004-seed-evidence-templates";
+import { EvidenceTemplate } from "../src/lib/models/EvidenceTemplate";
 
 /**
  * Migration tests (ADR-014).
@@ -329,4 +331,26 @@ test("both migrations are safe to run against an empty database", async () => {
     assert.equal(report.changed, 0);
     assert.equal(report.unresolved, 0);
   }
+});
+
+test("004: a dry run reports the two templates but writes nothing", async () => {
+  const report = await seedEvidenceTemplates.run({ dryRun: true });
+  assert.equal(report.changed, 2);
+  assert.equal(await EvidenceTemplate.countDocuments({}), 0);
+});
+
+test("004: apply seeds the active EB-2 NIW and EB-1A templates, and a second pass changes nothing", async () => {
+  const first = await seedEvidenceTemplates.run({ dryRun: false });
+  assert.equal(first.changed, 2);
+
+  const templates = await EvidenceTemplate.find({}).sort({ key: 1 }).lean();
+  assert.deepEqual(templates.map((t) => [t.key, t.caseType, t.version, t.status]), [
+    ["eb1a_base", "eb1a", 1, "active"],
+    ["eb2_niw_base", "eb2_niw", 1, "active"],
+  ]);
+
+  const second = await seedEvidenceTemplates.run({ dryRun: false });
+  assert.equal(second.changed, 0);
+  assert.equal(second.alreadyDone, 2);
+  assert.equal(await EvidenceTemplate.countDocuments({}), 2);
 });

@@ -1,50 +1,46 @@
-export interface EvidenceTemplateItem {
-  key: string;
-  title: string;
-  description: string;
-  importance: 'required' | 'recommended' | 'optional';
-  section: string;
-  order: number;
-  clientGuidance: string;
-  staffGuidance: string;
-  suggestedCategoryKey: string;
-}
+/** DTOs for the evidence API, shaped like server/services/evidenceManagement.js. */
 
-export interface EvidenceTemplate {
+export type EvidenceImportance = 'required' | 'recommended' | 'optional';
+export type EvidenceStatus = 'missing' | 'in_progress' | 'satisfied' | 'waived' | 'not_applicable';
+
+/** GET /staff/cases/:caseId/evidence/templates — active templates for the case's type. */
+export interface EvidenceTemplateSummary {
   key: string;
   name: string;
   description: string;
   caseType: string;
   version: number;
-  status: 'draft' | 'active' | 'retired';
-  items: EvidenceTemplateItem[];
+  itemCount: number;
+}
+
+export interface EvidenceLinkedDocument {
+  id: string;
+  displayName: string;
+  status: string;
 }
 
 export interface EvidenceRequirementDetail {
-  _id: string;
-  case: string;
-  workspace: string;
+  id: string;
+  caseId: string;
+  workspaceId: string;
   source: 'template' | 'custom';
-  templateKey?: string;
-  templateVersion?: number;
-  templateItemKey?: string;
+  templateKey: string | null;
+  templateVersion: number | null;
+  templateItemKey: string | null;
   section: string;
   order: number;
   title: string;
   description: string;
-  importance: 'required' | 'recommended' | 'optional';
-  status: 'missing' | 'in_progress' | 'satisfied' | 'waived' | 'not_applicable';
+  importance: EvidenceImportance;
+  status: EvidenceStatus;
   clientVisible: boolean;
   clientGuidance: string;
   staffGuidance: string;
   internalNotes: string;
-  linkedCategories: string[];
-  linkedDocuments: { _id: string; name: string; status: string }[];
-  linkedRequests: string[];
-  waivedReason?: string;
-  notApplicableReason?: string;
-  satisfiedAt?: string;
-  satisfiedBy?: string;
+  linkedDocuments: EvidenceLinkedDocument[];
+  waivedReason: string | null;
+  notApplicableReason: string | null;
+  satisfiedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,24 +60,19 @@ export interface EvidenceSummary {
 export interface EvidenceListResponse {
   requirements: EvidenceRequirementDetail[];
   summary: EvidenceSummary;
+  /** Server-derived: whether this actor may change the checklist on this case. */
+  actions: { canManage: boolean };
 }
 
-export interface EvidenceStatusUpdateRequest {
-  status: 'missing' | 'in_progress' | 'satisfied' | 'waived' | 'not_applicable';
-  reason?: string;
+export interface EvidenceProvisionResult {
+  created: number;
+  skipped: number;
+  template: { key: string; version: number };
 }
 
-export interface EvidenceProvisionRequest {
-  templateKey: string;
-  version?: number;
-}
-
-export interface CustomRequirementRequest {
-  title: string;
-  description?: string;
-  importance?: 'required' | 'recommended' | 'optional';
-  section?: string;
-  order?: number;
-  internalNotes?: string;
-  clientVisible?: boolean;
+/** GET /staff/cases/:caseId/evidence/eligible-documents */
+export interface EligibleDocument {
+  id: string;
+  displayName: string;
+  status: string;
 }

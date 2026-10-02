@@ -118,7 +118,6 @@ describe('CaseDetailComponent', () => {
       const fixture = setup({});
       expect(buttons(fixture)).toEqual([]);
       // setup() would have failed on an unexpected /member-options request via http.verify()
-      expect(fixture.componentInstance.canManageEvidence()).toBe(false);
     });
 
     it('hides Archive once the case is archived', () => {

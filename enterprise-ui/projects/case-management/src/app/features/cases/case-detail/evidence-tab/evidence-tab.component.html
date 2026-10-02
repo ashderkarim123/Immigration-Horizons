@@ -18,6 +18,9 @@
     </div>
     <div class="header-right">
       @if (canManage()) {
+        <button type="button" class="btn btn-secondary" (click)="openCustomModal()">
+          Add Requirement
+        </button>
         <button type="button" class="btn btn-primary" (click)="openProvisionModal()">
           Provision Template
         </button>
@@ -35,7 +38,7 @@
       @for (group of groupedRequirements(); track group.section) {
         <div class="evidence-section">
           <h4 class="section-title">{{ group.section }}</h4>
-          
+
           <div class="table-responsive">
             <table class="data-table">
               <thead>
@@ -43,21 +46,20 @@
                   <th>Item</th>
                   <th>Importance</th>
                   <th>Status</th>
+                  <th>Documents</th>
                   <th>Last Updated</th>
-                  @if (canManage()) {
-                    <th class="action-cell">Actions</th>
-                  }
+                  <th class="action-cell">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                @for (req of group.items; track req._id) {
+                @for (req of group.items; track req.id) {
                   <tr>
                     <td>
                       <div class="fw-medium">{{ req.title }}</div>
                       <div class="text-secondary small doc-desc">{{ req.description }}</div>
                     </td>
                     <td>
-                      <span class="badge" 
+                      <span class="badge"
                             [class.badge-warning]="req.importance === 'required'"
                             [class.badge-info]="req.importance === 'recommended'"
                             [class.badge-neutral]="req.importance === 'optional'">
@@ -67,17 +69,90 @@
                     <td>
                       <ih-status-badge [status]="req.status"></ih-status-badge>
                     </td>
+                    <td>{{ req.linkedDocuments.length }}</td>
                     <td class="text-secondary">
                       {{ req.updatedAt | date:'shortDate' }}
                     </td>
-                    @if (canManage()) {
-                      <td class="action-cell">
+                    <td class="action-cell">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-secondary"
+                        [attr.aria-expanded]="expandedId() === req.id"
+                        (click)="toggleDocuments(req)"
+                      >
+                        {{ expandedId() === req.id ? 'Hide' : 'Details' }}
+                      </button>
+                      @if (canManage()) {
                         <button type="button" class="btn btn-sm btn-secondary" (click)="openStatusModal(req)">
                           Update
                         </button>
-                      </td>
-                    }
+                      }
+                    </td>
                   </tr>
+                  @if (expandedId() === req.id) {
+                    <tr class="detail-row">
+                      <td colspan="6">
+                        @if (req.staffGuidance) {
+                          <p class="guidance"><strong>Staff guidance:</strong> {{ req.staffGuidance }}</p>
+                        }
+                        @if (req.clientGuidance) {
+                          <p class="guidance"><strong>Client guidance:</strong> {{ req.clientGuidance }}</p>
+                        }
+                        @if (req.waivedReason || req.notApplicableReason) {
+                          <p class="guidance"><strong>Reason:</strong> {{ req.waivedReason || req.notApplicableReason }}</p>
+                        }
+
+                        <h5 class="linked-title">Linked documents</h5>
+                        @if (req.linkedDocuments.length === 0) {
+                          <p class="text-secondary small">No documents linked yet.</p>
+                        }
+                        <ul class="linked-list">
+                          @for (doc of req.linkedDocuments; track doc.id) {
+                            <li>
+                              <a [routerLink]="['/documents', doc.id]">{{ doc.displayName }}</a>
+                              <ih-status-badge [status]="doc.status"></ih-status-badge>
+                              @if (canManage()) {
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-secondary"
+                                  [disabled]="isLinking()"
+                                  [attr.aria-label]="'Unlink ' + doc.displayName"
+                                  (click)="unlinkDocument(req, doc.id)"
+                                >
+                                  Unlink
+                                </button>
+                              }
+                            </li>
+                          }
+                        </ul>
+
+                        @if (canManage()) {
+                          <div class="link-row">
+                            <label class="form-label" [attr.for]="'link-' + req.id">Link a case document</label>
+                            <select
+                              class="form-select"
+                              [id]="'link-' + req.id"
+                              [ngModel]="documentToLink()"
+                              (ngModelChange)="documentToLink.set($event)"
+                            >
+                              <option value="">Choose a document...</option>
+                              @for (doc of linkableDocuments(); track doc.id) {
+                                <option [value]="doc.id">{{ doc.displayName }}</option>
+                              }
+                            </select>
+                            <button
+                              type="button"
+                              class="btn btn-primary"
+                              [disabled]="!documentToLink() || isLinking()"
+                              (click)="linkDocument(req)"
+                            >
+                              Link
+                            </button>
+                          </div>
+                        }
+                      </td>
+                    </tr>
+                  }
                 }
               </tbody>
             </table>
@@ -90,25 +165,72 @@
   <!-- Provision Modal -->
   @if (showProvisionModal()) {
     <div class="modal-backdrop" (click)="showProvisionModal.set(false)">
-      <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-label="Provision Evidence Template" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>Provision Evidence Template</h3>
-          <button type="button" class="btn-close" (click)="showProvisionModal.set(false)">×</button>
+          <button type="button" class="btn-close" aria-label="Close" (click)="showProvisionModal.set(false)">×</button>
         </div>
         <div class="modal-body">
-          <p class="mb-3">Applying a template will add standard required items to this case's checklist. Existing items will not be overwritten.</p>
-          <div class="form-group">
-            <label class="form-label">Template</label>
-            <select class="form-select" [(ngModel)]="templateKeyToProvision">
-              <option value="eb2_niw_base">EB-2 NIW Canonical Evidence</option>
-              <option value="eb1a_base">EB-1A Extraordinary Ability</option>
-            </select>
-          </div>
+          @if (templatesLoading()) {
+            <p>Loading templates...</p>
+          } @else if (templates().length === 0) {
+            <p>No evidence templates are available for this case type. You can still add requirements one at a time.</p>
+          } @else {
+            <p class="mb-3">Applying a template adds its standard items to this case's checklist. Existing items are not overwritten.</p>
+            <div class="form-group">
+              <label class="form-label" for="evidence-template">Template</label>
+              <select id="evidence-template" class="form-select" [ngModel]="templateKeyToProvision()" (ngModelChange)="templateKeyToProvision.set($event)">
+                @for (t of templates(); track t.key) {
+                  <option [value]="t.key">{{ t.name }} ({{ t.itemCount }} items)</option>
+                }
+              </select>
+            </div>
+          }
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="showProvisionModal.set(false)">Cancel</button>
-          <button type="button" class="btn btn-primary" [disabled]="isProvisioning()" (click)="submitProvision()">
+          <button type="button" class="btn btn-primary" [disabled]="!templateKeyToProvision() || isProvisioning()" (click)="submitProvision()">
             Provision Checklist
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Custom Requirement Modal -->
+  @if (showCustomModal()) {
+    <div class="modal-backdrop" (click)="showCustomModal.set(false)">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-label="Add Evidence Requirement" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Add Evidence Requirement</h3>
+          <button type="button" class="btn-close" aria-label="Close" (click)="showCustomModal.set(false)">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group mb-3">
+            <label class="form-label" for="custom-title">Title <span class="text-danger">*</span></label>
+            <input id="custom-title" type="text" class="form-control" maxlength="200" [ngModel]="customTitle()" (ngModelChange)="customTitle.set($event)" />
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="custom-section">Section</label>
+            <input id="custom-section" type="text" class="form-control" maxlength="100" [ngModel]="customSection()" (ngModelChange)="customSection.set($event)" />
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label" for="custom-importance">Importance</label>
+            <select id="custom-importance" class="form-select" [ngModel]="customImportance()" (ngModelChange)="customImportance.set($event)">
+              <option value="required">Required</option>
+              <option value="recommended">Recommended</option>
+              <option value="optional">Optional</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="custom-description">Description</label>
+            <textarea id="custom-description" class="form-control" rows="3" [ngModel]="customDescription()" (ngModelChange)="customDescription.set($event)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="showCustomModal.set(false)">Cancel</button>
+          <button type="button" class="btn btn-primary" [disabled]="!customTitle().trim() || isCreating()" (click)="submitCustom()">
+            Add Requirement
           </button>
         </div>
       </div>
@@ -118,18 +240,18 @@
   <!-- Status Update Modal -->
   @if (showStatusModal() && activeRequirement()) {
     <div class="modal-backdrop" (click)="showStatusModal.set(false)">
-      <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-label="Update Requirement Status" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>Update Requirement Status</h3>
-          <button type="button" class="btn-close" (click)="showStatusModal.set(false)">×</button>
+          <button type="button" class="btn-close" aria-label="Close" (click)="showStatusModal.set(false)">×</button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
             <strong>{{ activeRequirement()?.title }}</strong>
           </div>
           <div class="form-group mb-3">
-            <label class="form-label">New Status</label>
-            <select class="form-select" [(ngModel)]="newStatus">
+            <label class="form-label" for="evidence-status">New Status</label>
+            <select id="evidence-status" class="form-select" [ngModel]="newStatus()" (ngModelChange)="newStatus.set($event)">
               <option value="missing">Missing</option>
               <option value="in_progress">In Progress</option>
               <option value="satisfied">Satisfied</option>
@@ -137,11 +259,11 @@
               <option value="not_applicable">Not Applicable</option>
             </select>
           </div>
-          
+
           @if (newStatus() === 'waived' || newStatus() === 'not_applicable') {
             <div class="form-group">
-              <label class="form-label">Reason <span class="text-danger">*</span></label>
-              <textarea class="form-control" rows="3" [(ngModel)]="statusReason" placeholder="Provide a reason..."></textarea>
+              <label class="form-label" for="evidence-reason">Reason <span class="text-danger">*</span></label>
+              <textarea id="evidence-reason" class="form-control" rows="3" [ngModel]="statusReason()" (ngModelChange)="statusReason.set($event)" placeholder="Provide a reason..."></textarea>
             </div>
           }
         </div>
