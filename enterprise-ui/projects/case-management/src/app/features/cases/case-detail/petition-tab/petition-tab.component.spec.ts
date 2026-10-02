@@ -102,7 +102,7 @@ describe('PetitionTabComponent', () => {
     await showList([summary()]);
     http.expectOne('/api/v1/staff/petitions/p1').flush({ data: detail(overrides), meta });
     await settle();
-    http.match('/api/v1/staff/cases/case1/member-options').forEach((r) => r.flush({ data: { employees: [{ _id: 'u1', name: 'Wendy Writer' }] }, meta }));
+    http.match('/api/v1/staff/cases/case1/member-options').forEach((r) => r.flush({ data: { employees: [{ id: 'u1', name: 'Wendy Writer', email: 'wendy@ih.test', role: 'petition_writer' }] }, meta }));
     await settle();
   }
 
@@ -230,6 +230,13 @@ describe('PetitionTabComponent', () => {
     expect(again.request.body.body).toBe('Keep me');
     again.flush({ data: detail({ revision: 2 }), meta });
     await retry;
+  });
+
+  it('the assignee picker offers each employee by the id the API returns', async () => {
+    await openPetition({ sections: [section({ actions: { canEdit: true, canMarkReady: true, canReturn: false, canApprove: false, canAssign: true } }), detail().sections[1]] });
+    fixture.detectChanges();
+    const options = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('#assignee option') as NodeListOf<HTMLOptionElement>).map((o) => [o.value, o.textContent?.trim()]);
+    expect(options).toEqual([['', 'Unassigned'], ['u1', 'Wendy Writer']]);
   });
 
   it('assignment posts the chosen employee with the revision', async () => {

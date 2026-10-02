@@ -111,7 +111,7 @@
               <div class="row">
                 <select id="assignee" class="form-select" [ngModel]="assigneeChoice()" (ngModelChange)="assigneeChoice.set($event)">
                   <option value="">Unassigned</option>
-                  @for (emp of employees(); track emp._id) { <option [value]="emp._id">{{ emp.name }}</option> }
+                  @for (emp of employees(); track emp.id) { <option [value]="emp.id">{{ emp.name }}</option> }
                 </select>
                 <button type="button" class="btn btn-secondary btn-sm" [disabled]="busy()" (click)="assign()">Save assignee</button>
               </div>
