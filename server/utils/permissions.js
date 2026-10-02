@@ -128,6 +128,8 @@ const CAPABILITIES = {
   // specialists/reviewer get ownership-scoped task access (see
   // canManageTask below), not blanket access.
   'tasks.manage': MANAGER_ROLES,
+  // 'All tasks' scope on the staff Tasks page, still limited to the actor's own cases unless cases.view_all.
+  'tasks.view_all': MANAGER_ROLES,
   'sprints.manage': MANAGER_ROLES,
   // No per-task-type ownership data exists on DeliveryRecord (see
   // PHASE_2_AUTHORIZATION.md "Known limitations") — role-level access is

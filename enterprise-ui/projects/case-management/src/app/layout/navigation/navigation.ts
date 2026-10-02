@@ -35,6 +35,9 @@ export class Navigation {
     
     // Everyone sees tasks and deadlines
     items.push({ label: 'Tasks', path: '/tasks', icon: 'check-square' });
+    if (caps.includes('channels.view')) {
+      items.push({ label: 'Messages', path: '/messages', icon: 'message-square' });
+    }
     items.push({ label: 'Deadlines', path: '/deadlines', icon: 'calendar' });
 
     return items;

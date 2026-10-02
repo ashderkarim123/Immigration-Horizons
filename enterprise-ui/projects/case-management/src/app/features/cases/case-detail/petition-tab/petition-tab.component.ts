@@ -38,8 +38,9 @@ const SAVE_LABELS: Record<SaveState, string> = {
   error: 'Couldn’t save — retry',
 };
 
+/** From GET /staff/cases/:id/member-options, which returns `id` (never Mongo's `_id`). */
 interface EmployeeOption {
-  _id: string;
+  id: string;
   name: string;
 }
 

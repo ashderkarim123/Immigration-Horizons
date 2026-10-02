@@ -107,6 +107,15 @@ describe('ChatTabComponent', () => {
     expect(text).toContain('The client can read this message');
   });
 
+  it('opens the channel named by the Messages inbox deep link instead of the default pick', () => {
+    fixture.componentRef.setInput('initialChannelId', 'c0');
+    fixture.detectChanges();
+    http.expectOne('/api/v1/staff/cases/case1/channels').flush({ data: { case: { id: 'case1', caseNumber: 'IH-1', title: 'T' }, channels: [channel({ id: 'c0', name: 'Strategy', audience: 'staff_only', clientVisible: false }), channel()] }, meta: { requestId: 'r' } });
+    http.expectOne('/api/v1/staff/channels/c0/messages').flush({ data: { messages: [], nextCursor: null, syncCursor: null }, meta: { requestId: 'r' } });
+    http.match('/api/v1/staff/channels/c0/attachable-documents').forEach((r) => r.flush({ data: { documents: [] }, meta: { requestId: 'r' } }));
+    expect(component.selectedChannelId()).toBe('c0');
+  });
+
   it('renders client messages and marks the channel read through the newest non-own message', () => {
     fixture.detectChanges();
     http.expectOne('/api/v1/staff/cases/case1/channels').flush({ data: { case: { id: 'case1', caseNumber: 'IH-1', title: 'T' }, channels: [channel({ unreadCount: 1 })] }, meta: { requestId: 'r' } });

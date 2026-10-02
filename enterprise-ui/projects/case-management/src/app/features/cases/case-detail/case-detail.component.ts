@@ -8,16 +8,18 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatusBadgeComponent } from '../../../shared/status-badge.component';
 import { SkeletonComponent } from '../../../shared/skeleton.component';
-import { EmptyStateComponent } from '../../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../../shared/error-state.component';
 import { ConfirmDialogComponent } from '../../../shared/confirm-dialog.component';
 import { PaginationComponent } from '../../../shared/pagination.component';
 import { EvidenceTabComponent } from './evidence-tab/evidence-tab.component';
+import { TasksTabComponent } from './tasks-tab/tasks-tab.component';
 import { DocumentsTabComponent } from './documents-tab/documents-tab.component';
 import { ChatTabComponent } from './chat-tab/chat-tab.component';
 import { FormsTabComponent } from './forms-tab/forms-tab.component';
 import { PetitionTabComponent } from './petition-tab/petition-tab.component';
 import { PacketTabComponent } from './packet-tab/packet-tab.component';
+
+const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 'chat', 'forms', 'petition', 'packet'] as const;
 
 @Component({
   selector: 'ih-case-detail',
@@ -28,11 +30,11 @@ import { PacketTabComponent } from './packet-tab/packet-tab.component';
     FormsModule,
     StatusBadgeComponent,
     SkeletonComponent,
-    EmptyStateComponent,
     ErrorStateComponent,
     ConfirmDialogComponent,
     PaginationComponent,
     EvidenceTabComponent,
+    TasksTabComponent,
     DocumentsTabComponent,
     ChatTabComponent,
     FormsTabComponent,
@@ -48,6 +50,8 @@ export class CaseDetailComponent implements OnInit {
   private toast = inject(ToastService);
 
   caseId = signal<string>('');
+  /** Deep link from the Messages inbox: /cases/:id?tab=chat&channel=:channelId */
+  initialChannelId = signal<string | null>(null);
   caseData = signal<CaseDetail | null>(null);
   members = signal<CaseMember[]>([]);
   memberOptions = signal<MemberOption[]>([]);
@@ -56,7 +60,7 @@ export class CaseDetailComponent implements OnInit {
   isError = signal(false);
   errorMessage = signal('');
 
-  activeTab = signal<'overview' | 'team' | 'activity' | 'tasks' | 'evidence' | 'documents' | 'chat' | 'forms' | 'petition' | 'packet'>('overview');
+  activeTab = signal<(typeof TABS)[number]>('overview');
 
   // Team tab
   membersLoading = signal(false);
@@ -70,9 +74,6 @@ export class CaseDetailComponent implements OnInit {
   activityTotal = signal(0);
   activityTotalPages = signal(1);
   private activityLoaded = false;
-
-  caseTasks = signal<any[]>([]);
-  isTasksLoading = signal(false);
 
   // UI visibility comes from the server's per-case action flags, never from role names.
   // The server re-checks every mutation.
@@ -121,10 +122,15 @@ export class CaseDetailComponent implements OnInit {
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
+    const query = this.route.snapshot.queryParamMap;
+    const tab = query?.get('tab');
+    if (tab && (TABS as readonly string[]).includes(tab)) this.activeTab.set(tab as (typeof TABS)[number]);
+    this.initialChannelId.set(query?.get('channel') ?? null);
     if (id) {
       this.caseId.set(id);
       this.loadCaseDetail();
       this.loadMembers();
+      if (this.activeTab() === 'activity') this.loadActivity(1);
     }
   }
 
@@ -198,21 +204,6 @@ export class CaseDetailComponent implements OnInit {
       error: () => {
         this.activityError.set(true);
         this.activityLoading.set(false);
-      }
-    });
-  }
-
-  loadCaseTasks(): void {
-    if (this.caseTasks().length > 0) return; // already loaded
-    this.isTasksLoading.set(true);
-    this.api.get<{ tasks: any[] }>(`/staff/cases/${this.caseId()}/tasks`).subscribe({
-      next: ({ data }) => {
-        this.caseTasks.set(data.tasks);
-        this.isTasksLoading.set(false);
-      },
-      error: () => {
-        this.toast.error('Failed to load case tasks.');
-        this.isTasksLoading.set(false);
       }
     });
   }
