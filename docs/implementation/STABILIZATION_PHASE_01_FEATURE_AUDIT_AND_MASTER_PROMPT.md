@@ -38,6 +38,231 @@ Do not replace the Next.js public site, Next.js client portal, or Express API as
 
 ---
 
+
+## 1A. P0 architecture boundary — Admin CMS and Staff Operations must be separate
+
+This separation is mandatory.
+
+The current code allows an active \`AdminUser\` such as a PM to authenticate at \`/admin/login\`, because the CMS login looks up the shared AdminUser collection and the \`requireAdmin\` middleware only checks whether the CMS session has \`isAdmin=true\`. That is not the intended final product boundary.
+
+### Final surface ownership
+
+~~~text
+admin.immigrationhorizons.com
+  PURPOSE: platform administration + website/CMS only
+
+  Allowed users:
+    super_admin
+    admin
+    editor (only the CMS areas its capabilities permit)
+
+  Staff operational roles such as:
+    pm
+    petition_writer
+    business_plan_specialist
+    recommendation_letter_specialist
+    uscis_forms_specialist
+    evidence_collector
+    reviewer
+    viewer
+  MUST NOT be able to create an authenticated Admin CMS session.
+
+app.immigrationhorizons.com/staff/*
+  PURPOSE: all immigration operations / case-management work
+
+  Users:
+    staff operations administrator
+    PM / Project Manager
+    specialists
+    reviewer / QA
+    other staff roles as permitted
+
+  Operational modules belong here:
+    dashboard
+    clients
+    cases
+    case workspaces / team membership
+    tasks
+    deadlines
+    evidence
+    documents
+    communications / channels / chat
+    Smart Forms
+    petition work
+    filing packets
+    operational queries/consultations as they are migrated
+~~~
+
+### Do not use a fake or shared "pseudo user"
+
+Do not create a shared fake account that multiple people use to administer case work.
+
+Introduce a real persistent staff-side elevated role, recommended name:
+
+~~~text
+operations_admin
+~~~
+
+Display label:
+
+~~~text
+Staff Operations Admin
+~~~
+
+Every person who performs staff administration must have their own account/session so assignment, case activity, security events and audit history remain attributable to a real person.
+
+### Staff Operations Admin responsibilities
+
+The Staff Operations Admin lives only on the Staff Portal and should be able, subject to the canonical capability matrix, to:
+
+- create/convert operational cases where product workflow allows it;
+- assign or change the Project Manager;
+- manage case workspace membership;
+- add/remove employees from case teams;
+- create/assign/reassign tasks;
+- initialize/manage case channels;
+- manage restricted-channel membership;
+- manage case documents/evidence/forms as appropriate;
+- oversee operational queues;
+- perform other case-management administration that currently leaks into the EJS Admin CMS.
+
+Do not make normal PMs organization-wide administrators merely to achieve these actions. PM rights should remain scoped by capabilities and case membership.
+
+### Workspace creation rule
+
+Do not add a generic "Create Workspace" button if the domain invariant is one primary workspace per case.
+
+The preferred workflow is:
+
+~~~text
+Create/convert Case
+  -> system atomically provisions the primary CaseWorkspace
+  -> system provisions required primary client / PM membership
+  -> authorized staff manages additional workspace members
+  -> authorized staff initializes/manages channels
+~~~
+
+Workspace identity is system-owned infrastructure. Staff should manage membership and collaboration, not manually invent detached workspaces.
+
+### Channel workflow
+
+The Staff Operations Admin / authorized PM may manage channels from the Staff Portal.
+
+Use the existing WorkspaceChannel domain and canonical staff API. Do not create an Angular-only channel model.
+
+At minimum the Staff Portal must expose, according to capability:
+
+- initialize default case channels;
+- create a channel;
+- rename/update;
+- reorder;
+- archive;
+- manage restricted-channel members;
+- clearly label client-visible vs staff-only vs restricted audiences.
+
+### Admin CMS must stop being an operations console
+
+After staff parity is verified, the Admin CMS navigation and routes must no longer be the normal place for:
+
+- Cases
+- Clients/case operational management
+- Tasks
+- Case workspaces/team management
+- Case documents
+- Case queries/communications
+- Case channels/chat
+- Evidence
+- Forms
+- Petition work
+- Filing packet work
+- delivery/case-production operations that have a canonical staff equivalent
+
+Do not duplicate or migrate MongoDB data. "Move to Staff Portal" means move the UI/route ownership to Angular + the canonical Express staff API while continuing to use the same authoritative collections/services.
+
+During stabilization, legacy EJS operational routes may be retained temporarily as rollback code, but:
+
+1. normal staff users must be denied CMS authentication;
+2. those routes must not remain the documented day-to-day workflow;
+3. once Angular parity for a module is verified, remove it from Admin CMS navigation;
+4. retire or explicitly admin-only the legacy route after rollback confidence is sufficient.
+
+### Admin CMS responsibilities after separation
+
+The Admin CMS should converge toward:
+
+- website content / Blog;
+- SEO;
+- FAQs;
+- testimonials;
+- services/content configuration;
+- media library;
+- system settings;
+- CMS/platform user provisioning and role administration;
+- security/audit administration where appropriate.
+
+It must not be the ordinary case-production workspace.
+
+### Authentication boundary implementation
+
+Add an explicit CMS-surface authorization concept. Do not rely on the generic historical name \`AdminUser\` to mean a person may enter the CMS.
+
+Recommended implementation:
+
+~~~text
+admin.cms.access
+~~~
+
+Grant it only to:
+
+~~~text
+super_admin
+admin
+editor
+~~~
+
+or an equivalently explicit, tested CMS allowlist.
+
+The Admin CMS login flow must refuse a correct credential for an account that lacks CMS access, record a denied \`admin_cms\` security event, and create no authenticated CMS session.
+
+A PM entering their correct staff credentials at \`admin.immigrationhorizons.com/admin/login\` must remain unauthenticated.
+
+Do not weaken Staff Portal login: the same underlying employee identity may still authenticate at the staff surface according to the staff role matrix.
+
+### Session separation
+
+Keep the two surfaces independently authenticated.
+
+~~~text
+Admin CMS session/cookie
+  !=
+Staff EmployeeSession / ih_staff_session
+~~~
+
+A Staff Portal login must not automatically establish an Admin CMS session.
+
+An Admin CMS login must not be treated as a Staff Portal login.
+
+### Required tests for this boundary
+
+Add tests proving:
+
+- PM + correct password -> Admin CMS denied, no CMS session;
+- specialist + correct password -> Admin CMS denied;
+- reviewer + correct password -> Admin CMS denied;
+- viewer + correct password -> Admin CMS denied;
+- editor + correct password -> CMS access only to permitted CMS capabilities;
+- admin -> CMS access;
+- super_admin -> CMS access;
+- denied CMS login records an appropriate security event without claiming bad password;
+- denied CMS login does not increment bad-password lockout counters merely because the role lacks CMS access;
+- PM can still log in successfully through the Staff Portal;
+- Staff and Admin sessions remain independent;
+- hiding an Admin sidebar item is never the authorization boundary; direct CMS route access is also denied.
+
+This is P0 and must be completed before treating the staff/admin split as production-complete.
+
+---
+
 ## 2. Audit summary
 
 Use these statuses:
@@ -52,6 +277,8 @@ Use these statuses:
 | Module | Audit status |
 |---|---|
 | Production routing/deployment | GREEN |
+| Admin CMS vs Staff Portal authentication boundary | RED |
+| Operational modules still exposed in Admin CMS | RED |
 | Existing staff login/session | GREEN |
 | First-login permanent-password setup | RED |
 | Dashboard | YELLOW |
@@ -764,14 +991,16 @@ Follow this sequence unless current code proves a dependency requires a small ad
 
 ### Batch A — P0 authentication and canonical DTO repair
 
-1. first-login password setup
-2. Cases list contract
-3. Clients list/detail contract
-4. case-detail permission/action flags
-5. Team loading and mutation contracts
-6. Activity endpoint integration
-7. safe case mutation refresh behavior
-8. dashboard navigation under /staff
+1. enforce Admin CMS vs Staff Portal authentication separation and add Staff Operations Admin capability/role design
+2. begin removing migrated operational modules from Admin CMS navigation after Staff parity is verified
+3. first-login password setup
+4. Cases list contract
+5. Clients list/detail contract
+6. case-detail permission/action flags
+7. Team loading and mutation contracts
+8. Activity endpoint integration
+9. safe case mutation refresh behavior
+10. dashboard navigation under /staff
 
 Run tests and commit.
 
@@ -996,6 +1225,23 @@ Before editing:
 Do not blindly patch based only on prose.
 
 ## Batch A — repair P0 Angular/API contracts
+
+### A0. Enforce Admin CMS vs Staff Operations separation
+
+Implement the architecture boundary in Section 1A.
+
+Required:
+
+- add explicit CMS-access authorization such as `admin.cms.access`;
+- deny PM/specialist/reviewer/viewer CMS authentication even with a correct password;
+- preserve correct bad-password lockout behavior separately from role/surface denial;
+- create no CMS session on a surface-authorization denial;
+- keep Staff EmployeeSession authentication independent;
+- introduce/confirm a real staff-side elevated operational role such as `operations_admin`, not a shared pseudo account;
+- move operational authority to canonical Staff APIs and Angular;
+- remove migrated operational modules from Admin CMS navigation only after their Staff Portal parity is verified;
+- keep legacy route code only as a deliberate temporary rollback path, not the normal workflow;
+- add route-level tests: UI hiding alone is insufficient.
 
 ### A1. First-login password setup
 
@@ -1240,26 +1486,29 @@ Create regression tests for every defect found.
 
 Stabilization Phase 01 is complete only when:
 
-1. first-login staff password setup works
-2. Cases list/search/filter/pagination/navigation works
-3. Clients list/detail works
-4. PM sees case actions permitted by the server
-5. Team loads real members and add/remove/PM change works
-6. Activity timeline loads real CaseActivity
-7. case mutations do not corrupt local case state
-8. Evidence works on a real CaseWorkspace and has integration coverage
-9. Evidence custom/link/unlink workflow is usable
-10. Tasks can be operated, not merely listed
-11. staff has a discoverable global Messages inbox
-12. case Chat remains interoperable with Client Portal Chat
-13. Documents, Forms, Petition and Filing Packet core flows pass regression verification
-14. removed workspace members lose access immediately
-15. Angular tests use canonical DTO-shaped fixtures for touched workflows
-16. root tests are green
-17. server tests are green
-18. Angular case-management tests are green
-19. lint/typecheck/build are green
-20. final GitHub CI for the exact final SHA has all required jobs successful
+1. PM/specialist/reviewer/viewer cannot authenticate to Admin CMS; admin/editor/super_admin access follows explicit CMS capability
+2. Staff Operations Admin can administer case operations from the Staff Portal with an individually attributable account
+3. Admin CMS no longer serves as the documented normal case-operations workspace
+4. first-login staff password setup works
+5. Cases list/search/filter/pagination/navigation works
+6. Clients list/detail works
+7. PM sees case actions permitted by the server
+8. Team loads real members and add/remove/PM change works
+9. Activity timeline loads real CaseActivity
+10. case mutations do not corrupt local case state
+11. Evidence works on a real CaseWorkspace and has integration coverage
+12. Evidence custom/link/unlink workflow is usable
+13. Tasks can be operated, not merely listed
+14. staff has a discoverable global Messages inbox
+15. case Chat remains interoperable with Client Portal Chat
+16. Documents, Forms, Petition and Filing Packet core flows pass regression verification
+17. removed workspace members lose access immediately
+18. Angular tests use canonical DTO-shaped fixtures for touched workflows
+19. root tests are green
+20. server tests are green
+21. Angular case-management tests are green
+22. lint/typecheck/build are green
+23. final GitHub CI for the exact final SHA has all required jobs successful
 
 ## Final report
 
