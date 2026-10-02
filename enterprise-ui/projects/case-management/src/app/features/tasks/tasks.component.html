@@ -95,6 +95,7 @@
             <th>Status</th>
             <th>Priority</th>
             <th>Due Date</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -119,13 +120,24 @@
               </td>
               <td>{{ t.assignee ? t.assignee.displayName : 'Unassigned' }}</td>
               <td>
-                <ih-status-badge [status]="t.status"></ih-status-badge>
+                @if (t.actions.canChangeStatus) {
+                  <select #sel class="form-select" [attr.aria-label]="'Status of ' + t.title" (change)="setStatus(t, sel)">
+                    @for (s of statuses; track s.value) { <option [value]="s.value" [selected]="s.value === t.status">{{ s.label }}</option> }
+                  </select>
+                } @else {
+                  <ih-status-badge [status]="t.status"></ih-status-badge>
+                }
               </td>
               <td>
                 <ih-status-badge [status]="t.priority"></ih-status-badge>
               </td>
               <td [class.text-danger]="isOverdue(t)">
-                {{ t.dueDate ? (t.dueDate | date:'mediumDate') : 'None' }}
+                {{ t.dueDate ? (t.dueDate | date:'mediumDate':'UTC') : 'None' }}
+              </td>
+              <td>
+                @if (t.actions.canEdit && t.case) {
+                  <button type="button" class="btn btn-sm btn-secondary" (click)="editing.set(t)">Edit</button>
+                }
               </td>
             </tr>
           }
@@ -141,3 +153,13 @@
     ></ih-pagination>
   }
 </div>
+
+@if (editing(); as task) {
+  <ih-task-form-dialog
+    [open]="true"
+    [caseId]="task.case!.id"
+    [task]="task"
+    (saved)="onSaved($event)"
+    (closed)="editing.set(null)"
+  ></ih-task-form-dialog>
+}

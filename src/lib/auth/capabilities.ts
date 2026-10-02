@@ -68,6 +68,7 @@ export const CAPABILITIES: Record<string, string[]> = {
   "leads.delete": ["super_admin", "admin"],
   "notes.create": [...MANAGER_ROLES, ...SPECIALIST_ROLES, "reviewer"],
   "tasks.manage": MANAGER_ROLES,
+  "tasks.view_all": MANAGER_ROLES,
   "sprints.manage": MANAGER_ROLES,
   "deliveries.manage": CASE_WORKER_ROLES,
   "csv.export": MANAGER_ROLES,

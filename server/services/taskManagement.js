@@ -11,7 +11,52 @@ const { notify } = require('../utils/notify');
  * Handles canonical task business logic for Phase 04.
  */
 
+const MAX_TITLE = 200;
+const MAX_DESCRIPTION = 5000;
+
+/**
+ * Validates and normalizes the editable task fields. `partial` (updates) only checks
+ * the fields that are present; otherwise a title is required. Bad values are reported
+ * here instead of surfacing as a Mongoose cast/enum error (a 500).
+ */
+function validateTaskFields(data, { partial = false } = {}) {
+  const errors = {};
+  const values = {};
+  const has = (k) => data[k] !== undefined;
+
+  if (has('title') || !partial) {
+    const title = typeof data.title === 'string' ? data.title.trim() : '';
+    if (!title) errors.title = 'Title is required.';
+    else if (title.length > MAX_TITLE) errors.title = `Title must not exceed ${MAX_TITLE} characters.`;
+    else values.title = title;
+  }
+  if (has('type')) {
+    if (!Task.TYPES.includes(data.type)) errors.type = 'Invalid task type.';
+    else values.type = data.type;
+  }
+  if (has('priority')) {
+    if (!Task.PRIORITIES.includes(data.priority)) errors.priority = 'Invalid priority.';
+    else values.priority = data.priority;
+  }
+  if (has('description')) {
+    const description = typeof data.description === 'string' ? data.description.trim() : '';
+    if (description.length > MAX_DESCRIPTION) errors.description = `Description must not exceed ${MAX_DESCRIPTION} characters.`;
+    else values.description = description;
+  }
+  if (has('dueDate')) {
+    if (data.dueDate === null || data.dueDate === '') values.dueDate = null;
+    else if (Number.isNaN(new Date(data.dueDate).getTime())) errors.dueDate = 'Invalid due date.';
+    else values.dueDate = new Date(data.dueDate);
+  }
+
+  return Object.keys(errors).length ? { errors } : { values };
+}
+
 async function createCaseTask({ caseDoc, workspace, taskData, actor }) {
+  const checked = validateTaskFields(taskData);
+  if (checked.errors) return { outcome: 'validation_error', errors: checked.errors };
+  taskData = { ...taskData, ...checked.values };
+
   if (taskData.assignee) {
     if (!mongoose.Types.ObjectId.isValid(taskData.assignee)) {
       return { outcome: 'validation_error', errors: { assignee: 'Invalid assignee ID.' } };
@@ -34,7 +79,7 @@ async function createCaseTask({ caseDoc, workspace, taskData, actor }) {
     type: taskData.type || 'Other',
     description: taskData.description || '',
     priority: taskData.priority || 'medium',
-    status: taskData.status || 'todo',
+    status: 'todo', // moves through changeTaskStatus, never set on creation
     dueDate: taskData.dueDate || null,
     assignee: taskData.assignee || null,
     assigneeName: taskData.assigneeName || '',
@@ -67,24 +112,23 @@ async function createCaseTask({ caseDoc, workspace, taskData, actor }) {
 }
 
 async function updateTask({ task, caseDoc, workspace, updates, actor }) {
-  const allowedUpdates = ['title', 'description', 'priority', 'dueDate', 'type'];
+  const checked = validateTaskFields(updates, { partial: true });
+  if (checked.errors) return { outcome: 'validation_error', errors: checked.errors };
+
   let hasChanges = false;
   let dueDateChanged = false;
 
-  for (const field of allowedUpdates) {
-    if (updates[field] !== undefined) {
-      if (field === 'dueDate') {
-        const oldDate = task.dueDate ? task.dueDate.toISOString() : null;
-        const newDate = updates.dueDate ? new Date(updates.dueDate).toISOString() : null;
-        if (oldDate !== newDate) {
-          task.dueDate = updates.dueDate;
-          hasChanges = true;
-          dueDateChanged = true;
-        }
-      } else if (task[field] !== updates[field]) {
-        task[field] = updates[field];
+  for (const [field, value] of Object.entries(checked.values)) {
+    if (field === 'dueDate') {
+      const oldDate = task.dueDate ? task.dueDate.toISOString() : null;
+      if (oldDate !== (value ? value.toISOString() : null)) {
+        task.dueDate = value;
         hasChanges = true;
+        dueDateChanged = true;
       }
+    } else if (task[field] !== value) {
+      task[field] = value;
+      hasChanges = true;
     }
   }
 

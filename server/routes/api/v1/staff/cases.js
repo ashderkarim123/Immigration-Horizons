@@ -25,6 +25,7 @@ const {
   accessibleCaseIdFilter,
   memberCaseIds,
   canViewCase,
+  canManageTask,
   canManageCase,
   canAssignCase,
   canArchiveCase,
@@ -32,6 +33,7 @@ const {
 } = require('../../../../services/casePolicy');
 const { can } = require('../../../../utils/permissions');
 const { createApiError } = require('../../../../middleware/api/apiError');
+const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedOrigin');
 
 // ─── Serializers ─────────────────────────────────────────────────────────────
 
@@ -405,36 +407,17 @@ router.get('/:id/tasks', staffAuthMiddleware, requireApiCapability('cases.view')
     const hasAccess = await canViewCase(req, workspace._id);
     if (!hasAccess) return next(createApiError(404, 'not_found', 'Case not found.'));
 
+    const { populated, taskActionContext, taskAccess, serializeTask } = require('../../../../services/taskDto');
     const Task = require('../../../../models/admin/Task');
-    const tasks = await Task.find({ case: caseId })
-      .populate('assignee', 'name')
-      .populate('case', 'caseNumber title')
-      .populate('lead', 'firstName lastName email')
-      .sort({ dueDate: 1, createdAt: -1 })
-      .lean();
-
-    // serializeTaskSummary from tasks.js logic
-    const serializeTaskSummary = (t) => ({
-      id: t._id,
-      title: t.title,
-      type: t.type,
-      status: t.status,
-      priority: t.priority,
-      dueDate: t.dueDate || null,
-      assignee: t.assignee
-        ? { id: t.assignee._id, displayName: t.assignee.name || '' }
-        : null,
-      case: t.case
-        ? { id: t.case._id, caseNumber: t.case.caseNumber, title: t.case.title }
-        : null,
-      lead: t.lead
-        ? { id: t.lead._id, displayName: [t.lead.firstName, t.lead.lastName].filter(Boolean).join(' ') || t.lead.email }
-        : null,
-      updatedAt: t.updatedAt,
-    });
+    const ctx = await taskActionContext(req);
+    const tasks = await populated(Task.find({ case: caseId }).sort({ dueDate: 1, createdAt: -1 })).lean();
 
     res.json({
-      data: { tasks: tasks.map(serializeTaskSummary) },
+      data: {
+        tasks: tasks.map((t) => serializeTask(t, taskAccess(req, t, ctx))),
+        // may this actor add a task to this case (tasks.manage + membership)
+        canCreate: await canManageTask(req, workspace._id),
+      },
       meta: { requestId: req.id },
     });
   } catch (err) {
@@ -443,26 +426,14 @@ router.get('/:id/tasks', staffAuthMiddleware, requireApiCapability('cases.view')
 });
 
 // POST /api/v1/staff/cases/:id/tasks
-router.post('/:id/tasks', staffAuthMiddleware, requireApiCapability('cases.view'), async (req, res, next) => {
+router.post('/:id/tasks', trustedOriginMiddleware, staffAuthMiddleware, requireApiCapability('cases.view'), async (req, res, next) => {
   try {
-    const caseId = req.params.id;
-    if (!mongoose.Types.ObjectId.isValid(caseId)) {
-      return next(createApiError(404, 'not_found', 'Case not found.'));
-    }
-
     const { loadCaseAndWorkspace } = require('../../../../services/caseManagement');
-    const context = await loadCaseAndWorkspace(caseId);
-    if (!context) return next(createApiError(404, 'not_found', 'Case not found.'));
+    const context = await loadCaseAndWorkspace(req.params.id);
+    if (!context || !(await canViewCase(req, context.workspace._id))) return next(createApiError(404, 'not_found', 'Case not found.'));
+    if (!(await canManageTask(req, context.workspace._id))) return next(createApiError(403, 'forbidden', 'Insufficient capability.'));
 
-    const { canManageTask } = require('../../../../services/casePolicy');
-    const hasAccess = await canManageTask(req, context.workspace._id);
-    if (!hasAccess) return next(createApiError(403, 'forbidden', 'Insufficient capability.'));
-
-    const { title, type, priority, dueDate, assignee, description } = req.body;
-    if (!title || !title.trim()) {
-      return res.status(400).json({ error: { code: 'validation_error', message: 'Title is required.' } });
-    }
-
+    const { title, type, priority, dueDate, assignee, description } = req.body || {};
     const { createCaseTask } = require('../../../../services/taskManagement');
     const result = await createCaseTask({
       caseDoc: context.caseDoc,
@@ -470,12 +441,12 @@ router.post('/:id/tasks', staffAuthMiddleware, requireApiCapability('cases.view'
       taskData: { title, type, priority, dueDate, assignee, description },
       actor: req.staff,
     });
-
     if (result.outcome === 'validation_error') {
-      return res.status(400).json({ error: { code: 'validation_error', message: 'Invalid task.', fields: result.errors } });
+      return next(createApiError(422, 'validation_error', 'Please correct the highlighted fields.', Object.entries(result.errors).map(([field, message]) => ({ field, message }))));
     }
 
-    res.json({ data: { id: result.task._id }, meta: { requestId: req.id } });
+    const { loadTaskDto } = require('../../../../services/taskDto');
+    res.status(201).json({ data: await loadTaskDto(req, result.task._id), meta: { requestId: req.id } });
   } catch (err) {
     next(err);
   }

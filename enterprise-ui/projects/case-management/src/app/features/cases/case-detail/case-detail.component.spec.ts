@@ -140,6 +140,30 @@ describe('CaseDetailComponent', () => {
     });
   });
 
+  describe('deep links', () => {
+    it('opens the tab and channel named in the URL (Messages inbox) and ignores unknown tabs', () => {
+      for (const [query, expected] of [
+        [{ tab: 'chat', channel: 'ch9' }, 'chat'],
+        [{ tab: 'bogus' }, 'overview'],
+      ] as const) {
+        TestBed.resetTestingModule();
+        TestBed.configureTestingModule({
+          providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            provideRouter([]),
+            { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'case1' }), queryParamMap: convertToParamMap(query) } } },
+          ],
+        });
+        const fixture = TestBed.createComponent(CaseDetailComponent);
+        fixture.detectChanges();
+        expect(fixture.componentInstance.activeTab()).toBe(expected);
+        expect(fixture.componentInstance.initialChannelId()).toBe('channel' in query ? query.channel : null);
+        TestBed.inject(HttpTestingController).match(() => true); // pending loads are irrelevant here
+      }
+    });
+  });
+
   describe('team tab', () => {
     it('renders the members endpoint DTO (employee and client members), not caseData.team', () => {
       const fixture = setup(PM);

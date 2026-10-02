@@ -76,6 +76,13 @@ const ACTIVITY_TYPES = [
   'filing_packet_returned',
   'filing_packet_approved',
   'filing_packet_finalized',
+  // Stabilization 01 — task lifecycle (taskManagement.js). Titles only, never descriptions.
+  'task_created',
+  'task_assigned',
+  'task_status_changed',
+  'task_completed',
+  'task_reopened',
+  'task_due_date_changed',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(

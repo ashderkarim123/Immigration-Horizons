@@ -49,6 +49,8 @@ export class ChatTabComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   caseId = input.required<string>();
+  /** Channel to open first (deep link from the Messages inbox); falls back to the default pick. */
+  initialChannelId = input<string | null>(null);
 
   readonly audienceLabels = AUDIENCE_LABELS;
 
@@ -123,7 +125,10 @@ export class ChatTabComponent implements OnInit {
         this.channels.set(res.data.channels);
         this.isLoading.set(false);
         if (selectFirst && res.data.channels.length) {
-          const preferred = res.data.channels.find((c) => c.audience === 'client_and_team') ?? res.data.channels[0];
+          const preferred =
+            res.data.channels.find((c) => c.id === this.initialChannelId()) ??
+            res.data.channels.find((c) => c.audience === 'client_and_team') ??
+            res.data.channels[0];
           this.selectChannel(preferred.id);
         }
       },
