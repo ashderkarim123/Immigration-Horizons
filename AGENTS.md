@@ -55,42 +55,80 @@ keeps its own session check and row-level policy.
 <!-- END:project-topology -->
 
 <!-- BEGIN:working-state -->
-# Repository state (as of 2026-09-03)
+# The staff platform: Angular app + canonical Express API
 
-**This is a snapshot, not a guarantee.** Verify with `git log --oneline -3`
-and `git status` before relying on any of it.
+Employees work in an **Angular** app, not in Next.js or the EJS CMS. Know where things live:
 
-At the time of writing: `main` is `50b6c8a`, the working tree is clean, and
-`origin/main` matches. Cycles 1 through 10 are committed. Nothing is
-pending approval.
+| Thing | Where |
+|---|---|
+| Staff case-management app (served at `app.immigrationhorizons.com/staff/`, `<base href="/staff/">`) | `enterprise-ui/projects/case-management` |
+| Placeholder admin console (cutover deferred, do not build on it) | `enterprise-ui/projects/admin-console` |
+| Canonical staff API (`/api/v1/staff/*`) | `server/routes/api/v1/staff/*.js` + `server/services/*` |
+| Admin CMS (EJS): leads, blog, users, the older case/query screens | `server/routes/admin/*`, `server/views/admin/*` |
+| Client portal | `src/app/(app)/portal/**` (Next.js) |
+| Decisions and per-phase records | `docs/architecture/ADR-*.md`, `docs/implementation/*` |
 
-## Two things about the history worth knowing
+Employee accounts are one `AdminUser` model shared by the CMS and the staff app (separate session stores).
+Client accounts (`ClientUser`) are separate: clients never sign in to staff surfaces, and staff never sign in to the portal.
 
-**`50b6c8a` says less than it did.** Its message — "feat: Implement host
-management and employee session handling" — describes Cycles 8A and 8B, but
-the commit also contains all of Cycle 8C (ADR-010, the staff case and
-client operations console) and all of Cycle 9 (ADR-011, the client portal
-experience layer). If you are looking for where `/staff/clients`,
-`/staff/operations`, `/portal/profile` or `/portal/security` came from, it
-is there. Don't conclude they are uncommitted because the message doesn't
-mention them.
+## Rules for the staff API and Angular app (each one was a real bug)
 
-**`cc43363` is a dead commit, and it is harmless.** It was authored outside
-an agent session and contained only Cycle 8A's 38 route-group file moves —
-`0 insertions, 0 deletions` — without `src/proxy.ts`, the route-group
-layouts, or the import fixes that make those moves build. It briefly sat on
-`main`. It no longer does: `main` was rebuilt cleanly on top of `a7cc546`,
-which is still an ancestor, so nothing was rewritten destructively. The
-commit object survives in the object store but is unreachable from any
-branch, and `git log` will not show it. Nothing needs to be done about it.
+1. **The API returns `id`, never `_id`.** Angular must not assume Mongo fields. Give every response a typed DTO in
+   `core/api/*.types.ts`; avoid `any`.
+2. **Never infer permission from a role name in Angular.** Render from the server's `actions` flags (or `capabilities`).
+   The function that builds the flags must be the one the mutation route enforces (see `server/services/taskDto.js`).
+3. **Mutation endpoints may return a compact result.** Re-read the canonical state, or return the refreshed DTO. Never replace a
+   screen's state with a partial response. On a rejected change keep the modal and the user's input.
+4. **Errors use `{ error: { code, message, fieldErrors } }`.** Read them with `apiErrorMessage()` (`core/api/api-error.ts`);
+   `err.error.message` is the wrong place. Use `createApiError`; bad input is a 4xx, never a Mongoose 500.
+5. **Conceal, don't confess.** A missing, malformed, inaccessible or removed-member target is one identical 404; visible but not
+   permitted is 403. Every mutating route uses `trustedOriginMiddleware`. Removed workspace members lose access on the next request.
+6. **Resolve the workspace explicitly.** `ClientCase` has no `workspace` field; use `caseManagement.loadCaseAndWorkspace`.
+7. **Angular specs use fixtures shaped like the real response**, and each touched endpoint has a server integration test pinning the
+   same fields. Two green suites that disagree is the failure mode this repo has already hit.
+8. **Adding an enum or capability is a three-place change:** the server model/map, its Next.js mirror (`src/lib/**`), and the contract
+   fixture in `docs/architecture/*-contract.json` (regenerate it, never hand-edit). `CaseActivity` types, capabilities and
+   security-event types all work this way. An undefined capability makes `can()` false for **everyone, Super Admin included**.
+9. **A migration must be registered** in `scripts/migrate.ts`; an unregistered one silently never runs.
+10. Component styles are encapsulated: a modal's CSS in a parent does not reach a child component.
+
+# Safety: production
+
+- `main` is wired to deployment. **Merging or pushing to `main` deploys to production** after CI. Work on a branch; merge only when asked.
+- Never run migrations, index builds, backfills or scripts against the production database without the owner's explicit say-so.
+  `npm run db:migrate` is a dry run by default, and `--apply` on a production-looking URI needs `--i-have-a-backup`.
+- Credentials never go in the repo. `server/scripts/seedStaffUser.js` takes them from the environment (`SEED_EMAIL`, `SEED_PASSWORD`,
+  optional `SEED_NAME`, `SEED_ROLE`) and is the break-glass way to create or recover a Super Admin. Run it from `server/`.
+- Evidence checklists need migration `004-seed-evidence-templates` applied in production (it was written but unregistered until
+  Stabilization 01). Check `docs/implementation/STABILIZATION_PHASE_01_REPORT.md` §6 before assuming it has been run.
+
+# Current state (a snapshot as of 2026-10-03; verify before relying on it)
+
+- The Angular staff app covers dashboard, cases, clients, team, activity, tasks, deadlines, evidence, documents, chat, a Messages
+  inbox, Smart Forms, petition work and filing packets. **Stabilization Phase 01 (Batches A to F) is merged and deployed.**
+  `docs/implementation/STABILIZATION_PHASE_01_REPORT.md` lists the defects, the limitations and the two-session QA checklist (not yet run).
+- **Phase 11 (USCIS Tracking) is not started.** It is gated on migration 004, the QA run, and a decision on staff notifications.
+- Deferred on purpose, do not start unasked: calendar/reminders, global search/reporting, Angular admin-console cutover, retiring CMS
+  operational routes, official USCIS PDF rendering, e-signature/e-filing, AI features.
+- Undecided: moving case operations out of the admin CMS (denying PMs, retiring routes). PMs still do real work there (document
+  review, answering queries); do not remove it before Angular covers it.
+
+Run `git log --oneline -5` and `git status` before trusting any of this.
 
 ## Running the test suites
 
-Run the two suites **sequentially**, never concurrently. Run together they
-contend for `mongodb-memory-server` instances and fail with "Instance
-failed to start within Nms" — which reads exactly like a real failure and
-is not one. Both helpers set a 60s launch timeout for the same reason.
+Run suites **sequentially**, never concurrently: they contend for `mongodb-memory-server` instances and fail with "Instance failed to
+start within Nms", which looks exactly like a real failure.
 
-Last verified green: root **281/281**, server **407/407**, `tsc --noEmit`
-clean, `npm run lint` clean, `npm run build` clean.
+| Suite | Command (run from) | Last verified |
+|---|---|---|
+| Root (Next.js) | `npm test` (repo root) | 430 pass |
+| Express API + CMS | `npm test` (`server/`, about 10 to 15 minutes) | 637 pass |
+| Angular | `npx ng test case-management --watch=false` (`enterprise-ui/`) | 136 pass |
+| Types, lint, build | `npx tsc --noEmit` · `npm run lint` · `npx ng build case-management` | clean |
+
+Tips:
+- On Windows PowerShell set env vars with `$env:NAME='x'`; the `NAME=x command` form only works in bash.
+- Do not `grep -r .` from the repo root (it walks `node_modules`); use the search tools.
+- One server test file: `node --test path/to/file.test.js`. Root tests need `--conditions=react-server` (the npm script adds it).
 <!-- END:working-state -->
