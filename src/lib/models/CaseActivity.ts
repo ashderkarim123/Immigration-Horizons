@@ -65,6 +65,12 @@ export const CASE_ACTIVITY_TYPES = [
   "filing_packet_returned",
   "filing_packet_approved",
   "filing_packet_finalized",
+  "task_created",
+  "task_assigned",
+  "task_status_changed",
+  "task_completed",
+  "task_reopened",
+  "task_due_date_changed",
 ] as const;
 
 export type CaseActivityType = (typeof CASE_ACTIVITY_TYPES)[number];

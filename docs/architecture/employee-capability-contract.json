@@ -96,6 +96,11 @@
       "admin",
       "pm"
     ],
+    "tasks.view_all": [
+      "super_admin",
+      "admin",
+      "pm"
+    ],
     "sprints.manage": [
       "super_admin",
       "admin",

@@ -5,6 +5,7 @@ const WorkspaceMessage = require('../models/WorkspaceMessage');
 const WorkspaceMember = require('../models/WorkspaceMember');
 const ChannelMember = require('../models/ChannelMember');
 const CaseDocument = require('../models/CaseDocument');
+const ClientCase = require('../models/ClientCase');
 
 const { can } = require('../utils/permissions');
 const { encodeCursor, decodeCursor, cursorFilter, changedFilter, boundedLimit } = require('../utils/messageCursor');
@@ -118,6 +119,85 @@ async function loadCaseChannels(req, caseId) {
       canCreateChannel: await collaborationPolicy.canCreateChannel(req, workspace._id),
     },
   };
+}
+
+// ponytail: the inbox considers the most recently active channels only; page through
+// them in memory. Past this many conversations, move the unread/last-message join into the database.
+const INBOX_CHANNEL_CAP = 300;
+const PREVIEW_LENGTH = 140;
+
+/**
+ * Staff Messages inbox: the conversations (channels with at least one human message)
+ * the actor may see, unread first, newest activity first. Visibility is re-derived per
+ * channel by the same policy the case Chat tab uses, so restricted / staff-only channels
+ * never leak. Unread counts exist only for channels the actor is a workspace member of
+ * (read state belongs to a membership); org-wide viewers without one see 0.
+ */
+async function loadInbox(req, { filter = 'all', search = '', page = 1, limit = 25 } = {}) {
+  const memberships = await WorkspaceMember.find({ adminUser: req.staff._id, memberType: 'employee', status: 'active' }).select('_id workspace').lean();
+  const memberIdByWorkspace = new Map(memberships.map((m) => [String(m.workspace), m._id]));
+
+  const orgWide = can(req, 'channels.view_all');
+  const channelQuery = { archivedAt: null };
+  if (!orgWide) channelQuery.workspace = { $in: memberships.map((m) => m.workspace) };
+  const candidates = await WorkspaceChannel.find(channelQuery).select('case workspace name visibility channelType').lean();
+  if (!candidates.length) return { items: [], total: 0, page, totalPages: 1, pageSize: limit, unreadTotal: 0 };
+
+  const latest = await WorkspaceMessage.aggregate([
+    { $match: { channel: { $in: candidates.map((c) => c._id) }, deletedAt: null, senderType: { $ne: 'system' } } },
+    { $sort: { createdAt: -1 } },
+    { $group: { _id: '$channel', body: { $first: '$body' }, senderDisplayName: { $first: '$senderDisplayName' }, senderType: { $first: '$senderType' }, createdAt: { $first: '$createdAt' } } },
+    { $sort: { createdAt: -1 } },
+    { $limit: INBOX_CHANNEL_CAP },
+  ]);
+  const channelById = new Map(candidates.map((c) => [String(c._id), c]));
+
+  const visible = [];
+  for (const message of latest) {
+    const channel = channelById.get(String(message._id));
+    if (await collaborationPolicy.canViewChannel(req, channel)) visible.push({ channel, message });
+  }
+
+  const unread = {};
+  const byWorkspace = new Map();
+  for (const { channel } of visible) {
+    byWorkspace.set(String(channel.workspace), [...(byWorkspace.get(String(channel.workspace)) || []), channel._id]);
+  }
+  for (const [workspaceId, channelIds] of byWorkspace) {
+    const workspaceMemberId = memberIdByWorkspace.get(workspaceId);
+    if (workspaceMemberId) Object.assign(unread, await readStateService.getUnreadCountsForChannels({ channelIds, workspaceMemberId, selfAdminId: req.staff._id }));
+  }
+
+  const cases = await ClientCase.find({ _id: { $in: [...new Set(visible.map((v) => String(v.channel.case)))] } }).select('caseNumber title').lean();
+  const caseById = new Map(cases.map((c) => [String(c._id), c]));
+
+  const needle = String(search || '').trim().toLowerCase();
+  let items = visible.map(({ channel, message }) => {
+    const c = caseById.get(String(channel.case));
+    return {
+      channelId: id(channel),
+      channelName: channel.name,
+      audience: audienceOf(channel),
+      case: c ? { id: id(c), caseNumber: c.caseNumber, title: c.title } : null,
+      latestMessage: {
+        senderName: message.senderDisplayName,
+        senderType: message.senderType,
+        preview: message.body.length > PREVIEW_LENGTH ? `${message.body.slice(0, PREVIEW_LENGTH)}…` : message.body,
+        createdAt: message.createdAt,
+      },
+      unreadCount: unread[String(channel._id)] || 0,
+    };
+  });
+
+  const unreadTotal = items.filter((i) => i.unreadCount > 0).length;
+  if (filter === 'unread') items = items.filter((i) => i.unreadCount > 0);
+  if (needle) items = items.filter((i) => [i.channelName, i.case && i.case.caseNumber, i.case && i.case.title].some((v) => String(v || '').toLowerCase().includes(needle)));
+
+  // already newest-first from the aggregation; a stable sort puts unread conversations on top
+  items.sort((a, b) => Number(b.unreadCount > 0) - Number(a.unreadCount > 0));
+
+  const total = items.length;
+  return { items: items.slice((page - 1) * limit, page * limit), total, page, totalPages: Math.max(1, Math.ceil(total / limit)), pageSize: limit, unreadTotal };
 }
 
 /** Safe attachment metadata only — id, display name, type, size. Never storage keys or paths. */
@@ -280,6 +360,7 @@ module.exports = {
   loadViewableChannel,
   loadViewableMessage,
   loadCaseChannels,
+  loadInbox,
   mapChannel,
   mapMessages,
   listMessages,

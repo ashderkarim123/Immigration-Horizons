@@ -1,0 +1,69 @@
+<div class="page-header">
+  <div>
+    <h1>Messages</h1>
+    <p class="page-subtitle">Conversations across your cases, unread first</p>
+  </div>
+</div>
+
+<div class="filters-bar card">
+  <div class="filter-group" role="group" aria-label="Show">
+    <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === 'all'" [class.btn-secondary]="filter() !== 'all'" [attr.aria-pressed]="filter() === 'all'" (click)="setFilter('all')">All</button>
+    <button type="button" class="btn btn-sm" [class.btn-primary]="filter() === 'unread'" [class.btn-secondary]="filter() !== 'unread'" [attr.aria-pressed]="filter() === 'unread'" (click)="setFilter('unread')">
+      Unread @if (unreadTotal() > 0) { <span class="unread-pill">{{ unreadTotal() }}</span> }
+    </button>
+  </div>
+  <div class="filter-group">
+    <input
+      type="search"
+      class="form-control"
+      placeholder="Search by case number, case title or channel..."
+      aria-label="Search conversations"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)"
+      (keyup.enter)="onFilterChange()"
+    />
+  </div>
+</div>
+
+<div class="section-card card">
+  @if (isLoading()) {
+    <ih-skeleton [rows]="5" rowHeight="3rem"></ih-skeleton>
+  } @else if (isError()) {
+    <ih-error-state title="Failed to load messages" [message]="errorMessage()" (retry)="load()"></ih-error-state>
+  } @else if (items().length === 0) {
+    <ih-empty-state
+      [title]="filter() === 'unread' ? 'You are all caught up' : 'No conversations yet'"
+      [description]="filter() === 'unread' ? 'There are no unread messages on your cases.' : 'Conversations appear here once a client or teammate writes in a case channel.'"
+    ></ih-empty-state>
+  } @else {
+    <ul class="inbox-list">
+      @for (item of items(); track item.channelId) {
+        <li>
+          <button type="button" class="inbox-row" [class.unread]="item.unreadCount > 0" (click)="open(item)">
+            <span class="row-main">
+              <span class="row-top">
+                @if (item.case) {
+                  <strong class="case-no">{{ item.case.caseNumber }}</strong>
+                  <span class="case-name">{{ item.case.title }}</span>
+                }
+                <span class="channel-name">#{{ item.channelName }}</span>
+                <span class="audience audience-{{ item.audience }}">{{ audienceLabel(item) }}</span>
+              </span>
+              <span class="row-preview">
+                <span class="sender">{{ item.latestMessage.senderName }}:</span> {{ item.latestMessage.preview }}
+              </span>
+            </span>
+            <span class="row-meta">
+              <time [attr.datetime]="item.latestMessage.createdAt">{{ item.latestMessage.createdAt | date:'short' }}</time>
+              @if (item.unreadCount > 0) {
+                <span class="unread-pill" [attr.aria-label]="item.unreadCount + ' unread'">{{ item.unreadCount }}</span>
+              }
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+
+    <ih-pagination [page]="page()" [totalPages]="totalPages()" [totalItems]="totalItems()" (pageChange)="onPageChange($event)"></ih-pagination>
+  }
+</div>
