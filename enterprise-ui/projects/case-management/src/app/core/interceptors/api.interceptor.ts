@@ -18,8 +18,11 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      // Handle 401 Unauthorized globally
-      if (error.status === 401 && !req.url.includes('/staff/session/login')) {
+      // Handle 401 Unauthorized globally. Not for the /staff/me session probe: a 401
+      // there just means "signed out" and the route guards redirect on it. Redirecting
+      // here too re-runs the /login guard's probe, which 401s again — an endless loop.
+      const sessionProbe = req.url.endsWith('/staff/me');
+      if (error.status === 401 && !sessionProbe && !req.url.includes('/staff/session/login')) {
         // Clear state and force re-login
         authService.isAuthenticated.set(false);
         router.navigate(['/login']);
