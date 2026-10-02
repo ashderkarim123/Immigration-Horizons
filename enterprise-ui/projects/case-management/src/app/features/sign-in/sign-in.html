@@ -38,10 +38,34 @@
       <button type="submit" class="btn btn-primary btn-block" [disabled]="loginForm.invalid || isSubmitting()">
         {{ isSubmitting() ? 'Signing in...' : 'Sign in' }}
       </button>
+
+      <details class="auth-help">
+        <summary>Forgot your password?</summary>
+        <p>
+          Staff passwords are reset by an administrator, not by email. Ask your administrator to
+          reset your credentials in the admin console. You will receive a temporary password and
+          be asked to choose a new one the first time you sign in.
+        </p>
+        <p>
+          Five failed attempts in a row lock the account for 15 minutes. Wait, then try again,
+          or ask an administrator to reset it.
+        </p>
+      </details>
     </form>
   </div>
 
-  <div class="auth-panel visual-panel">
-    <!-- Blank/Branded area for layout -->
-  </div>
+  <aside class="auth-panel visual-panel" aria-label="About the staff workspace">
+    <div class="visual-content">
+      <p class="eyebrow">Immigration Horizons</p>
+      <h2>Case management workspace</h2>
+      <p class="lede">One place for the team to prepare and track every petition.</p>
+      <ul class="feature-list">
+        <li>Cases, clients and workspace members</li>
+        <li>Evidence, documents and filing packets</li>
+        <li>Tasks and upcoming deadlines</li>
+        <li>Case messaging with clients and the team</li>
+      </ul>
+      <p class="fine-print">Authorised employees only. Sign-in activity is recorded.</p>
+    </div>
+  </aside>
 </div>

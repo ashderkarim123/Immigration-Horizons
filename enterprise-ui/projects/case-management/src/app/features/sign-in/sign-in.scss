@@ -38,7 +38,83 @@
 
 @media (min-width: 768px) {
   .visual-panel {
-    display: block;
+    display: flex;
+    align-items: center;
+    padding: var(--ih-space-8);
+  }
+}
+
+.visual-content {
+  position: relative; // above the ::after gradient
+  z-index: 1;
+  max-width: 440px;
+  margin: 0 auto;
+  color: var(--ih-text-inverse);
+
+  .eyebrow {
+    color: var(--ih-accent-300); // gold on navy: 300/400 only (contrast rule)
+    font-size: var(--ih-font-size-sm);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--ih-space-3);
+  }
+
+  h2 {
+    font-size: var(--ih-font-size-2xl);
+    color: var(--ih-text-inverse);
+    margin-bottom: var(--ih-space-3);
+  }
+
+  .lede {
+    color: var(--ih-brand-100);
+    margin-bottom: var(--ih-space-6);
+  }
+
+  .feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--ih-space-8);
+
+    li {
+      position: relative;
+      padding-left: var(--ih-space-6);
+      margin-bottom: var(--ih-space-3);
+      color: var(--ih-brand-50);
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.55em;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--ih-accent-400);
+      }
+    }
+  }
+
+  .fine-print {
+    font-size: var(--ih-font-size-sm);
+    color: var(--ih-brand-200);
+  }
+}
+
+.auth-help {
+  margin-top: var(--ih-space-6);
+  font-size: var(--ih-font-size-sm);
+  color: var(--ih-text-secondary);
+
+  summary {
+    cursor: pointer;
+    color: var(--ih-brand-600);
+    font-weight: 500;
+  }
+
+  p {
+    margin-top: var(--ih-space-2);
+    line-height: 1.5;
   }
 }
 
