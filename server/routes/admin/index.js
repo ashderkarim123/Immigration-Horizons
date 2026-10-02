@@ -1498,17 +1498,54 @@ function generateTempPassword() {
   return crypto.randomBytes(20).toString('base64url').slice(0, 24);
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** One-shot message shown on the next Users page view (success or error). */
+function userNotice(req, type, message) {
+  req.session.usersNotice = { type, message };
+}
+
+/** Who is acting, for the append-only security log. */
+function adminActor(req) {
+  const sessionUser = req.session.adminUser;
+  return {
+    actorType: sessionUser && sessionUser.id ? 'admin_user' : 'env_fallback',
+    actorAdminId: sessionUser && sessionUser.id ? sessionUser.id : null,
+    actorName: (sessionUser && sessionUser.name) || 'Admin',
+  };
+}
+
+/** Another active Super Admin exists besides `excludeId`, so the last one can never be demoted or disabled. */
+async function hasOtherActiveSuperAdmin(excludeId) {
+  return (await AdminUser.countDocuments({ role: 'super_admin', isActive: true, _id: { $ne: excludeId } })) > 0;
+}
+
+function renderUserForm(res, { user, editMode, error, status = 200 }) {
+  return res.status(status).render('admin/users/form', {
+    title: editMode ? `Edit User: ${user.name || ''} | Admin` : 'New User | Admin',
+    user,
+    editMode,
+    roleLabels: ROLE_LABELS,
+    error,
+    currentPage: 'users',
+  });
+}
+
 router.get('/admin/users', requireCapability('users.manage'), async (req, res) => {
   try {
     const users = await AdminUser.find().select('-password').sort({ createdAt: -1 }).lean();
     // One-time temp credential display: passed via session flash, cleared immediately
     const tempCredential = req.session.tempCredential || null;
+    const notice = req.session.usersNotice || null;
     delete req.session.tempCredential;
+    delete req.session.usersNotice;
     res.render('admin/users/index', {
       title: 'Users | Admin',
       users,
       roleLabels: ROLE_LABELS,
       tempCredential,
+      notice,
+      now: new Date(),
       error: null,
       currentPage: 'users',
     });
@@ -1518,28 +1555,16 @@ router.get('/admin/users', requireCapability('users.manage'), async (req, res) =
 });
 
 router.get('/admin/users/new', requireCapability('users.manage'), (req, res) => {
-  res.render('admin/users/form', {
-    title: 'New User | Admin',
-    user: null,
-    editMode: false,
-    roleLabels: ROLE_LABELS,
-    error: null,
-    currentPage: 'users',
-  });
+  renderUserForm(res, { user: null, editMode: false, error: null });
 });
 
 router.get('/admin/users/:id/edit', requireCapability('users.manage'), async (req, res) => {
   try {
-    const user = await AdminUser.findById(req.params.id).select('-password').lean();
+    const user = mongoose.Types.ObjectId.isValid(req.params.id)
+      ? await AdminUser.findById(req.params.id).select('-password').lean()
+      : null;
     if (!user) return res.redirect('/admin/users');
-    res.render('admin/users/form', {
-      title: `Edit User: ${user.name} | Admin`,
-      user,
-      editMode: true,
-      roleLabels: ROLE_LABELS,
-      error: null,
-      currentPage: 'users',
-    });
+    renderUserForm(res, { user, editMode: true, error: null });
   } catch (err) {
     res.redirect('/admin/users');
   }
@@ -1556,9 +1581,13 @@ router.get('/admin/users/:id/edit', requireCapability('users.manage'), async (re
  */
 router.post('/admin/users', requireCapability('users.manage'), async (req, res) => {
   try {
-    const { name, email, role, jobTitle, department } = req.body;
+    const { name, role, jobTitle, department } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
     if (!name || !email || !role) {
       throw new Error('Name, email, and role are required.');
+    }
+    if (!EMAIL_PATTERN.test(email)) {
+      throw new Error('Enter a valid email address.');
     }
     // Privilege escalation guard: only super_admin can create super_admin
     if (role === 'super_admin' && getRole(req) !== 'super_admin') {
@@ -1567,6 +1596,9 @@ router.post('/admin/users', requireCapability('users.manage'), async (req, res) 
     const validRoles = Object.keys(ROLE_LABELS);
     if (!validRoles.includes(role)) {
       throw new Error('Invalid role.');
+    }
+    if (await AdminUser.exists({ email })) {
+      throw new Error('An account with that email already exists.');
     }
 
     const tempPassword = generateTempPassword();
@@ -1589,9 +1621,7 @@ router.post('/admin/users', requireCapability('users.manage'), async (req, res) 
       type: 'login_succeeded', // closest existing type; extend contract additively if needed
       result: 'success',
       surface: 'admin_cms',
-      actorType: req.session.adminUser && req.session.adminUser.id ? 'admin_user' : 'env_fallback',
-      actorAdminId: req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null,
-      actorName: req.session.adminUser && req.session.adminUser.name ? req.session.adminUser.name : 'Admin',
+      ...adminActor(req),
       subjectEmail: newUser.email,
       req,
       meta: { action: 'employee_account_created', role },
@@ -1604,31 +1634,31 @@ router.post('/admin/users', requireCapability('users.manage'), async (req, res) 
       name: newUser.name,
       email: newUser.email,
       password: tempPassword, // cleared from session after one view
+      purpose: 'created',
     };
 
     res.redirect('/admin/users');
   } catch (err) {
-    res.render('admin/users/form', {
-      title: 'New User | Admin',
-      user: req.body,
-      editMode: false,
-      roleLabels: ROLE_LABELS,
-      error: err.message,
-      currentPage: 'users',
-    });
+    renderUserForm(res, { user: req.body, editMode: false, error: err.message, status: 400 });
   }
 });
 
 /**
- * PATCH /admin/users/:id — update name/role/jobTitle/department/isActive.
+ * PATCH /admin/users/:id — update name/email/role/jobTitle/department/isActive.
+ * (HTML forms reach this via POST …?_method=PATCH.)
  * When isActive is set to false, all EmployeeSession rows are revoked immediately.
+ * The email is the sign-in identifier, so changing it also revokes sessions.
  */
 router.patch('/admin/users/:id', requireCapability('users.manage'), async (req, res) => {
-  try {
-    const target = await AdminUser.findById(req.params.id);
-    if (!target) return res.redirect('/admin/users');
+  const target = mongoose.Types.ObjectId.isValid(req.params.id) ? await AdminUser.findById(req.params.id) : null;
+  if (!target) return res.redirect('/admin/users');
 
+  const fail = (message, status = 400) =>
+    { const { password, ...safe } = target.toObject(); return renderUserForm(res, { user: { ...safe, ...req.body, _id: target._id }, editMode: true, error: message, status }); };
+
+  try {
     const { name, role, jobTitle, department, isActive } = req.body;
+    const email = req.body.email === undefined ? undefined : String(req.body.email).trim().toLowerCase();
 
     // Privilege guard: only super_admin may promote/demote super_admin
     if (target.role === 'super_admin' && getRole(req) !== 'super_admin') {
@@ -1637,11 +1667,24 @@ router.patch('/admin/users/:id', requireCapability('users.manage'), async (req, 
     if (role === 'super_admin' && getRole(req) !== 'super_admin') {
       return res.status(403).send('Only a Super Admin can assign the Super Admin role.');
     }
+    if (role && !Object.keys(ROLE_LABELS).includes(role)) return fail('Invalid role.');
+    if (email !== undefined && !EMAIL_PATTERN.test(email)) return fail('Enter a valid email address.');
+    if (name !== undefined && !String(name).trim()) return fail('Name is required.');
+
+    const emailChanging = email !== undefined && email !== target.email;
+    if (emailChanging && (await AdminUser.exists({ email, _id: { $ne: target._id } }))) {
+      return fail('Another account already uses that email.');
+    }
 
     const wasActive = target.isActive;
     const becomingInactive = wasActive && isActive === 'false';
+    const losingSuperAdmin = target.role === 'super_admin' && ((role && role !== 'super_admin') || becomingInactive);
+    if (losingSuperAdmin && !(await hasOtherActiveSuperAdmin(target._id))) {
+      return fail('This is the only active Super Admin. Create or promote another one first.');
+    }
 
-    if (name) target.name = name;
+    if (name) target.name = String(name).trim();
+    if (emailChanging) target.email = email;
     if (role) target.role = role;
     if (jobTitle !== undefined) target.jobTitle = jobTitle;
     if (department !== undefined) target.department = department;
@@ -1649,36 +1692,39 @@ router.patch('/admin/users/:id', requireCapability('users.manage'), async (req, 
 
     await target.save();
 
-    // Revoke all EmployeeSession rows when account is deactivated (ADR-016)
-    if (becomingInactive) {
+    // Revoke all EmployeeSession rows when the account is deactivated or its sign-in email changes (ADR-016)
+    if (becomingInactive || emailChanging) {
       await EmployeeSession.deleteMany({ adminUser: target._id });
+    }
+    if (becomingInactive) {
       await recordSecurityEvent({
         type: 'session_revoked',
         result: 'success',
         surface: 'admin_cms',
-        actorType: req.session.adminUser && req.session.adminUser.id ? 'admin_user' : 'env_fallback',
-        actorAdminId: req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null,
-        actorName: req.session.adminUser && req.session.adminUser.name || 'Admin',
+        ...adminActor(req),
         subjectEmail: target.email,
         req,
         meta: { action: 'account_deactivated' },
       });
     }
 
+    userNotice(req, 'success', `Saved ${target.name}.${emailChanging ? ` They now sign in with ${target.email}.` : ''}`);
     res.redirect('/admin/users');
   } catch (err) {
     console.error('[admin/users/patch]', err.message);
-    res.redirect('/admin/users');
+    fail('Could not save changes. Please try again.', 500);
   }
 });
 
 /**
  * POST /admin/users/:id/reset-credentials — generate new temp password,
  * revoke all existing EmployeeSession rows, force first-login setup again.
+ * Works for every employee and admin (they share one account model) and also
+ * clears a lockout, since a forgotten password usually ends in one.
  */
 router.post('/admin/users/:id/reset-credentials', requireCapability('users.manage'), async (req, res) => {
   try {
-    const target = await AdminUser.findById(req.params.id);
+    const target = mongoose.Types.ObjectId.isValid(req.params.id) ? await AdminUser.findById(req.params.id) : null;
     if (!target) return res.redirect('/admin/users');
 
     // Privilege guard
@@ -1692,6 +1738,8 @@ router.post('/admin/users/:id/reset-credentials', requireCapability('users.manag
     target.credentialIssuedAt = new Date();
     target.passwordChangedAt = null;
     await target.save();
+    // Counters are written with updateOne, never save() (ADR-012 §3)
+    await AdminUser.updateOne({ _id: target._id }, { $set: { failedLoginCount: 0, lockedUntil: null } });
 
     // Revoke all existing sessions — employee must log in fresh with new temp
     await EmployeeSession.deleteMany({ adminUser: target._id });
@@ -1701,9 +1749,7 @@ router.post('/admin/users/:id/reset-credentials', requireCapability('users.manag
       type: 'password_reset_completed',
       result: 'success',
       surface: 'admin_cms',
-      actorType: req.session.adminUser && req.session.adminUser.id ? 'admin_user' : 'env_fallback',
-      actorAdminId: req.session.adminUser && req.session.adminUser.id ? req.session.adminUser.id : null,
-      actorName: req.session.adminUser && req.session.adminUser.name || 'Admin',
+      ...adminActor(req),
       subjectEmail: target.email,
       req,
       meta: { action: 'admin_credential_reset' },
@@ -1715,11 +1761,13 @@ router.post('/admin/users/:id/reset-credentials', requireCapability('users.manag
       name: target.name,
       email: target.email,
       password: tempPassword,
+      purpose: 'reset',
     };
 
     res.redirect('/admin/users');
   } catch (err) {
     console.error('[admin/users/reset-credentials]', err.message);
+    userNotice(req, 'error', 'Could not reset the password. Please try again.');
     res.redirect('/admin/users');
   }
 });
