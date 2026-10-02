@@ -138,6 +138,11 @@ jobs:
         run: npx ng build case-management
         working-directory: enterprise-ui
 
+      # Release Gate 01 (ADR-024): the build deploy.sh will ship. Fails on a wrong
+      # base href, a missing entry bundle, or a bundle that talks to another origin.
+      - name: Verify the staff build is releasable under /staff/
+        run: node scripts/deploy/verify-staff-build.js enterprise-ui/dist/case-management/browser
+
       - name: Build admin-console
         run: npx ng build admin-console
         working-directory: enterprise-ui

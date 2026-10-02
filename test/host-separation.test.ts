@@ -113,7 +113,7 @@ test("app host sends marketing URLs back to the public site rather than 404ing",
   assert.equal(res.headers.get("location"), `https://${PUBLIC_HOST}/services/eb1a`);
 });
 
-test("app host root routes staff to /staff and everyone else to /portal", () => {
+test("app host root sends staff to /staff/ with a browser redirect and everyone else to /portal", () => {
   const anonymous = proxy(request(APP_HOST, "/"));
   assert.ok(anonymous.headers.get("x-middleware-rewrite")?.endsWith("/portal"));
 
@@ -121,8 +121,37 @@ test("app host root routes staff to /staff and everyone else to /portal", () => 
   headers.set("host", APP_HOST);
   headers.set("cookie", "ih_staff_session=some-opaque-token");
   const staff = proxy(new NextRequest(new URL(`https://${APP_HOST}/`), { headers }));
-  assert.ok(staff.headers.get("x-middleware-rewrite")?.endsWith("/staff"));
+
+  // Release Gate 01 (ADR-024 §12): a redirect, not a rewrite. A rewrite never returns to
+  // nginx, so after the Angular cutover it would still render the legacy Next staff UI.
+  assert.equal(staff.headers.get("x-middleware-rewrite"), null, "staff must not be rewritten inside Next");
+  assert.equal(staff.status, 307, "temporary: a permanent redirect would be cached past an nginx rollback");
+  assert.equal(staff.headers.get("location"), `https://${APP_HOST}/staff/`);
   assert.equal(staff.headers.get("X-Robots-Tag"), "noindex, nofollow");
+  assert.match(staff.headers.get("Cache-Control") ?? "", /no-store/);
+});
+
+test("the staff redirect targets the public app host even when Next sees the upstream address", () => {
+  // Behind nginx the request URL is the upstream (127.0.0.1:3000); only x-forwarded-host is real.
+  const headers = new Headers({ host: "127.0.0.1:3000", "x-forwarded-host": APP_HOST, cookie: "ih_staff_session=x" });
+  const res = proxy(new NextRequest(new URL("http://127.0.0.1:3000/"), { headers }));
+  assert.equal(res.status, 307);
+  assert.equal(res.headers.get("location"), `https://${APP_HOST}/staff/`);
+});
+
+test("only the app root redirects; /staff and /portal themselves still pass through (legacy staff stays the rollback surface)", () => {
+  const headers = new Headers({ host: APP_HOST, cookie: "ih_staff_session=x" });
+  for (const path of ["/staff", "/staff/cases", "/portal", "/api/portal/login", "/api/staff/login"]) {
+    const res = proxy(new NextRequest(new URL(`https://${APP_HOST}${path}`), { headers }));
+    assert.equal(res.status, 200, `${path} must not be redirected by the app-root rule`);
+  }
+});
+
+test("the staff cookie is a routing hint only: single-host mode (localhost) never redirects", () => {
+  const headers = new Headers({ host: "localhost:3000", cookie: "ih_staff_session=x" });
+  const res = proxy(new NextRequest(new URL("http://localhost:3000/"), { headers }));
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("location"), null);
 });
 
 test("the staff surface is noindex and stays on the app host", () => {
