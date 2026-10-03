@@ -31,6 +31,8 @@ const eslintConfig = defineConfig([
     "server/**",
     // enterprise-ui/ is a separate Angular application.
     "enterprise-ui/**",
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

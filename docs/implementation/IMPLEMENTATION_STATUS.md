@@ -1,5 +1,9 @@
 # Implementation Status — Immigration Horizons Client Portal
 
+## Stabilization update — 2026-10-03
+
+Stabilization is on `stabilization/angular-feature-parity-audit`, starting from `5c30c51a55c798add6aed1d9d79ef34b94ab25bc`. Completed child task/chat work was incorporated without rewriting history. CMS separation, individual Staff Operations Admin accounts, guided case intake/queues, client document actions and operational Staff surfaces are implemented. See [ADR-025](../architecture/ADR-025-stabilization-staff-cms-and-guided-work.md) and the [Phase 01 report](STABILIZATION_PHASE_01_REPORT.md) for current validation, limits and release gates. Older cycle snapshots below are historical context. No production action or Phase 11 implementation is included.
+
 **Last updated:** 2026-08-04
 **Branch:** `main`
 **Worktree at time of writing:** clean except this cycle's own changes (see "Commits" below); no unrelated user changes present.

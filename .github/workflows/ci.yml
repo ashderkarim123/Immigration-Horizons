@@ -22,6 +22,51 @@ env:
   NODE_VERSION: '22'
 
 jobs:
+  browser:
+    name: Browser workflows (Staff and Client)
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            enterprise-ui/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
+        working-directory: server
+      - run: npm ci --no-audit --no-fund
+        working-directory: enterprise-ui
+      - run: npx ng build case-management
+        working-directory: enterprise-ui
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          TEST_MONGODB_URI: mongodb://127.0.0.1:27017/ih-ci-browser-test
+      - name: Record the browser-tested revision
+        if: always()
+        run: |
+          mkdir -p test-results
+          printf '%s\n' "$GITHUB_SHA" > test-results/tested-commit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stabilization-browser-evidence
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
   static:
     name: Lint · types · build
     runs-on: ubuntu-latest
