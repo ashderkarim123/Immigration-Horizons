@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, type BadgeTone } from "@/components/app/badge";
 import { Field, Select, TextArea, TextInput } from "@/components/forms/fields";
+import { useHydrated } from "@/components/forms/use-hydrated";
 import { ADDRESS_PARTS, MAX_REPEATED_ROWS } from "@/lib/content/smart-form-constants";
 import { isVisible, type Answers, type FormField, type FormSection } from "@/lib/forms/engine";
 import type { toClientDto } from "@/lib/forms/form-service";
@@ -50,6 +51,9 @@ const ADDRESS_LABELS: Record<(typeof ADDRESS_PARTS)[number], string> = {
 };
 
 export function SmartFormEditor({ initial }: { initial: ClientFormDto }) {
+  // The server preview cannot capture edits. Enable controls after hydration so
+  // early input cannot appear filled while missing from the autosave patch.
+  const ready = useHydrated();
   const [form, setForm] = useState(initial);
   const [answers, setAnswers] = useState<Answers>(initial.answers);
   const [saveState, setSaveState] = useState<SaveState>("saved");
@@ -64,7 +68,7 @@ export function SmartFormEditor({ initial }: { initial: ClientFormDto }) {
   const inFlight = useRef<Promise<boolean> | null>(null);
   const halted = useRef(false);
 
-  const editable = form.actions.canEdit && saveState !== "conflict";
+  const editable = ready && form.actions.canEdit && saveState !== "conflict";
   const status = STATUS[form.status] ?? STATUS.draft;
 
   const applyServerForm = useCallback((next: ClientFormDto) => {

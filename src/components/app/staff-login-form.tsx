@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Field, TextInput } from "@/components/forms/fields";
+import { useHydrated } from "@/components/forms/use-hydrated";
 import { postPortalJson } from "@/lib/auth/portal-fetch";
 
 export function StaffLoginForm({ next }: { next?: string }) {
+  const ready = useHydrated();
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function StaffLoginForm({ next }: { next?: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+    <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       {error ? (
         <p
           role="alert"
@@ -46,7 +48,7 @@ export function StaffLoginForm({ next }: { next?: string }) {
       ) : null}
 
       <Field label="Work email" htmlFor="email" required>
-        <TextInput id="email" name="email" type="email" autoComplete="username" required />
+        <TextInput id="email" name="email" type="email" autoComplete="username" disabled={!ready || pending} required />
       </Field>
 
       <Field label="Password" htmlFor="password" required>
@@ -55,11 +57,12 @@ export function StaffLoginForm({ next }: { next?: string }) {
           name="password"
           type="password"
           autoComplete="current-password"
+          disabled={!ready || pending}
           required
         />
       </Field>
 
-      <Button type="submit" variant="gold" disabled={pending} block>
+      <Button type="submit" variant="gold" disabled={!ready || pending} block>
         {pending ? "Signing in…" : "Sign in"}
       </Button>
     </form>

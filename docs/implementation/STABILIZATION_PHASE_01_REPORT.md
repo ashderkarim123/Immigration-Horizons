@@ -4,7 +4,7 @@ Date: 2026-10-03. Branch: `stabilization/angular-feature-parity-audit`.
 
 Starting SHA: `5c30c51a55c798add6aed1d9d79ef34b94ab25bc`.
 
-Application implementation SHA: `5f93ab0f891c37080d383b6ad5037b8583f2d62c`.
+Main implementation checkpoint SHA: `5f93ab0f891c37080d383b6ad5037b8583f2d62c`; the later hydration repair is included in the final delivery SHA.
 
 The exact final delivery SHA, commits and CI URL/job results are recorded in the delivery receipt and final handoff after the final push. The browser CI artifact also contains `test-results/tested-commit.txt` with that exact SHA. A tracked report cannot embed the hash of the commit containing itself.
 
@@ -37,6 +37,8 @@ CMS separation is commit `5acc1af` (`fix(auth): separate CMS access from staff o
 Local verification: root **430 passed**, with the existing Bash syntax check skipped on Windows (431 total); server **662 passed**, followed by **6/6 guided** and **6/6 planning** tests after the final queue/channel-notification refinements; Angular **137 Staff + 1 admin-console passed**; browser **7/7 passed**, no test retries (3.2 minutes). Lint, typecheck, Next build, both Angular builds and Staff build verification passed. The browser read helper retries only ECONNRESET on idempotent GET assertions; mutations and HTTP failures are not retried. Exact final CI results follow in the delivery receipt. Real commands:
 
 CI verification SHA: `744ef65bbfbd50b6381bfbca036b49b00fd7ebfc`. [CI run 37133185285](https://github.com/ashderkarim123/Immigration-Horizons/actions/runs/37133185285) completed with **all five jobs successful**: lint/types/Next build; root **431/431** (including Bash); server **663/663**; Angular **137 Staff + 1 admin-console**, both builds and Staff verification; browser **7/7** (40.5 seconds). Artifact `stabilization-browser-evidence` contains screenshots/report and the exact tested commit. This final documentation update is checked again on its own delivery SHA; that run and SHA are pinned in the delivery receipt/final handoff.
+
+The subsequent documentation SHA `b1039ae` exposed an early-input race in [run 37134001351](https://github.com/ashderkarim123/Immigration-Horizons/actions/runs/37134001351). The browser trace showed that the first date-of-birth input never reached the answers PATCH; submission correctly returned 422 for the missing field. A local follow-up also reproduced Client sign-in's native GET fallback before hydration. Smart Form and Next.js sign-in controls now remain disabled until hydration; sign-in forms explicitly use POST. The browser regression deliberately holds script downloads, checks that editing/submission remain disabled, then releases scripts and completes login and the same form lifecycle without test retries. Repair verification passed lint, typecheck, Next build and all **7/7 browser workflows** locally. The delivery receipt records CI verification on the final SHA.
 
 - Root: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build`.
 - Server: `npm test`.

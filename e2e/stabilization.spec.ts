@@ -11,6 +11,24 @@ type Fixture = {
 async function fixture(page: Page): Promise<Fixture> {
   return (await page.request.get("/__browser_fixture")).json();
 }
+async function checkServerPreview(page: Page, url: string, check: () => Promise<void>) {
+  let releaseScripts!: () => void;
+  const scriptsReady = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  const scriptRoute = "**/_next/static/**/*.js";
+  await page.route(scriptRoute, async (route) => {
+    await scriptsReady;
+    await route.continue();
+  });
+  try {
+    await page.goto(url, { waitUntil: "commit" });
+    await check();
+  } finally {
+    releaseScripts();
+    await page.unrouteAll({ behavior: "wait" });
+  }
+}
 async function staffLogin(page: Page, role = "pm") {
   const data = await fixture(page);
   await page.goto("/staff/login", { waitUntil: "domcontentloaded" });
@@ -22,7 +40,12 @@ async function staffLogin(page: Page, role = "pm") {
 }
 async function clientLogin(page: Page) {
   const data = await fixture(page);
-  await page.goto("/portal/login", { waitUntil: "domcontentloaded" });
+  await checkServerPreview(page, "/portal/login", async () => {
+    await expect(page.getByLabel("Email", { exact: false })).toBeDisabled();
+    await expect(page.getByLabel(/^Password/)).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeDisabled();
+    await expect(page.locator("form")).toHaveAttribute("method", "post");
+  });
   await page.getByLabel("Email", { exact: false }).fill(data.client.email);
   await page.getByLabel(/^Password/).fill(data.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -274,8 +297,12 @@ test("two sessions complete document, intake, messaging and case preparation wor
   const formId = forms.forms.find(
     (f: { templateKey: string }) => f.templateKey === "personal_contact",
   ).id;
-  await client.goto(`/portal/cases/${data.caseId}/forms/${formId}`, {
-    waitUntil: "domcontentloaded",
+  // A slow script download must not leave editable server-rendered controls
+  // that can lose the first answer before React attaches its event handlers.
+  await checkServerPreview(client, `/portal/cases/${data.caseId}/forms/${formId}`, async () => {
+    await expect(client.getByLabel(/^Date of birth/)).toBeVisible();
+    await expect(client.getByLabel(/^Date of birth/)).toBeDisabled();
+    await expect(client.getByRole("button", { name: "Submit for review", exact: true })).toBeDisabled();
   });
   await client.getByLabel(/^Date of birth/).fill("1990-01-01");
   await client.getByLabel(/^Country of birth/).selectOption("PK");

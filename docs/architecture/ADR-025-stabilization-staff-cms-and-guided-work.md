@@ -9,6 +9,8 @@ Status: Implemented on `stabilization/angular-feature-parity-audit`; release req
 
 The individually attributable `operations_admin` role is displayed as Staff Operations Admin. It has organization-wide operational capabilities, including case creation, team, task and channel management. It has no CMS, user-administration or settings capability. PM access continues to require live case membership. Express mounts the canonical API before CMS session handling; `ih_staff_session` and the CMS session do not substitute for one another.
 
+Next.js sign-in forms use an explicit POST method and keep controls disabled until hydration attaches their handlers. This prevents an early browser-native GET submission from placing credentials in the URL.
+
 ## Canonical case creation
 
 Staff creates a case for an existing active client, or converts an eligible linked consultation. The canonical case-conversion service provisions the primary CaseWorkspace, client and PM membership, document categories and channels. Conversion is idempotent. The Staff app does not offer detached workspace creation. Mongo transactions are used when supported; the existing standalone-database fallback remains. The case API returns capabilities/action flags; Angular reloads canonical detail after compact mutations and discards stale responses after navigation.
@@ -23,7 +25,7 @@ Lead intake, team planning, manual delivery records, notifications and preferenc
 
 The server-owned category/subtype registry generates both application mirrors. New cases include the required identity, education, employment, recommendation, research, recognition, government, civil, financial and other-evidence groups. Existing category keys and records remain compatible. Optional document-request subtype is mirrored in both models. Requested uploads bind the authenticated client, live membership, case, category, request and subtype; replacement comments remain next to the replacement action. General uploads collect meaningful metadata and support native selection and drag/drop. Existing secure storage and download authorization remain in force.
 
-The Client dashboard puts Action required first and excludes employee-only notes and content. Smart Forms retain their existing templates, field keys, autosave, revision conflicts, audit and review/lock lifecycle. Country options are generated into a checked-in static list so Node and browser ICU differences cannot cause hydration to replace an edited form. Updating those labels requires regenerating `scripts/generateCountries.cjs`. Multi-party canonical facts and USCIS PDF mapping remain future product work; no Phase 11 tracking or USCIS generator is introduced.
+The Client dashboard puts Action required first and excludes employee-only notes and content. Smart Forms retain their existing templates, field keys, autosave, revision conflicts, audit and review/lock lifecycle. Country options are generated into a checked-in static list so Node and browser ICU differences cannot cause hydration to replace an edited form. Editing and submission are disabled in the server preview until the editor is hydrated, so an early first answer cannot bypass its autosave handlers. Updating those labels requires regenerating `scripts/generateCountries.cjs`. Multi-party canonical facts and USCIS PDF mapping remain future product work; no Phase 11 tracking or USCIS generator is introduced.
 
 ## Verification and release boundary
 

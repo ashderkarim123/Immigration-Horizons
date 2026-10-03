@@ -4,11 +4,13 @@ import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Field, TextInput } from "@/components/forms/fields";
+import { useHydrated } from "@/components/forms/use-hydrated";
 import { Button } from "@/components/ui/button";
 import { postPortalJson } from "@/lib/auth/portal-fetch";
 import Link from "next/link";
 
 export function LoginForm() {
+  const ready = useHydrated();
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? undefined;
@@ -39,7 +41,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+    <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       {error ? (
         <p
           className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
@@ -55,6 +57,7 @@ export function LoginForm() {
           name="email"
           type="email"
           autoComplete="email"
+          disabled={!ready || pending}
           required
         />
       </Field>
@@ -65,6 +68,7 @@ export function LoginForm() {
           name="password"
           type="password"
           autoComplete="current-password"
+          disabled={!ready || pending}
           required
         />
       </Field>
@@ -82,7 +86,7 @@ export function LoginForm() {
         type="submit"
         variant="gold"
         size="lg"
-        disabled={pending}
+        disabled={!ready || pending}
         className="w-full"
       >
         {pending ? "Signing in…" : "Sign in"}
