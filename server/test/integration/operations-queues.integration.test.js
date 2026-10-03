@@ -295,14 +295,15 @@ test('unread client messages counts only messages newer than the newest employee
   assert.equal(counts.unreadClientMessages, 1, 'a newer client message is unread again');
 });
 
-test('the dashboard renders operational counts for a manager and omits them for a viewer', async () => {
+test('the CMS dashboard focuses on content; operational recovery routes stay protected', async () => {
   await seedCase({ targetFilingDate: new Date(Date.now() + 3 * 86400000) });
 
   const manager = await loggedInAs('admin');
   const managerRes = await manager.agent.get('/admin');
   assert.equal(managerRes.status, 200);
-  assert.ok(managerRes.text.includes('Operations'));
-  assert.ok(managerRes.text.includes('Filing within 30 days'));
+  assert.ok(managerRes.text.includes('Website administration'));
+  assert.ok(!managerRes.text.includes('Filing within 30 days'));
+  assert.ok(!managerRes.text.includes('href="/admin/cases"'));
 
   const viewer = await loggedInAs('viewer');
   const viewerRes = await viewer.agent.get('/admin');

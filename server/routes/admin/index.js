@@ -43,7 +43,6 @@ const attachQueries = require('./queries');
 const attachDocuments = require('./documents');
 const attachCollaboration = require('./collaboration');
 const attachClients = require('./clients');
-const { getOperationalCounts } = require('../../services/operationsQueues');
 const { isChecked } = require('../../utils/checkbox');
 const {
   organizationTimezone,
@@ -344,62 +343,38 @@ router.use('/admin', requireAdmin, async (req, res, next) => {
 router.get('/admin', async (req, res) => {
   try {
     const [
-      totalLeads,
-      newLeadsToday,
-      leadsThisMonth,
       blogPosts,
       publishedPosts,
       draftPosts,
       testimonials,
       faqs,
-      recentLeads,
       recentPosts,
     ] = await Promise.all([
-      Consultation.countDocuments(),
-      Consultation.countDocuments({
-        createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
-      }),
-      Consultation.countDocuments({
-        createdAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
-      }),
       BlogPost.countDocuments(),
       BlogPost.countDocuments({ published: true }),
       BlogPost.countDocuments({ published: false }),
       Testimonial.countDocuments(),
       FAQ.countDocuments(),
-      Consultation.find().sort({ createdAt: -1 }).limit(10),
       BlogPost.find().sort({ createdAt: -1 }).limit(5),
     ]);
 
-    // Cycle 8 — operational queue counts (ADR-007 §4). Computed in one
-    // aggregation module; never throws (returns zeros on failure), so the
-    // dashboard renders even if a queue query has a problem.
-    const operations = can(req, 'cases.view') ? await getOperationalCounts() : null;
-
-    res.render('admin/dashboard', {
+    res.render('admin/cms-dashboard', {
       title: 'Dashboard | Admin',
       stats: {
-        totalLeads,
-        newLeadsToday,
-        leadsThisMonth,
         blogPosts,
         publishedPosts,
         draftPosts,
         testimonials,
         faqs,
       },
-      operations,
-      recentLeads,
       recentPosts,
       currentPage: 'dashboard',
     });
   } catch (err) {
     console.error('[admin/dashboard]', err.message);
-    res.render('admin/dashboard', {
+    res.render('admin/cms-dashboard', {
       title: 'Dashboard | Admin',
       stats: {},
-      operations: null,
-      recentLeads: [],
       recentPosts: [],
       currentPage: 'dashboard',
     });

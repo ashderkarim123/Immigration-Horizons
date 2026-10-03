@@ -1,6 +1,7 @@
 <div class="page-header">
   <h1>Dashboard</h1>
   <p class="page-subtitle">{{ metrics()?.workspaceLabel || 'Staff case-management overview' }}</p>
+  <p>@if (auth.capabilities().includes('leads.view')) { <a routerLink="/intake">Lead intake</a> · } @if (auth.capabilities().includes('sprints.manage')) { <a routerLink="/planning">Team planning</a> · } <a routerLink="/notifications">My notifications</a></p>
 </div>
 
 @if (isLoading()) {
@@ -13,33 +14,38 @@
       <a routerLink="/consultations" [queryParams]="{ queue: 'unanswered' }" class="metric-card"><div class="metric-value">{{ m.unansweredQueries }}</div><div class="metric-label">Unanswered consultations and questions</div></a>
       <a routerLink="/consultations" [queryParams]="{ queue: 'scheduling' }" class="metric-card"><div class="metric-value">{{ m.queriesAwaitingScheduling }}</div><div class="metric-label">Awaiting consultation scheduling</div></a>
     }
-    <a routerLink="/cases" class="metric-card">
+    @if (auth.capabilities().includes('cases.view')) { <a routerLink="/cases" class="metric-card">
       <div class="metric-value">{{ m.myCases }}</div>
       <div class="metric-label">Active Cases</div>
-    </a>
-    <a routerLink="/messages" [queryParams]="{ filter: 'unread' }" class="metric-card">
+    </a> }
+    @if (auth.capabilities().includes('channels.view')) { <a routerLink="/messages" [queryParams]="{ filter: 'unread' }" class="metric-card">
       <div class="metric-value">{{ m.unreadClientMessages }}</div>
-      <div class="metric-label">Unread Messages</div>
-    </a>
-    <a routerLink="/deadlines" class="metric-card">
+      <div class="metric-label">Unread conversations</div>
+    </a> }
+    @if (auth.capabilities().includes('cases.view')) { <a routerLink="/deadlines" class="metric-card">
       <div class="metric-value">{{ m.upcomingDeadlines }}</div>
       <div class="metric-label">Upcoming Deadlines</div>
-    </a>
+    </a> }
     <a routerLink="/tasks" class="metric-card">
       <div class="metric-value">{{ m.myOpenTasks }}</div>
       <div class="metric-label">Open Tasks</div>
     </a>
   </div>
 
-  @if (m.workQueues?.length) {
+  @if (activeQueues().length) {
     <h2 class="queue-heading">Needs attention</h2>
     <div class="metrics-grid">
-      @for (queue of m.workQueues; track queue.key) {
+      @for (queue of activeQueues(); track queue.key) {
         <a routerLink="/work-queues" [queryParams]="{ queue: queue.key }" class="metric-card"><div class="metric-value">{{ queue.count }}</div><div class="metric-label">{{ queue.label }}</div></a>
       }
     </div>
+  } @else if (m.workQueues?.length) {
+    <p role="status">Your work queues are clear. Open a case or create new work to continue.</p>
   }
   <div class="dashboard-sections">
+    @if (m.employeeWorkload?.length) {
+      <div class="section-card"><h3>Employee workload</h3><p>Open assigned work across the firm.</p><div class="table-responsive"><table class="data-table"><thead><tr><th>Employee</th><th>Open tasks</th><th>Overdue</th></tr></thead><tbody>@for (employee of m.employeeWorkload; track employee.employeeId) { <tr><td><a routerLink="/tasks" [queryParams]="{scope:'all',assignee:employee.employeeId}">{{ employee.name }}</a></td><td>{{ employee.openTasks }}</td><td>{{ employee.overdueTasks }}</td></tr> }</tbody></table></div></div>
+    }
     <!-- Recent Cases -->
     <div class="section-card">
       <h3>Recent Cases</h3>
@@ -56,7 +62,7 @@
             @for (c of m.recentCases; track c.id) {
               <tr>
                 <td><a [routerLink]="['/cases', c.id]">{{ c.caseNumber }}</a></td>
-                <td>{{ c.caseType }}</td>
+                <td>{{ caseTypeLabel(c.caseType) }}</td>
                 <td><span class="badge">{{ c.currentStage }}</span></td>
               </tr>
             }

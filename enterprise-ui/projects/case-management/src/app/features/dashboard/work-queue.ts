@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api/api.service';
 import { apiErrorMessage } from '../../core/api/api-error';
@@ -12,7 +13,8 @@ import { WorkQueue } from '../../core/api/dashboard.types';
 })
 export class WorkQueuePage implements OnInit {
   private api = inject(ApiService); private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef); private sequence = 0;
   queue = signal<WorkQueue | null>(null); error = signal('');
-  ngOnInit() { this.load(); }
-  load() { this.error.set(''); this.api.get<WorkQueue>('/staff/work-queues', { queue: this.route.snapshot.queryParamMap.get('queue') }).subscribe({ next: ({ data }) => this.queue.set(data), error: error => this.error.set(apiErrorMessage(error, 'Could not load this queue.')) }); }
+  ngOnInit() { this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.load()); }
+  load() { const sequence = ++this.sequence; this.queue.set(null); this.error.set(''); this.api.get<WorkQueue>('/staff/work-queues', { queue: this.route.snapshot.queryParamMap.get('queue') }).subscribe({ next: ({ data }) => { if (sequence === this.sequence) this.queue.set(data); }, error: error => { if (sequence === this.sequence) this.error.set(apiErrorMessage(error, 'Could not load this queue.')); } }); }
 }

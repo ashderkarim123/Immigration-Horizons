@@ -4,10 +4,9 @@ const Interaction = require('../../../../models/ConsultationInteraction');
 const History = require('../../../../models/InteractionHistory');
 const Update = require('../../../../models/InteractionUpdate');
 const AdminUser = require('../../../../models/admin/User');
-const WorkspaceMember = require('../../../../models/WorkspaceMember');
 const policy = require('../../../../services/interactionPolicy');
 const service = require('../../../../services/interactionService');
-const { can } = require('../../../../utils/permissions');
+const { isValidTimezone, zonedTimeToUtc } = require('../../../../utils/timezone');
 const constants = require('../../../../utils/interactionConstants');
 const { requireApiCapability } = require('../../../../middleware/api/staffAuth');
 const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedOrigin');
@@ -15,7 +14,7 @@ const { createApiError } = require('../../../../middleware/api/apiError');
 const actor = req => ({ type: 'admin_user', id: req.staff._id, name: req.staff.name });
 const respond = (req, res, data) => res.json({ data, meta: { requestId: req.id } });
 const route = handler => async (req, res, next) => { try { await handler(req, res, next); } catch (error) { next(error.isVersionConflict ? createApiError(409, 'conflict', error.message) : error); } };
-const dto = record => ({ id: record._id, interactionNumber: record.interactionNumber, subject: record.subject, type: record.type, typeLabel: constants.INTERACTION_TYPE_LABELS[record.type], status: record.status, statusLabel: constants.INTERACTION_STATUS_LABELS[record.status], priority: record.priority, scopeType: record.scopeType, caseId: record.case || null, scheduledFor: record.scheduledFor || null, timezone: record.timezone || '', assignedTo: record.assignedTo?._id || record.assignedTo || null, createdAt: record.createdAt, updatedAt: record.updatedAt, clientMessage: record.clientMessage || '', clientVisibleResponse: record.clientVisibleResponse || '', internalResponse: record.internalResponse || '', resolutionSummary: record.resolutionSummary || '' });
+const dto = record => ({ id: record._id, interactionNumber: record.interactionNumber, subject: record.subject, type: record.type, typeLabel: constants.INTERACTION_TYPE_LABELS[record.type], status: record.status, statusLabel: constants.INTERACTION_STATUS_LABELS[record.status], priority: record.priority, scopeType: record.scopeType, caseId: record.case || null, scheduledFor: record.scheduledFor || null, timezone: record.timezone || '', assignedTo: record.assignedTo?._id || record.assignedTo || null, createdAt: record.createdAt, updatedAt: record.updatedAt, description: record.description || '', clientVisibleResponse: record.clientVisibleResponse || '', internalResponse: record.internalResponse || '', resolutionSummary: record.resolutionSummary || '' });
 const scope = policy.accessibleInteractionFilter;
 async function load(req, check = policy.canViewInteraction) {
   const record = mongoose.isValidObjectId(req.params.id) ? await Interaction.findById(req.params.id) : null;
@@ -48,7 +47,15 @@ router.get('/:id', requireApiCapability('queries.view'), route(async (req, res) 
 const mutations = {
   acknowledge: ['queries.triage', policy.canTriageInteraction, (record, req) => service.acknowledgeInteraction(record, actor(req))],
   assign: ['queries.assign', policy.canAssignInteraction, (record, req) => service.assignInteraction(record, req.body.assignedTo, actor(req))],
-  schedule: ['queries.schedule', policy.canScheduleInteraction, (record, req) => service.scheduleInteraction(record, { scheduledFor: req.body.scheduledFor, timezone: req.body.timezone }, actor(req))],
+  schedule: ['queries.schedule', policy.canScheduleInteraction, (record, req) => {
+    const { timezone } = req.body;
+    let { scheduledFor } = req.body;
+    if (typeof scheduledFor === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d(?::\d\d)?$/.test(scheduledFor)) {
+      if (!isValidTimezone(timezone)) return { outcome: 'validation_error', errors: { timezone: 'Choose a valid IANA timezone.' } };
+      scheduledFor = zonedTimeToUtc(scheduledFor, timezone);
+    }
+    return service.scheduleInteraction(record, { scheduledFor, timezone }, actor(req));
+  }],
   status: ['queries.manage', policy.canManageInteraction, (record, req) => req.body.status === 'in_progress' ? service.startWork(record, actor(req)) : { outcome: 'validation_error', errors: { status: 'Choose In progress.' } }],
   answer: ['queries.answer', policy.canAnswerInteraction, (record, req) => service.answerInteraction(record, req.body, actor(req))],
   'request-clarification': ['queries.answer', policy.canAnswerInteraction, (record, req) => service.requestClarification(record, { clientVisibleQuestion: req.body.clientVisibleQuestion }, actor(req))],

@@ -1,4 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, DestroyRef } from '@angular/core';
+import { combineLatest } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -48,14 +50,15 @@ interface ConsultationQuery {
 })
 export class Consultations implements OnInit {
   private api = inject(ApiService); private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef); private sequence = 0;
   id = ''; search = ''; queue = ''; page = 1; pages = signal(1);
   items = signal<ConsultationQuery[]>([]); detail = signal<ConsultationQuery | null>(null); error = signal(''); loading = signal(false); busy = signal(false);
   assignedTo = ''; scheduledFor = ''; timezone = 'UTC'; response = ''; internal = ''; summary = ''; question = ''; reason = ''; note = '';
-  ngOnInit() { this.route.paramMap.subscribe(params => { this.id = params.get('id') || ''; this.detail.set(null); this.queue = this.route.snapshot.queryParamMap.get('queue') || ''; this.load(); }); }
+  ngOnInit() { combineLatest([this.route.paramMap, this.route.queryParamMap]).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(([params, query]) => { this.id = params.get('id') || ''; this.detail.set(null); this.queue = query.get('queue') || ''; this.page = 1; this.busy.set(false); this.load(); }); }
   load() {
-    this.error.set(''); this.loading.set(true);
-    if (this.id) this.api.get<ConsultationQuery>(`/staff/queries/${this.id}`).subscribe({ next: ({ data }) => { this.detail.set(data); this.assignedTo = data.assignedTo || ''; this.response = data.clientVisibleResponse; this.internal = data.internalResponse; this.summary = data.resolutionSummary; this.timezone = data.timezone || 'UTC'; this.loading.set(false); }, error: error => this.fail(error) });
-    else this.api.get<Paginated<ConsultationQuery>>('/staff/queries', { search: this.search, queue: this.queue, page: this.page }).subscribe({ next: ({ data }) => { this.items.set(data.items); this.pages.set(data.totalPages); this.loading.set(false); }, error: error => this.fail(error) });
+    const sequence = ++this.sequence; this.error.set(''); this.loading.set(true);
+    if (this.id) this.api.get<ConsultationQuery>(`/staff/queries/${this.id}`).subscribe({ next: ({ data }) => { if (sequence !== this.sequence) return; this.detail.set(data); this.assignedTo = data.assignedTo || ''; this.response = data.clientVisibleResponse; this.internal = data.internalResponse; this.summary = data.resolutionSummary; this.timezone = data.timezone || 'UTC'; this.loading.set(false); }, error: error => { if (sequence === this.sequence) this.fail(error); } });
+    else this.api.get<Paginated<ConsultationQuery>>('/staff/queries', { search: this.search, queue: this.queue, page: this.page }).subscribe({ next: ({ data }) => { if (sequence !== this.sequence) return; this.items.set(data.items); this.pages.set(data.totalPages); this.loading.set(false); }, error: error => { if (sequence === this.sequence) this.fail(error); } });
   }
   private fail(error: unknown) { this.error.set(apiErrorMessage(error, 'Could not load this request.')); this.loading.set(false); this.busy.set(false); }
   act(action: string, body: Record<string, unknown> = {}) { if (this.busy() || !this.id) return; this.busy.set(true); this.error.set(''); this.api.post(`/staff/queries/${this.id}/${action}`, body).subscribe({ next: () => { this.busy.set(false); this.note = ''; this.question = ''; this.load(); }, error: error => this.fail(error) }); }

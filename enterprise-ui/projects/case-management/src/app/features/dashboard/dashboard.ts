@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DashboardMetrics } from '../../core/api/dashboard.types';
 import { AuthService } from '../../core/auth/auth.service';
+import { CASE_TYPES } from '../../core/api/case-catalog';
 
 @Component({
   selector: 'ih-dashboard',
@@ -17,8 +18,10 @@ export class Dashboard implements OnInit {
   private api = inject(ApiService);
   
   metrics = signal<DashboardMetrics | null>(null);
+  activeQueues = computed(() => (this.metrics()?.workQueues || []).filter(queue => queue.count > 0));
   isLoading = signal(true);
   error = signal<string | null>(null);
+  caseTypeLabel(value: string) { return CASE_TYPES.find(type => type.value === value)?.label || value; }
 
   ngOnInit() {
     this.load();

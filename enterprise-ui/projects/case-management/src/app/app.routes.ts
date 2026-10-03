@@ -28,6 +28,10 @@ export const routes: Routes = [
       },
       { path: 'consultations', loadComponent: () => import('./features/consultations/consultations').then(m => m.Consultations) },
       { path: 'consultations/:id', loadComponent: () => import('./features/consultations/consultations').then(m => m.Consultations) },
+      { path: 'intake', loadComponent: () => import('./features/consultations/lead-intake').then(m => m.LeadIntake) },
+      { path: 'intake/:id', loadComponent: () => import('./features/consultations/lead-intake').then(m => m.LeadIntake) },
+      { path: 'planning', loadComponent: () => import('./features/tasks/planning').then(m => m.Planning) },
+      { path: 'notifications', loadComponent: () => import('./features/dashboard/notifications').then(m => m.StaffNotifications) },
       {
         path: 'cases',
         loadComponent: () =>

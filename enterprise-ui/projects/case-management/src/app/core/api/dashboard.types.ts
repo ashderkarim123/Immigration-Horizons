@@ -23,6 +23,7 @@ export interface DashboardTask {
 export interface DashboardMetrics {
   workspaceLabel?: string;
   workQueues?: WorkQueue[];
+  employeeWorkload?: { employeeId: string; name: string; openTasks: number; overdueTasks: number }[];
   role: string;
   myCases: number;
   unassignedCases: number;

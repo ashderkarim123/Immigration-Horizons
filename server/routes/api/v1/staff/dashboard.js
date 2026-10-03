@@ -6,6 +6,7 @@ const CaseDocument = require('../../../../models/CaseDocument');
 const DocumentRequest = require('../../../../models/DocumentRequest');
 const ConsultationInteraction = require('../../../../models/ConsultationInteraction');
 const Task = require('../../../../models/admin/Task');
+const AdminUser = require('../../../../models/admin/User');
 const { loadInbox } = require('../../../../services/staffChatService');
 const { loadWorkQueues } = require('../../../../services/staffWorkQueues');
 const { accessibleCaseIdFilter } = require('../../../../services/casePolicy');
@@ -58,9 +59,7 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
       ? { $or: [{ case: null }, { case: caseFilter._id }] }
       : {};
 
-    // For queries, if they can't see queries, scope to empty. If they can but don't have view_all, they see all?
-    // Wait, in Next.js `queryScopeFilter` is used. We don't have a `queryScopeFilter` in Express yet, 
-    // but the Next.js one scopes queries to `assignee: actor.adminUserId` if they aren't queries.view_all.
+    // Consultation and case queries use the same live policy as their list route.
     const queryScope = canSeeQueries
       ? await require('../../../../services/interactionPolicy').accessibleInteractionFilter(req)
       : { _id: { $in: [] } };
@@ -162,12 +161,23 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
       .lean();
 
     const upcomingDeadlines = upcomingCaseDeadlines + upcomingTaskDeadlines;
+    let employeeWorkload = [];
+    if (can(req, 'cases.view_all') && can(req, 'tasks.view_all')) {
+      const rows = await Task.aggregate([
+        { $match: { status: { $ne: 'completed' }, assignee: { $ne: null } } },
+        { $group: { _id: '$assignee', openTasks: { $sum: 1 }, overdueTasks: { $sum: { $cond: [{ $and: [{ $ne: ['$dueDate', null] }, { $lt: ['$dueDate', new Date()] }] }, 1, 0] } } } },
+        { $sort: { overdueTasks: -1, openTasks: -1, _id: 1 } },
+      ]);
+      const employees = await AdminUser.find({ _id: { $in: rows.map(row => row._id) } }).select('name').lean();
+      employeeWorkload = rows.map(row => ({ employeeId: String(row._id), name: employees.find(e => String(e._id) === String(row._id))?.name || 'Former employee', openTasks: row.openTasks, overdueTasks: row.overdueTasks }));
+    }
 
     res.json({
       data: {
         role: req.staff.role,
         workspaceLabel: can(req, 'cases.view_all') ? 'Operations overview' : can(req, 'cases.manage') ? 'My case portfolio' : can(req, 'petitions.review') ? 'Review queue' : 'My assigned work',
         workQueues: (await loadWorkQueues(req)).map(({ items, ...queue }) => ({ ...queue, items: items.slice(0, 5) })),
+        employeeWorkload,
         myCases,
         unassignedCases,
         upcomingDeadlines,

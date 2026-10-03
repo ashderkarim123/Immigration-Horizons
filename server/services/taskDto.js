@@ -44,14 +44,14 @@ function serializeTask(t, access) {
     assignee: t.assignee ? { id: t.assignee._id, displayName: t.assignee.name || '' } : null,
     case: t.case ? { id: t.case._id, caseNumber: t.case.caseNumber, title: t.case.title } : null,
     lead: t.lead
-      ? { id: t.lead._id, displayName: [t.lead.firstName, t.lead.lastName].filter(Boolean).join(' ') || t.lead.email }
+      ? { id: t.lead._id, displayName: t.lead.name || t.lead.email }
       : null,
     actions: { canEdit: access.canEdit, canChangeStatus: access.canChangeStatus, canAssign: access.canAssign },
   };
 }
 
 const populated = (query) =>
-  query.populate('assignee', 'name').populate('case', 'caseNumber title').populate('lead', 'firstName lastName email');
+  query.populate('assignee', 'name').populate('case', 'caseNumber title').populate('lead', 'name email');
 
 /** Re-reads a task with its relations and serializes it for this actor. */
 async function loadTaskDto(req, taskId, ctx) {
