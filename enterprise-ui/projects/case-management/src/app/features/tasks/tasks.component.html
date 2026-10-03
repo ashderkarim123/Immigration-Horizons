@@ -5,6 +5,8 @@
   </div>
 </div>
 
+@if (selectedAssignee()) { <p>Showing the selected employee's tasks. <button type="button" (click)="selectedAssignee.set(''); onFilterChange()">Show all employees</button></p> }
+
 <div class="filters-bar card">
   <div class="filter-group">
     <input

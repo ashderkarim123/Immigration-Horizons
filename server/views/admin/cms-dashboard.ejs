@@ -1,0 +1,19 @@
+<div class="page-header"><div><h1>Website administration</h1><p class="page-subtitle">Publish content and manage platform settings. Case work belongs in the Staff Portal.</p></div></div>
+<div class="stats-grid">
+  <% [
+    { label: 'Blog posts', value: stats.blogPosts, url: '/admin/blog', icon: 'edit' },
+    { label: 'Published posts', value: stats.publishedPosts, url: '/admin/blog?status=published', icon: 'check-circle' },
+    { label: 'Draft posts', value: stats.draftPosts, url: '/admin/blog?status=draft', icon: 'file-alt' },
+    { label: 'Testimonials', value: stats.testimonials, url: '/admin/testimonials', icon: 'star' },
+    { label: 'FAQs', value: stats.faqs, url: '/admin/faqs', icon: 'question-circle' },
+  ].forEach(function(tile) { %>
+    <a class="stat-card" href="<%= tile.url %>" style="text-decoration:none;color:inherit"><div class="stat-card-icon blue"><i class="fas fa-<%= tile.icon %>" aria-hidden="true"></i></div><div class="stat-card-value"><%= tile.value || 0 %></div><div class="stat-card-label"><%= tile.label %></div></a>
+  <% }); %>
+</div>
+<section class="admin-card"><div class="admin-card-header"><h2>Recent blog posts</h2><a href="/admin/blog/new" class="btn btn-primary">New blog post</a></div><div class="admin-card-body">
+  <% if (!recentPosts.length) { %><p>No blog posts yet. Create your first post to begin.</p><% } else { %>
+    <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Post</th><th>Status</th></tr></thead><tbody>
+      <% recentPosts.forEach(function(post) { %><tr><td><a href="/admin/blog/<%= post._id %>/edit"><%= post.title %></a></td><td><%= post.published ? 'Published' : 'Draft' %></td></tr><% }); %>
+    </tbody></table></div>
+  <% } %>
+</div></section>

@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --conditions=react-server --import tsx --test --test-concurrency=1 test/*.test.ts",
+    "test:e2e": "playwright test",
     "db:indexes": "node --conditions=react-server --import tsx scripts/createIndexes.ts",
     "db:indexes:dry-run": "node --conditions=react-server --import tsx scripts/createIndexes.ts --dry-run",
     "mail:check": "node --conditions=react-server --import tsx scripts/checkMail.ts",
@@ -37,6 +38,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",

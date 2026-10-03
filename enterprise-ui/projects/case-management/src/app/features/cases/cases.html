@@ -2,6 +2,7 @@
   <div>
     <h1>Cases</h1>
     <p class="page-subtitle">Manage client petitions, track progress, and review assignments</p>
+    @if (auth.capabilities().includes('cases.create')) { <a routerLink="/cases/new" class="btn btn-primary">Create case</a> }
   </div>
 </div>
 

@@ -231,13 +231,13 @@ test('an infected scan result quarantines the document and it is excluded from n
 test('category provisioning is idempotent — re-running creates no duplicates', async () => {
   const { caseDoc, workspace } = await seedCase();
   const first = await categoryService.provisionDefaultCategories({ caseId: caseDoc._id, workspaceId: workspace._id });
-  assert.equal(first.created.length, 19);
+  assert.equal(first.created.length, require('../../utils/documentConstants').DEFAULT_CATEGORY_TEMPLATE.length);
 
   const second = await categoryService.provisionDefaultCategories({ caseId: caseDoc._id, workspaceId: workspace._id });
   assert.equal(second.created.length, 0);
 
   const total = await DocumentCategory.countDocuments({ case: caseDoc._id });
-  assert.equal(total, 19);
+  assert.equal(total, require('../../utils/documentConstants').DEFAULT_CATEGORY_TEMPLATE.length);
 });
 
 test('reorderCategories rejects a category id that belongs to a different case', async () => {

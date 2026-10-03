@@ -1,9 +1,12 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { combineLatest } from 'rxjs';
 import { ApiService } from '../../../core/api/api.service';
 import { apiErrorMessage } from '../../../core/api/api-error';
 import { CaseActivityItem, CaseDetail, CaseMember, MemberOption, Paginated } from '../../../core/api/case.types';
 import { ToastService } from '../../../shared/toast.service';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CASE_STAGES, CASE_TYPES } from '../../../core/api/case-catalog';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StatusBadgeComponent } from '../../../shared/status-badge.component';
@@ -47,14 +50,31 @@ const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 
 export class CaseDetailComponent implements OnInit {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+  workflowGroups = [
+    { label: 'Overview', tabs: [{ key: 'overview', label: 'Overview' }] },
+    { label: 'Client inputs', tabs: [{ key: 'documents', label: 'Documents' }, { key: 'evidence', label: 'Evidence' }, { key: 'forms', label: 'Smart forms' }] },
+    { label: 'Case work', tabs: [{ key: 'tasks', label: 'Tasks' }, { key: 'petition', label: 'Petition' }, { key: 'packet', label: 'Filing packet' }] },
+    { label: 'Communication', tabs: [{ key: 'chat', label: 'Messages' }] },
+    { label: 'Management', tabs: [{ key: 'team', label: 'Team' }, { key: 'activity', label: 'Activity' }] },
+  ];
+  selectTab(tab: string) {
+    if (!(TABS as readonly string[]).includes(tab)) return;
+    this.activeTab.set(tab as (typeof TABS)[number]);
+    this.router.navigate([], { relativeTo: this.route, queryParams: { tab, channel: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    if (tab === 'activity') this.openActivityTab();
+  }
   private toast = inject(ToastService);
 
   caseId = signal<string>('');
   /** Deep link from the Messages inbox: /cases/:id?tab=chat&channel=:channelId */
   initialChannelId = signal<string | null>(null);
+  createAction = signal('');
   caseData = signal<CaseDetail | null>(null);
   members = signal<CaseMember[]>([]);
   memberOptions = signal<MemberOption[]>([]);
+  managerOptions = computed(() => this.memberOptions().filter(employee => employee.canManageCases));
 
   isLoading = signal(true);
   isError = signal(false);
@@ -100,17 +120,8 @@ export class CaseDetailComponent implements OnInit {
   clientUpdateMessage = signal('');
   isSubmitting = signal(false);
 
-  validStages = [
-    { value: 'initial_review', label: 'Initial Review' },
-    { value: 'document_collection', label: 'Document Collection' },
-    { value: 'drafting', label: 'Drafting' },
-    { value: 'client_review', label: 'Client Review' },
-    { value: 'ready_to_file', label: 'Ready to File' },
-    { value: 'filed', label: 'Filed' },
-    { value: 'decision_received', label: 'Decision Received' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'archived', label: 'Archived' }
-  ];
+  validStages = CASE_STAGES;
+  caseTypeLabel(value: string) { return CASE_TYPES.find(type => type.value === value)?.label || value; }
 
   /** Employee-assignable subset of WORKSPACE_ROLES; project_manager is set via Change PM. */
   memberRoles = [
@@ -121,17 +132,24 @@ export class CaseDetailComponent implements OnInit {
   ];
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    const query = this.route.snapshot.queryParamMap;
-    const tab = query?.get('tab');
-    if (tab && (TABS as readonly string[]).includes(tab)) this.activeTab.set(tab as (typeof TABS)[number]);
-    this.initialChannelId.set(query?.get('channel') ?? null);
-    if (id) {
-      this.caseId.set(id);
-      this.loadCaseDetail();
-      this.loadMembers();
-      if (this.activeTab() === 'activity') this.loadActivity(1);
-    }
+    combineLatest([this.route.paramMap, this.route.queryParamMap]).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(([params, query]) => {
+      const id = params.get('id');
+      const tab = query.get('tab');
+      this.activeTab.set(tab && (TABS as readonly string[]).includes(tab) ? tab as (typeof TABS)[number] : 'overview');
+      this.initialChannelId.set(query.get('channel'));
+      this.createAction.set(query.get('action') || '');
+      if (id && id !== this.caseId()) {
+        this.caseId.set(id);
+        this.caseData.set(null);
+        this.members.set([]);
+        this.memberOptions.set([]);
+        this.activity.set([]);
+        this.activityLoaded = false;
+        this.loadCaseDetail();
+        this.loadMembers();
+      }
+      if (id && this.activeTab() === 'activity' && !this.activityLoaded) this.loadActivity(1);
+    });
   }
 
   /** silent = background refresh after a mutation: keeps the page, tab and modal state intact. */
@@ -141,9 +159,12 @@ export class CaseDetailComponent implements OnInit {
       this.isError.set(false);
     }
 
-    this.api.get<CaseDetail>(`/staff/cases/${this.caseId()}`).subscribe({
+    const id = this.caseId();
+    this.api.get<CaseDetail>(`/staff/cases/${id}`).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: ({ data }) => {
+        if (id !== this.caseId()) return;
         this.caseData.set(data);
+        if (data.availableTabs && !data.availableTabs.includes(this.activeTab())) this.activeTab.set('overview');
         this.selectedNewStage.set(data.currentStage);
         this.selectedNewPmId.set(data.projectManager?.id ?? '');
         this.isLoading.set(false);
@@ -151,6 +172,7 @@ export class CaseDetailComponent implements OnInit {
         if (data.actions.canManageMembers || data.actions.canAssignManager) this.loadMemberOptions();
       },
       error: (err) => {
+        if (id !== this.caseId()) return;
         if (silent) {
           this.toast.error('Saved, but the case could not be refreshed. Reload the page.');
           return;
@@ -163,14 +185,17 @@ export class CaseDetailComponent implements OnInit {
   }
 
   loadMembers(): void {
+    const id = this.caseId();
     this.membersLoading.set(true);
     this.membersError.set(false);
     this.api.get<{ members: CaseMember[] }>(`/staff/cases/${this.caseId()}/members`).subscribe({
       next: ({ data }) => {
+        if (this.caseId() !== id) return;
         this.members.set(data.members);
         this.membersLoading.set(false);
       },
       error: () => {
+        if (this.caseId() !== id) return;
         this.membersError.set(true);
         this.membersLoading.set(false);
       }
@@ -178,9 +203,10 @@ export class CaseDetailComponent implements OnInit {
   }
 
   loadMemberOptions(): void {
+    const id = this.caseId();
     this.api.get<{ employees: MemberOption[] }>(`/staff/cases/${this.caseId()}/member-options`).subscribe({
-      next: ({ data }) => this.memberOptions.set(data.employees),
-      error: () => this.memberOptions.set([])
+      next: ({ data }) => { if (this.caseId() === id) this.memberOptions.set(data.employees); },
+      error: () => { if (this.caseId() === id) this.memberOptions.set([]); }
     });
   }
 
@@ -190,10 +216,12 @@ export class CaseDetailComponent implements OnInit {
   }
 
   loadActivity(page: number): void {
+    const id = this.caseId();
     this.activityLoading.set(true);
     this.activityError.set(false);
     this.api.get<Paginated<CaseActivityItem>>(`/staff/cases/${this.caseId()}/activity`, { page, limit: 20 }).subscribe({
       next: ({ data }) => {
+        if (this.caseId() !== id) return;
         this.activity.set(data.items);
         this.activityPage.set(data.page);
         this.activityTotal.set(data.total);
@@ -202,6 +230,7 @@ export class CaseDetailComponent implements OnInit {
         this.activityLoading.set(false);
       },
       error: () => {
+        if (this.caseId() !== id) return;
         this.activityError.set(true);
         this.activityLoading.set(false);
       }

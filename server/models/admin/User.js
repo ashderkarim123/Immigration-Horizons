@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema(
         // Original roles — kept for back-compat with existing accounts.
         'super_admin', 'admin', 'editor',
         // Lead-operations roles (Phase 9).
-        'pm', 'petition_writer', 'business_plan_specialist',
+        'operations_admin', 'pm', 'petition_writer', 'business_plan_specialist',
         'recommendation_letter_specialist', 'uscis_forms_specialist',
         'evidence_collector', 'reviewer', 'viewer',
       ],

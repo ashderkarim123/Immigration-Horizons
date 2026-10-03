@@ -70,6 +70,10 @@ function createApp() {
     }),
   );
 
+  // The staff API authenticates only EmployeeSession cookies. Keep it outside
+  // express-session so a CMS cookie can never influence staff policy identity.
+  app.use('/api/v1', apiRoutes);
+
   // ----- Sessions -----
   const sessionConfig = {
     secret: process.env.SESSION_SECRET || 'insecure-dev-secret-change-me',
@@ -139,7 +143,6 @@ function createApp() {
   // ----- JSON API Mount -----
   // Mounted before CSRF so that the API handles its own CSRF/origin checks 
   // via the trustedOrigin middleware and is not required to submit an EJS token.
-  app.use('/api/v1', apiRoutes);
 
   // ----- CSRF -----
   // After the session (it stores the token there) and after the body

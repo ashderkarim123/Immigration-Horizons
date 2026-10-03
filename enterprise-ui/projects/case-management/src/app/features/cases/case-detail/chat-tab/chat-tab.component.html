@@ -1,10 +1,13 @@
+@if (canCreateChannel() || selectedChannel()?.canManage) {
+  <ih-channel-management [caseId]="caseId()" [channels]="channels()" [channel]="selectedChannel()" [canCreate]="canCreateChannel()" [canReorder]="canReorderChannels()" (changed)="loadChannels(true)"></ih-channel-management>
+}
 @if (isLoading()) {
   <ih-skeleton [rows]="6" rowHeight="3rem"></ih-skeleton>
 } @else if (isError()) {
   <ih-error-state title="Chat unavailable" message="The case conversations could not be loaded." (retry)="loadChannels(true)"></ih-error-state>
 } @else if (channels().length === 0) {
   <ih-empty-state title="No chat channels yet" description="This case has no conversation channels. Set up the default channels to start chatting with the client and team."></ih-empty-state>
-  <button type="button" class="btn btn-primary" (click)="initializeChannels()">Set up chat channels</button>
+  @if (canCreateChannel()) { <button type="button" class="btn btn-primary" (click)="initializeChannels()">Set up chat channels</button> }
 } @else {
   <div class="chat-layout">
     <!-- Channels -->

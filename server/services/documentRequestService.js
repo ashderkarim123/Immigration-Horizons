@@ -3,6 +3,7 @@ const DocumentCategory = require('../models/DocumentCategory');
 const WorkspaceMember = require('../models/WorkspaceMember');
 const CaseActivity = require('../models/CaseActivity');
 const ClientCase = require('../models/ClientCase');
+const { documentTypesForCategory } = require('../utils/documentTaxonomy');
 const { notifyClient } = require('./notificationService');
 
 const {
@@ -53,6 +54,7 @@ async function createDocumentRequest({
   categoryId,
   title,
   instructions,
+  documentType,
   requestedFromMemberId,
   requestedByAdminId,
   dueDate,
@@ -65,6 +67,12 @@ async function createDocumentRequest({
   const category = await DocumentCategory.findOne({ _id: categoryId, case: caseId, active: true });
   if (!category) {
     return { outcome: 'validation_error', errors: { category: 'Category not found for this case.' } };
+  }
+  if (category.visibility !== 'client_visible' || !['client', 'both'].includes(category.allowedUploaderTypes)) {
+    return { outcome: 'validation_error', errors: { category: 'Choose a category that accepts client uploads.' } };
+  }
+  if (documentType && !documentTypesForCategory(category.templateKey).includes(documentType)) {
+    return { outcome: 'validation_error', errors: { documentType: 'Choose a document type for this category.' } };
   }
 
   // requestedFrom must be an active-or-invited CLIENT member of THIS
@@ -85,6 +93,7 @@ async function createDocumentRequest({
     category: categoryId,
     title: title.trim(),
     instructions: (instructions || '').trim(),
+    documentType: documentType || '',
     requestedFrom: member._id,
     requestedBy: requestedByAdminId,
     dueDate: dueDate ? new Date(dueDate) : null,

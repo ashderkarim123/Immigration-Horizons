@@ -3,6 +3,9 @@
 export type ChatAudience = 'client_and_team' | 'staff_only' | 'restricted';
 
 export interface ChatChannel {
+  canManage?: boolean;
+  canArchive?: boolean;
+  canManageMembers?: boolean;
   id: string;
   name: string;
   description: string;
@@ -13,6 +16,7 @@ export interface ChatChannel {
 }
 
 export interface ChatChannelList {
+  capabilities?: { canCreateChannel: boolean; canReorderChannels?: boolean };
   case: { id: string; caseNumber: string; title: string };
   channels: ChatChannel[];
 }

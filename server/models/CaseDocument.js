@@ -25,6 +25,9 @@ const CaseDocumentSchema = new mongoose.Schema(
     originalName: { type: String, required: true, trim: true, maxlength: 255 },
     displayName: { type: String, required: true, trim: true, maxlength: 255 },
     storageKey: { type: String, required: true },
+    description: { type: String, default: '', maxlength: 2000 },
+    documentType: { type: String, default: '', maxlength: 100 },
+    subjectClient: { type: mongoose.Schema.Types.ObjectId, ref: 'ClientUser', default: null },
 
     mimeType: { type: String, required: true },
     detectedMimeType: { type: String, required: true },

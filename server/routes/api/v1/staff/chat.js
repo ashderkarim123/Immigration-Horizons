@@ -111,7 +111,7 @@ router.post('/cases/:caseId/channels', trustedOriginMiddleware, requireApiCapabi
     description: req.body.description,
     channelType: CHANNEL_TYPES.includes(req.body.channelType) ? req.body.channelType : 'standard',
     visibility: req.body.visibility,
-    actor: actorOf(req),
+    actor: { ...actorOf(req), type: 'admin_user' },
   });
   failOnOutcome(result);
   return response(res, req, chat.mapChannel(result.channel, { canSend: true }), 201);
@@ -122,7 +122,7 @@ router.post('/cases/:caseId/channels/reorder', trustedOriginMiddleware, requireA
   const result = await channelService.reorderChannels({
     workspaceId: req.chatCase.workspace._id,
     orderedChannelIds: asList(req.body.orderedChannelIds),
-    actor: actorOf(req),
+    actor: { ...actorOf(req), type: 'admin_user' },
   });
   failOnOutcome(result);
   return response(res, req, { outcome: result.outcome });
@@ -145,7 +145,7 @@ router.patch('/channels/:channelId', trustedOriginMiddleware, requireApiCapabili
     name: req.body.name,
     description: req.body.description,
     visibility: CHANNEL_VISIBILITY.includes(req.body.visibility) ? req.body.visibility : undefined,
-    actor: actorOf(req),
+    actor: { ...actorOf(req), type: 'admin_user' },
   });
   failOnOutcome(result);
   return response(res, req, chat.mapChannel(result.channel, { canSend: true }));
@@ -153,7 +153,7 @@ router.patch('/channels/:channelId', trustedOriginMiddleware, requireApiCapabili
 
 // POST /api/v1/staff/channels/:channelId/archive
 router.post('/channels/:channelId/archive', trustedOriginMiddleware, requireApiCapability('channels.archive'), channelParam(collaborationPolicy.canArchiveChannel), route(async (req, res) => {
-  const result = await channelService.archiveChannel({ channelId: req.channel._id, actor: actorOf(req) });
+  const result = await channelService.archiveChannel({ channelId: req.channel._id, actor: { ...actorOf(req), type: 'admin_user' } });
   failOnOutcome(result);
   return response(res, req, { outcome: result.outcome });
 }));
@@ -172,7 +172,7 @@ router.post('/channels/:channelId/members', trustedOriginMiddleware, requireApiC
   const result = await channelService.addChannelMember({
     channelId: req.channel._id,
     workspaceMemberId: req.body.workspaceMemberId,
-    actor: actorOf(req),
+    actor: { ...actorOf(req), type: 'admin_user' },
   });
   failOnOutcome(result);
   return response(res, req, { members: await chat.listMembers(req.channel) }, 201);
@@ -184,7 +184,7 @@ router.delete('/channels/:channelId/members/:channelMemberId', trustedOriginMidd
   const result = await channelService.removeChannelMember({
     channelId: req.channel._id,
     memberId: req.params.channelMemberId,
-    actor: actorOf(req),
+    actor: { ...actorOf(req), type: 'admin_user' },
   });
   failOnOutcome(result);
   return response(res, req, { members: await chat.listMembers(req.channel) });

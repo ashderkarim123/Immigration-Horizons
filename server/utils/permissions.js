@@ -16,6 +16,7 @@
 const ROLE_LABELS = {
   super_admin: 'Super Admin',
   admin: 'Admin',
+  operations_admin: 'Staff Operations Admin',
   pm: 'PM / Project Manager',
   petition_writer: 'Petition Writer',
   business_plan_specialist: 'Business Plan Specialist',
@@ -39,7 +40,7 @@ const SPECIALIST_ROLES = [
 
 // Roles allowed to assign leads/tasks, create sprints, change delivery
 // state, and delete records outright.
-const MANAGER_ROLES = ['super_admin', 'admin', 'pm'];
+const MANAGER_ROLES = ['super_admin', 'admin', 'operations_admin', 'pm'];
 
 // Every role except `viewer` can update tasks/notes/status on work that
 // applies to them; `viewer` is read-only everywhere in this module.
@@ -67,8 +68,8 @@ const TASK_OWNERSHIP_ROLES = [...SPECIALIST_ROLES, 'reviewer'];
  * malformed.
  */
 function getRole(req) {
-  if (req.session && req.session.adminUser && req.session.adminUser.role) return req.session.adminUser.role;
   if (req.staff && req.staff.role) return req.staff.role;
+  if (req.session && req.session.adminUser && req.session.adminUser.role) return req.session.adminUser.role;
   return null;
 }
 
@@ -112,6 +113,7 @@ function requireManager(req, res, next) {
 // ---------------------------------------------------------------------------
 
 const CAPABILITIES = {
+  'admin.cms.access': ['super_admin', 'admin', 'editor'],
   // Users & settings — admin-tier only.
   'users.manage': ['super_admin', 'admin'],
   'users.delete': ['super_admin'],
@@ -122,7 +124,7 @@ const CAPABILITIES = {
   'leads.assign': MANAGER_ROLES,
   'leads.edit': MANAGER_ROLES, // status changes
   'leads.delete': ['super_admin', 'admin'], // pm intentionally excluded — see PHASE_2_AUTHORIZATION.md
-  'notes.create': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'], // editor & viewer excluded
+  'notes.create': ['super_admin', 'admin', 'operations_admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'], // editor & viewer excluded
 
   // Task/sprint/delivery — broad "manage anything" tier stays manager-only;
   // specialists/reviewer get ownership-scoped task access (see
@@ -136,7 +138,7 @@ const CAPABILITIES = {
   // preserved for everyone who legitimately does delivery-adjacent work
   // (managers, specialists, reviewer), excluding editor (CMS-only role)
   // and viewer (read-only).
-  'deliveries.manage': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'deliveries.manage': ['super_admin', 'admin', 'operations_admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
 
   // CMS — editor tier.
   'blog.manage': ['super_admin', 'admin', 'editor'],
@@ -162,39 +164,39 @@ const CAPABILITIES = {
   // still limits them to workspaces they are an active member of. Nothing
   // here grants create/manage/assign/archive.
   'cases.view': [...MANAGER_ROLES, ...TASK_OWNERSHIP_ROLES],
-  'cases.view_all': ['super_admin', 'admin'],
-  'cases.create': ['super_admin', 'admin', 'pm'],
-  'cases.manage': ['super_admin', 'admin', 'pm'],
-  'cases.assign': ['super_admin', 'admin'], // reassigning the project manager is admin-tier, not self-service for a PM
-  'cases.archive': ['super_admin', 'admin'],
-  'workspace.members.manage': ['super_admin', 'admin', 'pm'],
+  'cases.view_all': ['super_admin', 'admin', 'operations_admin'],
+  'cases.create': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'cases.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'cases.assign': ['super_admin', 'admin', 'operations_admin'], // reassigning the project manager is admin-tier, not self-service for a PM
+  'cases.archive': ['super_admin', 'admin', 'operations_admin'],
+  'workspace.members.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
 
   // Client account operations (Cycle 8 — ADR-007 §7). `clients.manage` is
   // admin-tier rather than PM-tier deliberately: disabling an account and
   // re-issuing an activation invitation are higher-consequence than case
   // work, matching how cases.assign/cases.archive are already scoped.
-  'clients.view': ['super_admin', 'admin', 'pm'],
-  'clients.manage': ['super_admin', 'admin'],
+  'clients.view': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'clients.manage': ['super_admin', 'admin', 'operations_admin'],
 
   // Publishing a client-visible case update (Cycle 8). Emits a
   // client-visible system message into the case's updates channel — see
   // ADR-007 §6.
-  'client_updates.publish': ['super_admin', 'admin', 'pm'],
+  'client_updates.publish': ['super_admin', 'admin', 'operations_admin', 'pm'],
 
   // Consultation/query tracking (Cycle 3). Same conservative-matrix
   // approach as cases.* above — see
   // 04_CONSULTATION_AND_QUERY_TRACKING.md §16 and services/interactionPolicy.js.
   // Specialists/reviewer/editor/viewer excluded: no product rule yet
   // justifies granting them query access.
-  'queries.view': ['super_admin', 'admin', 'pm'],
-  'queries.view_all': ['super_admin', 'admin'],
-  'queries.create': ['super_admin', 'admin', 'pm'],
-  'queries.triage': ['super_admin', 'admin', 'pm'],
-  'queries.assign': ['super_admin', 'admin', 'pm'],
-  'queries.schedule': ['super_admin', 'admin', 'pm'],
-  'queries.answer': ['super_admin', 'admin', 'pm'],
-  'queries.manage': ['super_admin', 'admin', 'pm'],
-  'queries.close': ['super_admin', 'admin', 'pm'],
+  'queries.view': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'queries.view_all': ['super_admin', 'admin', 'operations_admin'],
+  'queries.create': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'queries.triage': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'queries.assign': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'queries.schedule': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'queries.answer': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'queries.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'queries.close': ['super_admin', 'admin', 'operations_admin', 'pm'],
 
   // Document management (Cycle 5). Same conservative-matrix approach as
   // cases.*/queries.* above — see 05_DOCUMENT_MANAGEMENT.md §19 and
@@ -207,12 +209,12 @@ const CAPABILITIES = {
   // reading a case's evidence and changing its review state are different
   // levels of consequence.
   'documents.view': [...MANAGER_ROLES, ...TASK_OWNERSHIP_ROLES],
-  'documents.view_all': ['super_admin', 'admin'],
-  'documents.upload': ['super_admin', 'admin', 'pm'],
-  'documents.review': ['super_admin', 'admin', 'pm'],
-  'documents.archive': ['super_admin', 'admin', 'pm'],
-  'document_categories.manage': ['super_admin', 'admin', 'pm'],
-  'document_requests.manage': ['super_admin', 'admin', 'pm'],
+  'documents.view_all': ['super_admin', 'admin', 'operations_admin'],
+  'documents.upload': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'documents.review': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'documents.archive': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'document_categories.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'document_requests.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
   'document_versions.view': [...MANAGER_ROLES, ...TASK_OWNERSHIP_ROLES],
 
   // Team collaboration (Cycle 6). Same conservative-matrix approach as
@@ -221,25 +223,25 @@ const CAPABILITIES = {
   // Case specialists/reviewer get view+send+edit_own only (module doc's own
   // suggested narrower grant for that tier) — moderation and channel
   // management stay manager-tier.
-  'channels.view': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
-  'channels.view_all': ['super_admin', 'admin'],
-  'channels.create': ['super_admin', 'admin', 'pm'],
-  'channels.manage': ['super_admin', 'admin', 'pm'],
-  'channels.archive': ['super_admin', 'admin', 'pm'],
-  'channel_members.manage': ['super_admin', 'admin', 'pm'],
-  'messages.send': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
-  'messages.edit_own': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
-  'messages.moderate': ['super_admin', 'admin', 'pm'],
-  'messages.view_revisions': ['super_admin', 'admin', 'pm'],
+  'channels.view': ['super_admin', 'admin', 'operations_admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'channels.view_all': ['super_admin', 'admin', 'operations_admin'],
+  'channels.create': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'channels.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'channels.archive': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'channel_members.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'messages.send': ['super_admin', 'admin', 'operations_admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'messages.edit_own': ['super_admin', 'admin', 'operations_admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'messages.moderate': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'messages.view_revisions': ['super_admin', 'admin', 'operations_admin', 'pm'],
 
   // Smart Forms (Phase 08, ADR-021 §15). Capability gates only — every use
   // is ALSO scoped to case membership (services/smartFormPolicy.js), so a
   // role grant never reaches a case the actor is not on. Editing and review
   // are separate because the person preparing answers should not be the only
   // one who can sign them off; locking is narrower still.
-  'forms.view': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
-  'forms.edit': ['super_admin', 'admin', 'pm', 'uscis_forms_specialist'],
-  'forms.review': ['super_admin', 'admin', 'pm', 'reviewer', 'uscis_forms_specialist'],
+  'forms.view': ['super_admin', 'admin', 'operations_admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'forms.edit': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
+  'forms.review': ['super_admin', 'admin', 'operations_admin', 'pm', 'reviewer', 'uscis_forms_specialist'],
   'forms.lock': ['super_admin', 'admin', 'reviewer'],
   'form_templates.manage': ['super_admin', 'admin'],
 
@@ -247,18 +249,18 @@ const CAPABILITIES = {
   // ALSO scoped to case membership, and petitions.edit is further limited to
   // assigned sections for anyone without petitions.manage. A reviewer gets no
   // drafting right from reviewing.
-  'petitions.view': ['super_admin', 'admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
-  'petitions.manage': ['super_admin', 'admin', 'pm'],
-  'petitions.edit': ['super_admin', 'admin', 'pm', 'petition_writer'],
-  'petitions.review': ['super_admin', 'admin', 'pm', 'reviewer'],
+  'petitions.view': ['super_admin', 'admin', 'operations_admin', 'pm', ...SPECIALIST_ROLES, 'reviewer'],
+  'petitions.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'petitions.edit': ['super_admin', 'admin', 'operations_admin', 'pm', 'petition_writer'],
+  'petitions.review': ['super_admin', 'admin', 'operations_admin', 'pm', 'reviewer'],
   'petitions.finalize': ['super_admin', 'admin', 'reviewer'],
 
   // Filing Packets (Phase 10, ADR-023 §21). Capability gates only — every use is
   // ALSO scoped to case membership. Assembling, approving and locking the filing
   // snapshot are three separate rights.
-  'filing_packets.view': ['super_admin', 'admin', 'pm', 'petition_writer', 'uscis_forms_specialist', 'reviewer'],
-  'filing_packets.manage': ['super_admin', 'admin', 'pm', 'uscis_forms_specialist'],
-  'filing_packets.review': ['super_admin', 'admin', 'pm', 'reviewer'],
+  'filing_packets.view': ['super_admin', 'admin', 'operations_admin', 'pm', 'petition_writer', 'uscis_forms_specialist', 'reviewer'],
+  'filing_packets.manage': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
+  'filing_packets.review': ['super_admin', 'admin', 'operations_admin', 'pm', 'reviewer'],
   'filing_packets.finalize': ['super_admin', 'admin', 'reviewer'],
 };
 

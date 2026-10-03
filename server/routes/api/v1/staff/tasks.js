@@ -46,6 +46,10 @@ router.get('/', staffAuthMiddleware, route(async (req, res, next) => {
   if (req.query.status) query.status = req.query.status;
   if (req.query.priority) query.priority = req.query.priority;
   if (req.query.type) query.type = req.query.type;
+  if (req.query.assignee && scope === 'all') {
+    if (!mongoose.isValidObjectId(req.query.assignee)) return next(createApiError(400, 'validation_error', 'Choose a valid employee.'));
+    query.assignee = req.query.assignee;
+  }
 
   if (req.query.due === 'overdue') {
     query.dueDate = { $ne: null, $lt: new Date() };

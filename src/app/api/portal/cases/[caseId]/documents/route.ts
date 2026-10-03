@@ -64,7 +64,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ cas
 
   if (typeof replaceDocumentId === "string" && replaceDocumentId) {
     const accessible = await getAccessibleDocument(replaceDocumentId, String(client._id));
-    if (!accessible) {
+    if (!accessible || String(accessible.document.case) !== caseId) {
       await getStorageProvider().deleteTemp(storageKey).catch(() => {});
       return jsonError("not_found", "That document could not be found.");
     }
@@ -98,6 +98,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ cas
   }
 
   const result = await uploadDocument({
+    title: typeof formData.get('title') === 'string' ? String(formData.get('title')) : '',
+    description: typeof formData.get('description') === 'string' ? String(formData.get('description')) : '',
+    documentType: typeof formData.get('documentType') === 'string' ? String(formData.get('documentType')) : '',
     caseId,
     workspaceId: String(uploadable.workspace._id),
     categoryId,

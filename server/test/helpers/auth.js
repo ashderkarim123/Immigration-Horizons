@@ -1,4 +1,5 @@
 const AdminUser = require('../../models/admin/User');
+const assert = require('node:assert/strict');
 
 let counter = 0;
 /** Unique-enough email per call so parallel/sequential seeds never collide on the unique index. */
@@ -85,4 +86,22 @@ async function loginAs(agent, { email, password }) {
   return attachCsrf(agent, await readCsrfToken(agent, '/admin'));
 }
 
-module.exports = { seedAdminUser, loginAs, uniqueEmail, readCsrfToken, attachCsrf };
+/** Exercises an intentionally denied CMS login without fabricating a session. */
+async function expectCmsDenied(agent, { email, password }) {
+  const token = await readCsrfToken(agent, '/admin/login');
+  const response = await agent.post('/admin/login').type('form').send({ username: email, password, _csrf: token });
+  assert.equal(response.status, 200);
+  assert.match(response.text, /Invalid username or password/);
+  assert.equal((await agent.get('/admin')).headers.location, '/admin/login');
+  return attachCsrf(agent, token);
+}
+async function loginStaffAs(agent, { email, password }) {
+  const response = await agent.post('/api/v1/staff/session/login').set('Origin', 'http://localhost:4000').send({ email, password });
+  assert.equal(response.status, 200);
+  for (const method of ['post', 'put', 'patch', 'delete']) {
+    const original = agent[method].bind(agent);
+    agent[method] = url => original(url).set('Origin', 'http://localhost:4000');
+  }
+  return agent;
+}
+module.exports = { seedAdminUser, loginAs, expectCmsDenied, loginStaffAs, uniqueEmail, readCsrfToken, attachCsrf };

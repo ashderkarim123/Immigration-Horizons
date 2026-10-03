@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 
 const { startTestDb, stopTestDb, clearCollections } = require('../helpers/testDb');
-const { seedAdminUser, loginAs } = require('../helpers/auth');
+const { seedAdminUser, loginAs, expectCmsDenied, loginStaffAs } = require('../helpers/auth');
 
 const { createApp } = require('../../app');
 const ClientUser = require('../../models/ClientUser');
@@ -40,7 +40,7 @@ test.beforeEach(clearCollections);
 async function loggedInAs(role) {
   const agent = request.agent(app);
   const creds = await seedAdminUser({ role });
-  await loginAs(agent, creds);
+  await (['super_admin', 'admin', 'editor'].includes(role) ? loginAs(agent, creds) : expectCmsDenied(agent, creds));
   return { agent, user: creds.user };
 }
 
@@ -77,23 +77,18 @@ test('a viewer cannot reach the client list or any client action', async () => {
   const { agent } = await loggedInAs('viewer');
   const client = await seedClient();
 
-  assert.equal((await agent.get('/admin/clients')).status, 403);
-  assert.equal((await agent.get(`/admin/clients/${client._id}`)).status, 403);
-  assert.equal((await agent.post(`/admin/clients/${client._id}/disable`)).status, 403);
-  assert.equal((await agent.post(`/admin/clients/${client._id}/resend-invitation`)).status, 403);
+  assert.equal((await agent.get('/admin/clients')).status, 302);
+  assert.equal((await agent.get(`/admin/clients/${client._id}`)).status, 302);
+  assert.equal((await agent.post(`/admin/clients/${client._id}/disable`)).status, 302);
+  assert.equal((await agent.post(`/admin/clients/${client._id}/resend-invitation`)).status, 302);
 });
 
-test('a pm can VIEW clients but cannot manage them (clients.manage is admin-tier)', async () => {
+test('a PM cannot use CMS client recovery routes', async () => {
   const { agent } = await loggedInAs('pm');
   const client = await seedClient();
-
-  assert.equal((await agent.get('/admin/clients')).status, 200);
-  assert.equal((await agent.get(`/admin/clients/${client._id}`)).status, 200);
-
-  assert.equal((await agent.post(`/admin/clients/${client._id}/disable`)).status, 403);
-  assert.equal((await agent.post(`/admin/clients/${client._id}/resend-invitation`)).status, 403);
-  assert.equal((await agent.post(`/admin/clients/${client._id}/revoke-invitation`)).status, 403);
-  assert.equal((await agent.post(`/admin/clients/${client._id}/reactivate`)).status, 403);
+  for (const path of ['/admin/clients', '/admin/clients/' + client._id]) assert.equal((await agent.get(path)).status, 302);
+  for (const action of ['disable', 'resend-invitation', 'revoke-invitation', 'reactivate']) assert.equal((await agent.post('/admin/clients/' + client._id + '/' + action)).status, 302);
+  assert.equal((await ClientUser.findById(client._id)).status, 'active');
 });
 
 test('an admin can view and manage clients', async () => {
@@ -202,7 +197,9 @@ async function seedCaseFor(client, pm) {
 }
 
 test('a pm sees a client case only when they are an active member of its workspace', async () => {
-  const { agent, user: pm } = await loggedInAs('pm');
+  const credentials = await seedAdminUser({ role: 'pm' });
+  const agent = await loginStaffAs(request.agent(app), credentials);
+  const pm = credentials.user;
   const client = await seedClient();
   const otherPm = await AdminUser.create({
     name: 'Other PM',
@@ -212,8 +209,9 @@ test('a pm sees a client case only when they are an active member of its workspa
   });
   const { workspace } = await seedCaseFor(client, otherPm);
 
-  const before = await agent.get(`/admin/clients/${client._id}`);
-  assert.ok(!before.text.includes('Visible Case Title'), 'a non-member PM must not see the case');
+  const before = await agent.get(`/api/v1/staff/clients/${client._id}`);
+  assert.equal(before.status, 200);
+  assert.ok(!JSON.stringify(before.body).includes('Visible Case Title'), 'a non-member PM must not see the case');
 
   await WorkspaceMember.create({
     workspace: workspace._id,
@@ -223,8 +221,9 @@ test('a pm sees a client case only when they are an active member of its workspa
     status: 'active',
   });
 
-  const after = await agent.get(`/admin/clients/${client._id}`);
-  assert.ok(after.text.includes('Visible Case Title'), 'an active member PM must see the case');
+  const after = await agent.get(`/api/v1/staff/clients/${client._id}`);
+  assert.equal(after.status, 200);
+  assert.ok(JSON.stringify(after.body).includes('Visible Case Title'), 'an active member PM must see the case');
 });
 
 test('an admin (cases.view_all) sees a client case without any workspace membership', async () => {

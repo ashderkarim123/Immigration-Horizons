@@ -23,6 +23,8 @@ export interface StaffDocument {
   id: string;
   displayName: string;
   originalName: string;
+  documentType?: string;
+  description?: string;
   category: Pick<DocumentCategory, 'id' | 'name'> | null;
   status: string;
   visibility: string;
@@ -64,6 +66,7 @@ export interface DocumentRequest {
   category: Pick<DocumentCategory, 'id' | 'name'> | null;
   title: string;
   instructions: string;
+  documentType?: string;
   requestedFrom: { id: string; client: DocumentActor | null } | null;
   requestedBy: DocumentActor | null;
   dueDate: string | null;

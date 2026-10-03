@@ -26,7 +26,7 @@
           </div>
           <h1 class="case-title">{{ c.title }}</h1>
           <p class="case-sub">
-            Type: <strong>{{ c.caseType }}</strong> &bull;
+            Type: <strong>{{ caseTypeLabel(c.caseType) }}</strong> &bull;
             Client: <strong>{{ c.primaryClient?.displayName || 'Unassigned' }}</strong> &bull;
             PM: <strong>{{ c.projectManager?.name || 'Unassigned' }}</strong>
           </p>
@@ -56,91 +56,32 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <div class="workspace-tabs">
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'overview'"
-          (click)="activeTab.set('overview')"
-        >
-          Overview
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'team'"
-          (click)="activeTab.set('team')"
-        >
-          Team ({{ members().length }})
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'tasks'"
-          (click)="activeTab.set('tasks')"
-        >
-          Tasks
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'activity'"
-          (click)="openActivityTab()"
-        >
-          Activity Timeline
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'evidence'"
-          (click)="activeTab.set('evidence')"
-        >
-          Evidence
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'documents'"
-          (click)="activeTab.set('documents')"
-        >
-          Documents
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'chat'"
-          (click)="activeTab.set('chat')"
-        >
-          Chat
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'forms'"
-          (click)="activeTab.set('forms')"
-        >
-          Forms
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'petition'"
-          (click)="activeTab.set('petition')"
-        >
-          Petition
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'packet'"
-          (click)="activeTab.set('packet')"
-        >
-          Filing Packet
-        </button>
-      </div>
+      <nav class="workflow-navigation" aria-label="Case workflow">
+        @for (group of workflowGroups; track group.label) {
+          <div class="workflow-group"><span class="workflow-group-label">{{ group.label }}</span><div>
+            @for (tab of group.tabs; track tab.key) {
+              @if (!c.availableTabs || c.availableTabs.includes(tab.key)) {
+                <button type="button" class="tab-btn" [class.active]="activeTab() === tab.key" [attr.aria-current]="activeTab() === tab.key ? 'page' : null" (click)="selectTab(tab.key)">{{ tab.label }}</button>
+              }
+            }
+          </div></div>
+        }
+      </nav>
+      <p class="case-sub">Target filing: {{ c.targetFilingDate ? (c.targetFilingDate | date:'mediumDate') : 'Not scheduled' }}</p>
+      @if (c.nextMilestone; as milestone) { <p class="case-sub">Next milestone: <button type="button" class="link-btn" (click)="selectTab(milestone.tab)">{{ milestone.label }} · {{ milestone.date | date:'mediumDate' }}</button></p> }
     </div>
 
+    @if (activeTab() === 'overview' && c.workSummary?.length) {
+      @if (c.overview; as overview) {
+        <div class="metrics-grid"><button class="metric-card" (click)="selectTab('tasks')"><div class="metric-value">{{ overview.openTasks }}</div><div class="metric-label">Open tasks</div></button><button class="metric-card" (click)="selectTab('chat')"><div class="metric-value">{{ overview.unreadConversations }}</div><div class="metric-label">Unread conversations</div></button></div>
+        <section class="section-card"><h2>Recent updates</h2><ul>@for (event of overview.recentActivity; track event.id) { <li>{{ event.message }} <small>{{ event.createdAt | date:'medium' }}</small></li> } @empty { <li>No case updates yet.</li> }</ul></section>
+      }
+      <h2>Next actions</h2><div class="metrics-grid case-work-summary">
+        @for (work of c.workSummary; track work.key) {
+          <button type="button" class="metric-card" (click)="selectTab(work.tab)"><div class="metric-value">{{ work.count }}</div><div class="metric-label">{{ work.label }}</div></button>
+        }
+      </div>
+    }
     <!-- Tab 1: Overview -->
     @if (activeTab() === 'overview') {
       <div class="overview-grid">
@@ -336,7 +277,7 @@
 
     <!-- Tab 4: Tasks -->
     @if (activeTab() === 'tasks') {
-      <ih-tasks-tab [caseId]="caseId()"></ih-tasks-tab>
+      <ih-tasks-tab [caseId]="caseId()" [createOnLoad]="createAction() === 'task'"></ih-tasks-tab>
     }
 
     <!-- Tab 5: Evidence -->
@@ -361,7 +302,7 @@
     }
 
     @if (activeTab() === 'documents') {
-      <ih-documents-tab [caseId]="caseId()"></ih-documents-tab>
+      <ih-documents-tab [caseId]="caseId()" [createOnLoad]="createAction() === 'request'"></ih-documents-tab>
     }
   </div>
 
@@ -409,14 +350,15 @@
           <button type="button" class="btn-close" (click)="showPmModal.set(false)">×</button>
         </div>
         <div class="modal-body">
-          <label class="form-label">Select Employee</label>
+          <label class="form-label" for="case-pm">Project manager</label>
           <select
+            id="case-pm"
             class="form-select"
             [ngModel]="selectedNewPmId()"
             (ngModelChange)="selectedNewPmId.set($event)"
           >
             <option value="" disabled>Select a project manager...</option>
-            @for (emp of memberOptions(); track emp.id) {
+            @for (emp of managerOptions(); track emp.id) {
               <option [value]="emp.id">{{ emp.name }} ({{ emp.email }})</option>
             }
           </select>
@@ -446,8 +388,9 @@
         </div>
         <div class="modal-body">
           <div class="form-group mb-3">
-            <label class="form-label">Select Employee</label>
+            <label class="form-label" for="case-new-member">Select Employee</label>
             <select
+              id="case-new-member"
               class="form-select"
               [ngModel]="newMemberUserId()"
               (ngModelChange)="newMemberUserId.set($event)"
@@ -460,8 +403,9 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Assignment Role</label>
+            <label class="form-label" for="case-member-role">Assignment Role</label>
             <select
+              id="case-member-role"
               class="form-select"
               [ngModel]="newMemberRole()"
               (ngModelChange)="newMemberRole.set($event)"
@@ -496,8 +440,9 @@
           <button type="button" class="btn-close" (click)="showUpdateModal.set(false)">×</button>
         </div>
         <div class="modal-body">
-          <label class="form-label">Update Message (visible to client portal)</label>
+          <label class="form-label" for="case-client-update">Update Message (visible to client portal)</label>
           <textarea
+            id="case-client-update"
             class="form-control"
             rows="4"
             placeholder="Type status update for client..."

@@ -341,6 +341,7 @@ router.post('/cases/:caseId/document-requests', trustedOriginMiddleware, require
       categoryId: req.body.categoryId,
       title: req.body.title,
       instructions: req.body.instructions,
+      documentType: req.body.documentType,
       requestedFromMemberId: req.body.requestedFromMemberId,
       requestedByAdminId: actor.id,
       dueDate: req.body.dueDate,

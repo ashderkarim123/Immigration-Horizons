@@ -19,7 +19,7 @@ const { can, getRole } = require('../utils/permissions');
  */
 
 async function hasActiveEmployeeMembership(req, workspaceId) {
-  const adminUserId = req.session && req.session.adminUser && req.session.adminUser.id;
+  const adminUserId = (req.staff && req.staff._id) || (req.session && req.session.adminUser && req.session.adminUser.id);
   if (!adminUserId || !workspaceId) return false;
   const membership = await WorkspaceMember.findOne({
     workspace: workspaceId,
@@ -79,8 +79,15 @@ async function canAddInteractionUpdate(req, interaction) {
 function canCreateInteraction(req) {
   return can(req, 'queries.create');
 }
+async function accessibleInteractionFilter(req) {
+  if (!can(req, 'queries.view')) return { _id: { $in: [] } };
+  if (can(req, 'queries.view_all')) return {};
+  const workspaces = await WorkspaceMember.distinct('workspace', { adminUser: req.staff?._id || req.session?.adminUser?.id, memberType: 'employee', status: 'active' });
+  return { $or: [{ scopeType: 'consultation' }, { scopeType: 'case', workspace: { $in: workspaces } }] };
+}
 
 module.exports = {
+  accessibleInteractionFilter,
   hasActiveEmployeeMembership,
   canViewInteraction,
   canAssignInteraction,

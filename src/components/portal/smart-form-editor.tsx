@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge, type BadgeTone } from "@/components/app/badge";
 import { Field, Select, TextArea, TextInput } from "@/components/forms/fields";
+import { useHydrated } from "@/components/forms/use-hydrated";
 import { ADDRESS_PARTS, MAX_REPEATED_ROWS } from "@/lib/content/smart-form-constants";
 import { isVisible, type Answers, type FormField, type FormSection } from "@/lib/forms/engine";
 import type { toClientDto } from "@/lib/forms/form-service";
+import { COUNTRIES } from "@/lib/forms/countries";
 
 /**
  * Client-side Smart Form editor (ADR-021 §12, §26). The browser holds no
@@ -39,28 +41,6 @@ const SAVE_LABEL: Record<SaveState, string> = {
   error: "Couldn’t save — retry",
 };
 
-const NOT_COUNTRIES = new Set(["AC", "CP", "DG", "EA", "EU", "EZ", "IC", "TA", "UN", "XA", "XB", "ZZ", "QO"]);
-let countryCache: { code: string; name: string }[] | null = null;
-function countries() {
-  if (countryCache) return countryCache;
-  const names = new Intl.DisplayNames(["en"], { type: "region" });
-  const list: { code: string; name: string }[] = [];
-  for (let a = 65; a <= 90; a += 1) {
-    for (let b = 65; b <= 90; b += 1) {
-      const code = String.fromCharCode(a, b);
-      if (NOT_COUNTRIES.has(code)) continue;
-      try {
-        const name = names.of(code);
-        if (name && name !== code) list.push({ code, name });
-      } catch {
-        /* not a region code */
-      }
-    }
-  }
-  countryCache = list.sort((x, y) => x.name.localeCompare(y.name));
-  return countryCache;
-}
-
 const ADDRESS_LABELS: Record<(typeof ADDRESS_PARTS)[number], string> = {
   line1: "Street address",
   line2: "Apartment, suite, etc.",
@@ -71,6 +51,9 @@ const ADDRESS_LABELS: Record<(typeof ADDRESS_PARTS)[number], string> = {
 };
 
 export function SmartFormEditor({ initial }: { initial: ClientFormDto }) {
+  // The server preview cannot capture edits. Enable controls after hydration so
+  // early input cannot appear filled while missing from the autosave patch.
+  const ready = useHydrated();
   const [form, setForm] = useState(initial);
   const [answers, setAnswers] = useState<Answers>(initial.answers);
   const [saveState, setSaveState] = useState<SaveState>("saved");
@@ -85,7 +68,7 @@ export function SmartFormEditor({ initial }: { initial: ClientFormDto }) {
   const inFlight = useRef<Promise<boolean> | null>(null);
   const halted = useRef(false);
 
-  const editable = form.actions.canEdit && saveState !== "conflict";
+  const editable = ready && form.actions.canEdit && saveState !== "conflict";
   const status = STATUS[form.status] ?? STATUS.draft;
 
   const applyServerForm = useCallback((next: ClientFormDto) => {
@@ -450,11 +433,10 @@ function FieldInput({
 }
 
 function CountrySelect({ value, onChange, ...rest }: { id: string; disabled: boolean; error: boolean; value: string; onChange: (value: string) => void }) {
-  const list = useMemo(() => countries(), []);
   return (
     <Select id={rest.id} disabled={rest.disabled} error={rest.error} value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">Choose a country…</option>
-      {list.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+      {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
     </Select>
   );
 }

@@ -10,6 +10,8 @@ import { PaginationComponent } from '../../shared/pagination.component';
 import { SkeletonComponent } from '../../shared/skeleton.component';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../shared/error-state.component';
+import { CASE_STAGES } from '../../core/api/case-catalog';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'ih-cases',
@@ -28,6 +30,7 @@ import { ErrorStateComponent } from '../../shared/error-state.component';
   styleUrls: ['../dashboard/dashboard.scss', './cases.scss']
 })
 export class Cases implements OnInit {
+  readonly auth = inject(AuthService);
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -51,18 +54,7 @@ export class Cases implements OnInit {
   selectedScope = signal('all');
   includeArchived = signal(false);
 
-  stages = [
-    { label: 'All Stages', value: '' },
-    { label: 'Initial Review', value: 'initial_review' },
-    { label: 'Document Collection', value: 'document_collection' },
-    { label: 'Drafting', value: 'drafting' },
-    { label: 'Client Review', value: 'client_review' },
-    { label: 'Ready to File', value: 'ready_to_file' },
-    { label: 'Filed / Pending Decision', value: 'filed' },
-    { label: 'Decision Received', value: 'decision_received' },
-    { label: 'Completed', value: 'completed' },
-    { label: 'Archived', value: 'archived' }
-  ];
+  stages = [{ label: 'All Stages', value: '' }, ...CASE_STAGES];
 
   priorities = [
     { label: 'All Priorities', value: '' },

@@ -30,9 +30,13 @@ router.use('/me', require('./me'));
 router.use(staffAuthMiddleware, requirePasswordSetupComplete);
 
 router.use('/dashboard', require('./dashboard'));
+router.use('/work-queues', require('./work-queues'));
+router.use('/', require('./case-intake'));
 router.use('/cases', require('./cases'));
 router.use('/cases/:caseId', require('./case-mutations'));
 router.use('/clients', require('./clients'));
+router.use('/queries', require('./queries'));
+router.use('/', require('./planning'));
 router.use('/tasks', require('./tasks'));
 router.use('/deadlines', require('./deadlines'));
 router.use('/', require('./documents'));

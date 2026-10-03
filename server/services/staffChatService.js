@@ -60,7 +60,7 @@ async function loadViewableMessage(req, messageId) {
   return channel ? { message, channel } : null;
 }
 
-function mapChannel(channel, { unreadCount = 0, canSend = false } = {}) {
+function mapChannel(channel, { unreadCount = 0, canSend = false, canManage = false, canArchive = false, canManageMembers = false } = {}) {
   return {
     id: id(channel),
     name: channel.name,
@@ -73,6 +73,9 @@ function mapChannel(channel, { unreadCount = 0, canSend = false } = {}) {
     order: channel.order,
     unreadCount,
     canSend,
+    canManage,
+    canArchive,
+    canManageMembers,
     createdAt: channel.createdAt,
   };
 }
@@ -107,6 +110,9 @@ async function loadCaseChannels(req, caseId) {
       mapChannel(channel, {
         unreadCount: unread[String(channel._id)] || 0,
         canSend: await collaborationPolicy.canSendMessage(req, channel),
+        canManage: await collaborationPolicy.canManageChannel(req, channel),
+        canArchive: await collaborationPolicy.canArchiveChannel(req, channel),
+        canManageMembers: await collaborationPolicy.canManageChannelMembers(req, channel),
       }),
     );
   }
@@ -117,6 +123,7 @@ async function loadCaseChannels(req, caseId) {
     channels,
     capabilities: {
       canCreateChannel: await collaborationPolicy.canCreateChannel(req, workspace._id),
+      canReorderChannels: can(req, 'channels.manage') && all.length === visible.length,
     },
   };
 }

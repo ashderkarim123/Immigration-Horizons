@@ -83,6 +83,8 @@ export class TasksTabComponent implements OnInit {
   private api = inject(ApiService);
   private taskApi = inject(TaskApi);
   private toast = inject(ToastService);
+  private createRequested = false;
+  createOnLoad = input(false);
 
   caseId = input.required<string>();
 
@@ -106,6 +108,10 @@ export class TasksTabComponent implements OnInit {
         this.tasks.set(data.tasks);
         this.canCreate.set(data.canCreate);
         this.isLoading.set(false);
+        if (!this.createRequested && data.canCreate && this.createOnLoad()) {
+          this.createRequested = true;
+          this.openCreate();
+        }
       },
       error: () => {
         this.isError.set(true);

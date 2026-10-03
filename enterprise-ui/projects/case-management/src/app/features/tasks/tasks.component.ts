@@ -58,6 +58,7 @@ export class TasksComponent implements OnInit {
   selectedStatus = signal('');
   selectedPriority = signal('');
   selectedDue = signal('');
+  selectedAssignee = signal('');
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -67,6 +68,7 @@ export class TasksComponent implements OnInit {
       this.selectedStatus.set(params['status'] || '');
       this.selectedPriority.set(params['priority'] || '');
       this.selectedDue.set(params['due'] || '');
+      this.selectedAssignee.set(params['assignee'] || '');
       this.loadTasks();
     });
   }
@@ -85,6 +87,7 @@ export class TasksComponent implements OnInit {
     if (this.selectedStatus()) queryParams['status'] = this.selectedStatus();
     if (this.selectedPriority()) queryParams['priority'] = this.selectedPriority();
     if (this.selectedDue()) queryParams['due'] = this.selectedDue();
+    if (this.selectedAssignee()) queryParams['assignee'] = this.selectedAssignee();
 
     this.api.get<Paginated<TaskItem>>('/staff/tasks', queryParams).subscribe({
       next: ({ data }) => {
@@ -120,6 +123,7 @@ export class TasksComponent implements OnInit {
     if (this.selectedStatus()) queryParams['status'] = this.selectedStatus();
     if (this.selectedPriority()) queryParams['priority'] = this.selectedPriority();
     if (this.selectedDue()) queryParams['due'] = this.selectedDue();
+    if (this.selectedAssignee()) queryParams['assignee'] = this.selectedAssignee();
 
     this.router.navigate([], {
       relativeTo: this.route,

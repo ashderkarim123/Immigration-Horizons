@@ -259,6 +259,7 @@ test("POST /api/portal/document-requests/:requestId/upload: fulfills a request a
     workspace: workspace._id,
     category: category._id,
     title: "Please upload your passport",
+    documentType: "Passport",
     requestedFrom: member._id,
     status: "open",
   });
@@ -271,6 +272,10 @@ test("POST /api/portal/document-requests/:requestId/upload: fulfills a request a
 
   const updatedRequest = await DocumentRequest.findById(request._id).lean();
   assert.equal(updatedRequest!.status, "uploaded");
+  const uploaded = await CaseDocument.findOne({ documentRequest: request._id }).lean();
+  assert.equal(uploaded!.documentType, 'Passport');
+  assert.equal(String(uploaded!.subjectClient), String(member.clientUser));
+  assert.equal(uploaded!.displayName, 'Please upload your passport');
 
   const { cookie: otherCookie } = await seedActiveCaseForClient();
   const deniedRes = await requestUploadRoute.POST(

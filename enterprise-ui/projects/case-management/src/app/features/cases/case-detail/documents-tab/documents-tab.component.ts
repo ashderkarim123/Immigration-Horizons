@@ -2,6 +2,7 @@ import { Component, computed, inject, input, OnInit, signal } from '@angular/cor
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { documentTypesForCategory } from '../../../../core/api/document-taxonomy';
 import { ApiService } from '../../../../core/api/api.service';
 import { DocumentCenter, DocumentCategory, DocumentRequest, StaffDocument } from '../../../../core/api/document.types';
 import { ToastService } from '../../../../shared/toast.service';
@@ -21,6 +22,8 @@ import { ConfirmDialogComponent } from '../../../../shared/confirm-dialog.compon
 export class DocumentsTabComponent implements OnInit {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private createRequested = false;
+  createOnLoad = input(false);
 
   caseId = input.required<string>();
   center = signal<DocumentCenter | null>(null);
@@ -42,7 +45,10 @@ export class DocumentsTabComponent implements OnInit {
   requestTitle = signal('');
   requestInstructions = signal('');
   requestDueDate = signal('');
+  requestDocumentType = signal('');
+  requestDocumentTypes = computed(() => documentTypesForCategory(this.categories().find(c => c.id === this.requestCategoryId())?.templateKey || ''));
   categoryName = signal('');
+  editingCategoryId = signal('');
   categoryDescription = signal('');
   categoryVisibility = signal<'client_visible' | 'employees_only'>('client_visible');
   categoryUploaderTypes = signal<'client' | 'employee' | 'both'>('both');
@@ -66,6 +72,10 @@ export class DocumentsTabComponent implements OnInit {
       next: (result) => {
         this.center.set(result.data);
         this.isLoading.set(false);
+        if (!this.createRequested && this.createOnLoad() && result.data.capabilities.canManageRequests) {
+          this.createRequested = true;
+          this.openRequest();
+        }
       },
       error: () => {
         this.isError.set(true);
@@ -124,6 +134,7 @@ export class DocumentsTabComponent implements OnInit {
     this.requestTitle.set('');
     this.requestInstructions.set('');
     this.requestDueDate.set('');
+    this.requestDocumentType.set('');
     this.showRequestModal.set(true);
   }
 
@@ -135,6 +146,7 @@ export class DocumentsTabComponent implements OnInit {
       requestedFromMemberId: this.requestMemberId(),
       title: this.requestTitle().trim(),
       instructions: this.requestInstructions().trim(),
+      documentType: this.requestDocumentType(),
       dueDate: this.requestDueDate() || null,
     }).subscribe({
       next: () => {
@@ -151,6 +163,7 @@ export class DocumentsTabComponent implements OnInit {
   }
 
   openCategoryManager(): void {
+    this.editingCategoryId.set('');
     this.categoryName.set('');
     this.categoryDescription.set('');
     this.showCategoryModal.set(true);
@@ -167,14 +180,36 @@ export class DocumentsTabComponent implements OnInit {
   createCategory(): void {
     if (!this.categoryName().trim() || this.isSubmitting()) return;
     this.isSubmitting.set(true);
-    this.api.post(`/staff/cases/${this.caseId()}/document-categories`, {
+    const body = {
       name: this.categoryName().trim(),
       description: this.categoryDescription().trim(),
       visibility: this.categoryVisibility(),
       allowedUploaderTypes: this.categoryUploaderTypes(),
-    }).subscribe({
-      next: () => { this.isSubmitting.set(false); this.toast.success('Category created.'); this.showCategoryModal.set(false); this.loadDocuments(); },
+    };
+    const request = this.editingCategoryId()
+      ? this.api.patch(`/staff/document-categories/${this.editingCategoryId()}`, body)
+      : this.api.post(`/staff/cases/${this.caseId()}/document-categories`, body);
+    request.subscribe({
+      next: () => { this.isSubmitting.set(false); this.toast.success('Category saved.'); this.showCategoryModal.set(false); this.loadDocuments(); },
       error: (error) => { this.isSubmitting.set(false); this.toast.error(error.error?.error?.message || 'Could not create category.'); },
+    });
+  }
+
+  editCategory(category: DocumentCategory): void {
+    this.editingCategoryId.set(category.id); this.categoryName.set(category.name);
+    this.categoryDescription.set(category.description); this.categoryVisibility.set(category.visibility);
+    this.categoryUploaderTypes.set(category.allowedUploaderTypes);
+  }
+
+  moveCategory(index: number, direction: number): void {
+    if (this.isSubmitting()) return;
+    const ids = this.categories().map(category => category.id);
+    if (index + direction < 0 || index + direction >= ids.length) return;
+    [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
+    this.isSubmitting.set(true);
+    this.api.post(`/staff/cases/${this.caseId()}/document-categories/reorder`, { orderedCategoryIds: ids }).subscribe({
+      next: () => { this.isSubmitting.set(false); this.toast.success('Category order saved.'); this.loadDocuments(); },
+      error: (error) => { this.isSubmitting.set(false); this.toast.error(error.error?.error?.message || 'Could not reorder categories.'); },
     });
   }
 

@@ -69,7 +69,7 @@ async function changeProjectManager({ caseDoc, workspace, newManagerId, actor })
     return { outcome: 'validation_error', errors: { projectManagerId: 'Invalid project manager.' } };
   }
   const newManager = await AdminUser.findOne({ _id: newManagerId, isActive: true });
-  if (!newManager) {
+  if (!newManager || !require('../utils/permissions').can({ staff: newManager }, 'cases.manage')) {
     return { outcome: 'validation_error', errors: { projectManagerId: 'Not a valid, active team member.' } };
   }
   if (String(caseDoc.projectManager) === String(newManager._id)) {

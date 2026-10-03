@@ -261,10 +261,25 @@ router.get('/:id', staffAuthMiddleware, requireApiCapability('cases.view'), asyn
     const canPublishClientUpdate = can(req, 'client_updates.publish') &&
       (can(req, 'cases.view_all') || await canViewCase(req, workspace._id));
 
+    const taskFilter = { case: caseDoc._id, status: { $ne: 'completed' }, ...(!can(req, 'cases.manage') ? { assignee: req.staff._id } : {}) };
+    const [nextTask, openTasks, recentActivity, conversations] = await Promise.all([
+      require('../../../../models/admin/Task').findOne({ ...taskFilter, dueDate: { $ne: null } }).select('title dueDate').sort({ dueDate: 1 }).lean(),
+      require('../../../../models/admin/Task').countDocuments(taskFilter),
+      require('../../../../models/CaseActivity').find({ case: caseDoc._id }).select('type message createdAt actorName').sort({ createdAt: -1 }).limit(5).lean(),
+      can(req, 'channels.view') ? require('../../../../services/staffChatService').loadCaseChannels(req, caseDoc._id) : null,
+    ]);
     res.json({
       data: {
         ...serializeCaseDetail(caseDoc),
+        nextMilestone: nextTask ? { label: nextTask.title, date: nextTask.dueDate, tab: 'tasks' } : caseDoc.targetFilingDate ? { label: 'Target filing', date: caseDoc.targetFilingDate, tab: 'overview' } : null,
+        overview: { openTasks, unreadConversations: (conversations?.channels || []).filter(channel => channel.unreadCount > 0).length, recentActivity: recentActivity.map(event => ({ id: event._id, message: event.message, createdAt: event.createdAt })) },
         workspaceId: workspace._id,
+        availableTabs: [
+          ['overview', 'cases.view'], ['documents', 'documents.view'], ['evidence', 'cases.view'],
+          ['forms', 'forms.view'], ['tasks', 'cases.view'], ['petition', 'petitions.view'],
+          ['packet', 'filing_packets.view'], ['chat', 'channels.view'], ['team', 'cases.view'], ['activity', 'cases.view'],
+        ].filter(([, capability]) => can(req, capability)).map(([tab]) => tab),
+        workSummary: await require('../../../../services/staffWorkQueues').loadWorkQueues(req, { caseId: caseDoc._id }),
         actions: {
           canManageCase: canManage,
           canAssignManager: canAssign,
@@ -381,6 +396,7 @@ router.get('/:id/member-options', staffAuthMiddleware, requireApiCapability('cas
           name: e.name || '',
           email: e.email || '',
           role: e.role || '',
+          canManageCases: can({ staff: e }, 'cases.manage'),
           jobTitle: e.jobTitle || '',
           department: e.department || '',
           avatar: e.avatar || null,

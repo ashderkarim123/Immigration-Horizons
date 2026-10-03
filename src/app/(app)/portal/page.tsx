@@ -12,6 +12,7 @@ import { Consultation } from "@/lib/models/Consultation";
 import { STATUS_LABELS } from "@/lib/content/portal";
 import { listAccessibleCases } from "@/lib/auth/case-policy";
 import { CASE_TYPES, CLIENT_STAGE_LABELS, type CaseStage } from "@/lib/content/case-constants";
+import { listClientActions } from "@/lib/dashboard/client-actions";
 
 export const metadata: Metadata = {
   title: "Client Portal",
@@ -34,7 +35,7 @@ export default async function PortalDashboardPage() {
   const db = getDb();
   if (db) await db;
 
-  const [consultations, cases] = await Promise.all([
+  const [consultations, cases, actions] = await Promise.all([
     db
       ? Consultation.find({ clientUser: client._id })
           .select("service status createdAt")
@@ -43,6 +44,7 @@ export default async function PortalDashboardPage() {
           .lean()
       : Promise.resolve([]),
     listAccessibleCases(String(client._id)),
+    listClientActions(String(client._id)),
   ]);
 
   const displayName = client.firstName || client.email;
@@ -51,10 +53,16 @@ export default async function PortalDashboardPage() {
     <Container width="default" className="py-10 sm:py-14">
       <PageHeader
         title={`Welcome back, ${displayName}`}
-        description="A summary of your cases and consultations."
+        description="What your team needs from you, and how your cases are progressing."
       />
 
       <div className="flex flex-col gap-6">
+        <Panel title="Action Required">
+          {actions.length ? <RowList>{actions.map(action => (
+            <Row key={action.key} href={action.href} primary={action.label} secondary={action.detail}
+              trailing={action.dueDate ? <Badge tone="neutral">Due {new Date(action.dueDate).toLocaleDateString('en-US', { timeZone: 'UTC' })}</Badge> : undefined} />
+          ))}</RowList> : <EmptyState title="You’re up to date" body="You have no outstanding uploads, forms, or unread messages. Your team will let you know when something needs your attention." />}
+        </Panel>
         <Panel
           title="Your cases"
           action={cases.length > 0 ? <PanelLink href="/portal/cases">View all</PanelLink> : undefined}

@@ -3,6 +3,7 @@
   "roles": [
     "super_admin",
     "admin",
+    "operations_admin",
     "pm",
     "petition_writer",
     "business_plan_specialist",
@@ -16,6 +17,7 @@
   "roleLabels": {
     "super_admin": "Super Admin",
     "admin": "Admin",
+    "operations_admin": "Staff Operations Admin",
     "pm": "PM / Project Manager",
     "petition_writer": "Petition Writer",
     "business_plan_specialist": "Business Plan Specialist",
@@ -29,6 +31,7 @@
   "managerRoles": [
     "super_admin",
     "admin",
+    "operations_admin",
     "pm"
   ],
   "specialistRoles": [
@@ -42,6 +45,11 @@
     "viewer"
   ],
   "capabilities": {
+    "admin.cms.access": [
+      "super_admin",
+      "admin",
+      "editor"
+    ],
     "users.manage": [
       "super_admin",
       "admin"
@@ -56,6 +64,7 @@
     "leads.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -69,11 +78,13 @@
     "leads.assign": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "leads.edit": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "leads.delete": [
@@ -83,6 +94,7 @@
     "notes.create": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -94,21 +106,25 @@
     "tasks.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "tasks.view_all": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "sprints.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "deliveries.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -140,16 +156,19 @@
     "csv.export": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "reports.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "cases.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -160,92 +179,111 @@
     ],
     "cases.view_all": [
       "super_admin",
-      "admin"
+      "admin",
+      "operations_admin"
     ],
     "cases.create": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "cases.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "cases.assign": [
       "super_admin",
-      "admin"
+      "admin",
+      "operations_admin"
     ],
     "cases.archive": [
       "super_admin",
-      "admin"
+      "admin",
+      "operations_admin"
     ],
     "workspace.members.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "clients.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "clients.manage": [
       "super_admin",
-      "admin"
+      "admin",
+      "operations_admin"
     ],
     "client_updates.publish": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "queries.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "queries.view_all": [
       "super_admin",
-      "admin"
+      "admin",
+      "operations_admin"
     ],
     "queries.create": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "queries.triage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "queries.assign": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "queries.schedule": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "queries.answer": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "queries.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "queries.close": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "documents.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -256,36 +294,43 @@
     ],
     "documents.view_all": [
       "super_admin",
-      "admin"
+      "admin",
+      "operations_admin"
     ],
     "documents.upload": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "documents.review": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "documents.archive": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "document_categories.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "document_requests.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "document_versions.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -297,6 +342,7 @@
     "channels.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -307,31 +353,37 @@
     ],
     "channels.view_all": [
       "super_admin",
-      "admin"
+      "admin",
+      "operations_admin"
     ],
     "channels.create": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "channels.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "channels.archive": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "channel_members.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "messages.send": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -343,6 +395,7 @@
     "messages.edit_own": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -354,16 +407,19 @@
     "messages.moderate": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "messages.view_revisions": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "forms.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -375,12 +431,14 @@
     "forms.edit": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "uscis_forms_specialist"
     ],
     "forms.review": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "reviewer",
       "uscis_forms_specialist"
@@ -397,6 +455,7 @@
     "petitions.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "business_plan_specialist",
@@ -408,17 +467,20 @@
     "petitions.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm"
     ],
     "petitions.edit": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer"
     ],
     "petitions.review": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "reviewer"
     ],
@@ -430,6 +492,7 @@
     "filing_packets.view": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "petition_writer",
       "uscis_forms_specialist",
@@ -438,12 +501,14 @@
     "filing_packets.manage": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "uscis_forms_specialist"
     ],
     "filing_packets.review": [
       "super_admin",
       "admin",
+      "operations_admin",
       "pm",
       "reviewer"
     ],
