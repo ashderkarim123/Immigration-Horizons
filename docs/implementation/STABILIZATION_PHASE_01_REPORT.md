@@ -36,6 +36,8 @@ CMS separation is commit `5acc1af` (`fix(auth): separate CMS access from staff o
 
 Local verification: root **430 passed**, with the existing Bash syntax check skipped on Windows (431 total); server **662 passed**, followed by **6/6 guided** and **6/6 planning** tests after the final queue/channel-notification refinements; Angular **137 Staff + 1 admin-console passed**; browser **7/7 passed**, no test retries (3.2 minutes). Lint, typecheck, Next build, both Angular builds and Staff build verification passed. The browser read helper retries only ECONNRESET on idempotent GET assertions; mutations and HTTP failures are not retried. Exact final CI results follow in the delivery receipt. Real commands:
 
+CI verification SHA: `744ef65bbfbd50b6381bfbca036b49b00fd7ebfc`. [CI run 37133185285](https://github.com/ashderkarim123/Immigration-Horizons/actions/runs/37133185285) completed with **all five jobs successful**: lint/types/Next build; root **431/431** (including Bash); server **663/663**; Angular **137 Staff + 1 admin-console**, both builds and Staff verification; browser **7/7** (40.5 seconds). Artifact `stabilization-browser-evidence` contains screenshots/report and the exact tested commit. This final documentation update is checked again on its own delivery SHA; that run and SHA are pinned in the delivery receipt/final handoff.
+
 - Root: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build`.
 - Server: `npm test`.
 - Angular: `npm test`, `npx ng build case-management`, `npx ng build admin-console`.
@@ -59,6 +61,7 @@ Independent Client/PM browser sessions exercise requested/general/replacement up
 - Consultation conversion is idempotent. Separate deliberate new-case submissions can create separate cases; no universal duplicate-case policy was invented.
 - Unconverted lead access retains existing leads.view policy; converted leads/case tasks use live membership. Sprint metadata remains shared while task visibility/assignment remains scoped.
 - Due-today queues use UTC day boundaries. Next milestone is an open-task due date, falling back to target filing date; it is not USCIS tracking.
+- CI's Next build reports a Turbopack tracing warning for dynamic private-storage paths; compilation and the storage security/browser tests pass. Review packaging during staging. GitHub's push hook also reported existing default-branch Dependabot alerts (43, including four critical); dependency remediation is outside this feature-stabilization batch and needs review before a production release.
 
 ## Production requirements
 
