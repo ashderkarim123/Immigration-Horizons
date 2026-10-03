@@ -50,6 +50,8 @@ function mapDocument(document, { evidenceCount = 0 } = {}) {
     id: id(document),
     displayName: document.displayName || document.originalName,
     originalName: document.originalName,
+    documentType: document.documentType || '',
+    description: document.description || '',
     category: category && typeof category === 'object'
       ? { id: id(category), name: category.name }
       : null,
@@ -103,6 +105,7 @@ function mapRequest(request) {
       : null,
     title: request.title,
     instructions: request.instructions || '',
+    documentType: request.documentType || '',
     requestedFrom: member ? { id: id(member), client } : null,
     requestedBy: person(request.requestedBy, 'employee'),
     dueDate: request.dueDate || null,

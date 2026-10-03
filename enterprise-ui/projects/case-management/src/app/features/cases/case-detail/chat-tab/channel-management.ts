@@ -10,8 +10,8 @@ interface ChannelMember { workspaceMemberId: string; displayName: string; member
     @if (canCreate()) {
       <form (ngSubmit)="create()"><h4>Create a channel</h4>
         <label>Channel name<input name="newName" [(ngModel)]="newName" required maxlength="100" /></label>
-        <label>Audience<select name="audience" [(ngModel)]="newVisibility"><option value="clients_and_team">Client and team</option><option value="employees_only">Staff only</option><option value="restricted_members">Selected members</option></select></label>
-        <p>{{ newVisibility === 'clients_and_team' ? 'The client and all case team members can read this conversation.' : newVisibility === 'employees_only' ? 'Only staff assigned to this case can read this conversation.' : 'Only selected members and authorized operations administrators can read this conversation.' }}</p>
+        <label>Audience<select aria-label="Audience" name="audience" [(ngModel)]="newVisibility"><option value="clients_and_team">Client and team</option><option value="employees_only">Staff only</option><option value="restricted_members">Selected members</option></select></label>
+        <p>{{ newVisibility === 'clients_and_team' ? 'The client and all case team members can read this conversation.' : newVisibility === 'employees_only' ? 'Only staff assigned to this case can read this conversation.' : 'Selected members and authorized Staff administrators can read this conversation.' }}</p>
         <button class="btn btn-primary" type="submit" [disabled]="busy() || !newName.trim()">Create channel</button>
       </form>
     }

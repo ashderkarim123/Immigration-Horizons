@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
@@ -22,9 +23,10 @@ const ACTIONS: Record<string, { label: string; capability: string; tab: string }
 })
 export class CreateWork implements OnInit {
   private api = inject(ApiService); private auth = inject(AuthService); private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
   kind = this.route.snapshot.queryParamMap.get('kind') || ''; action = ACTIONS[this.kind];
   cases = signal<CaseListItem[]>([]); error = signal(''); loading = signal(false); search = '';
-  ngOnInit() { this.load(); }
+  ngOnInit() { this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(query => { this.kind = query.get('kind') || ''; this.action = ACTIONS[this.kind]; this.load(); }); }
   load() {
     if (!this.action || !this.auth.capabilities().includes(this.action.capability)) { this.error.set('This action is not available for your account.'); return; }
     this.loading.set(true); this.error.set('');

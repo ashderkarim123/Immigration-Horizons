@@ -40,22 +40,27 @@ export function DocumentUploadForm({
   const general = !requestId && !replaceDocumentId;
   const category = categories?.find(item => item.id === selectedCategory);
   const chooseFile = (candidate: File | undefined) => {
-    if (!candidate) return;
+    if (!candidate) return false;
     setFile(null);
-    if (!/\.(pdf|docx|xlsx|jpe?g|png|tiff?)$/i.test(candidate.name)) { setError("Choose a PDF, Word, Excel, or image file."); return; }
-    if (candidate.size > maxFileBytes) { setError(`Choose a file smaller than ${Math.ceil(maxFileBytes / 1024 / 1024)} MB.`); return; }
+    if (!/\.(pdf|docx|xlsx|jpe?g|png|tiff?)$/i.test(candidate.name)) { setError("Choose a PDF, Word, Excel, or image file."); return false; }
+    if (candidate.size > maxFileBytes) { setError(`Choose a file smaller than ${Math.ceil(maxFileBytes / 1024 / 1024)} MB.`); return false; }
     setError(null); setFile(candidate);
+    return true;
   };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
-    if (!file) { setError("Choose a file to upload."); return; }
+    // A native picker can receive a selection before hydration completes.
+    // Retain that selection and apply the same validation used for drag/drop.
+    const selectedFile = file || event.currentTarget.querySelector<HTMLInputElement>('input[type="file"]')?.files?.[0];
+    if (!selectedFile) { setError("Choose a file to upload."); return; }
+    if (!chooseFile(selectedFile)) return;
     setPending(true);
     setError(null);
 
     const formData = new FormData(event.currentTarget);
-    formData.set("file", file);
+    formData.set("file", selectedFile);
     if (categoryId) formData.set("categoryId", categoryId);
     if (replaceDocumentId) formData.set("replaceDocumentId", replaceDocumentId);
 
@@ -89,13 +94,13 @@ export function DocumentUploadForm({
         <select name="subject" className="mt-1 block w-full rounded-lg border border-ink-200 p-2" disabled={pending}><option value="self">{subjectLabel}</option></select>
       </label> : null}
       {categories ? <>
-        <label className="text-sm font-medium">Category<select name="categoryId" value={selectedCategory} onChange={event => setSelectedCategory(event.target.value)} required disabled={pending} className="mt-1 block w-full rounded-lg border border-ink-200 p-2"><option value="">Choose a category</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-        <label className="text-sm font-medium">Document type<select key={selectedCategory} name="documentType" required disabled={pending || !category} className="mt-1 block w-full rounded-lg border border-ink-200 p-2"><option value="">Choose a document type</option>{category?.documentTypes.map(type => <option key={type} value={type}>{type}</option>)}</select></label>
+        <div><label htmlFor={`${fileId}-category`} className="text-sm font-medium">Category</label><select id={`${fileId}-category`} name="categoryId" value={selectedCategory} onChange={event => setSelectedCategory(event.target.value)} required disabled={pending} className="mt-1 block w-full rounded-lg border border-ink-200 p-2"><option value="">Choose a category</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
+        <div><label htmlFor={`${fileId}-type`} className="text-sm font-medium">Document type</label><select id={`${fileId}-type`} key={selectedCategory} name="documentType" required disabled={pending || !category} className="mt-1 block w-full rounded-lg border border-ink-200 p-2"><option value="">Choose a document type</option>{category?.documentTypes.map(type => <option key={type} value={type}>{type}</option>)}</select></div>
       </> : null}
       {general ? <>
         <label className="text-sm font-medium">Document title<input name="title" required maxLength={255} disabled={pending} placeholder="For example, current passport" className="mt-1 block w-full rounded-lg border border-ink-200 p-2" /></label>
-        <label className="text-sm font-medium">Description (optional)<textarea name="description" maxLength={2000} disabled={pending} className="mt-1 block w-full rounded-lg border border-ink-200 p-2" /></label>
       </> : null}
+      <label className="text-sm font-medium">Description (optional)<textarea name="description" maxLength={2000} disabled={pending} className="mt-1 block w-full rounded-lg border border-ink-200 p-2" /></label>
       <div onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); if (!pending) chooseFile(event.dataTransfer.files[0]); }} className="rounded-lg border-2 border-dashed border-ink-200 p-4">
       <label htmlFor={fileId} className="mb-2 block text-sm font-medium">Drag a file here, or choose a file</label>
       <input

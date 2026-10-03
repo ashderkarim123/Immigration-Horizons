@@ -33,12 +33,12 @@ export class Navigation {
       items.push({ label: 'Clients', path: '/clients', icon: 'users' });
     }
     
-    // Everyone sees tasks and deadlines
+    // Every employee can see their own tasks; case deadlines need case visibility.
     items.push({ label: 'Tasks', path: '/tasks', icon: 'check-square' });
     if (caps.includes('channels.view')) {
       items.push({ label: 'Messages', path: '/messages', icon: 'message-square' });
     }
-    items.push({ label: 'Deadlines', path: '/deadlines', icon: 'calendar' });
+    if (caps.includes('cases.view')) items.push({ label: 'Deadlines', path: '/deadlines', icon: 'calendar' });
 
     return items;
   });

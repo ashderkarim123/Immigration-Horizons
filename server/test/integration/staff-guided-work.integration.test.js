@@ -15,6 +15,7 @@ const Consultation = require('../../models/Consultation');
 const Task = require('../../models/admin/Task');
 const CaseSmartForm = require('../../models/CaseSmartForm');
 const mongoose = require('mongoose');
+const CaseActivity = require('../../models/CaseActivity');
 const ORIGIN = 'http://localhost:4000';
 let app; let sequence = 0;
 test.before(async () => { await startTestDb(); app = createApp(); });
@@ -83,6 +84,11 @@ test('queues, case overview, and dashboard task counts all revoke access on memb
   assert.equal(review.workQueues.find(queue => queue.key === 'forms_review').count, 1);
   assert.ok(!review.workQueues.some(queue => queue.key === 'document_review'));
   assert.equal((await pm.agent.get('/api/v1/staff/dashboard')).body.data.myOpenTasks, 1);
+  const firm = (await operations.agent.get('/api/v1/staff/dashboard')).body.data;
+  assert.deepEqual(firm.employeeWorkload, [{ employeeId: String(pm.user._id), name: pm.user.name, openTasks: 1, overdueTasks: 1 }]);
+  assert.deepEqual((await pm.agent.get('/api/v1/staff/dashboard')).body.data.employeeWorkload, []);
+  const scopedTasks = await operations.agent.get(`/api/v1/staff/tasks?scope=all&assignee=${pm.user._id}`);
+  assert.equal(scopedTasks.body.data.total, 1);
   assert.equal((await pm.agent.get(`/api/v1/staff/cases/${caseId}`)).body.data.workSummary.find(queue => queue.key === 'overdue_tasks').count, 1);
   await WorkspaceMember.updateMany({ workspace: workspace._id, adminUser: { $in: [pm.user._id, reviewer.user._id] } }, { $set: { status: 'removed', removedAt: new Date() } });
   const removed = (await pm.agent.get('/api/v1/staff/dashboard')).body.data;
@@ -91,4 +97,40 @@ test('queues, case overview, and dashboard task counts all revoke access on memb
   assert.equal((await reviewer.agent.get('/api/v1/staff/work-queues?queue=forms_review')).body.data.count, 0);
   assert.equal((await pm.agent.get(`/api/v1/staff/cases/${caseId}`)).status, 404);
   assert.equal((await operations.agent.get('/api/v1/staff/work-queues?queue=overdue_tasks')).body.data.count, 1);
+});
+
+test('a PM can create and manage a restricted conversation with attributable membership and immediate revocation', async () => {
+  const operations = await staff('operations_admin'); const pm = await staff('pm'); const reviewer = await staff('reviewer'); const customer = await client();
+  const created = await create(operations.agent, { clientId: String(customer._id), projectManagerId: String(pm.user._id), title: 'Restricted conversation', caseType: 'other' });
+  const caseId = created.body.data.id; const workspace = await CaseWorkspace.findOne({ case: caseId });
+  const member = await WorkspaceMember.create({ workspace: workspace._id, memberType: 'employee', adminUser: reviewer.user._id, workspaceRole: 'reviewer', status: 'active' });
+  const channel = await pm.agent.post(`/api/v1/staff/cases/${caseId}/channels`).send({ name: 'Selected reviewers', visibility: 'restricted_members', channelType: 'private' });
+  assert.equal(channel.status, 201, JSON.stringify(channel.body));
+  const channelId = channel.body.data.id;
+  const list = (await pm.agent.get(`/api/v1/staff/cases/${caseId}/channels`)).body.data;
+  assert.ok(list.channels.find(c => c.id === channelId).canManageMembers);
+  assert.equal((await reviewer.agent.get(`/api/v1/staff/channels/${channelId}/messages`)).status, 404);
+  const added = await pm.agent.post(`/api/v1/staff/channels/${channelId}/members`).send({ workspaceMemberId: String(member._id) });
+  assert.equal(added.status, 201, JSON.stringify(added.body));
+  const channelMemberId = added.body.data.members.find(m => m.workspaceMemberId === String(member._id)).channelMemberId;
+  assert.equal((await reviewer.agent.get(`/api/v1/staff/channels/${channelId}/messages`)).status, 200);
+  assert.equal((await pm.agent.delete(`/api/v1/staff/channels/${channelId}/members/${channelMemberId}`)).status, 200);
+  assert.equal((await reviewer.agent.get(`/api/v1/staff/channels/${channelId}/messages`)).status, 404);
+  const audit = await CaseActivity.findOne({ case: caseId, type: 'channel_created' }).lean();
+  assert.equal(audit.actorType, 'admin_user'); assert.equal(String(audit.actorId), String(pm.user._id));
+});
+
+test('document requests validate type against their category and preserve the requested subject', async () => {
+  const operations = await staff('operations_admin'); const pm = await staff('pm'); const customer = await client();
+  const created = await create(operations.agent, { clientId: String(customer._id), projectManagerId: String(pm.user._id), title: 'Requested metadata', caseType: 'other' });
+  const caseId = created.body.data.id; const workspace = await CaseWorkspace.findOne({ case: caseId });
+  const member = await WorkspaceMember.findOne({ workspace: workspace._id, clientUser: customer._id });
+  const category = await DocumentCategory.findOne({ case: caseId, templateKey: 'identity_civil_documents' });
+  const body = { title: 'Passport', categoryId: String(category._id), requestedFromMemberId: String(member._id), documentType: 'Passport' };
+  assert.equal((await pm.agent.post(`/api/v1/staff/cases/${caseId}/document-requests`).send({ ...body, documentType: 'Tax return' })).status, 400);
+  const response = await pm.agent.post(`/api/v1/staff/cases/${caseId}/document-requests`).send(body);
+  assert.equal(response.status, 201, JSON.stringify(response.body));
+    assert.equal(response.body.data.request.documentType, 'Passport');
+    const dashboard = await pm.agent.get('/api/v1/staff/dashboard');
+    assert.equal(dashboard.body.data.workQueues.find(queue => queue.key === 'requested_documents').count, 1);
 });

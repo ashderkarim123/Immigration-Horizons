@@ -174,3 +174,33 @@ a {
     color: var(--ih-brand-700);
   }
 }
+
+/* Shared controls keep workflows in lazy case tabs visually consistent. */
+button, input, select, textarea { font: inherit; }
+input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea {
+  min-width: 0; padding: .6rem .75rem; border: 1px solid var(--ih-border-medium);
+  border-radius: var(--ih-radius-md); background: white; color: var(--ih-text-primary);
+}
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .6; }
+.btn, .documents-tab .request-row button {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  min-height: 2.5rem; padding: .5rem .85rem; border: 1px solid var(--ih-border-medium);
+  border-radius: var(--ih-radius-md); background: white; color: var(--ih-brand-900);
+  font-size: .875rem; font-weight: 600; line-height: 1.4; text-decoration: none;
+}
+.btn-primary { background: var(--ih-brand-900); border-color: var(--ih-brand-900); color: white; }
+.btn-primary:hover:not(:disabled) { background: var(--ih-brand-700); }
+.btn-secondary:hover:not(:disabled) { background: var(--ih-brand-50); }
+.btn-outline-danger { border-color: #fecaca; color: #b91c1c; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 110; display: flex; justify-content: center; align-items: center; padding: 1rem; background: rgba(16, 42, 67, .5); }
+.modal-card { width: min(36rem, 100%); max-height: 90dvh; overflow-y: auto; border-radius: .75rem; background: white; box-shadow: var(--ih-shadow-lg); }
+.modal-header, .modal-footer { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--ih-border-light); }
+.modal-footer { border-bottom: 0; border-top: 1px solid var(--ih-border-light); justify-content: flex-end; }
+.modal-body { padding: 1rem 1.25rem; }
+.btn-close { border: 0; background: transparent; font-size: 1.5rem; padding: .25rem; }
+.data-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.data-table th, .data-table td { padding: .75rem; text-align: left; border-bottom: 1px solid var(--ih-border-light); }
+.data-table th { color: var(--ih-text-secondary); background: var(--ih-gray-50); font-weight: 600; }
+.table-responsive { overflow-x: auto; }
+.link-btn { border: 0; background: none; color: var(--ih-brand-700); padding: .25rem 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }

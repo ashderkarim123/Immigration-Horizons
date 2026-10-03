@@ -67,6 +67,7 @@ export async function POST(
     declaredMimeType: file.type,
     extension: extensionOf(file.name),
     clientUserId: String(client._id),
+    description: String(formData.get('description') || '').slice(0, 2000),
   });
 
   if (result.outcome === "validation_error") return jsonError("unprocessable", Object.values(result.errors)[0]);

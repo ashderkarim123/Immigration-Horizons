@@ -66,7 +66,7 @@ export default async function PortalCaseDocumentsPage({
               const overdue =
                 request.dueDate &&
                 new Date(request.dueDate as unknown as string) < new Date() &&
-                request.status !== "fulfilled";
+                ["open", "replacement_required"].includes(request.status);
               return (
                 <li id={`request-${request._id}`} key={String(request._id)} className="border-ink-100 border-t pt-4 first:border-t-0 first:pt-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">

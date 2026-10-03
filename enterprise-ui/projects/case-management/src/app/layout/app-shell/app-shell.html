@@ -1,6 +1,6 @@
 <a class="skip-link" href="#staff-content">Skip to content</a>
 <div class="app-shell" [class.sidebar-collapsed]="sidebarCollapsed()" [class.mobile-menu-open]="mobileMenuOpen()">
-  @if (mobileMenuOpen()) { <button type="button" class="menu-backdrop" aria-label="Close navigation" (click)="mobileMenuOpen.set(false)"></button> }
+  @if (mobileMenuOpen()) { <button type="button" class="menu-backdrop" tabindex="-1" aria-label="Close navigation" (click)="closeMenu()"></button> }
   <!-- Sidebar -->
   <aside id="staff-navigation" class="sidebar" aria-label="Main navigation" (click)="navigationClick($event)">
     <div class="sidebar-header">
@@ -13,7 +13,7 @@
     </div>
 
     <ih-navigation [collapsed]="sidebarCollapsed() && !mobileMenuOpen()" />
-    <button type="button" class="mobile-menu-btn drawer-close" (click)="mobileMenuOpen.set(false)" aria-label="Close navigation">Close</button>
+    <button type="button" class="mobile-menu-btn drawer-close" (click)="closeMenu()" aria-label="Close navigation">Close</button>
 
     <div class="sidebar-footer">
       <button
@@ -33,12 +33,12 @@
   </aside>
 
   <!-- Main content area -->
-  <div class="main-area">
+  <div class="main-area" [attr.inert]="mobileMenuOpen() ? '' : null">
     <header class="top-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; border-bottom: 1px solid var(--ih-border-light); background: var(--ih-bg-header); height: var(--ih-header-height);">
       <div class="header-left">
         <button
           class="mobile-menu-btn"
-          (click)="mobileMenuOpen.update(toggleMobile)"
+          (click)="openMenu()"
           aria-label="Toggle menu"
           [attr.aria-expanded]="mobileMenuOpen()"
           aria-controls="staff-navigation"
@@ -50,7 +50,7 @@
         </button>
       </div>
       @if (hasCreateActions()) {
-        <details class="create-menu"><summary class="btn btn-primary">Create New</summary><div class="create-menu-items">
+        <details class="create-menu" (click)="createClick($event)"><summary class="btn btn-primary">Create New</summary><div class="create-menu-items">
           @if (auth.capabilities().includes('cases.create')) { <a routerLink="/cases/new">Case</a> }
           @for (action of createActions; track action.kind) { @if (auth.capabilities().includes(action.capability)) { <a routerLink="/create" [queryParams]="{ kind: action.kind }">{{ action.label }}</a> } }
         </div></details>

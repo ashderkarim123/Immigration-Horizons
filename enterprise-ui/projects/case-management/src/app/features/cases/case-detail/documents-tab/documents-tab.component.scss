@@ -5,7 +5,7 @@
 .header-actions, .modal-footer { display: flex; flex-wrap: wrap; gap: .5rem; }
 .category-filters { display: flex; flex-wrap: wrap; gap: .5rem; }
 .category-filters button { border: 1px solid #d1d5db; background: white; border-radius: 999px; padding: .4rem .75rem; cursor: pointer; }
-.category-filters button.active { color: white; background: #1d4ed8; border-color: #1d4ed8; }
+.category-filters button.active { color: white; background: var(--ih-brand-900); border-color: var(--ih-brand-900); }
 .document-link { color: #1d4ed8; font-weight: 600; text-decoration: none; }
 small { display: block; color: #6b7280; margin-top: .15rem; }
 .request-section { border-top: 1px solid #e5e7eb; padding-top: 1rem; }

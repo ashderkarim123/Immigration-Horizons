@@ -100,10 +100,10 @@ export type DefaultCategoryTemplateEntry = {
 export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   {
     "templateKey": "identity_civil_documents",
-    "name": "Identity and Civil Documents",
+    "name": "Identity & Immigration",
     "slug": "identity-civil-documents",
     "order": 1,
-    "description": "Passports, birth/marriage certificates, and other civil-status records.",
+    "description": "Passports, visas, I-94, work authorization, and identity records.",
     "visibility": "client_visible",
     "allowedUploaderTypes": "both",
     "required": true
@@ -120,7 +120,7 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   },
   {
     "templateKey": "education_academic_records",
-    "name": "Education and Academic Records",
+    "name": "Education",
     "slug": "education-academic-records",
     "order": 3,
     "description": "Degrees, transcripts, and academic credential evaluations.",
@@ -130,7 +130,7 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   },
   {
     "templateKey": "employment_professional_experience",
-    "name": "Employment and Professional Experience",
+    "name": "Employment & Experience",
     "slug": "employment-professional-experience",
     "order": 4,
     "description": "Resumes, employment letters, and professional experience records.",
@@ -150,7 +150,7 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   },
   {
     "templateKey": "awards_memberships_recognition",
-    "name": "Awards, Memberships, and Recognition",
+    "name": "Awards, Memberships & Recognition",
     "slug": "awards-memberships-recognition",
     "order": 6,
     "description": "Awards, honors, and professional membership evidence.",
@@ -160,7 +160,7 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   },
   {
     "templateKey": "publications_citations_judging_media",
-    "name": "Publications, Citations, Judging, and Media",
+    "name": "Research, Publications & Citations",
     "slug": "publications-citations-judging-media",
     "order": 7,
     "description": "Publications, citation records, judging evidence, and media coverage.",
@@ -183,9 +183,9 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
     "name": "Recommendation Letters",
     "slug": "recommendation-letters",
     "order": 9,
-    "description": "Drafted and finalized recommendation letters.",
+    "description": "Signed letters and recommender background supplied for staff review.",
     "visibility": "client_visible",
-    "allowedUploaderTypes": "employee",
+    "allowedUploaderTypes": "both",
     "required": false
   },
   {
@@ -260,12 +260,12 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   },
   {
     "templateKey": "uscis_receipts_notices",
-    "name": "USCIS Receipts and Notices",
+    "name": "USCIS / Government Documents",
     "slug": "uscis-receipts-notices",
     "order": 17,
-    "description": "Official USCIS receipt notices and correspondence.",
+    "description": "Official USCIS receipt notices and government correspondence.",
     "visibility": "client_visible",
-    "allowedUploaderTypes": "employee",
+    "allowedUploaderTypes": "both",
     "required": false
   },
   {
@@ -280,7 +280,7 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   },
   {
     "templateKey": "other",
-    "name": "Other",
+    "name": "Other Supporting Evidence",
     "slug": "other",
     "order": 19,
     "description": "Documents that do not fit another category.",
@@ -290,7 +290,7 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   },
   {
     "templateKey": "personal_civil_records",
-    "name": "Personal and Civil Documents",
+    "name": "Personal / Civil Documents",
     "slug": "personal-civil-records",
     "order": 20,
     "description": "Personal and family civil records.",
@@ -300,7 +300,7 @@ export const DEFAULT_CATEGORY_TEMPLATE: DefaultCategoryTemplateEntry[] = [
   },
   {
     "templateKey": "business_financial_records",
-    "name": "Business and Financial Documents",
+    "name": "Business / Financial",
     "slug": "business-financial-records",
     "order": 21,
     "description": "Business registrations, financial statements, tax records, and supporting financial evidence.",

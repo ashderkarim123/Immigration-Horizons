@@ -208,7 +208,7 @@ export async function uploadDocument(params: UploadDocumentParams) {
               originalName,
               displayName,
               description: (params.description || '').trim().slice(0, 2000),
-              documentType: params.documentType || '',
+              documentType: request?.documentType || params.documentType || '',
               subjectClient: clientUserId,
               storageKey,
               mimeType: declaredMimeType,

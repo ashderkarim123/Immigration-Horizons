@@ -115,8 +115,7 @@ const ICONS: Record<string, string> = {
       stroke-linecap="round"
       stroke-linejoin="round"
       aria-hidden="true"
-      [innerHTML]="svgPaths()"
-    ></svg>
+    ><path [attr.d]="pathData()" /></svg>
   `,
   styles: [`
     :host {
@@ -137,21 +136,6 @@ export class IhIconComponent {
 
   readonly viewBox = '0 0 24 24';
 
-  readonly svgPaths = computed<string>(() => {
-    const iconName = this.name();
-    const pathData = ICONS[iconName];
-    if (!pathData) {
-      // Fallback: render an X circle for unknown icon names in dev
-      return '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>';
-    }
-    // Each space-separated segment starting with an uppercase letter is a new path element
-    return pathData
-      .split(/(?=[MLHVCSQTAZM])/g)
-      .filter(Boolean)
-      // Group into full sub-paths by splitting on M at start of each shape
-      .join('')
-      .split(/ (?=[M])/)
-      .map((d) => `<path d="${d.trim()}" />`)
-      .join('');
-  });
+  // Bind native SVG attributes: innerHTML sanitization strips SVG path markup.
+  readonly pathData = computed(() => ICONS[this.name()] || 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M15 9l-6 6 M9 9l6 6');
 }

@@ -209,6 +209,8 @@ async function uploadDocument({
             uploadedByAdmin: uploaderType === 'employee' ? uploaderAdminId : null,
             originalName,
             displayName,
+            documentType: request?.documentType || '',
+            subjectClient: uploaderType === 'client' ? uploaderClientId : null,
             storageKey,
             mimeType: declaredMimeType,
             detectedMimeType,

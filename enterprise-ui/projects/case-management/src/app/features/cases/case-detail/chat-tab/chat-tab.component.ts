@@ -131,6 +131,7 @@ export class ChatTabComponent implements OnInit {
         this.isLoading.set(false);
         if (selectFirst && res.data.channels.length) {
           const preferred =
+            res.data.channels.find((c) => c.id === this.selectedChannelId()) ??
             res.data.channels.find((c) => c.id === this.initialChannelId()) ??
             res.data.channels.find((c) => c.audience === 'client_and_team') ??
             res.data.channels[0];

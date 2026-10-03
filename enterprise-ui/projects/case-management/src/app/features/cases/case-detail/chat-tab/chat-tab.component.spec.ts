@@ -97,6 +97,20 @@ describe('ChatTabComponent', () => {
     fixture.detectChanges();
   }
 
+  it('keeps the selected restricted conversation and draft after a management refresh', () => {
+    const channels = [channel(), channel({id:'c2', name:'Review', audience:'restricted', clientVisible:false})];
+    open(channels);
+    component.selectChannel('c2');
+    http.expectOne('/api/v1/staff/channels/c2/messages').flush({data:{messages:[],nextCursor:null,syncCursor:null},meta:{requestId:'r'}});
+    http.match('/api/v1/staff/channels/c2/attachable-documents').forEach(request => request.flush({data:{documents:[]},meta:{requestId:'r'}}));
+    component.text.set('Unsent restricted review note');
+    component.loadChannels(true);
+    http.expectOne('/api/v1/staff/cases/case1/channels').flush({data:{case:{id:'case1',caseNumber:'IH-1',title:'T'},channels},meta:{requestId:'r'}});
+    expect(component.selectedChannelId()).toBe('c2');
+    expect(component.text()).toBe('Unsent restricted review note');
+    http.expectNone('/api/v1/staff/channels/c1/messages');
+  });
+
   it('selects the shared client channel first and labels its audience with text', () => {
     open([channel({ id: 'c0', name: 'Strategy', audience: 'staff_only', clientVisible: false }), channel()], []);
     // staff-only channel c0 is listed first, but the client+team channel is preferred

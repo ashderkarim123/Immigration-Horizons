@@ -46,6 +46,8 @@ export interface CaseActions {
 }
 
 export interface CaseDetail extends Omit<CaseListItem, 'primaryClient'> {
+  nextMilestone?: { label: string; date: string; tab: string } | null;
+  overview?: { openTasks: number; unreadConversations: number; recentActivity: { id: string; message: string; createdAt: string }[] };
   availableTabs?: string[];
   workSummary?: import('./dashboard.types').WorkQueue[];
   createdAt: string;
@@ -75,7 +77,7 @@ export interface CaseMember {
   client: CaseClientRef | null;
 }
 
-export type MemberOption = Omit<CaseMemberEmployee, never>;
+export type MemberOption = CaseMemberEmployee & { canManageCases?: boolean };
 
 export interface CaseActivityItem {
   id: string;

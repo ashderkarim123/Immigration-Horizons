@@ -9,6 +9,7 @@ const ClientUser = require('../models/ClientUser');
 const AdminUser = require('../models/admin/User');
 const ActivityLog = require('../models/admin/ActivityLog');
 const { notify, notifyMany } = require('../utils/notify');
+const { can } = require('../utils/permissions');
 
 const { CASE_TYPE_VALUES } = require('../utils/caseConstants');
 const { generateCaseNumber } = require('../utils/caseNumber');
@@ -125,7 +126,7 @@ async function provisionCase({ consultationId = null, clientId = null, input, ac
   const { clientUser } = clientResolution;
 
   const projectManager = await AdminUser.findOne({ _id: input.projectManagerId, isActive: true });
-  if (!projectManager) {
+  if (!projectManager || !can({ staff: projectManager }, 'cases.manage')) {
     return {
       outcome: 'validation_error',
       errors: { projectManagerId: 'Selected project manager is not a valid, active team member.' },

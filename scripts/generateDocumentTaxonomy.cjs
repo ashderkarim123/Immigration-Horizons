@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
@@ -14,3 +15,4 @@ fs.writeFileSync(path.join(root, 'src/lib/content/document-taxonomy.ts'),
   '// Generated from server/utils/documentTaxonomy.js.\n' +
   `export const DOCUMENT_TYPES_BY_CATEGORY: Record<string, string[]> = ${JSON.stringify(DOCUMENT_TYPES_BY_CATEGORY, null, 2)};\n` +
   "export function documentTypesForCategory(templateKey: string) { return [...(DOCUMENT_TYPES_BY_CATEGORY[templateKey] || []), 'Other']; }\n");
+fs.copyFileSync(path.join(root, 'src/lib/content/document-taxonomy.ts'), path.join(root, 'enterprise-ui/projects/case-management/src/app/core/api/document-taxonomy.ts'));

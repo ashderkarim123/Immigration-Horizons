@@ -58,8 +58,12 @@ router.post('/case-intake', trustedOriginMiddleware, requireApiCapability('cases
       return next(createApiError(400, 'invalid_input', 'Choose an active project manager.'));
     }
     if (consultationId) {
-      if (!mongoose.isValidObjectId(consultationId) || !(await Consultation.exists({ _id: consultationId, ...leadScope(req), convertedCase: null }))) {
+      if (!mongoose.isValidObjectId(consultationId) || !(await Consultation.exists({ _id: consultationId, ...leadScope(req) }))) {
         return next(createApiError(404, 'not_found', 'Consultation not found.'));
+      }
+      const lead = await Consultation.findById(consultationId).select('convertedCase').lean();
+      if (lead.convertedCase && !(await ClientCase.exists({ $and: [{ _id: lead.convertedCase }, await accessibleCaseIdFilter(req) || {}] }))) {
+        return next(createApiError(404, 'not_found', 'Case not found.'));
       }
     } else if (!mongoose.isValidObjectId(clientId) || !(await ClientUser.exists({ $and: [{ _id: clientId, status: { $ne: 'disabled' } }, await clientScope(req)] }))) {
       return next(createApiError(404, 'not_found', 'Client not found.'));

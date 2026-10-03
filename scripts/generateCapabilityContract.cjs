@@ -1,4 +1,5 @@
 // permissions.js owns the cross-application role vocabulary (ADR-009).
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');

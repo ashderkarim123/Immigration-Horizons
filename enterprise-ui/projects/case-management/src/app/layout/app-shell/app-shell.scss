@@ -183,6 +183,8 @@
   .mobile-menu-open .menu-backdrop { display: block; position: fixed; inset: 0; z-index: 90; background: rgba(0, 0, 0, .4); border: 0; }
   .header-right { gap: .5rem !important; }
   .user-info { font-size: .75rem !important; max-width: 12rem; }
+  .top-header { height: auto !important; min-height: var(--ih-header-height); gap: .5rem; flex-wrap: wrap; padding: .5rem !important; }
+  .header-right { min-width: 0; flex: 1; justify-content: flex-end; }
   .content-area { padding: 1rem; }
   .drawer-close { width: auto; color: white; margin: 1rem; }
 

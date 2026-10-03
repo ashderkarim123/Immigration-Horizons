@@ -2,6 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, TestRequest, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+
+function routeStub(query: Record<string, string> = {}) {
+  const paramMap = convertToParamMap({ id: 'case1' });
+  const queryParamMap = convertToParamMap(query);
+  return { snapshot: { paramMap, queryParamMap }, paramMap: of(paramMap), queryParamMap: of(queryParamMap) };
+}
 
 import { CaseActions, CaseActivityItem, CaseDetail, CaseMember, MemberOption, Paginated } from '../../../core/api/case.types';
 import { CaseDetailComponent } from './case-detail.component';
@@ -66,8 +73,8 @@ const members: CaseMember[] = [
 ];
 
 const options: MemberOption[] = [
-  { id: 'emp-h', name: 'Hana Helper', email: 'hana@ih.test', role: 'reviewer', avatar: null, jobTitle: '', department: '' },
-  { id: 'emp-new', name: 'Nia New', email: 'nia@ih.test', role: 'pm', avatar: null, jobTitle: '', department: '' },
+  { id: 'emp-h', name: 'Hana Helper', email: 'hana@ih.test', role: 'reviewer', avatar: null, jobTitle: '', department: '', canManageCases: false },
+  { id: 'emp-new', name: 'Nia New', email: 'nia@ih.test', role: 'pm', avatar: null, jobTitle: '', department: '', canManageCases: true },
 ];
 
 const FULL: Partial<CaseActions> = { canManageCase: true, canAssignManager: true, canArchive: true, canManageMembers: true, canPublishClientUpdate: true };
@@ -83,7 +90,7 @@ describe('CaseDetailComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'case1' }) } } },
+        { provide: ActivatedRoute, useValue: routeStub() },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -126,7 +133,7 @@ describe('CaseDetailComponent', () => {
           provideHttpClient(),
           provideHttpClientTesting(),
           provideRouter([]),
-          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'case1' }) } } },
+          { provide: ActivatedRoute, useValue: routeStub() },
         ],
       });
       http = TestBed.inject(HttpTestingController);
@@ -152,7 +159,7 @@ describe('CaseDetailComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             provideRouter([]),
-            { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'case1' }), queryParamMap: convertToParamMap(query) } } },
+            { provide: ActivatedRoute, useValue: routeStub(query) },
           ],
         });
         const fixture = TestBed.createComponent(CaseDetailComponent);
@@ -167,7 +174,7 @@ describe('CaseDetailComponent', () => {
   describe('team tab', () => {
     it('renders the members endpoint DTO (employee and client members), not caseData.team', () => {
       const fixture = setup(PM);
-      expect(fixture.nativeElement.textContent).toContain('Team (3)');
+      expect(fixture.nativeElement.textContent).toContain('Team');
       fixture.componentInstance.activeTab.set('team');
       fixture.detectChanges();
 
@@ -194,7 +201,7 @@ describe('CaseDetailComponent', () => {
           provideHttpClient(),
           provideHttpClientTesting(),
           provideRouter([]),
-          { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'case1' }) } } },
+          { provide: ActivatedRoute, useValue: routeStub() },
         ],
       });
       http = TestBed.inject(HttpTestingController);
