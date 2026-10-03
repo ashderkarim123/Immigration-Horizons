@@ -1,5 +1,9 @@
 # Implementation Status — Immigration Horizons Client Portal
 
+## Production preflight — 2026-10-04
+
+Stabilization merged in PR #6; the isolated fixture repair merged in PR #7. Production is running `1408784255ca0aff8f1a2d6cc7086998bc11fe80`, with all five Main CI jobs and automatic deployment successful. Required environment checks and unauthenticated endpoint/browser checks pass. Private document, admin upload, nginx and MongoDB logical backups were created and checked. A full catalog review found nine missing evidence indexes that the existing index scripts omitted; their provisioning paths are being corrected on `fix/evidence-index-provisioning`. Production database changes, Atlas snapshot confirmation, authenticated real-user QA and the final observation sign-off remain pending. Stabilization stays open and Phase 11 has not started. See the [production preflight record](../deployment/STABILIZATION_PRODUCTION_PREFLIGHT_2026_10_04.md).
+
 ## Stabilization update — 2026-10-03
 
 Stabilization is on `stabilization/angular-feature-parity-audit`, starting from `5c30c51a55c798add6aed1d9d79ef34b94ab25bc`. Completed child task/chat work was incorporated without rewriting history. CMS separation, individual Staff Operations Admin accounts, guided case intake/queues, client document actions and operational Staff surfaces are implemented. See [ADR-025](../architecture/ADR-025-stabilization-staff-cms-and-guided-work.md) and the [Phase 01 report](STABILIZATION_PHASE_01_REPORT.md) for current validation, limits and release gates. Older cycle snapshots below are historical context. No production action or Phase 11 implementation is included.
