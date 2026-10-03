@@ -12,7 +12,12 @@ import { CaseSmartForm } from '../src/lib/models/CaseSmartForm';
 import { WorkspaceChannel } from '../src/lib/models/WorkspaceChannel';
 import { WorkspaceMessage } from '../src/lib/models/WorkspaceMessage';
 import { listClientActions } from '../src/lib/dashboard/client-actions';
-before(startTestDb); after(stopTestDb); beforeEach(clearCollections);
+before(async () => {
+  await startTestDb();
+  // Enforce the real unique channel indexes before inserting test fixtures.
+  await WorkspaceChannel.init();
+});
+after(stopTestDb); beforeEach(clearCollections);
 
 test('client next actions contain only assigned requests, safe form notes and readable conversations, and revoke immediately', async () => {
   const client = await ClientUser.create({ email: 'actions@ih.test', normalizedEmail: 'actions@ih.test', status: 'active' });
@@ -23,8 +28,8 @@ test('client next actions contain only assigned requests, safe form notes and re
   await DocumentRequest.create({ case: c._id, workspace: ws._id, category: category._id, title: 'Passport', requestedFrom: member._id, instructions: 'All pages', internalComment: 'SECRET REQUEST' });
   await DocumentRequest.create({ case: c._id, workspace: ws._id, category: category._id, title: 'Other participant', requestedFrom: new mongoose.Types.ObjectId() });
   await CaseSmartForm.create({ case: c._id, workspace: ws._id, template: new mongoose.Types.ObjectId(), templateKey: 'qa', templateVersion: 1, templateTitleSnapshot: 'Personal information', status: 'needs_changes', clientReviewNote: 'Check your birth date', internalReviewNote: 'SECRET FORM', answers: { staff_identity_notes: 'SECRET ANSWER' } });
-  for (const [slug, visibility] of [['public', 'clients_and_team'], ['private', 'employees_only'], ['restricted', 'restricted_members']] as const) {
-    const channel = await WorkspaceChannel.create({ case: c._id, workspace: ws._id, name: slug, slug, order: 1, visibility, channelType: 'standard' });
+  for (const [slug, visibility, order] of [['public', 'clients_and_team', 1], ['private', 'employees_only', 2], ['restricted', 'restricted_members', 3]] as const) {
+    const channel = await WorkspaceChannel.create({ case: c._id, workspace: ws._id, name: slug, slug, order, visibility, channelType: 'standard' });
     await WorkspaceMessage.create({ case: c._id, workspace: ws._id, channel: channel._id, senderType: 'system', senderDisplayName: 'Team', body: `Message in ${slug}`, clientVisible: visibility === 'clients_and_team' });
   }
   const actions = await listClientActions(String(client._id));
