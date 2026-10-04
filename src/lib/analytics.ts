@@ -17,6 +17,29 @@
 export const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "GTM-M9KC3GDW";
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-XYD4F5BE1F";
 
+/** Keep the current direct GA4 setup until the GTM Google tag is verified. */
+export function analyticsTransport(value = process.env.NEXT_PUBLIC_GA_TRANSPORT): "direct" | "gtm" | "off" {
+  if (value === undefined || value === "" || value === "direct") return "direct";
+  if (value === "gtm") return "gtm";
+  return "off"; // Unknown values fail closed rather than counting hits twice.
+}
+
+const services = new Set(["EB-2 NIW", "EB-1A", "EB-1B", "EB-1C", "O-1", "O-1 Visa",
+  "RFE & NOID Responses", "Recommendation Letters", "Expert Opinion Letters",
+  "Business & Personal Plans", "Evidence Review & Packaging", "Immigration Consultation"]);
+
+/** Only categorical form information is allowed through the event boundary. */
+export function analyticsParams(params: Params): Params {
+  const result: Params = {};
+  if (params.form_name === "contact" || params.form_name === "consultation") result.form_name = params.form_name;
+  if (typeof params.service === "string" && services.has(params.service)) result.service = params.service;
+  if (typeof params.error_fields === "string") {
+    const fields = params.error_fields.split(",").filter((field) => ["name", "email", "phone", "service", "message", "consent", "none"].includes(field));
+    if (fields.length) result.error_fields = fields.join(",");
+  }
+  return result;
+}
+
 export type AnalyticsEvent =
   | "generate_lead" // a consultation or contact form was accepted by the server
   | "form_error" // a submission was rejected (validation / rate limit)
@@ -35,14 +58,30 @@ declare global {
 }
 
 /**
- * Pushes `{ event, ...params }` to the dataLayer (GTM custom-event triggers
- * listen for it) and, when the direct GA4 tag is loaded, sends the same event
- * through gtag. No-op on the server; never throws.
+ * Sends each event through ONE selected transport. GTM mode needs a published
+ * Google tag and Custom Event triggers; direct mode owns GA4 in code and must
+ * not also configure GA4 event tags in GTM. No-op on the server.
  */
 export function trackEvent(name: AnalyticsEvent, params: Params = {}): void {
   if (typeof window === "undefined") return;
-  (window.dataLayer ??= []).push({ event: name, ...params });
-  window.gtag?.("event", name, params);
+  try {
+    const transport = analyticsTransport();
+    const safe = analyticsParams(params);
+    if (transport === "gtm") (window.dataLayer ??= []).push({ ...safe, event: name });
+    if (transport === "direct") {
+      // Queue early clicks/form outcomes even before Next's afterInteractive
+      // initializer runs. gtag uses Arguments objects in the same dataLayer.
+      const gtag = window.gtag ??= function (command, event, values) {
+        void command; void event; void values;
+        // gtag's command queue uses Arguments objects, distinct from GTM events.
+        // eslint-disable-next-line prefer-rest-params
+        (window.dataLayer ??= []).push(arguments);
+      };
+      gtag("event", name, safe);
+    }
+  } catch {
+    // Tracking failures must never break contact links or accepted lead forms.
+  }
 }
 
 /** Which event, if any, a click on a link with this href should record. */

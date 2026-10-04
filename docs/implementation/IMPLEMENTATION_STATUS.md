@@ -1981,3 +1981,19 @@ and remains blocker 1.
 `12_TESTING_QA_AND_ACCEPTANCE.md`, but the VPS migration is the more useful
 next action: `VPS_MIGRATION.md` §4.4 and §4.5 close blockers 1 and 4, and
 neither can be closed from a development machine.
+
+## Pre-Phase-11 SEO audit and Google reporting — 2026-10-04
+
+The user selected reports-first Google Search Console/GA4/GTM setup. A live
+crawl of 23 sitemap URLs passed structural metadata/HTTP checks; two CMS
+article snippets need editorial shortening. ADR-026 proposes operator-only,
+read-only OAuth reporting, public-layout verification and one GA4 event
+transport. Credentials/tokens and raw report exports are excluded from Git.
+
+See docs/seo/SEO_AUDIT_2026-10-04.md for findings and validation limits and
+docs/seo/GOOGLE_INTEGRATION_SETUP.md for account authorization steps. Google
+account connection and account-level tag validation remain pending. Local
+DB regression checks encountered MongoDB startup `open: Operation not
+permitted`; browser download also failed. Review exact-SHA CI separately.
+No merge, deployment, database operation or Google tag publication occurred.
+Phase 11 remains on hold.

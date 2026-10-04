@@ -29,7 +29,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       // Defence in depth for the single-host case (local dev, or a
       // misconfigured proxy that never sets the app host): the SaaS
       // surface is never a crawl target on the public host either.
-      disallow: ["/portal", "/portal/", "/api/portal"],
+      disallow: ["/portal", "/portal/", "/staff", "/staff/", "/api/", "/admin", "/admin/"],
     },
     sitemap: `${site.url}/sitemap.xml`,
   };

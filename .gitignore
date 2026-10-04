@@ -51,3 +51,10 @@ next-env.d.ts
 enterprise-ui/node_modules/
 enterprise-ui/.angular/
 enterprise-ui/dist/
+
+# Google credentials and private SEO exports must never enter the repository.
+client_secret_*.json
+*oauth-token*.json
+.secrets/
+/validation/
+__pycache__/
