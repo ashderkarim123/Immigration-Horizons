@@ -12,6 +12,7 @@ import { getAccessibleMessageCenter } from "@/lib/auth/collaboration-policy";
 import { getUnreadCountsForChannels } from "@/lib/collaboration/read-state-service";
 import { AdminUser } from "@/lib/models/AdminUser";
 import { CaseSmartForm } from "@/lib/models/CaseSmartForm";
+import { USCISFiling } from "@/lib/models/USCISFiling";
 import { CASE_TYPES, CLIENT_STAGE_LABELS, type CaseStage } from "@/lib/content/case-constants";
 
 export const metadata: Metadata = {
@@ -50,6 +51,8 @@ export default async function PortalCaseDetailPage({
     case: caseDoc._id,
     status: { $in: ["draft", "needs_changes"] },
   });
+
+  const trackedFilings = await USCISFiling.countDocuments({ case: caseDoc._id, clientVisible: true, archivedAt: null });
 
   const trail = [
     { name: "Portal", href: "/portal" },
@@ -153,6 +156,20 @@ export default async function PortalCaseDetailPage({
             <ArrowRight size={14} aria-hidden />
           </Link>
         </div>
+
+        {trackedFilings > 0 ? (
+          <div className="rounded-panel border-ink-200 flex flex-col gap-2 border bg-white p-6 shadow-subtle text-sm">
+            <h2 className="font-display text-navy-800 text-base font-semibold">USCIS status</h2>
+            <p className="text-ink-500">See the latest USCIS updates your team has shared for this case.</p>
+            <Link
+              href={`/portal/cases/${caseId}/uscis`}
+              className="text-navy-700 mt-2 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+            >
+              View USCIS status
+              <ArrowRight size={14} aria-hidden />
+            </Link>
+          </div>
+        ) : null}
 
         <div className="rounded-panel border-ink-200 flex flex-col gap-2 border border-dashed bg-white p-6 text-sm">
           <h2 className="font-display text-navy-800 text-base font-semibold">Coming soon</h2>
