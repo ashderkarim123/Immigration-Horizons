@@ -15,10 +15,7 @@ export function ClickTracker() {
       const anchor = (event.target as Element | null)?.closest?.("a");
       const name = anchor && eventForHref(anchor.getAttribute("href") ?? "");
       if (!anchor || !name) return;
-      trackEvent(name, {
-        link_text: (anchor.getAttribute("aria-label") ?? anchor.textContent ?? "").trim().slice(0, 80),
-        page_path: window.location.pathname,
-      });
+      trackEvent(name);
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);

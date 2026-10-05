@@ -89,6 +89,16 @@ test("marketing pages on the public host are NOT marked noindex", () => {
   assert.equal(res.headers.get("X-Robots-Tag"), null);
 });
 
+test("www marketing URLs converge on the apex host without dropping campaign parameters", () => {
+  const res = proxy(request(`www.${PUBLIC_HOST}`, "/services/eb2-niw?utm_source=google"));
+  assert.equal(res.status, 308);
+  assert.equal(res.headers.get("location"), `https://${PUBLIC_HOST}/services/eb2-niw?utm_source=google`);
+  const forwarded = proxy(request("127.0.0.1:3000", "/about", `www.${PUBLIC_HOST}`));
+  assert.equal(forwarded.headers.get("location"), `https://${PUBLIC_HOST}/about`);
+  const privateRoute = proxy(request(`www.${PUBLIC_HOST}`, "/portal/login"));
+  assert.equal(privateRoute.headers.get("location"), `https://${APP_HOST}/portal/login`);
+});
+
 // ---------------------------------------------------------------------------
 // App host
 // ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { APP_HOST, PUBLIC_HOST, classifyHost, isAppPath } from "./lib/hosts";
+import { APP_HOST, PUBLIC_HOST, classifyHost, isAppPath, normalizeHost } from "./lib/hosts";
 
 /**
  * Name only — deliberately not imported from `lib/auth/employee-session`,
@@ -111,6 +111,13 @@ export function proxy(request: NextRequest) {
   // password-reset links already sitting in people's inboxes keep working.
   if (kind === "public" && appPath) {
     return NextResponse.redirect(new URL(`https://${APP_HOST}${pathname}${search}`), 308);
+  }
+
+  // Serve one marketing hostname. Canonicals already point at the apex;
+  // redirect www as well so links and crawlers converge on that same URL.
+  const incomingHost = normalizeHost(request.headers.get("x-forwarded-host") ?? request.headers.get("host"));
+  if (kind === "public" && incomingHost === `www.${PUBLIC_HOST}`) {
+    return NextResponse.redirect(new URL(`https://${PUBLIC_HOST}${pathname}${search}`), 308);
   }
 
   return NextResponse.next();
