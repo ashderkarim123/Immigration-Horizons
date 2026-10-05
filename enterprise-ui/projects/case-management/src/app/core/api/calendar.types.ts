@@ -79,6 +79,8 @@ export interface CalendarResponse {
   /** Sources the actor may not see are simply absent; this lists which kinds were queried. */
   kinds: CalendarKind[];
   scope: CalendarScope;
+  /** True when a source had more rows than one response carries; narrow the range or filters. */
+  truncated: boolean;
 }
 
 export interface CalendarConfig {
@@ -92,6 +94,7 @@ export interface CalendarConfig {
   scopes: CalendarScope[];
   canManage: boolean;
   maxRangeDays: number;
+  reminders: { deadlineReminders: boolean; appointmentReminders: boolean };
 }
 
 export interface CalendarFilters {

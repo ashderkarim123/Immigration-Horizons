@@ -2,12 +2,14 @@ const express = require('express');
 const router = express.Router();
 const { staffAuthMiddleware } = require('../../../../middleware/api/staffAuth');
 const { CAPABILITIES, ROLE_LABELS } = require('../../../../utils/permissions');
+const { resolveTimeZone, isValidTimezone } = require('../../../../utils/calendarTime');
 
 router.get('/', staffAuthMiddleware, (req, res, next) => {
   try {
     const user = req.staff;
     const role = user.role || 'viewer';
-    
+    const resolved = { ...resolveTimeZone(user.timeZone), userValue: isValidTimezone(user.timeZone) ? user.timeZone : null };
+
     // Resolve capabilities
     const capabilities = [];
     if (role === 'super_admin') {
@@ -34,6 +36,7 @@ router.get('/', staffAuthMiddleware, (req, res, next) => {
           code: role,
           label: ROLE_LABELS[role] || role
         },
+        timeZone: { value: resolved.userValue, resolved: resolved.zone, source: resolved.source },
         capabilities: [...new Set(capabilities)], // unique
         mustChangePassword: user.mustChangePassword
       },

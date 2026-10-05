@@ -138,7 +138,7 @@ async function getOrCreatePreferences({ recipientType, recipientAdminId = null, 
 
 async function updatePreferences({ recipientType, recipientAdminId = null, recipientClientId = null, updates }) {
   const prefs = await getOrCreatePreferences({ recipientType, recipientAdminId, recipientClientId });
-  const allowed = ['mentionEmails', 'digestEmails', 'digestFrequency'];
+  const allowed = ['mentionEmails', 'digestEmails', 'digestFrequency', 'deadlineReminders', 'appointmentReminders'];
   for (const key of allowed) {
     if (Object.prototype.hasOwnProperty.call(updates, key)) prefs[key] = updates[key];
   }

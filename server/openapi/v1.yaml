@@ -2006,3 +2006,127 @@ paths:
         '200': { description: Filing detail (archived) }
         '403': { description: Missing uscis_tracking.manage or untrusted Origin }
         '404': { description: Filing missing or inaccessible }
+  /staff/calendar:
+    get:
+      summary: Unified calendar for a bounded date range (calendar.view)
+      description: >
+        A read-time projection of the modules that own each date: case target filing (ClientCase), task due dates, document request
+        due dates, query appointments and response dates, USCIS response dates (action required only) and manual case events.
+        There is no calendar collection for any of them. Every source starts from the actor's authorized scope in the database
+        query (cases.view_all, or active workspace membership, plus the source's own capability: documents.view, queries.view,
+        uscis_tracking.view, cases.view); calendar.view alone never widens access. Date-only items carry date (YYYY-MM-DD) and are
+        never shifted by a timezone; timed items carry the UTC instant and the IANA zone they were scheduled in. from/to are
+        required, inclusive calendar dates in the viewer zone, and the range may cover at most 93 days.
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: timeZone, in: query, schema: { type: string }, description: "IANA zone for range boundaries (default: the employee zone, then PRACTICE_TIME_ZONE, then UTC)" }
+        - { name: scope, in: query, schema: { type: string, enum: [mine, team], default: mine }, description: "mine = assigned to the actor, or cases they are a member of; team = everything the actor is authorized to see" }
+        - { name: kinds, in: query, schema: { type: string }, description: "Comma-separated: target_filing, task_due, appointment, document_due, query_due, uscis_response, manual_event. Kinds the actor may not see are omitted, not an error." }
+        - { name: caseId, in: query, schema: { type: string }, description: Only items of one case; a case the actor cannot see is the same 404 as a missing one }
+        - { name: assignee, in: query, schema: { type: string }, description: Task assignee, honoured only with tasks.view_all }
+        - { name: includeCompleted, in: query, schema: { type: string, enum: ["true"] }, description: Include completed, fulfilled, answered, cancelled and no-show items }
+      responses:
+        '200': { description: "{ items: CalendarItem[], range: { from, to, timeZone }, kinds, scope, truncated }; at most 500 items per source" }
+        '401': { description: Unauthenticated }
+        '403': { description: Missing calendar.view }
+        '404': { description: caseId missing, malformed or inaccessible (identical) }
+        '422': { description: "validation_error: missing or malformed range, range over 93 days, unknown scope or kind, invalid timeZone" }
+  /staff/calendar/config:
+    get:
+      summary: Calendar settings for the actor (calendar.view)
+      description: Resolved timezone and where it came from, the practice fallback, the source filters the actor may use, reminder preferences and canManage. Never other environment values.
+      responses:
+        '200': { description: "{ timeZone: { resolved, source: user|practice|utc, userValue, practice: { value, configured, invalid } }, kinds, scopes, canManage, maxRangeDays, reminders }" }
+        '401': { description: Unauthenticated }
+        '403': { description: Missing calendar.view }
+  /staff/calendar/preferences:
+    patch:
+      summary: Update the actor's calendar timezone and reminder preferences (calendar.view)
+      description: At least one field. An empty or null timeZone clears the saved zone (the practice zone, then UTC, applies). The zone is validated server-side and never inferred from an IP address.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                timeZone: { type: string, nullable: true, description: IANA zone such as America/New_York; abbreviations and offsets are refused }
+                deadlineReminders: { type: boolean }
+                appointmentReminders: { type: boolean }
+      responses:
+        '200': { description: The updated calendar config }
+        '403': { description: Missing calendar.view or untrusted Origin }
+        '422': { description: validation_error with fieldErrors }
+  /staff/cases/{caseId}/calendar-events:
+    post:
+      summary: Add a manual event to a case (calendar.manage, cases.view)
+      description: >
+        For case dates that no other module already owns. Timed events are entered as wall-clock startLocal/endLocal ("YYYY-MM-DDTHH:mm")
+        in timeZone and stored as exact UTC instants; all-day events are plain dates that never shift. Attendees must be active employee
+        members of the case. meetingUrl must be https. A client-visible event needs an intentional clientTitle; internal text never reaches a client.
+      parameters:
+        - { name: caseId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                eventType: { type: string, enum: [appointment, consultation, interview, biometrics, meeting, deadline, milestone, other], default: appointment }
+                title: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 2000 }
+                allDay: { type: boolean, default: false }
+                startDate: { type: string, format: date, nullable: true, description: Required when allDay }
+                endDate: { type: string, format: date, nullable: true }
+                startLocal: { type: string, nullable: true, description: Required when not allDay }
+                endLocal: { type: string, nullable: true }
+                timeZone: { type: string, nullable: true, description: Required when not allDay }
+                location: { type: string, maxLength: 300 }
+                meetingUrl: { type: string, nullable: true, maxLength: 500 }
+                attendeeIds: { type: array, maxItems: 25, items: { type: string } }
+                clientVisible: { type: boolean, default: false }
+                clientTitle: { type: string, maxLength: 200 }
+                clientDescription: { type: string, maxLength: 1000 }
+      responses:
+        '201': { description: CaseCalendarEvent DTO }
+        '403': { description: Missing calendar.manage or cases.view, or untrusted Origin }
+        '404': { description: Case missing, malformed id or inaccessible (identical) }
+        '422': { description: validation_error with fieldErrors }
+  /staff/calendar-events/{eventId}:
+    get:
+      summary: A manual event, ready for the editor (calendar.view, cases.view)
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: "CaseCalendarEvent DTO; actions = { canEdit, canCancel }" }
+        '403': { description: Missing calendar.view or cases.view }
+        '404': { description: Event missing, malformed id or inaccessible (identical) }
+    patch:
+      summary: Edit a manual event (calendar.manage, cases.view)
+      description: Partial. The merged result is validated as a whole, so switching between all-day and timed leaves no stale fields. A cancelled event is final.
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: CaseCalendarEvent DTO }
+        '403': { description: Missing calendar.manage or untrusted Origin }
+        '404': { description: Event missing or inaccessible }
+        '409': { description: The event was cancelled (invalid_state) }
+        '422': { description: validation_error with fieldErrors }
+  /staff/calendar-events/{eventId}/cancel:
+    post:
+      summary: Cancel a manual event (calendar.manage, cases.view)
+      description: Non-destructive and idempotent. There is no delete endpoint.
+      parameters:
+        - { name: eventId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: CaseCalendarEvent DTO (cancelled) }
+        '403': { description: Missing calendar.manage or untrusted Origin }
+        '404': { description: Event missing or inaccessible }
