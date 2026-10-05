@@ -171,6 +171,33 @@ describe('CaseDetailComponent', () => {
     });
   });
 
+  describe('Case Tracking tab', () => {
+    const open = (query: Record<string, string>, availableTabs?: string[]) => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: ActivatedRoute, useValue: routeStub(query) }] });
+      const http2 = TestBed.inject(HttpTestingController);
+      const fixture = TestBed.createComponent(CaseDetailComponent);
+      fixture.detectChanges();
+      http2.expectOne(CASE).flush({ data: { ...detail(PM), ...(availableTabs ? { availableTabs } : {}) }, meta });
+      http2.match(() => true).forEach((r) => r.flush({ data: { members: [], employees: [], filings: [], actions: { canCreate: false } }, meta }));
+      fixture.detectChanges();
+      return fixture;
+    };
+
+    it('is offered only when the server lists the tab, under the Case work group', () => {
+      const labels = (f: ReturnType<typeof open>) => Array.from(f.nativeElement.querySelectorAll('.workflow-navigation .tab-btn') as NodeListOf<HTMLElement>).map((b) => b.textContent?.trim());
+      expect(labels(open({}, ['overview', 'tasks', 'tracking']))).toContain('Case Tracking');
+      expect(labels(open({}, ['overview', 'tasks']))).not.toContain('Case Tracking');
+    });
+
+    it('opens from the queue deep link on the named filing', () => {
+      const fixture = open({ tab: 'tracking', filing: 'f7' }, ['overview', 'tracking']);
+      expect(fixture.componentInstance.activeTab()).toBe('tracking');
+      expect(fixture.componentInstance.initialFilingId()).toBe('f7');
+      expect(fixture.nativeElement.querySelector('ih-tracking-tab')).toBeTruthy();
+    });
+  });
+
   describe('team tab', () => {
     it('renders the members endpoint DTO (employee and client members), not caseData.team', () => {
       const fixture = setup(PM);

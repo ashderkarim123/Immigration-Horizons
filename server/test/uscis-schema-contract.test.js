@@ -30,3 +30,9 @@ test('vocabularies and limits match the contract', () => {
   assert.deepEqual(C.TRACKING_PROVIDERS, contract.trackingProviders);
   assert.deepEqual(C.LIMITS, contract.limits);
 });
+
+test('the Angular status-category list matches the contract (drift guard)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../../enterprise-ui/projects/case-management/src/app/core/api/uscis.types.ts'), 'utf8');
+  const listed = [...src.matchAll(/\{ value: '([a-z_]+)', label: '/g)].map((m) => m[1]);
+  assert.deepEqual(listed, contract.statusCategories);
+});

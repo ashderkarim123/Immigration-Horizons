@@ -488,7 +488,10 @@ async function buildQueueFilter(req, query = {}) {
   if (authorizedIds) filter.case = { $in: authorizedIds };
   if (query.archived !== 'true') filter.archivedAt = null;
 
-  if (C.STATUS_CATEGORIES.includes(query.statusCategory)) filter.currentStatusCategory = query.statusCategory;
+  // One category, or a comma-separated list ("approved,closed"); unknown values are ignored.
+  const categories = String(query.statusCategory || '').split(',').filter((c) => C.STATUS_CATEGORIES.includes(c));
+  if (categories.length === 1) filter.currentStatusCategory = categories[0];
+  else if (categories.length > 1) filter.currentStatusCategory = { $in: categories };
   const actionRequired = parseBool(query.actionRequired);
   if (actionRequired !== undefined) filter.actionRequired = actionRequired;
   if (C.TRACKING_PROVIDERS.includes(query.trackingProvider)) filter.trackingProvider = query.trackingProvider;

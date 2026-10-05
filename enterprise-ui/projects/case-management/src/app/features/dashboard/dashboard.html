@@ -26,6 +26,10 @@
       <div class="metric-value">{{ m.upcomingDeadlines }}</div>
       <div class="metric-label">Upcoming Deadlines</div>
     </a> }
+    @if (m.uscisActionRequired != null) { <a routerLink="/tracking" class="metric-card">
+      <div class="metric-value">{{ m.uscisActionRequired }}</div>
+      <div class="metric-label">USCIS action required</div>
+    </a> }
     <a routerLink="/tasks" class="metric-card">
       <div class="metric-value">{{ m.myOpenTasks }}</div>
       <div class="metric-label">Open Tasks</div>

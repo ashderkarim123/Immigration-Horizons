@@ -1872,7 +1872,7 @@ paths:
         client display name and project manager name, plus explicit per-filing actions. Never raw documents.
       parameters:
         - { name: search, in: query, schema: { type: string, maxLength: 80 }, description: Receipt prefix, case number, filing title or form type }
-        - { name: statusCategory, in: query, schema: { type: string, enum: [filed, received, actively_reviewed, notice_issued, rfe_issued, noid_issued, response_received, interview_scheduled, approved, denied, transferred, closed, other] } }
+        - { name: statusCategory, in: query, schema: { type: string }, description: "One category or a comma-separated list, e.g. approved,closed (filed, received, actively_reviewed, notice_issued, rfe_issued, noid_issued, response_received, interview_scheduled, approved, denied, transferred, closed, other)" }
         - { name: actionRequired, in: query, schema: { type: string, enum: ["true", "false"] } }
         - { name: responseDueFrom, in: query, schema: { type: string, format: date } }
         - { name: responseDueTo, in: query, schema: { type: string, format: date } }

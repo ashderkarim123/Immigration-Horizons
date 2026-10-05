@@ -157,7 +157,10 @@ test("the client DTO carries no provider internals, employee data, audit hashes 
   const keys = new Set<string>();
   const walk = (value: unknown) => {
     if (Array.isArray(value)) value.forEach(walk);
-    else if (value && typeof value === "object") for (const [k, v] of Object.entries(value)) (keys.add(k), walk(v));
+    else if (value && typeof value === "object") for (const [k, v] of Object.entries(value)) {
+        keys.add(k);
+        walk(v);
+      }
   };
   walk(body);
   for (const forbidden of ["_id", "__v", "workspace", "case", "createdBy", "createdByName", "updatedBy", "providerEventKey", "providerPayloadHash", "providerModifiedAt", "source", "observedAt", "trackingProvider", "trackingEnabled", "lastSyncErrorCode", "lastSyncErrorAt", "lastCheckedAt", "currentEvent", "clientVisible", "serviceCenter", "statusCategory"]) {
