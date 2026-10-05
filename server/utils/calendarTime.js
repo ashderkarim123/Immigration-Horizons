@@ -51,6 +51,9 @@ function instantToLocal(instant, zone) {
   return instant ? DateTime.fromJSDate(new Date(instant), { zone }).toFormat("yyyy-LL-dd'T'HH:mm") : null;
 }
 
+/** "Tue, Oct 20 at 2:30 PM EDT": an instant as a person in `zone` would read it (used in reminder text). */
+const formatInstant = (instant, zone) => DateTime.fromJSDate(new Date(instant), { zone }).setLocale('en-US').toFormat("ccc, LLL d 'at' h:mm a ZZZZ");
+
 /** Today's calendar date in a zone. */
 const todayInZone = (zone, now = new Date()) => DateTime.fromJSDate(now, { zone }).toISODate();
 
@@ -89,6 +92,7 @@ module.exports = {
   dateStringToUtc,
   localToInstant,
   instantToLocal,
+  formatInstant,
   todayInZone,
   daysBetween,
   addDays,

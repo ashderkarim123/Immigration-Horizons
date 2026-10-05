@@ -567,11 +567,14 @@ router.get(
         caseId: n.relatedCase,
         leadId: n.relatedLead,
         interactionId: n.relatedInteraction,
+        href: n.actionPath || null,
       })),
       preferences: {
         mentionEmails: preferences.mentionEmails,
         digestEmails: preferences.digestEmails,
         digestFrequency: preferences.digestFrequency,
+        deadlineReminders: preferences.deadlineReminders !== false,
+        appointmentReminders: preferences.appointmentReminders !== false,
       },
     });
   }),
@@ -603,6 +606,8 @@ router.patch(
       !["daily", "weekly", "off"].includes(req.body.digestFrequency)
     )
       throw invalid("Choose valid notification preferences.");
+    for (const key of ["deadlineReminders", "appointmentReminders"])
+      if (req.body[key] !== undefined && typeof req.body[key] !== "boolean") throw invalid("Choose valid notification preferences.");
     await notificationService.updatePreferences({
       recipientType: "employee",
       recipientAdminId: req.staff._id,

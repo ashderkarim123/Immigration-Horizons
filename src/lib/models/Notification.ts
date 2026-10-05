@@ -80,6 +80,8 @@ const NotificationSchema = new Schema(
 
     emailState: { type: String, enum: EMAIL_STATES, default: "not_applicable" },
     dedupeKey: { type: String, default: null },
+    // Phase 12: server-composed in-app destination for calendar reminders (mirrors server/models/admin/Notification.js).
+    actionPath: { type: String, default: null, maxlength: 300 },
   },
   { timestamps: true },
 );

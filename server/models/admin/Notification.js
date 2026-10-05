@@ -92,6 +92,10 @@ const NotificationSchema = new mongoose.Schema(
     // unset (not an empty string) everywhere else, matched by the sparse
     // partial index below.
     dedupeKey: { type: String, default: null },
+
+    // Phase 12 — in-app destination composed by the server when the notification is created (calendar reminders),
+    // e.g. "/cases/<id>?tab=tasks" for Staff or "/portal/cases/<id>/documents" for a client. Never user input.
+    actionPath: { type: String, default: null, maxlength: 300 },
   },
   { timestamps: true }
 );

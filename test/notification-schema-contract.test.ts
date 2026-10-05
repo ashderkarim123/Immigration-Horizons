@@ -24,7 +24,7 @@ test("notification type enum matches the contract exactly", () => {
 });
 
 test("required identity fields exist on both models", () => {
-  for (const field of ["recipientType", "recipientAdmin", "recipientClient", "dedupeKey", "emailState"]) {
+  for (const field of ["recipientType", "recipientAdmin", "recipientClient", "dedupeKey", "emailState", "actionPath"]) {
     assert.ok(Notification.schema.path(field), `Notification.${field} must exist`);
   }
   for (const field of ["recipientType", "recipientAdmin", "recipientClient", "mentionEmails", "digestEmails", "digestFrequency", "deadlineReminders", "appointmentReminders"]) {

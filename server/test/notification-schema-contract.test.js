@@ -31,7 +31,7 @@ test('every client-eligible type in the contract is a real notification type', (
 });
 
 test('required identity fields exist on both models', () => {
-  for (const field of ['recipientType', 'recipientAdmin', 'recipientClient', 'dedupeKey', 'emailState']) {
+  for (const field of ['recipientType', 'recipientAdmin', 'recipientClient', 'dedupeKey', 'emailState', 'actionPath']) {
     assert.ok(Notification.schema.path(field), `Notification.${field} must exist`);
   }
   for (const field of ['recipientType', 'recipientAdmin', 'recipientClient', 'mentionEmails', 'digestEmails', 'digestFrequency', 'deadlineReminders', 'appointmentReminders']) {
