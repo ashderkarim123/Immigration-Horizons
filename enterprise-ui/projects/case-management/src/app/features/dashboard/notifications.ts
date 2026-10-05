@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink, UrlTree } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api/api.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -14,6 +14,10 @@ interface Notice {
   caseId: string | null;
   leadId: string | null;
   interactionId: string | null;
+  /** A server-composed in-app destination (calendar reminders); preferred over the generic related-record links. */
+  href?: string | null;
+  /** `href` parsed for the router (only a same-app absolute path is ever accepted). */
+  link?: UrlTree | null;
 }
 @Component({
   standalone: true,
@@ -43,7 +47,9 @@ interface Notice {
           <h2>{{ notice.title }}</h2>
           <p>{{ notice.message }}</p>
           <p>{{ notice.createdAt | date: 'medium' }} · {{ notice.read ? 'Read' : 'Unread' }}</p>
-          @if (notice.caseId && auth.capabilities().includes('cases.view')) {
+          @if (notice.link) {
+            <a [routerLink]="notice.link">Open</a>
+          } @else if (notice.caseId && auth.capabilities().includes('cases.view')) {
             <a [routerLink]="['/cases', notice.caseId]">Open case</a>
           } @else if (notice.interactionId && auth.capabilities().includes('queries.view')) {
             <a [routerLink]="['/consultations', notice.interactionId]">Open consultation</a>
@@ -72,6 +78,12 @@ interface Notice {
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
           <option value="off">Off</option></select
+        ><label
+          ><input type="checkbox" name="deadline-reminders" [(ngModel)]="deadlineReminders" /> Remind me
+          before deadlines</label
+        ><label
+          ><input type="checkbox" name="appointment-reminders" [(ngModel)]="appointmentReminders" /> Remind
+          me before appointments</label
         ><button class="btn btn-primary" [disabled]="busy()">Save email preferences</button>
       </form>
     }`,
@@ -97,6 +109,7 @@ interface Notice {
 export class StaffNotifications {
   private api = inject(ApiService);
   auth = inject(AuthService);
+  private router = inject(Router);
   notices = signal<Notice[]>([]);
   loading = signal(true);
   busy = signal(false);
@@ -106,6 +119,8 @@ export class StaffNotifications {
   mentionEmails = true;
   digestEmails = true;
   digestFrequency = 'daily';
+  deadlineReminders = true;
+  appointmentReminders = true;
   constructor() {
     this.load();
   }
@@ -115,11 +130,11 @@ export class StaffNotifications {
     this.api
       .get<{
         items: Notice[];
-        preferences: { mentionEmails: boolean; digestEmails: boolean; digestFrequency: string };
+        preferences: { mentionEmails: boolean; digestEmails: boolean; digestFrequency: string; deadlineReminders?: boolean; appointmentReminders?: boolean };
       }>('/staff/notifications', { unread: this.unreadOnly ? '1' : null })
       .subscribe({
         next: ({ data }) => {
-          this.notices.set(data.items);
+          this.notices.set(data.items.map((n) => ({ ...n, link: this.linkOf(n.href) })));
           Object.assign(this, data.preferences);
           this.loading.set(false);
         },
@@ -130,6 +145,10 @@ export class StaffNotifications {
     this.loading.set(false);
     this.busy.set(false);
     this.error.set(apiErrorMessage(e, 'Could not load or update notifications.'));
+  }
+  /** A reminder carries a server-composed path such as /cases/:id?tab=tasks; the router resolves it under the app's base. */
+  private linkOf(href: string | null | undefined): UrlTree | null {
+    return href && href.startsWith('/') && !href.startsWith('//') ? this.router.parseUrl(href) : null;
   }
   markRead(id?: string) {
     if (this.busy()) return;
@@ -150,6 +169,8 @@ export class StaffNotifications {
         mentionEmails: this.mentionEmails,
         digestEmails: this.digestEmails,
         digestFrequency: this.digestFrequency,
+        deadlineReminders: this.deadlineReminders,
+        appointmentReminders: this.appointmentReminders,
       })
       .subscribe({
         next: () => {

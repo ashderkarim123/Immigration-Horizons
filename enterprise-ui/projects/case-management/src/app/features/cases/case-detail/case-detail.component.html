@@ -305,6 +305,10 @@
       <ih-tracking-tab [caseId]="caseId()" [initialFilingId]="initialFilingId()"></ih-tracking-tab>
     }
 
+    @if (activeTab() === 'calendar') {
+      <ih-calendar-tab [caseId]="caseId()" [initialEventId]="initialEventId()"></ih-calendar-tab>
+    }
+
     @if (activeTab() === 'documents') {
       <ih-documents-tab [caseId]="caseId()" [createOnLoad]="createAction() === 'request'"></ih-documents-tab>
     }

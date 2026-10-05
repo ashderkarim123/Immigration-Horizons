@@ -85,6 +85,11 @@ export const routes: Routes = [
           import('./features/messages/messages.component').then((m) => m.MessagesComponent),
       },
       {
+        path: 'calendar',
+        loadComponent: () =>
+          import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),
+      },
+      {
         path: 'deadlines',
         loadComponent: () =>
           import('./features/deadlines/deadlines.component').then((m) => m.DeadlinesComponent),
