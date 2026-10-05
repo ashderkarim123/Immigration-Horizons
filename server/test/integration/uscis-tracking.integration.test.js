@@ -445,6 +445,9 @@ test('queue: rows are scoped to the actor’s cases; search and every filter onl
   assert.equal((await q(admin.agent, '?actionRequired=true')).body.data.items[0].title, 'Mine');
   assert.equal((await q(admin.agent, '?actionRequired=false')).body.data.items[0].title, 'Theirs');
   assert.equal((await q(admin.agent, '?statusCategory=nonsense')).body.data.total, 2, 'an unknown value is ignored, not an error');
+  assert.equal((await q(admin.agent, '?statusCategory=approved,rfe_issued')).body.data.total, 2, 'a list matches any of its categories');
+  assert.equal((await q(admin.agent, '?statusCategory=approved,nonsense')).body.data.total, 1);
+  assert.equal((await q(t.pm.agent, '?statusCategory=approved,rfe_issued')).body.data.total, 1, 'a list still cannot reach another case');
   assert.equal((await q(admin.agent, '?hasDue=true')).body.data.total, 1);
   assert.equal((await q(admin.agent, '?responseDueFrom=2026-05-01&responseDueTo=2026-07-01')).body.data.total, 1);
   assert.equal((await q(admin.agent, '?responseDueFrom=2026-07-01')).body.data.total, 0);

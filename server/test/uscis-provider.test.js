@@ -237,3 +237,31 @@ test('the same observation always has the same fingerprint; a changed one does n
   assert.equal(a.providerFingerprint, b.providerFingerprint);
   assert.notEqual(a.providerFingerprint, c.providerFingerprint);
 });
+
+test('sandbox verification script: refuses production and unconfigured providers, passes a healthy sandbox, and prints no secret', async () => {
+  const { verify } = require('../scripts/verifyUscisSandbox');
+  const run = async (provider, receipt = RECEIPT) => {
+    const lines = [];
+    const result = await verify({ provider, receipt, log: (l) => lines.push(l) });
+    return { result, out: lines.join('\n') };
+  };
+
+  const production = await run(createTorchProvider({ config: config({ environment: 'production' }), fetchImpl: transport({ oauth: tokenOk(), status: caseStatus() }).fetchImpl }));
+  assert.deepEqual(production.result, { ok: false, reason: 'not_sandbox' });
+  assert.deepEqual((await run(createTorchProvider({ config: config({ enabled: false }) }))).result, { ok: false, reason: 'not_configured' });
+  const sandbox = () => {
+    let k = 0;
+    return make({ oauth: () => tokenOk(), status: () => (++k === 1 ? caseStatus() : json(404, {})) }).provider;
+  };
+  assert.deepEqual((await run(sandbox(), 'nope')).result, { ok: false, reason: 'bad_receipt' });
+
+  const good = await run(sandbox());
+  assert.equal(good.result.ok, true, good.out);
+  assert.match(good.out, /\[1\/2\] OAuth token exchange and case-status request: OK for IOE••••••7890/);
+  assert.match(good.out, /\[2\/2\] OK: intentional bad receipt was handled as provider_receipt_not_found/);
+  for (const secret of [SECRET, TOKEN, 'client-id-1', 'example.test', RECEIPT]) assert.ok(!good.out.includes(secret), `printed ${secret}`);
+
+  const failing = await run(make({ oauth: json(401, {}), status: caseStatus() }).provider);
+  assert.equal(failing.result.ok, false);
+  assert.match(failing.out, /FAILED: provider_auth_failed \(HTTP 401\)/);
+});
