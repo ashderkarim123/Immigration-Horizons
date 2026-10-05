@@ -17,6 +17,8 @@ const NotificationPreferenceSchema = new Schema(
     mentionEmails: { type: Boolean, default: true },
     digestEmails: { type: Boolean, default: true },
     digestFrequency: { type: String, enum: DIGEST_FREQUENCIES, default: "daily" },
+    deadlineReminders: { type: Boolean, default: true },
+    appointmentReminders: { type: Boolean, default: true },
   },
   { timestamps: true },
 );

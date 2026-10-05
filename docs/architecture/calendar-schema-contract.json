@@ -1,0 +1,59 @@
+{
+  "_comment": "Cross-app contract for manual calendar events (ADR-027). server/test/calendar-schema-contract.test.js and test/calendar-schema-contract.test.ts both assert their models and constants against this file. Add a field or value on one side only and both suites fail; that is the point.",
+  "collections": {
+    "CaseCalendarEvent": "case_calendar_events"
+  },
+  "fields": {
+    "CaseCalendarEvent": [
+      "allDay",
+      "cancelledAt",
+      "case",
+      "clientDescription",
+      "clientTitle",
+      "clientVisible",
+      "createdAt",
+      "createdBy",
+      "createdByName",
+      "employeeAttendees",
+      "endAt",
+      "endDate",
+      "eventType",
+      "internalDescription",
+      "internalTitle",
+      "location",
+      "meetingUrl",
+      "startAt",
+      "startDate",
+      "status",
+      "timeZone",
+      "updatedAt",
+      "updatedBy",
+      "updatedByName",
+      "workspace"
+    ]
+  },
+  "eventTypes": [
+    "appointment",
+    "consultation",
+    "interview",
+    "biometrics",
+    "meeting",
+    "deadline",
+    "milestone",
+    "other"
+  ],
+  "eventStatuses": [
+    "scheduled",
+    "completed",
+    "cancelled"
+  ],
+  "limits": {
+    "internalTitle": 200,
+    "internalDescription": 2000,
+    "location": 300,
+    "meetingUrl": 500,
+    "clientTitle": 200,
+    "clientDescription": 1000,
+    "attendees": 25
+  }
+}

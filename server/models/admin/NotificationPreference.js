@@ -18,6 +18,9 @@ const NotificationPreferenceSchema = new mongoose.Schema(
     mentionEmails: { type: Boolean, default: true },
     digestEmails: { type: Boolean, default: true },
     digestFrequency: { type: String, enum: DIGEST_FREQUENCIES, default: 'daily' },
+    // Phase 12 (ADR-027): two coarse switches, not a per-event matrix. The calendar itself is unaffected by them.
+    deadlineReminders: { type: Boolean, default: true },
+    appointmentReminders: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

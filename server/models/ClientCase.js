@@ -90,5 +90,6 @@ ClientCaseSchema.index({ createdAt: -1 });
 // "needing attention"/stalled queues filter on it. Declared identically in
 // src/lib/models/ClientCase.ts so the two mirrors stay in step.
 ClientCaseSchema.index({ archivedAt: 1, updatedAt: -1 });
+ClientCaseSchema.index({ archivedAt: 1, targetFilingDate: 1 }); // Phase 12 calendar: active cases by target filing date
 
 module.exports = mongoose.model('ClientCase', ClientCaseSchema, 'client_cases');

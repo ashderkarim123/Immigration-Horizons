@@ -27,6 +27,8 @@ const UserSchema = new mongoose.Schema(
     passwordChangedAt: { type: Date, default: null },
     jobTitle: { type: String, default: '' },
     department: { type: String, default: '' },
+    // Phase 12 (ADR-027): optional IANA zone. Empty means "use PRACTICE_TIME_ZONE, else UTC"; never inferred from an IP.
+    timeZone: { type: String, default: '' },
 
     // Login lockout counters (ADR-012 3). Written by BOTH this app and the
     // SaaS staff app, which authenticate the same records — see

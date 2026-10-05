@@ -88,6 +88,10 @@ const ACTIVITY_TYPES = [
   'uscis_filing_updated',
   'uscis_status_recorded',
   'uscis_filing_archived',
+  // Phase 12 — manual calendar events (ADR-027). Never carries descriptions or meeting links.
+  'calendar_event_created',
+  'calendar_event_updated',
+  'calendar_event_cancelled',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(

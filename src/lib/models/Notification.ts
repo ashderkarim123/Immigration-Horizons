@@ -43,6 +43,8 @@ export const NOTIFICATION_TYPES = [
   "uscis_filing_added",
   "uscis_status_changed",
   "uscis_action_required",
+  "calendar_deadline_reminder",
+  "calendar_appointment_reminder",
 ] as const;
 
 export const RECIPIENT_TYPES = ["employee", "client"] as const;

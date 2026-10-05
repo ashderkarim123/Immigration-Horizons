@@ -43,6 +43,9 @@ const NOTIFICATION_TYPES = [
   'uscis_filing_added',
   'uscis_status_changed',
   'uscis_action_required',
+  // Phase 12 — calendar reminders (ADR-027).
+  'calendar_deadline_reminder',
+  'calendar_appointment_reminder',
 ];
 
 const RECIPIENT_TYPES = ['employee', 'client'];

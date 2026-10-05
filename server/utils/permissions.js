@@ -268,6 +268,11 @@ const CAPABILITIES = {
   'uscis_tracking.view': ['super_admin', 'admin', 'operations_admin', 'pm', 'petition_writer', 'uscis_forms_specialist', 'reviewer'],
   'uscis_tracking.manage': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
   'uscis_tracking.sync': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
+
+  // Phase 12 — unified calendar (ADR-027). calendar.view is never a bypass: every source still needs its own
+  // capability (cases.view, documents.view, queries.view, uscis_tracking.view) plus case row access.
+  'calendar.view': ['super_admin', 'admin', 'operations_admin', 'pm', 'petition_writer', 'business_plan_specialist', 'recommendation_letter_specialist', 'uscis_forms_specialist', 'evidence_collector', 'reviewer'],
+  'calendar.manage': ['super_admin', 'admin', 'operations_admin', 'pm'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */
