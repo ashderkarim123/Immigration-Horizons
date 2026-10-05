@@ -13,6 +13,8 @@ import { getUnreadCountsForChannels } from "@/lib/collaboration/read-state-servi
 import { AdminUser } from "@/lib/models/AdminUser";
 import { CaseSmartForm } from "@/lib/models/CaseSmartForm";
 import { USCISFiling } from "@/lib/models/USCISFiling";
+import { getClientCalendar } from "@/lib/calendar/client-view";
+import { UpcomingDates } from "@/components/portal/upcoming-dates";
 import { CASE_TYPES, CLIENT_STAGE_LABELS, type CaseStage } from "@/lib/content/case-constants";
 
 export const metadata: Metadata = {
@@ -32,7 +34,7 @@ export default async function PortalCaseDetailPage({
 
   const accessible = await getAccessibleCase(caseId, String(client._id));
   if (!accessible) notFound();
-  const { caseDoc } = accessible;
+  const { caseDoc, workspace } = accessible;
 
   const projectManager = caseDoc.projectManager
     ? await AdminUser.findById(caseDoc.projectManager).select("name").lean()
@@ -52,6 +54,7 @@ export default async function PortalCaseDetailPage({
     status: { $in: ["draft", "needs_changes"] },
   });
 
+  const upcoming = await getClientCalendar({ caseId: String(caseDoc._id), workspaceId: String(workspace._id), clientUserId: String(client._id) });
   const trackedFilings = await USCISFiling.countDocuments({ case: caseDoc._id, clientVisible: true, archivedAt: null });
 
   const trail = [
@@ -171,11 +174,18 @@ export default async function PortalCaseDetailPage({
           </div>
         ) : null}
 
-        <div className="rounded-panel border-ink-200 flex flex-col gap-2 border border-dashed bg-white p-6 text-sm">
-          <h2 className="font-display text-navy-800 text-base font-semibold">Coming soon</h2>
-          <p className="text-ink-500">
-            Scheduled consultations for this case will appear here in a future update.
-          </p>
+        <div className="rounded-panel border-ink-200 flex flex-col gap-3 border bg-white p-6 text-sm shadow-subtle sm:col-span-2">
+          <h2 className="font-display text-navy-800 text-base font-semibold">Upcoming dates</h2>
+          <UpcomingDates items={upcoming} limit={3} />
+          {upcoming.length > 0 ? (
+            <Link
+              href={`/portal/cases/${caseId}/calendar`}
+              className="text-navy-700 mt-1 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+            >
+              See all upcoming dates
+              <ArrowRight size={14} aria-hidden />
+            </Link>
+          ) : null}
         </div>
       </div>
     </Container>

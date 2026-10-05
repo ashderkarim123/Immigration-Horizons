@@ -20,7 +20,7 @@ export default async function PortalNotificationPreferencesPage() {
 
   const preferences = db
     ? await getOrCreatePreferences({ recipientType: "client", recipientClientId: client._id })
-    : { mentionEmails: true, digestEmails: true, digestFrequency: "daily" as const };
+    : { mentionEmails: true, digestEmails: true, digestFrequency: "daily" as const, deadlineReminders: true, appointmentReminders: true };
 
   return (
     <Container width="prose" className="py-10 sm:py-14">
@@ -39,6 +39,8 @@ export default async function PortalNotificationPreferencesPage() {
           initialMentionEmails={Boolean(preferences.mentionEmails)}
           initialDigestEmails={Boolean(preferences.digestEmails)}
           initialDigestFrequency={(preferences.digestFrequency as "daily" | "weekly" | "off") ?? "daily"}
+          initialDeadlineReminders={preferences.deadlineReminders !== false}
+          initialAppointmentReminders={preferences.appointmentReminders !== false}
         />
       </div>
     </Container>

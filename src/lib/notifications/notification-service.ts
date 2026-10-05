@@ -121,10 +121,10 @@ export async function getOrCreatePreferences(params: { recipientType: "employee"
 
 export async function updateClientPreferences(params: {
   clientUserId: unknown;
-  updates: { mentionEmails?: boolean; digestEmails?: boolean; digestFrequency?: "daily" | "weekly" | "off" };
+  updates: { mentionEmails?: boolean; digestEmails?: boolean; digestFrequency?: "daily" | "weekly" | "off"; deadlineReminders?: boolean; appointmentReminders?: boolean };
 }) {
   const prefs = await getOrCreatePreferences({ recipientType: "client", recipientClientId: params.clientUserId });
-  const allowed = ["mentionEmails", "digestEmails", "digestFrequency"] as const;
+  const allowed = ["mentionEmails", "digestEmails", "digestFrequency", "deadlineReminders", "appointmentReminders"] as const;
   for (const key of allowed) {
     if (Object.prototype.hasOwnProperty.call(params.updates, key)) {
       (prefs as unknown as Record<string, unknown>)[key] = params.updates[key];
