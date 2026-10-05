@@ -262,6 +262,12 @@ const CAPABILITIES = {
   'filing_packets.manage': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
   'filing_packets.review': ['super_admin', 'admin', 'operations_admin', 'pm', 'reviewer'],
   'filing_packets.finalize': ['super_admin', 'admin', 'reviewer'],
+
+  // Phase 11 — USCIS filing tracking (ADR-026). Every operation also needs case row access
+  // (cases.view_all, or an active employee WorkspaceMember on the case).
+  'uscis_tracking.view': ['super_admin', 'admin', 'operations_admin', 'pm', 'petition_writer', 'uscis_forms_specialist', 'reviewer'],
+  'uscis_tracking.manage': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
+  'uscis_tracking.sync': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
 };
 
 /** Fail-closed: no role → no access. Never defaults to a privileged role. */

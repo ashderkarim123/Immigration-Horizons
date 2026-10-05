@@ -40,6 +40,9 @@ export const NOTIFICATION_TYPES = [
   "document_request_cancelled",
   "document_accepted",
   "document_replacement_requested",
+  "uscis_filing_added",
+  "uscis_status_changed",
+  "uscis_action_required",
 ] as const;
 
 export const RECIPIENT_TYPES = ["employee", "client"] as const;
