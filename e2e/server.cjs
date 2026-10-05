@@ -155,6 +155,79 @@ async function main() {
     "../enterprise-ui/dist/case-management/browser",
   );
   app.get("/__browser_fixture", (_req, res) => res.json(fixture));
+
+  // Phase 12 (calendar): its own case, client and dates, so nothing here disturbs the other browser journeys. Created on
+  // first request, relative to the real clock, in the disposable database only.
+  const isoDay = (offsetDays) =>
+    new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
+  let calendarFixture = null;
+  async function provisionCalendarFixture() {
+    const mk = async (label, email) =>
+      ClientUser.create({
+        firstName: label,
+        lastName: "Calendar",
+        email,
+        normalizedEmail: email,
+        passwordHash: await bcrypt.hash(password, 12),
+        status: "active",
+        emailVerifiedAt: new Date(),
+      });
+    const calendarClient = await mk("Cal", "calendar-client@browser.ih.test");
+    const otherClient = await mk("Other", "calendar-other@browser.ih.test");
+    const tomorrow = isoDay(1);
+    const created = await createClientCase({
+      clientId: calendarClient._id,
+      input: { title: "Calendar browser case", caseType: "eb2_niw", projectManagerId: roles.pm.id, priority: "high" },
+      actor,
+    });
+    const other = await createClientCase({
+      clientId: otherClient._id,
+      input: { title: "Other firm case", caseType: "eb2_niw", projectManagerId: roles.operations_admin.id, targetFilingDate: tomorrow, priority: "high" },
+      actor,
+    });
+    if (!created.case || !other.case) throw new Error("Calendar fixture provisioning failed.");
+    const ws = await CaseWorkspace.findOne({ case: created.case._id });
+    await WorkspaceMember.create({ workspace: ws._id, memberType: "employee", adminUser: roles.evidence_collector.id, workspaceRole: "contributor", status: "active" });
+    const clientMember = await WorkspaceMember.findOne({ workspace: ws._id, clientUser: calendarClient._id });
+    const cat = await DocumentCategory.findOne({ case: created.case._id, templateKey: "identity_civil_documents" });
+    await createDocumentRequest({
+      caseId: created.case._id,
+      workspaceId: ws._id,
+      categoryId: cat._id,
+      title: "Calendar passport copy",
+      documentType: "Passport",
+      instructions: "Upload all pages clearly.",
+      requestedFromMemberId: clientMember._id,
+      requestedByAdminId: roles.pm.id,
+      actor,
+      dueDate: tomorrow,
+    });
+    return {
+      caseId: String(created.case._id),
+      otherCaseId: String(other.case._id),
+      client: { email: calendarClient.email },
+      tomorrow,
+    };
+  }
+  app.post("/__browser_calendar_fixture", async (_req, res) => {
+    try {
+      calendarFixture = calendarFixture || provisionCalendarFixture();
+      res.json(await calendarFixture);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+  // One reminder pass against the disposable database, exactly as the production worker would run it.
+  app.post("/__browser_run_reminders", async (_req, res) => {
+    try {
+      const { runReminders } = require("../server/services/calendarReminderService");
+      res.json(await runReminders({ apply: true, now: new Date() }));
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
   app.post("/__browser_shutdown", (_req, res) => {
     res.json({ stopped: true });
     setImmediate(shutdown);

@@ -23,7 +23,7 @@ import { supportedZones } from './calendar-model';
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="event-dialog-title" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3 id="event-dialog-title">{{ eventId() ? 'Calendar event' : 'Add calendar event' }}</h3>
-          <button type="button" class="btn-close" aria-label="Close" (click)="closed.emit()">×</button>
+          <button type="button" class="btn-close" aria-label="Close dialog" (click)="closed.emit()">×</button>
         </div>
 
         <div class="modal-body">
