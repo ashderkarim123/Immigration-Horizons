@@ -85,6 +85,11 @@ const MODELS = [
   // writes (revoke/re-issue, session revocation) — ADR-007 §1.
   require('../models/PortalInvitation'),
   require('../models/ClientSession'),
+  // Staff API sessions use the same employee-session collection as Next.js.
+  require('../models/EmployeeSession'),
+  // Phase 05 — evidence provisioning depends on these unique indexes.
+  require('../models/EvidenceTemplate'),
+  require('../models/EvidenceRequirement'),
   // Phase 08 — Smart Forms (ADR-021 §30). Dual-writer with the Next.js app for
   // case_smart_forms / smart_form_audits; templates are written only by the seeder.
   require('../models/SmartFormTemplate'),
