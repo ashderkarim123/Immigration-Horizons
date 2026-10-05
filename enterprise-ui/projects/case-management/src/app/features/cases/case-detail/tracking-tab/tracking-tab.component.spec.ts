@@ -225,7 +225,7 @@ describe('TrackingTabComponent', () => {
   });
 
   it('add status: due date only with action required, the date is sent as entered, and the timeline updates', () => {
-    const component = setup([filing()]);
+    const component = setup([filing({ currentStatus: null })]);
     component.openStatus();
     fixture.detectChanges();
     expect(el().querySelector('#s-due')).toBeNull();
@@ -249,6 +249,32 @@ describe('TrackingTabComponent', () => {
 
     expect(component.statusOpen()).toBe(false);
     expect(Array.from(el().querySelectorAll('.timeline-item strong')).map((n) => n.textContent)).toEqual(['Request for Evidence', 'Case Was Received']);
+  });
+
+  it('add status: an outstanding action and its due date are carried over so a newer update cannot silently drop them', async () => {
+    const component = setup([filing()]); // current status: RFE, action required, due 2020-01-01
+    component.openStatus();
+    fixture.detectChanges();
+    await fixture.whenStable(); // ngModel writes input values asynchronously
+    expect(component.sActionRequired()).toBe(true);
+    expect(component.sDue()).toBe('2020-01-01');
+    expect(text()).toContain('The current status needs action');
+    expect((el().querySelector('#s-due') as HTMLInputElement).value).toBe('2020-01-01');
+
+    // clearing is a deliberate act: unchecking sends no action and no due date
+    component.sTitle.set('Response sent');
+    component.sActionRequired.set(false);
+    component.submitStatus();
+    const req = http.expectOne('/api/v1/staff/uscis/f1/status-events');
+    expect([req.request.body.actionRequired, req.request.body.responseDueAt]).toEqual([false, null]);
+    req.flush({ data: detailOf(filing()), meta }, { status: 201, statusText: 'Created' });
+  });
+
+  it('add status: nothing is carried over when the current status needs no action', () => {
+    const component = setup([filing({ currentStatus: { ...filing().currentStatus!, actionRequired: false, responseDueAt: null } })]);
+    component.openStatus();
+    expect([component.sActionRequired(), component.sDue()]).toEqual([false, '']);
+    expect(text()).not.toContain('The current status needs action');
   });
 
   it('add status: unchecking action required drops the due date; a server field error appears beside its input and keeps what was typed', () => {

@@ -213,6 +213,9 @@ const toLocalInput = (d = new Date()) => new Date(d.getTime() - d.getTimezoneOff
           <div class="modal-body">
             @if (formError()) { <p class="field-error" role="alert">{{ formError() }}</p> }
             <p class="hint">Status updates are permanent. To correct one, add a new update.</p>
+            @if (detail()?.filing?.currentStatus?.actionRequired) {
+              <p class="hint" role="note">The current status needs action. A newer update replaces it, so action required and the due date are carried over below. Clear them only if the action has been completed.</p>
+            }
 
             <label class="form-label" for="s-category">Category <span class="text-danger">*</span></label>
             <select id="s-category" class="form-select" [ngModel]="sCategory()" (ngModelChange)="sCategory.set($event)">
@@ -494,8 +497,11 @@ export class TrackingTabComponent implements OnInit {
     this.sTitle.set('');
     this.sDescription.set('');
     this.sOccurredAt.set(toLocalInput());
-    this.sActionRequired.set(false);
-    this.sDue.set('');
+    // A newer update replaces the current status, including its action flag and due date. Carry an outstanding
+    // action forward so it cannot be dropped by accident; staff clear it deliberately once it is done.
+    const outstanding = f.currentStatus?.actionRequired ? f.currentStatus : null;
+    this.sActionRequired.set(!!outstanding);
+    this.sDue.set(outstanding?.responseDueAt ? outstanding.responseDueAt.slice(0, 10) : '');
     this.sClientVisible.set(f.clientVisible);
     this.statusOpen.set(true);
   }
