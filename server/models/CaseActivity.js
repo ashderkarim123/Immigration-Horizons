@@ -83,6 +83,11 @@ const ACTIVITY_TYPES = [
   'task_completed',
   'task_reopened',
   'task_due_date_changed',
+  // Phase 11 — USCIS tracking (ADR-026). Titles only, never provider descriptions or payloads.
+  'uscis_filing_created',
+  'uscis_filing_updated',
+  'uscis_status_recorded',
+  'uscis_filing_archived',
 ];
 
 const CaseActivitySchema = new mongoose.Schema(

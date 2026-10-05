@@ -113,3 +113,16 @@ describe('Navigation', () => {
     expect(fixture.componentInstance.navItems().map((i) => i.label)).toEqual(['Dashboard', 'Cases', 'Tasks', 'Messages', 'Deadlines']);
   });
 });
+
+describe('Navigation: Tracking', () => {
+  it('lists Tracking only for roles with uscis_tracking.view', () => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
+    const auth = TestBed.inject(AuthService);
+    const fixture = TestBed.createComponent(Navigation);
+
+    auth.capabilities.set(['cases.view']);
+    expect(fixture.componentInstance.navItems().map((i) => i.label)).not.toContain('Tracking');
+    auth.capabilities.set(['cases.view', 'uscis_tracking.view']);
+    expect(fixture.componentInstance.navItems().map((i) => i.label)).toContain('Tracking');
+  });
+});

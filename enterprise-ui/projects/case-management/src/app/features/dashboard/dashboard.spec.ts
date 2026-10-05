@@ -50,4 +50,31 @@ describe('Dashboard', () => {
     expect(fixture.nativeElement.textContent).toContain('Collect transcripts');
     http.verify();
   });
+
+  describe('USCIS action required card', () => {
+    const load = (uscisActionRequired: number | null) => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
+      const http = TestBed.inject(HttpTestingController);
+      const fixture = TestBed.createComponent(Dashboard);
+      fixture.detectChanges();
+      http.expectOne('/api/v1/staff/dashboard').flush({
+        data: { role: 'pm', myCases: 1, unassignedCases: 0, upcomingDeadlines: 0, documentsAwaitingReview: 0, overdueDocumentRequests: 0, unansweredQueries: 0, queriesAwaitingScheduling: 0, unreadClientMessages: 0, myOpenTasks: 0, myOverdueTasks: 0, recentCases: [], myTasks: [], uscisActionRequired },
+        meta: { requestId: 'r' },
+      });
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    };
+
+    it('links to the real queue with the count the server computed with the same filter', () => {
+      const card = load(3).querySelector('a[href="/tracking"]');
+      expect(card?.textContent).toContain('3');
+      expect(card?.textContent).toContain('USCIS action required');
+    });
+
+    it('shows a zero, but no card at all when the actor cannot see USCIS tracking (null)', () => {
+      expect(load(0).querySelector('a[href="/tracking"]')?.textContent).toContain('0');
+      expect(load(null).querySelector('a[href="/tracking"]')).toBeNull();
+    });
+  });
 });

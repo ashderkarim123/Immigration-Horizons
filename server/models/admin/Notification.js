@@ -39,6 +39,10 @@ const NOTIFICATION_TYPES = [
   'document_request_cancelled',
   'document_accepted',
   'document_replacement_requested',
+  // Phase 11 — USCIS tracking (ADR-026).
+  'uscis_filing_added',
+  'uscis_status_changed',
+  'uscis_action_required',
 ];
 
 const RECIPIENT_TYPES = ['employee', 'client'];

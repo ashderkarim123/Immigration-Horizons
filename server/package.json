@@ -18,9 +18,10 @@
     "collaboration:provision-channels:apply": "node scripts/provisionChannels.js --apply",
     "forms:seed-templates": "node scripts/seedSmartFormTemplates.js",
     "forms:seed-templates:apply": "node scripts/seedSmartFormTemplates.js --apply",
-    "notifications:send-digests":"node scripts/sendNotificationDigests.js",
+    "notifications:send-digests": "node scripts/sendNotificationDigests.js",
     "notifications:send-digests:apply": "node scripts/sendNotificationDigests.js --apply",
-    "mail:check": "node scripts/checkMail.js"
+    "mail:check": "node scripts/checkMail.js",
+    "uscis:verify-sandbox": "node scripts/verifyUscisSandbox.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

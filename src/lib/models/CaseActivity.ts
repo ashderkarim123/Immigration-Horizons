@@ -71,6 +71,10 @@ export const CASE_ACTIVITY_TYPES = [
   "task_completed",
   "task_reopened",
   "task_due_date_changed",
+  "uscis_filing_created",
+  "uscis_filing_updated",
+  "uscis_status_recorded",
+  "uscis_filing_archived",
 ] as const;
 
 export type CaseActivityType = (typeof CASE_ACTIVITY_TYPES)[number];

@@ -1,0 +1,93 @@
+{
+  "_comment": "Cross-app contract for USCIS filing tracking (ADR-026). server/test/uscis-schema-contract.test.js and test/uscis-schema-contract.test.ts both assert their models and constants against this file. Add a field or value on one side only and both suites fail; that is the point.",
+  "collections": {
+    "USCISFiling": "uscis_filings",
+    "USCISStatusEvent": "uscis_status_events"
+  },
+  "fields": {
+    "USCISFiling": [
+      "actionRequired",
+      "archivedAt",
+      "case",
+      "clientVisible",
+      "createdAt",
+      "createdBy",
+      "createdByName",
+      "currentEvent",
+      "currentStatusAt",
+      "currentStatusCategory",
+      "currentStatusDescription",
+      "currentStatusSource",
+      "currentStatusTitle",
+      "filedAt",
+      "formSubType",
+      "formType",
+      "lastCheckedAt",
+      "lastSyncErrorAt",
+      "lastSyncErrorCode",
+      "lastSyncSucceededAt",
+      "receiptDate",
+      "receiptNumber",
+      "responseDueAt",
+      "serviceCenter",
+      "title",
+      "trackingEnabled",
+      "trackingProvider",
+      "updatedAt",
+      "updatedBy",
+      "updatedByName",
+      "workspace"
+    ],
+    "USCISStatusEvent": [
+      "actionRequired",
+      "case",
+      "clientVisible",
+      "createdAt",
+      "createdBy",
+      "createdByName",
+      "filing",
+      "observedAt",
+      "occurredAt",
+      "providerEventKey",
+      "providerModifiedAt",
+      "providerPayloadHash",
+      "responseDueAt",
+      "source",
+      "statusCategory",
+      "statusDescription",
+      "statusTitle",
+      "workspace"
+    ]
+  },
+  "statusCategories": [
+    "filed",
+    "received",
+    "actively_reviewed",
+    "notice_issued",
+    "rfe_issued",
+    "noid_issued",
+    "response_received",
+    "interview_scheduled",
+    "approved",
+    "denied",
+    "transferred",
+    "closed",
+    "other"
+  ],
+  "statusSources": [
+    "manual",
+    "uscis_api"
+  ],
+  "trackingProviders": [
+    "none",
+    "uscis_case_status"
+  ],
+  "limits": {
+    "title": 150,
+    "formType": 40,
+    "formSubType": 80,
+    "serviceCenter": 120,
+    "statusTitle": 200,
+    "statusDescription": 2000
+  }
+}

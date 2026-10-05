@@ -178,6 +178,8 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
         workspaceLabel: can(req, 'cases.view_all') ? 'Operations overview' : can(req, 'cases.manage') ? 'My case portfolio' : can(req, 'petitions.review') ? 'Review queue' : 'My assigned work',
         workQueues: (await loadWorkQueues(req)).map(({ items, ...queue }) => ({ ...queue, items: items.slice(0, 5) })),
         employeeWorkload,
+        // null (not 0) when the actor cannot see USCIS tracking, so the card is hidden rather than misleadingly empty
+        uscisActionRequired: can(req, 'uscis_tracking.view') ? await require('../../../../services/uscisTracking').countActionRequired(req) : null,
         myCases,
         unassignedCases,
         upcomingDeadlines,

@@ -301,6 +301,10 @@
       <ih-packet-tab [caseId]="caseId()" [caseLabel]="c.caseNumber || ''"></ih-packet-tab>
     }
 
+    @if (activeTab() === 'tracking') {
+      <ih-tracking-tab [caseId]="caseId()" [initialFilingId]="initialFilingId()"></ih-tracking-tab>
+    }
+
     @if (activeTab() === 'documents') {
       <ih-documents-tab [caseId]="caseId()" [createOnLoad]="createAction() === 'request'"></ih-documents-tab>
     }

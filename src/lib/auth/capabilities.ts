@@ -522,7 +522,10 @@ export const CAPABILITIES: Record<string, string[]> = {
     "super_admin",
     "admin",
     "reviewer"
-  ]
+  ],
+  "uscis_tracking.view": ["super_admin", "admin", "operations_admin", "pm", "petition_writer", "uscis_forms_specialist", "reviewer"],
+  "uscis_tracking.manage": ["super_admin", "admin", "operations_admin", "pm", "uscis_forms_specialist"],
+  "uscis_tracking.sync": ["super_admin", "admin", "operations_admin", "pm", "uscis_forms_specialist"]
 };
 
 /**

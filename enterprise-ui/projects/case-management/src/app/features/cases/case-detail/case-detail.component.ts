@@ -16,13 +16,14 @@ import { ConfirmDialogComponent } from '../../../shared/confirm-dialog.component
 import { PaginationComponent } from '../../../shared/pagination.component';
 import { EvidenceTabComponent } from './evidence-tab/evidence-tab.component';
 import { TasksTabComponent } from './tasks-tab/tasks-tab.component';
+import { TrackingTabComponent } from './tracking-tab/tracking-tab.component';
 import { DocumentsTabComponent } from './documents-tab/documents-tab.component';
 import { ChatTabComponent } from './chat-tab/chat-tab.component';
 import { FormsTabComponent } from './forms-tab/forms-tab.component';
 import { PetitionTabComponent } from './petition-tab/petition-tab.component';
 import { PacketTabComponent } from './packet-tab/packet-tab.component';
 
-const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 'chat', 'forms', 'petition', 'packet'] as const;
+const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 'chat', 'forms', 'petition', 'packet', 'tracking'] as const;
 
 @Component({
   selector: 'ih-case-detail',
@@ -38,6 +39,7 @@ const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 
     PaginationComponent,
     EvidenceTabComponent,
     TasksTabComponent,
+    TrackingTabComponent,
     DocumentsTabComponent,
     ChatTabComponent,
     FormsTabComponent,
@@ -55,14 +57,14 @@ export class CaseDetailComponent implements OnInit {
   workflowGroups = [
     { label: 'Overview', tabs: [{ key: 'overview', label: 'Overview' }] },
     { label: 'Client inputs', tabs: [{ key: 'documents', label: 'Documents' }, { key: 'evidence', label: 'Evidence' }, { key: 'forms', label: 'Smart forms' }] },
-    { label: 'Case work', tabs: [{ key: 'tasks', label: 'Tasks' }, { key: 'petition', label: 'Petition' }, { key: 'packet', label: 'Filing packet' }] },
+    { label: 'Case work', tabs: [{ key: 'tasks', label: 'Tasks' }, { key: 'petition', label: 'Petition' }, { key: 'packet', label: 'Filing packet' }, { key: 'tracking', label: 'Case Tracking' }] },
     { label: 'Communication', tabs: [{ key: 'chat', label: 'Messages' }] },
     { label: 'Management', tabs: [{ key: 'team', label: 'Team' }, { key: 'activity', label: 'Activity' }] },
   ];
   selectTab(tab: string) {
     if (!(TABS as readonly string[]).includes(tab)) return;
     this.activeTab.set(tab as (typeof TABS)[number]);
-    this.router.navigate([], { relativeTo: this.route, queryParams: { tab, channel: null }, queryParamsHandling: 'merge', replaceUrl: true });
+    this.router.navigate([], { relativeTo: this.route, queryParams: { tab, channel: null, filing: null }, queryParamsHandling: 'merge', replaceUrl: true });
     if (tab === 'activity') this.openActivityTab();
   }
   private toast = inject(ToastService);
@@ -70,6 +72,8 @@ export class CaseDetailComponent implements OnInit {
   caseId = signal<string>('');
   /** Deep link from the Messages inbox: /cases/:id?tab=chat&channel=:channelId */
   initialChannelId = signal<string | null>(null);
+  /** Deep link from the Tracking queue: /cases/:id?tab=tracking&filing=:filingId */
+  initialFilingId = signal<string | null>(null);
   createAction = signal('');
   caseData = signal<CaseDetail | null>(null);
   members = signal<CaseMember[]>([]);
@@ -137,6 +141,7 @@ export class CaseDetailComponent implements OnInit {
       const tab = query.get('tab');
       this.activeTab.set(tab && (TABS as readonly string[]).includes(tab) ? tab as (typeof TABS)[number] : 'overview');
       this.initialChannelId.set(query.get('channel'));
+      this.initialFilingId.set(query.get('filing'));
       this.createAction.set(query.get('action') || '');
       if (id && id !== this.caseId()) {
         this.caseId.set(id);

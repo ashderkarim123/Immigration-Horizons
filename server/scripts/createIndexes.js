@@ -96,6 +96,9 @@ const MODELS = [
   // Phase 10 — Filing Packets (ADR-023 §33). Staff-only: only this app reads/writes them.
   require('../models/FilingPacket'),
   require('../models/FilingPacketVersion'),
+  // Phase 11 — USCIS tracking (ADR-026 §Indexes). Staff-only writers; the portal only reads.
+  require('../models/USCISFiling'),
+  require('../models/USCISStatusEvent'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');

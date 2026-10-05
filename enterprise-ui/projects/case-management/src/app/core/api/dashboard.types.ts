@@ -23,6 +23,8 @@ export interface DashboardTask {
 export interface DashboardMetrics {
   workspaceLabel?: string;
   workQueues?: WorkQueue[];
+  /** Null when the actor cannot see USCIS tracking (no card); otherwise filings needing action, same filter as the queue. */
+  uscisActionRequired?: number | null;
   employeeWorkload?: { employeeId: string; name: string; openTasks: number; overdueTasks: number }[];
   role: string;
   myCases: number;
