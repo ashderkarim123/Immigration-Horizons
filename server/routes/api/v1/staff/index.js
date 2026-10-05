@@ -45,5 +45,6 @@ router.use('/', require('./evidence'));
 router.use('/', require('./forms'));
 router.use('/', require('./petitions'));
 router.use('/', require('./filing-packets'));
+router.use('/', require('./uscis'));
 
 module.exports = router;

@@ -277,7 +277,7 @@ router.get('/:id', staffAuthMiddleware, requireApiCapability('cases.view'), asyn
         availableTabs: [
           ['overview', 'cases.view'], ['documents', 'documents.view'], ['evidence', 'cases.view'],
           ['forms', 'forms.view'], ['tasks', 'cases.view'], ['petition', 'petitions.view'],
-          ['packet', 'filing_packets.view'], ['chat', 'channels.view'], ['team', 'cases.view'], ['activity', 'cases.view'],
+          ['packet', 'filing_packets.view'], ['tracking', 'uscis_tracking.view'], ['chat', 'channels.view'], ['team', 'cases.view'], ['activity', 'cases.view'],
         ].filter(([, capability]) => can(req, capability)).map(([tab]) => tab),
         workSummary: await require('../../../../services/staffWorkQueues').loadWorkQueues(req, { caseId: caseDoc._id }),
         actions: {
