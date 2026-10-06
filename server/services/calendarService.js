@@ -300,6 +300,7 @@ function manualItem(e, { canManage }) {
     sourceType: 'manual_event',
     sourceId: id(e),
     kind: 'manual_event',
+    eventType: e.eventType,
     case: { id: id(e.case), caseNumber: '', title: '' },
     title: e.internalTitle,
     description: summary(e.internalDescription),
@@ -347,10 +348,10 @@ async function fillCaseLabels(items) {
 }
 
 /** GET /staff/calendar. Every adapter runs only for kinds the actor may see AND asked for. */
-async function queryCalendar(req, params = {}) {
+async function queryCalendar(req, params = {}, { maxDays } = {}) {
   const filters = readFilters(params);
   const zone = viewerZone(req, params.timeZone);
-  const window = T.queryWindow({ from: params.from, to: params.to, zone });
+  const window = T.queryWindow({ from: params.from, to: params.to, zone, maxDays });
   if (window.error) throw invalidParam(window.error, 'from');
   const w = { ...window, dateEnd: T.dateStringToUtc(T.addDays(window.to, 1)) };
 

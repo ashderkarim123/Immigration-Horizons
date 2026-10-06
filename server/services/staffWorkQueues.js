@@ -58,4 +58,4 @@ async function loadWorkQueues(req, { caseId = null } = {}) {
     };
   }));
 }
-module.exports = { loadWorkQueues };
+module.exports = { loadWorkQueues, definitions };

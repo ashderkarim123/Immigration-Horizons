@@ -38,3 +38,17 @@ test('csvCell(): numbers and other non-string types are stringified safely', () 
   assert.equal(csvCell(42), '"42"');
   assert.equal(csvCell(true), '"true"');
 });
+
+test('csvCell(): a formula trigger after leading whitespace is neutralized too', () => {
+  for (const input of ['  =1+1', '\n=cmd', ' \t+SUM(A1)', '   @x', ' -5']) assert.equal(csvCell(input), `"'${input}"`, JSON.stringify(input));
+  assert.equal(csvCell('a=b'), '"a=b"', 'only a leading trigger matters');
+  assert.equal(csvCell('  plain'), '"  plain"');
+});
+
+test('csvRow() and toCsv(): explicit columns only, quoting, CRLF, BOM, and no field outside the allowlist', () => {
+  const { csvRow, toCsv } = require('../utils/csv');
+  assert.equal(csvRow(['a', 'b,c', 'd"e', '=x']), `"a","b,c","d""e","'=x"`);
+  const out = toCsv([{ key: 'name', label: 'Name' }, { key: 'n', label: 'Count' }], [{ name: 'A, B', n: 2, secret: 'LEAK' }, { name: '=1', n: 0 }]);
+  assert.equal(out, `\uFEFF"Name","Count"\r\n"A, B","2"\r\n"'=1","0"\r\n`);
+  assert.ok(!out.includes('LEAK'));
+});
