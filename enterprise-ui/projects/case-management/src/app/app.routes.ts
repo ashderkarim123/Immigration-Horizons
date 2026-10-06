@@ -85,6 +85,16 @@ export const routes: Routes = [
           import('./features/messages/messages.component').then((m) => m.MessagesComponent),
       },
       {
+        path: 'search',
+        loadComponent: () =>
+          import('./features/search/search-page.component').then((m) => m.SearchPageComponent),
+      },
+      {
+        path: 'reports',
+        loadComponent: () =>
+          import('./features/reports/reports.component').then((m) => m.ReportsComponent),
+      },
+      {
         path: 'calendar',
         loadComponent: () =>
           import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),

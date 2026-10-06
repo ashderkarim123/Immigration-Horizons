@@ -49,6 +49,7 @@
           </svg>
         </button>
       </div>
+      <ih-global-search />
       @if (hasCreateActions()) {
         <details class="create-menu" (click)="createClick($event)"><summary class="btn btn-primary">Create New</summary><div class="create-menu-items">
           @if (auth.capabilities().includes('cases.create')) { <a routerLink="/cases/new">Case</a> }

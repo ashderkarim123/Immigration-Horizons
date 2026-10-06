@@ -25,6 +25,16 @@ describe('Navigation', () => {
     expect(link?.getAttribute('href')).toBe('/calendar');
   });
 
+  it('offers Reports only to someone with reports.view, and links it to /reports', () => {
+    expect(labels(['cases.view', 'calendar.view'])).not.toContain('Reports');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: AuthService, useValue: { capabilities: signal(['reports.view']) } }] });
+    const fixture = TestBed.createComponent(Navigation);
+    fixture.detectChanges();
+    const link = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a')).find((a) => a.textContent?.includes('Reports'));
+    expect(link?.getAttribute('href')).toBe('/reports');
+  });
+
   it('keeps the existing entries: Tracking still follows uscis_tracking.view, Deadlines follows cases.view', () => {
     const all = labels(['cases.view', 'uscis_tracking.view', 'calendar.view']);
     expect(all).toEqual(expect.arrayContaining(['Dashboard', 'Cases', 'Tasks', 'Deadlines', 'Calendar', 'Tracking']));
