@@ -49,7 +49,7 @@ const csvOf = async (context: BrowserContext, query: string) => {
   return { res, text: await res.text() };
 };
 
-test("search, reports, CSV and revocation across two teams", async ({ browser, page }) => {
+test("search, reports, CSV and revocation across two teams", async ({ browser }) => {
   // ── baselines before the synthetic data exists (other journeys share this database) ──
   const pm = await staff(browser, "pm");
   const admin = await staff(browser, "admin");
