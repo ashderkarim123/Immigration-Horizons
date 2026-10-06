@@ -159,8 +159,8 @@ async function updateEvent({ event, data, actor }) {
   if (event.status === 'cancelled') return { outcome: 'invalid_state' };
   const merged = { ...toInput(event.toObject()), ...data };
   // Switching between all-day and timed must not carry the other mode's stale fields.
-  if (data.allDay === true) Object.assign(merged, { startLocal: null, endLocal: null, timeZone: null }, { startDate: data.startDate, endDate: data.endDate });
-  if (data.allDay === false) Object.assign(merged, { startDate: null, endDate: null }, { startLocal: data.startLocal, endLocal: data.endLocal });
+  if (data.allDay === true && !event.allDay) Object.assign(merged, { startLocal: null, endLocal: null, timeZone: null }, { startDate: data.startDate, endDate: data.endDate });
+  if (data.allDay === false && event.allDay) Object.assign(merged, { startDate: null, endDate: null }, { startLocal: data.startLocal, endLocal: data.endLocal });
   const checked = readFields(merged);
   if (checked.errors) return invalid(checked.errors);
   const attendeeError = await checkAttendees(event.workspace, checked.values.attendeeIds.filter((a) => !event.employeeAttendees.map(idOf).includes(a)));

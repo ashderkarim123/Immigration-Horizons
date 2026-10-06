@@ -388,6 +388,9 @@ test('read and edit: the editor round-trips, switching all-day and timed leaves 
   const allDay = await patch(w.pm.agent, url, { allDay: true, startDate: '2026-10-22' });
   assert.equal(allDay.status, 200, JSON.stringify(allDay.body));
   assert.deepEqual([allDay.body.data.allDay, allDay.body.data.startDate, allDay.body.data.startAt, allDay.body.data.endAt, allDay.body.data.timeZone], [true, '2026-10-22', null, null, null]);
+  const sameMode = await patch(w.pm.agent, url, { allDay: true, title: 'Renamed all-day' });
+  assert.equal(sameMode.status, 200, 'restating the current mode does not wipe its dates');
+  assert.deepEqual([sameMode.body.data.title, sameMode.body.data.startDate], ['Renamed all-day', '2026-10-22']);
   const backToTimed = await patch(w.pm.agent, url, { allDay: false, startLocal: '2026-10-23T08:15', timeZone: 'Asia/Karachi' });
   assert.deepEqual([backToTimed.body.data.startAt, backToTimed.body.data.startDate], ['2026-10-23T03:15:00.000Z', null]);
 
@@ -398,7 +401,7 @@ test('read and edit: the editor round-trips, switching all-day and timed leaves 
   assert.equal((await w.pm.agent.get('/api/v1/staff/calendar-events/not-an-id')).status, 404);
 
   const updates = await CaseActivity.find({ case: w.a.caseDoc._id, type: 'calendar_event_updated' }).lean();
-  assert.equal(updates.length, 3);
+  assert.equal(updates.length, 4);
   for (const a of updates) for (const secret of ['Moved prep', 'Internal prep notes', 'meet.example.com']) assert.ok(!a.message.includes(secret));
 });
 
