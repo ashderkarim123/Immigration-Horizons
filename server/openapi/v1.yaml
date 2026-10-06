@@ -2130,3 +2130,164 @@ paths:
         '200': { description: CaseCalendarEvent DTO (cancelled) }
         '403': { description: Missing calendar.manage or untrusted Origin }
         '404': { description: Event missing or inaccessible }
+  /staff/search:
+    get:
+      summary: Authorized global Staff search (any employee; each source applies its own capability and row scope)
+      description: >
+        Federated, read-time search over the real collections; there is no search index. Two modes. Quick mode (no `type`) returns
+        results grouped by source, up to `limit` (default 5, max 10) per source, over `types` (comma list, default every source the
+        actor may search). Full-results mode (`type=<one source>`) returns one source paginated (`page`, `limit` up to 50).
+        Sources: cases, clients, consultations, tasks, documents, queries, evidence, forms, petitions, filing_packets, uscis,
+        conversations. Searched fields are an explicit allowlist (case number/title, client name/email, lead name/email/service,
+        task title/type, document display/original name/type, query number/subject, evidence title/section, form template title/key,
+        petition title/kind, packet title/kind/petition title, USCIS receipt/title/form/status, channel name and its case number/title).
+        Never searched or returned: document contents, message bodies, form answers, petition body text, internal notes,
+        storage keys, checksums, credentials. The text is literal (regex metacharacters are escaped). Ranking within a source:
+        exact identifier, identifier prefix, name/title prefix, literal text, newest first; results are never mixed across sources.
+        Search text is never logged. 90 requests per minute per employee.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 80 } }
+        - { name: type, in: query, schema: { type: string, enum: [cases, clients, consultations, tasks, documents, queries, evidence, forms, petitions, filing_packets, uscis, conversations] }, description: Full-results mode for one source }
+        - { name: types, in: query, schema: { type: string }, description: Quick mode source list; sources the actor may not search are dropped }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 200 }, description: Full-results mode only }
+        - { name: limit, in: query, schema: { type: integer }, description: "Quick 1-10 (default 5) per source; full 1-50 (default 25)" }
+      responses:
+        '200':
+          description: >
+            { data: { groups: [{ type, label, items: Result[], hasMore }], availableTypes: [{ type, label }], page?, pageSize? },
+            meta: { requestId, unavailableTypes } }. Result = { type, id, title, subtitle, statusLabel, case: { id, caseNumber, title } | null,
+            context: string[], updatedAt, href, match: { field, quality: exact|prefix|text } }. A source that failed in quick mode
+            is listed in meta.unavailableTypes and has no group (never shown as zero matches).
+        '401': { description: "Unauthenticated" }
+        '403': { description: "type names a source the actor may not search" }
+        '422': { description: "validation_error: q length or characters, unknown type, page or limit out of range" }
+        '429': { description: "rate_limited" }
+        '500': { description: "Full-results mode only: the source failed (no stack trace)" }
+  /staff/reports/overview:
+    get:
+      summary: Overview report (reports.view)
+      description: >
+        Mixed. `snapshot` metrics are the state right now (active cases, open/overdue/unassigned tasks, documents awaiting review,
+        overdue document requests, evidence still needed, forms/petitions/filing packets awaiting review, USCIS action required,
+        unanswered queries); `period` metrics are events between from and to (cases opened, cases closed = archived, tasks
+        completed). A metric the actor may not see is null, never 0. Queue metrics reuse the Dashboard work-queue definitions.
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [accessible, mine, firm], default: accessible }, description: "accessible = live case policy; mine = cases the actor manages; firm needs cases.view_all and is refused (403) otherwise" }
+        - { name: from, in: query, schema: { type: string, format: date }, description: Default is 89 days before `to` }
+        - { name: to, in: query, schema: { type: string, format: date }, description: Default today in the employee zone }
+        - { name: caseType, in: query, schema: { type: string } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string, enum: [low, medium, high, urgent] } }
+        - { name: projectManager, in: query, schema: { type: string } }
+      responses:
+        '200': { description: "{ data: { snapshot: Metric[], period: { from, to, metrics: Metric[] } }, meta: { requestId, asOf, timeZone, scope, basis, from, to } }; Metric = { key, label, basis: snapshot|period, value: number|null, href }" }
+        '401': { description: "Unauthenticated" }
+        '403': { description: "Missing reports.view, or scope=firm without cases.view_all" }
+        '422': { description: "validation_error: invalid scope, enum, date, or a period over 366 days" }
+        '500': { description: "A source query failed; no partial or zeroed report is returned" }
+  /staff/reports/pipeline:
+    get:
+      summary: Case pipeline report (reports.view, cases.view)
+      description: >
+        Mixed. `snapshot`: active cases in scope grouped by stage, case type, priority and project manager. `period`: cases opened and
+        closed (archived) per week or month between from and to, bucketed in the employee time zone, every bucket present. No
+        time-in-stage, success or approval measure. Same scope and filter parameters as the overview, plus granularity.
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [accessible, mine, firm] } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: caseType, in: query, schema: { type: string } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: projectManager, in: query, schema: { type: string } }
+        - { name: granularity, in: query, schema: { type: string, enum: [week, month] }, description: Default week for periods up to 92 days, else month }
+      responses:
+        '200': { description: "{ data: { snapshot: { total, byStage, byCaseType, byPriority, byProjectManager }, period: { from, to, granularity, series: [{ bucket, start, opened, closed }], totals } }, meta }" }
+        '401': { description: "Unauthenticated" }
+        '403': { description: "Missing reports.view or cases.view, or scope=firm without cases.view_all" }
+        '422': { description: "validation_error" }
+  /staff/reports/workload:
+    get:
+      summary: Workload report (reports.view, cases.view)
+      description: >
+        Snapshot of open work per employee inside the report case scope: open cases as project manager, open tasks, overdue tasks,
+        tasks due within 7 days; unassigned tasks and cases without a project manager separately. Rows are alphabetical; there is
+        no utilization, score or ranking. Other employees' rows and the unassigned count need tasks.view_all (otherwise the actor's
+        own row, and unassignedTasks is null).
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [accessible, mine, firm] } }
+        - { name: caseType, in: query, schema: { type: string } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: projectManager, in: query, schema: { type: string } }
+      responses:
+        '200': { description: "{ data: { snapshot: { rows: [{ employeeId, name, openCases, openTasks, overdueTasks, dueSoonTasks }], unassignedTasks, casesWithoutProjectManager, scopeNote } }, meta }" }
+        '401': { description: "Unauthenticated" }
+        '403': { description: "Missing reports.view or cases.view, or scope=firm without cases.view_all" }
+  /staff/reports/deadlines:
+    get:
+      summary: Deadlines report (reports.view, cases.view)
+      description: >
+        Snapshot built from the calendar projection, so the two share authorization. Deadline kinds only: target_filing, task_due,
+        document_due, query_due, uscis_response and manual events typed "deadline" (appointments and meetings are excluded). Counts are
+        cumulative: dueWithin7Days and dueWithin30Days include today. Overdue covers deadlines up to 180 days past. Case-native items
+        inside the report scope only. The table is bounded to 200 rows (rowsTotal says how many exist).
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [accessible, mine, firm] } }
+        - { name: source, in: query, schema: { type: string, enum: [target_filing, task_due, document_due, query_due, uscis_response, manual_event] } }
+        - { name: caseType, in: query, schema: { type: string } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: projectManager, in: query, schema: { type: string } }
+      responses:
+        '200': { description: "{ data: { snapshot: { overdue, dueToday, dueWithin7Days, dueWithin30Days, bySource, overdueLookbackDays, truncated, rows: Row[], rowsShown, rowsTotal } }, meta }; Row = { date, kind, kindLabel, title, case, status, person, overdue, link: { path, queryParams } }" }
+        '401': { description: "Unauthenticated" }
+        '403': { description: "Missing reports.view or cases.view, or scope=firm without cases.view_all" }
+        '422': { description: "validation_error" }
+  /staff/reports/review-queues:
+    get:
+      summary: Review and workflow queues report (reports.view)
+      description: >
+        Snapshot counts and per-case rows for work waiting on someone. Queues shared with the Dashboard reuse its definitions so they
+        always agree. A queue the actor has no capability for has available=false and count=null (never zero). Not a legal-quality measure.
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [accessible, mine, firm] } }
+        - { name: source, in: query, schema: { type: string }, description: One queue key (document_review, documents_quarantined, document_requests, missing_evidence, forms_review, forms_needs_changes, petition_review, petitions_needs_changes, packet_review, packets_needs_changes, uscis_action_required, queries_unanswered, queries_overdue) }
+        - { name: caseType, in: query, schema: { type: string } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: projectManager, in: query, schema: { type: string } }
+      responses:
+        '200': { description: "{ data: { snapshot: { queues: [{ key, label, available, count, rows: [{ caseId, caseNumber, caseTitle, count, link }], rowsTotal }], rowLimit } }, meta }" }
+        '401': { description: "Unauthenticated" }
+        '403': { description: "Missing reports.view, or scope=firm without cases.view_all" }
+        '422': { description: "validation_error" }
+  /staff/reports/export.csv:
+    get:
+      summary: CSV export of a report (reports.view AND csv.export)
+      description: >
+        Built by the same report function and filters as the screen, so it never contains a row the screen would not show. Explicit
+        column allowlist, at most 10,000 rows (422 with a narrowing hint beyond that), UTF-8 with BOM, every cell quoted, formula
+        triggers neutralized with a leading apostrophe. Filename is deterministic and carries no names. A successful export is recorded
+        as a report_exported security event with report, scope, from, to and rowCount only. 6 exports per minute per employee.
+      parameters:
+        - { name: report, in: query, required: true, schema: { type: string, enum: [pipeline, workload, deadlines, review-queues] } }
+        - { name: scope, in: query, schema: { type: string, enum: [accessible, mine, firm] } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: caseType, in: query, schema: { type: string } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: projectManager, in: query, schema: { type: string } }
+        - { name: source, in: query, schema: { type: string }, description: Deadline kind or queue key, as on the screen }
+        - { name: granularity, in: query, schema: { type: string, enum: [week, month] } }
+      responses:
+        '200':
+          description: The CSV document
+          content:
+            text/csv:
+              schema: { type: string }
+        '401': { description: "Unauthenticated" }
+        '403': { description: "Missing reports.view or csv.export, or scope=firm without cases.view_all" }
+        '422': { description: "validation_error, including an export over the row cap" }
+        '429': { description: "rate_limited" }
