@@ -747,3 +747,18 @@ Dates change in their real module and the Calendar reflects the change automatic
 The reminder engine is resilient to worker retries because Notification dedupe is the persistence guard.
 
 A later external calendar integration (Google/Microsoft) can consume the same normalized CalendarItem feed without becoming the source of truth.
+
+## Implementation notes (Phase 12)
+
+Decisions made while implementing, where the text above left a choice.
+
+- **Time.** Task, document request, query response, USCIS response, target filing and all-day event dates are date-only: stored as a Mongo Date (or a `YYYY-MM-DD` string for all-day events), projected as `YYYY-MM-DD`, never converted. Query appointments and timed events are UTC instants plus an IANA zone. Luxon performs all server zone arithmetic; browsers use native Intl.
+- **Scope.** `scope=team` is everything the actor is authorized to see (all cases with `cases.view_all`, otherwise member cases). `scope=mine` is assigned work and member cases (tasks assigned to the actor, queries assigned to the actor, events the actor attends). Team-wide task visibility needs `tasks.view_all` (or `cases.manage` on the single case being viewed); everyone else sees their own tasks only.
+- **Truncation.** Each source returns at most 500 rows per request; the response carries `truncated` rather than silently dropping rows.
+- **Reminders, recipients.** Task: the active assignee. Target filing and USCIS: the case project manager (no other staff). Document request: the requesting employee, and the requested client. Query appointment: the assigned employee and the client of a scheduled case appointment. Query response date: the assigned employee only. Manual event: explicit active employee attendees, and active client members only when the event is client-visible. Project-manager oversight of tasks is deliberately not implemented.
+- **Reminders, scope of past dates.** Only the bucket a date is in now is considered (no back-fill of missed buckets). An overdue reminder is sent once per date version and only for dates up to 14 days past (`OVERDUE_LOOKBACK_DAYS`), so enabling the worker never sends a wave of old overdue notices. Manual events never produce an overdue reminder.
+- **Document-overdue duplicate path.** The legacy `document_request_overdue` client pass in `scripts/sendNotificationDigests.js` is preserved. The engine never sends a client overdue reminder for a document request; employees still receive the overdue reminder, which the legacy pass never sent. A regression test runs the legacy script and the engine together and asserts exactly one client overdue notice.
+- **USCIS and the client.** A client is reminded of a USCIS response date only under the Phase 11 rule: the filing is client-visible and the newest client-visible event requires action with a response date. The Staff snapshot is never used for a client, in reminders or in the portal projection.
+- **Notification links.** `Notification.actionPath` is a server-composed in-app path (Staff `/cases/<id>?tab=tasks`, portal `/portal/cases/<id>/documents`). It is never user input; the Staff app resolves it through the router and the portal accepts only a `/portal/...` path.
+- **Worker.** `workers/calendarReminderWorker.js` is not registered in `ecosystem.config.js`. It exits immediately unless `CALENDAR_REMINDERS_ENABLED` is exactly `true`. Starting it anywhere is a separate, deliberate step.
+- **Views.** Month and Agenda. A week grid was not built: an inaccessible grid would be worse than none. On a narrow screen the Agenda replaces the month grid.
