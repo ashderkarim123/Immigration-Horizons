@@ -47,5 +47,6 @@ router.use('/', require('./petitions'));
 router.use('/', require('./filing-packets'));
 router.use('/', require('./uscis'));
 router.use('/', require('./calendar'));
+router.use('/', require('./search'));
 
 module.exports = router;

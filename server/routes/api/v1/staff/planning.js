@@ -18,6 +18,7 @@ const {
   createInitialConsultationInteraction,
 } = require("../../../../services/interactionService");
 const { memberCaseIds } = require("../../../../services/casePolicy");
+const { leadScope } = require("../../../../services/leadPolicy");
 const {
   taskActionContext,
   taskAccess,
@@ -48,17 +49,6 @@ const missing = () =>
 const invalid = (message) => createApiError(422, "validation_error", message);
 const text = (value, limit = 200) =>
   typeof value === "string" ? value.trim().slice(0, limit) : "";
-async function leadScope(req) {
-  if (can(req, "cases.view_all")) return {};
-  // Unconverted leads follow the existing leads.view policy. Converted leads
-  // cannot provide a second path around case membership or removal.
-  return {
-    $or: [
-      { convertedCase: null },
-      { convertedCase: { $in: await memberCaseIds(req) } },
-    ],
-  };
-}
 async function loadLead(req) {
   if (!mongoose.isValidObjectId(req.params.id)) throw missing();
   const lead = await Lead.findOne({

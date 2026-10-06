@@ -1,26 +1,32 @@
 /**
- * CSV cell sanitizer — prevents formula/DDE injection when a spreadsheet
- * app (Excel, Google Sheets) opens an export containing public-form input.
+ * CSV helpers — one tested implementation shared by the Admin lead export and the Staff report exports.
  *
- * A cell beginning with `=`, `+`, `-`, `@`, a tab, or a carriage return can
- * be interpreted as a formula rather than literal text. Since this app's
- * lead-export fields (name, email, phone, message, ...) originate from an
- * anonymous, unauthenticated public form, any of them could carry such a
- * payload (e.g. a lead named `=HYPERLINK("http://evil","click")`).
- *
- * Fix: prefix a leading quote (`'`) — the standard, documented mitigation
- * (OWASP CSV Injection). Spreadsheet apps then treat the cell as plain
- * text instead of evaluating it. The literal `'` may remain visible; that
- * is the accepted trade-off for neutralizing formula execution.
+ * csvCell neutralizes formula/DDE injection: a cell whose first non-whitespace character is `=`, `+`, `-`, `@`, a tab or a
+ * carriage return can be interpreted as a formula by Excel or Google Sheets. Several exported fields originate from
+ * anonymous public forms or from user-entered labels (a lead named `=HYPERLINK("http://evil","click")`), so such a cell is
+ * prefixed with a single quote (OWASP CSV Injection). The quote may remain visible in the spreadsheet; that is the accepted
+ * trade-off. Leading whitespace is looked through, so `  =1+1` and `\n=1+1` are neutralized too. Every cell is quoted and
+ * embedded quotes are doubled, so commas, quotes and newlines are always encoded correctly.
  */
+const FORMULA_START = /^\s*[=+\-@\t\r]/;
+
 function csvCell(value) {
   let str = value === null || value === undefined ? '' : String(value);
-
-  if (/^[=+\-@\t\r]/.test(str)) {
-    str = `'${str}`;
-  }
-
+  if (FORMULA_START.test(str)) str = `'${str}`;
   return `"${str.replace(/"/g, '""')}"`;
 }
 
-module.exports = { csvCell };
+/** One CSV record (no trailing newline). */
+const csvRow = (cells) => cells.map(csvCell).join(',');
+
+/**
+ * A whole CSV document from an explicit column allowlist: `columns` is [{ key, label }] and each row is read ONLY through
+ * those keys, so a field that is not listed can never leak into an export. UTF-8 with a BOM so spreadsheets read non-ASCII
+ * names correctly; CRLF record separators.
+ */
+function toCsv(columns, rows) {
+  const lines = [csvRow(columns.map((c) => c.label)), ...rows.map((row) => csvRow(columns.map((c) => row[c.key])))];
+  return `\uFEFF${lines.join('\r\n')}\r\n`;
+}
+
+module.exports = { csvCell, csvRow, toCsv };

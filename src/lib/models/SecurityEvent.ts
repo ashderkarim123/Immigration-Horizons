@@ -29,6 +29,7 @@ export const SECURITY_EVENT_TYPES = [
   "session_revoked",
   "permission_denied",
   "csrf_rejected",
+  "report_exported",
 ] as const;
 
 export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number];
