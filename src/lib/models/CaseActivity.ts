@@ -75,6 +75,9 @@ export const CASE_ACTIVITY_TYPES = [
   "uscis_filing_updated",
   "uscis_status_recorded",
   "uscis_filing_archived",
+  "calendar_event_created",
+  "calendar_event_updated",
+  "calendar_event_cancelled",
 ] as const;
 
 export type CaseActivityType = (typeof CASE_ACTIVITY_TYPES)[number];

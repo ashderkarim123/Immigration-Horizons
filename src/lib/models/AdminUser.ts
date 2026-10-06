@@ -44,6 +44,7 @@ const AdminUserSchema = new Schema(
     passwordChangedAt: { type: Date, default: null },
     jobTitle: { type: String, default: "" },
     department: { type: String, default: "" },
+    timeZone: { type: String, default: "" },
 
     // Login lockout counters (ADR-012 3). These are the one exception to
     // the "never writes an AdminUser" rule above: the staff login route

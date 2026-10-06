@@ -99,6 +99,8 @@ const MODELS = [
   // Phase 11 — USCIS tracking (ADR-026 §Indexes). Staff-only writers; the portal only reads.
   require('../models/USCISFiling'),
   require('../models/USCISStatusEvent'),
+  // Phase 12 — manual calendar events (ADR-027). Staff-only writer; the portal only reads.
+  require('../models/CaseCalendarEvent'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');

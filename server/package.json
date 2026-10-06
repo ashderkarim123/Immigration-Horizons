@@ -20,6 +20,9 @@
     "forms:seed-templates:apply": "node scripts/seedSmartFormTemplates.js --apply",
     "notifications:send-digests": "node scripts/sendNotificationDigests.js",
     "notifications:send-digests:apply": "node scripts/sendNotificationDigests.js --apply",
+    "calendar:reminders": "node scripts/runCalendarReminders.js",
+    "calendar:reminders:apply": "node scripts/runCalendarReminders.js --apply",
+    "calendar:reminders:worker": "node workers/calendarReminderWorker.js",
     "mail:check": "node scripts/checkMail.js",
     "uscis:verify-sandbox": "node scripts/verifyUscisSandbox.js"
   },
@@ -35,6 +38,7 @@
     "file-type": "^22.0.1",
     "helmet": "^8.3.0",
     "i": "^0.3.7",
+    "luxon": "^3.7.2",
     "method-override": "^3.0.0",
     "mongoose": "^9.8.0",
     "multer": "^2.0.0-rc.1",

@@ -43,6 +43,8 @@ export const NOTIFICATION_TYPES = [
   "uscis_filing_added",
   "uscis_status_changed",
   "uscis_action_required",
+  "calendar_deadline_reminder",
+  "calendar_appointment_reminder",
 ] as const;
 
 export const RECIPIENT_TYPES = ["employee", "client"] as const;
@@ -78,6 +80,8 @@ const NotificationSchema = new Schema(
 
     emailState: { type: String, enum: EMAIL_STATES, default: "not_applicable" },
     dedupeKey: { type: String, default: null },
+    // Phase 12: server-composed in-app destination for calendar reminders (mirrors server/models/admin/Notification.js).
+    actionPath: { type: String, default: null, maxlength: 300 },
   },
   { timestamps: true },
 );

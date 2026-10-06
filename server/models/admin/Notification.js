@@ -43,6 +43,9 @@ const NOTIFICATION_TYPES = [
   'uscis_filing_added',
   'uscis_status_changed',
   'uscis_action_required',
+  // Phase 12 — calendar reminders (ADR-027).
+  'calendar_deadline_reminder',
+  'calendar_appointment_reminder',
 ];
 
 const RECIPIENT_TYPES = ['employee', 'client'];
@@ -89,6 +92,10 @@ const NotificationSchema = new mongoose.Schema(
     // unset (not an empty string) everywhere else, matched by the sparse
     // partial index below.
     dedupeKey: { type: String, default: null },
+
+    // Phase 12 — in-app destination composed by the server when the notification is created (calendar reminders),
+    // e.g. "/cases/<id>?tab=tasks" for Staff or "/portal/cases/<id>/documents" for a client. Never user input.
+    actionPath: { type: String, default: null, maxlength: 300 },
   },
   { timestamps: true }
 );

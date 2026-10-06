@@ -62,6 +62,10 @@ TaskSchema.pre('save', function () {
   }
 });
 
+// Phase 12 calendar: due-date windows by assignee, and by case.
+TaskSchema.index({ assignee: 1, status: 1, dueDate: 1 });
+TaskSchema.index({ case: 1, status: 1, dueDate: 1 });
+
 TaskSchema.statics.TYPES = TASK_TYPES;
 TaskSchema.statics.STATUSES = TASK_STATUSES;
 TaskSchema.statics.PRIORITIES = TASK_PRIORITIES;

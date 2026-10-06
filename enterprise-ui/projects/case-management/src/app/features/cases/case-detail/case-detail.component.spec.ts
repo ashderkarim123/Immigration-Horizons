@@ -198,6 +198,40 @@ describe('CaseDetailComponent', () => {
     });
   });
 
+  describe('Calendar tab', () => {
+    const calendarConfig = { timeZone: { resolved: 'UTC', source: 'utc', userValue: null, practice: { value: null, configured: false, invalid: false } }, kinds: [], scopes: ['mine', 'team'], canManage: false, maxRangeDays: 93, reminders: { deadlineReminders: true, appointmentReminders: true } };
+    const open = (query: Record<string, string>, availableTabs: string[]) => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: ActivatedRoute, useValue: routeStub(query) }] });
+      const http2 = TestBed.inject(HttpTestingController);
+      const fixture = TestBed.createComponent(CaseDetailComponent);
+      fixture.detectChanges();
+      http2.expectOne(CASE).flush({ data: { ...detail(PM), availableTabs }, meta });
+      for (const r of http2.match(() => true)) {
+        if (r.request.url.endsWith('/staff/calendar/config')) r.flush({ data: calendarConfig, meta });
+        else if (r.request.url.endsWith('/staff/calendar')) r.flush({ data: { items: [], range: { from: '', to: '', timeZone: 'UTC' }, kinds: [], scope: 'team', truncated: false }, meta });
+        else if (r.request.url.includes('/staff/calendar-events/')) r.flush({ error: { code: 'not_found', message: 'x' } }, { status: 404, statusText: 'Not Found' });
+        else r.flush({ data: { members: [], employees: [] }, meta });
+      }
+      fixture.detectChanges();
+      return fixture;
+    };
+
+    it('is offered only when the server lists the tab, under the Case work group', () => {
+      const labels = (f: ReturnType<typeof open>) => Array.from(f.nativeElement.querySelectorAll('.workflow-navigation .tab-btn') as NodeListOf<HTMLElement>).map((b) => b.textContent?.trim());
+      expect(labels(open({}, ['overview', 'tasks', 'calendar']))).toContain('Calendar');
+      expect(labels(open({}, ['overview', 'tasks']))).not.toContain('Calendar');
+    });
+
+    it('opens from a reminder or the Calendar page on the named event, and ignores a tab the server did not list', () => {
+      const fixture = open({ tab: 'calendar', event: 'e7' }, ['overview', 'calendar']);
+      expect(fixture.componentInstance.activeTab()).toBe('calendar');
+      expect(fixture.componentInstance.initialEventId()).toBe('e7');
+      expect(fixture.nativeElement.querySelector('ih-calendar-tab')).toBeTruthy();
+      expect(open({ tab: 'calendar' }, ['overview', 'tasks']).componentInstance.activeTab()).toBe('overview');
+    });
+  });
+
   describe('team tab', () => {
     it('renders the members endpoint DTO (employee and client members), not caseData.team', () => {
       const fixture = setup(PM);

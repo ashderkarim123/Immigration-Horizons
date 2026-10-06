@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** Reminder notifications carry a server-composed portal path; anything that is not a same-site /portal path is ignored. */
+function safePortalPath(value: unknown): string | null {
+  return typeof value === "string" && /^\/portal\/[A-Za-z0-9_/-]*$/.test(value) ? value : null;
+}
+
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
   if (seconds < 60) return "just now";
@@ -72,6 +77,12 @@ export default async function PortalNotificationsPage() {
                   <p className="text-navy-800 text-sm font-semibold">{n.title as string}</p>
                   <p className="text-ink-600 mt-0.5 text-sm">{n.message as string}</p>
                   <p className="text-ink-400 mt-1 text-xs">{timeAgo(n.createdAt as unknown as Date)}</p>
+                  {safePortalPath(n.actionPath) ? (
+                    <Link href={safePortalPath(n.actionPath) as string} className="text-navy-700 mt-1 inline-block text-xs font-semibold hover:underline">
+                      View
+                      <span className="sr-only"> {n.title as string}</span>
+                    </Link>
+                  ) : null}
                 </div>
                 {!n.read ? <MarkNotificationReadButton notificationId={String(n._id)} /> : null}
               </li>

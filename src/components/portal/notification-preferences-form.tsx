@@ -12,15 +12,21 @@ export function NotificationPreferencesForm({
   initialMentionEmails,
   initialDigestEmails,
   initialDigestFrequency,
+  initialDeadlineReminders,
+  initialAppointmentReminders,
 }: {
   initialMentionEmails: boolean;
   initialDigestEmails: boolean;
   initialDigestFrequency: DigestFrequency;
+  initialDeadlineReminders: boolean;
+  initialAppointmentReminders: boolean;
 }) {
   const router = useRouter();
   const [mentionEmails, setMentionEmails] = useState(initialMentionEmails);
   const [digestEmails, setDigestEmails] = useState(initialDigestEmails);
   const [digestFrequency, setDigestFrequency] = useState<DigestFrequency>(initialDigestFrequency);
+  const [deadlineReminders, setDeadlineReminders] = useState(initialDeadlineReminders);
+  const [appointmentReminders, setAppointmentReminders] = useState(initialAppointmentReminders);
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -32,6 +38,8 @@ export function NotificationPreferencesForm({
       mentionEmails,
       digestEmails,
       digestFrequency,
+      deadlineReminders,
+      appointmentReminders,
     });
     setPending(false);
     if (result.ok) {
@@ -73,6 +81,26 @@ export function NotificationPreferencesForm({
           <option value="weekly">Weekly</option>
           <option value="off">Off</option>
         </select>
+      </label>
+
+      <label className="flex items-start gap-3 text-sm">
+        <input
+          type="checkbox"
+          checked={deadlineReminders}
+          onChange={(e) => setDeadlineReminders(e.target.checked)}
+          className="border-ink-300 text-navy-700 mt-0.5 h-4 w-4 rounded"
+        />
+        <span className="text-navy-800">Remind me before a deadline, such as a document due date</span>
+      </label>
+
+      <label className="flex items-start gap-3 text-sm">
+        <input
+          type="checkbox"
+          checked={appointmentReminders}
+          onChange={(e) => setAppointmentReminders(e.target.checked)}
+          className="border-ink-300 text-navy-700 mt-0.5 h-4 w-4 rounded"
+        />
+        <span className="text-navy-800">Remind me before an appointment</span>
       </label>
 
       <p className="text-ink-500 text-xs">

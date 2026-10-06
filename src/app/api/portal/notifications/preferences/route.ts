@@ -26,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
   const client = await ClientUser.findById(actor.clientUserId);
   if (!client || client.status !== "active") return jsonError("unauthenticated", "Please log in.");
 
-  let body: { mentionEmails?: unknown; digestEmails?: unknown; digestFrequency?: unknown } = {};
+  let body: { mentionEmails?: unknown; digestEmails?: unknown; digestFrequency?: unknown; deadlineReminders?: unknown; appointmentReminders?: unknown } = {};
   try {
     body = await request.json();
   } catch {
@@ -43,6 +43,9 @@ export async function POST(request: Request): Promise<Response> {
       mentionEmails: Boolean(body.mentionEmails),
       digestEmails: Boolean(body.digestEmails),
       digestFrequency,
+      // Reminder switches are only changed when the caller sends them, so an older form cannot switch them off by omission.
+      ...(typeof body.deadlineReminders === "boolean" ? { deadlineReminders: body.deadlineReminders } : {}),
+      ...(typeof body.appointmentReminders === "boolean" ? { appointmentReminders: body.appointmentReminders } : {}),
     },
   });
 

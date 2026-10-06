@@ -19,6 +19,8 @@ export interface EmployeeData {
   role: { code: string; label: string };
   capabilities: string[];
   mustChangePassword: boolean;
+  /** The employee's saved IANA zone (or null) and the zone the server resolves for them (saved, practice, then UTC). */
+  timeZone?: { value: string | null; resolved: string; source: 'user' | 'practice' | 'utc' };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,6 +34,7 @@ export class AuthService {
   readonly role = signal<{ code: string; label: string } | null>(null);
   readonly capabilities = signal<string[]>([]);
   readonly mustChangePassword = signal<boolean>(false);
+  readonly timeZone = signal<EmployeeData['timeZone'] | null>(null);
 
   checkSession(): Observable<boolean> {
     return this.api.get<EmployeeData>('/staff/me').pipe(
@@ -42,6 +45,7 @@ export class AuthService {
         this.role.set(data.role);
         this.capabilities.set(data.capabilities);
         this.mustChangePassword.set(data.mustChangePassword);
+        this.timeZone.set(data.timeZone ?? null);
         this.isLoading.set(false);
       }),
       catchError(() => {

@@ -539,6 +539,24 @@
       "operations_admin",
       "pm",
       "uscis_forms_specialist"
+    ],
+    "calendar.view": [
+      "super_admin",
+      "admin",
+      "operations_admin",
+      "pm",
+      "petition_writer",
+      "business_plan_specialist",
+      "recommendation_letter_specialist",
+      "uscis_forms_specialist",
+      "evidence_collector",
+      "reviewer"
+    ],
+    "calendar.manage": [
+      "super_admin",
+      "admin",
+      "operations_admin",
+      "pm"
     ]
   }
 }

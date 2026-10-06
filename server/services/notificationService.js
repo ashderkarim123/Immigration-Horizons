@@ -24,8 +24,13 @@ function pickRelated(payload) {
  * dedupeKey race the same way every idempotent-create in this codebase
  * does (Cycle 5/6 precedent): let the unique index reject a concurrent
  * duplicate, then fetch and return the winner instead of erroring.
+ *
+ * `created` is false when the dedupeKey already existed (a repeat run, or
+ * the losing side of a concurrent race), so a caller that must count real
+ * inserts - the calendar reminder engine - can do so exactly.
+ * `actionPath` is a server-composed, in-app destination for the recipient.
  */
-async function createNotification({
+async function createNotificationOnce({
   recipientType,
   recipientAdminId = null,
   recipientClientId = null,
@@ -35,6 +40,7 @@ async function createNotification({
   type,
   emailState = 'not_applicable',
   dedupeKey = null,
+  actionPath = null,
   ...rest
 }) {
   const doc = {
@@ -50,22 +56,27 @@ async function createNotification({
     type,
     emailState,
     dedupeKey,
+    actionPath,
     ...pickRelated(rest),
   };
 
   try {
-    return await Notification.create(doc);
+    return { notification: await Notification.create(doc), created: true };
   } catch (err) {
     if (err && err.code === 11000 && err.keyPattern && err.keyPattern.dedupeKey) {
       const existing = await Notification.findOne({ dedupeKey });
-      if (existing) return existing;
+      if (existing) return { notification: existing, created: false };
     }
     // Notifications are a convenience layer — a failure here must never
     // break the underlying mutation that triggered it (documentEmail.js /
     // interactionEmail.js precedent).
     console.error('[notificationService] Failed to create notification:', err.message);
-    return null;
+    return { notification: null, created: false };
   }
+}
+
+async function createNotification(args) {
+  return (await createNotificationOnce(args)).notification;
 }
 
 /** Employee recipient — always created; employees never need the removed-member guard clients do. */
@@ -138,7 +149,7 @@ async function getOrCreatePreferences({ recipientType, recipientAdminId = null, 
 
 async function updatePreferences({ recipientType, recipientAdminId = null, recipientClientId = null, updates }) {
   const prefs = await getOrCreatePreferences({ recipientType, recipientAdminId, recipientClientId });
-  const allowed = ['mentionEmails', 'digestEmails', 'digestFrequency'];
+  const allowed = ['mentionEmails', 'digestEmails', 'digestFrequency', 'deadlineReminders', 'appointmentReminders'];
   for (const key of allowed) {
     if (Object.prototype.hasOwnProperty.call(updates, key)) prefs[key] = updates[key];
   }
@@ -179,6 +190,7 @@ async function markAllRead({ recipientType, recipientAdminId, recipientClientId 
 
 module.exports = {
   createNotification,
+  createNotificationOnce,
   notifyEmployee,
   notifyClient,
   getOrCreatePreferences,

@@ -44,6 +44,7 @@ ClientCaseSchema.index({ primaryClient: 1, archivedAt: 1, createdAt: -1 });
 // "needing attention" queue filters on it. Declared identically in
 // server/models/ClientCase.js so the two mirrors stay in step.
 ClientCaseSchema.index({ archivedAt: 1, updatedAt: -1 });
+ClientCaseSchema.index({ archivedAt: 1, targetFilingDate: 1 });
 
 export const ClientCase =
   mongoose.models.ClientCase ||

@@ -41,7 +41,9 @@
     "document_replacement_requested",
     "uscis_filing_added",
     "uscis_status_changed",
-    "uscis_action_required"
+    "uscis_action_required",
+    "calendar_deadline_reminder",
+    "calendar_appointment_reminder"
   ],
   "clientEligibleTypeValues": [
     "query_scheduled",
@@ -56,6 +58,8 @@
     "message_mention",
     "message_reply",
     "uscis_status_changed",
-    "uscis_action_required"
+    "uscis_action_required",
+    "calendar_deadline_reminder",
+    "calendar_appointment_reminder"
   ]
 }
