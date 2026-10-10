@@ -22,7 +22,9 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "projects/case-management/src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "projects/case-management/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
@@ -31,7 +33,9 @@
                 "input": "projects/case-management/public"
               }
             ],
-            "styles": ["projects/case-management/src/styles.scss"]
+            "styles": [
+              "projects/case-management/src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
@@ -93,16 +97,25 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "projects/admin-console/src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "projects/admin-console/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
               {
                 "glob": "**/*",
                 "input": "projects/admin-console/public"
+              },
+              {
+                "glob": "logo-header.png",
+                "input": "projects/case-management/public/assets/images",
+                "output": "assets/images"
               }
             ],
-            "styles": ["projects/admin-console/src/styles.scss"]
+            "styles": [
+              "projects/admin-console/src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
@@ -138,7 +151,10 @@
               "buildTarget": "admin-console:build:development"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "development",
+          "options": {
+            "proxyConfig": "projects/admin-console/proxy.conf.json"
+          }
         },
         "test": {
           "builder": "@angular/build:unit-test"

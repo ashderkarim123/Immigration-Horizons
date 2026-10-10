@@ -30,6 +30,14 @@ export const SECURITY_EVENT_TYPES = [
   "permission_denied",
   "csrf_rejected",
   "report_exported",
+  // Phase 14 (ADR-029): written by the admin CMS only; mirrored so the enum stays one vocabulary.
+  "admin_user_created",
+  "admin_user_updated",
+  "admin_user_deleted",
+  "admin_credentials_reset",
+  "admin_staff_sessions_revoked",
+  "admin_content_mutated",
+  "admin_settings_updated",
 ] as const;
 
 export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number];

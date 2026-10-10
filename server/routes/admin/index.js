@@ -32,7 +32,7 @@ const { logActivity } = require('../../utils/activity');
 const { ROLE_LABELS, getRole, can, requireCapability, canManageTask } = require('../../utils/permissions');
 const { csvCell } = require('../../utils/csv');
 const { recordSecurityEvent } = require('../../utils/securityEvents');
-const { isLockedOut, failedLoginUpdate, successfulLoginUpdate } = require('../../utils/lockout');
+const { authenticateAdmin, sessionIdentity } = require('../../services/adminAuthentication');
 const { DUE_SOON_DAYS, overdueTaskMatch, dueSoonTaskMatch, isOverdue, isDueSoon } = require('../../utils/taskDeadlines');
 const attachLeadOps = require('./leadOps');
 const { ASSIGNMENT_SLOTS } = attachLeadOps;
@@ -125,108 +125,13 @@ router.post('/admin/login', loginLimiter, async (req, res) => {
       error: 'Invalid username or password.',
     });
 
-  // Check admin users in DB first
+  // Real, DB-backed accounts first — the same service the JSON Admin API signs in with (ADR-029).
   if (mongoose.connection.readyState === 1) {
     try {
-      // `isActive` is deliberately NOT part of this query any more: a
-      // deactivated account must still be found, so guesses against it are
-      // counted and audited rather than silently falling through to the
-      // env-credential branch below.
-      const user = await AdminUser.findOne({ email: subjectEmail });
-      if (user) {
-        if (isLockedOut(user)) {
-          await recordSecurityEvent({
-            type: 'login_failed',
-            result: 'denied',
-            surface: 'admin_cms',
-            actorType: 'anonymous',
-            actorAdminId: user._id,
-            subjectEmail,
-            req,
-            meta: { reason: 'account_locked' },
-          });
-          return renderFailure();
-        }
-
-        const passwordMatches = await user.comparePassword(password);
-
-        if (!passwordMatches) {
-          const { patch, justLocked } = failedLoginUpdate(user);
-          // updateOne, not user.save(): saving re-validates the whole
-          // document, so a single legacy row with an off-enum role would
-          // stop being able to log in at all, and it would re-run the
-          // bcrypt pre('save') hook over an already-hashed password.
-          await AdminUser.updateOne({ _id: user._id }, { $set: patch });
-
-          await recordSecurityEvent({
-            type: 'login_failed',
-            result: 'failure',
-            surface: 'admin_cms',
-            actorType: 'anonymous',
-            actorAdminId: user._id,
-            subjectEmail,
-            req,
-            meta: { reason: 'bad_password' },
-          });
-          if (justLocked) {
-            await recordSecurityEvent({
-              type: 'account_locked',
-              result: 'denied',
-              surface: 'admin_cms',
-              actorType: 'anonymous',
-              actorAdminId: user._id,
-              subjectEmail,
-              req,
-              meta: { lockedUntil: patch.lockedUntil && patch.lockedUntil.toISOString() },
-            });
-          }
-          return renderFailure();
-        }
-
-        // Correct credential, account switched off. Counters are untouched:
-        // the password was right, so counting it as a guess would let the
-        // account's own owner lock out a login that may be reactivated.
-        if (user.isActive === false) {
-          await recordSecurityEvent({
-            type: 'login_failed',
-            result: 'denied',
-            surface: 'admin_cms',
-            actorType: 'anonymous',
-            actorAdminId: user._id,
-            subjectEmail,
-            req,
-            meta: { reason: 'account_deactivated' },
-          });
-          return renderFailure();
-        }
-
-        if (!can({ staff: user }, 'admin.cms.access')) {
-          await recordSecurityEvent({
-            type: 'permission_denied', result: 'denied', surface: 'admin_cms',
-            actorType: 'admin_user', actorAdminId: user._id, actorName: user.name,
-            subjectEmail, req, meta: { reason: 'cms_access_denied', role: user.role },
-          });
-          // A correct credential on the wrong surface is not a password guess.
-          // Do not reset or increment shared staff lockout counters.
-          return renderFailure();
-        }
-
-        await AdminUser.updateOne({ _id: user._id }, { $set: successfulLoginUpdate() });
-
-        await recordSecurityEvent({
-          type: 'login_succeeded',
-          result: 'success',
-          surface: 'admin_cms',
-          actorType: 'admin_user',
-          actorAdminId: user._id,
-          actorName: user.name || '',
-          subjectEmail,
-          req,
-          meta: { role: user.role },
-        });
-
-        return finishLogin({ isAdmin: true, adminUser: { id: user._id, name: user.name, role: user.role } });
-      }
+      const result = await authenticateAdmin({ email: username, password, req });
+      if (result.ok) return finishLogin(sessionIdentity(result.user));
+      // A matched account that was refused never falls through to the break-glass credential.
+      if (result.reason !== 'no_such_account') return renderFailure();
     } catch (err) {
       console.error('[login] DB auth failed, falling back to env credentials:', err.message);
     }

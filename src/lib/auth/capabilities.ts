@@ -159,6 +159,15 @@ export const CAPABILITIES: Record<string, string[]> = {
     "admin",
     "editor"
   ],
+  "seo.manage": [
+    "super_admin",
+    "admin",
+    "editor"
+  ],
+  "security_events.view": [
+    "super_admin",
+    "admin"
+  ],
   "csv.export": [
     "super_admin",
     "admin",
@@ -523,11 +532,47 @@ export const CAPABILITIES: Record<string, string[]> = {
     "admin",
     "reviewer"
   ],
-  "uscis_tracking.view": ["super_admin", "admin", "operations_admin", "pm", "petition_writer", "uscis_forms_specialist", "reviewer"],
-  "uscis_tracking.manage": ["super_admin", "admin", "operations_admin", "pm", "uscis_forms_specialist"],
-  "uscis_tracking.sync": ["super_admin", "admin", "operations_admin", "pm", "uscis_forms_specialist"],
-  "calendar.view": ["super_admin", "admin", "operations_admin", "pm", "petition_writer", "business_plan_specialist", "recommendation_letter_specialist", "uscis_forms_specialist", "evidence_collector", "reviewer"],
-  "calendar.manage": ["super_admin", "admin", "operations_admin", "pm"]
+  "uscis_tracking.view": [
+    "super_admin",
+    "admin",
+    "operations_admin",
+    "pm",
+    "petition_writer",
+    "uscis_forms_specialist",
+    "reviewer"
+  ],
+  "uscis_tracking.manage": [
+    "super_admin",
+    "admin",
+    "operations_admin",
+    "pm",
+    "uscis_forms_specialist"
+  ],
+  "uscis_tracking.sync": [
+    "super_admin",
+    "admin",
+    "operations_admin",
+    "pm",
+    "uscis_forms_specialist"
+  ],
+  "calendar.view": [
+    "super_admin",
+    "admin",
+    "operations_admin",
+    "pm",
+    "petition_writer",
+    "business_plan_specialist",
+    "recommendation_letter_specialist",
+    "uscis_forms_specialist",
+    "evidence_collector",
+    "reviewer"
+  ],
+  "calendar.manage": [
+    "super_admin",
+    "admin",
+    "operations_admin",
+    "pm"
+  ]
 };
 
 /**

@@ -1,32 +1,17 @@
 import { Routes } from '@angular/router';
+import { authGuard, loginGuard } from './core/guards/auth.guard';
 import { AdminAppShell } from './layout/app-shell/app-shell';
 
 export const routes: Routes = [
-  {
-    path: 'login',
-    loadComponent: () =>
-      import('./features/sign-in/sign-in').then((m) => m.AdminSignIn),
-  },
+  { path: 'login', canActivate: [loginGuard], title: 'Sign in · Admin Console', loadComponent: () => import('./features/sign-in/sign-in').then((m) => m.AdminSignIn) },
   {
     path: '',
     component: AdminAppShell,
+    canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      {
-        path: 'dashboard',
-        loadComponent: () =>
-          import('./features/dashboard/dashboard').then((m) => m.AdminDashboard),
-      },
-      {
-        path: 'content',
-        loadComponent: () =>
-          import('./features/content/content').then((m) => m.ContentPlaceholder),
-      },
-      {
-        path: '**',
-        loadComponent: () =>
-          import('./features/not-found/not-found').then((m) => m.AdminNotFound),
-      },
+      { path: 'dashboard', title: 'Dashboard · Admin Console', loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.AdminDashboard) },
+      { path: '**', title: 'Not found · Admin Console', loadComponent: () => import('./features/not-found/not-found').then((m) => m.AdminNotFound) },
     ],
   },
 ];
