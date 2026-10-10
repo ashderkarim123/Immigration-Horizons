@@ -22,6 +22,7 @@ const SECURITY_EVENT_TYPES = [
   'session_revoked',
   'permission_denied',
   'csrf_rejected',
+  'report_exported',
 ];
 
 const SECURITY_EVENT_RESULTS = ['success', 'failure', 'denied'];

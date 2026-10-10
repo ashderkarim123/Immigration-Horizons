@@ -41,6 +41,7 @@ export class Navigation {
     if (caps.includes('cases.view')) items.push({ label: 'Deadlines', path: '/deadlines', icon: 'clock' });
     if (caps.includes('calendar.view')) items.push({ label: 'Calendar', path: '/calendar', icon: 'calendar' });
     if (caps.includes('uscis_tracking.view')) items.push({ label: 'Tracking', path: '/tracking', icon: 'file-text' });
+    if (caps.includes('reports.view')) items.push({ label: 'Reports', path: '/reports', icon: 'activity' });
 
     return items;
   });

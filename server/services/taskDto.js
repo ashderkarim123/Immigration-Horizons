@@ -60,4 +60,18 @@ async function loadTaskDto(req, taskId, ctx) {
   return serializeTask(task, taskAccess(req, task, ctx || (await taskActionContext(req))));
 }
 
-module.exports = { taskActionContext, taskAccess, serializeTask, loadTaskDto, populated };
+/**
+ * Which tasks an actor may see, as a Mongo filter. One definition for the Tasks list and for Staff search so they cannot
+ * drift: tasks of cases the actor cannot see never appear (removed members lose them at once); case tasks additionally need
+ * `cases.view` (the same rule taskAccess applies to a single task); team-wide visibility needs `tasks.view_all`, otherwise
+ * only the actor's own tasks.
+ */
+async function visibleTaskFilter(req, { all = false } = {}) {
+  const filter = {};
+  if (!(all && can(req, 'tasks.view_all'))) filter.assignee = req.staff._id;
+  if (!can(req, 'cases.view')) filter.case = null;
+  else if (!can(req, 'cases.view_all')) filter.$or = [{ case: null }, { case: { $in: await memberCaseIds(req) } }];
+  return filter;
+}
+
+module.exports = { visibleTaskFilter, taskActionContext, taskAccess, serializeTask, loadTaskDto, populated };

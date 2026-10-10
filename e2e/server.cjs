@@ -218,6 +218,54 @@ async function main() {
       res.status(500).json({ error: String(error) });
     }
   });
+  // Phase 13 (search and reports): two teams, created on demand in the disposable database only. Team A (PM + specialist)
+  // owns a task, a document, a USCIS filing and a restricted conversation the PM is NOT on; team B (operations admin) owns a
+  // case with the same search token; case C has a formula-shaped title and a document awaiting review.
+  let searchFixture = null;
+  async function provisionSearchFixture() {
+    const Task = require("../server/models/admin/Task");
+    const CaseDocument = require("../server/models/CaseDocument");
+    const USCISFiling = require("../server/models/USCISFiling");
+    const WorkspaceChannel = require("../server/models/WorkspaceChannel");
+    const mk = async (label, email) =>
+      ClientUser.create({ firstName: label, lastName: "Search", email, normalizedEmail: email, passwordHash: await bcrypt.hash(password, 12), status: "active", emailVerifiedAt: new Date() });
+    const clients = [await mk("SA", "search-a@browser.ih.test"), await mk("SB", "search-b@browser.ih.test"), await mk("SC", "search-c@browser.ih.test")];
+    const make = async (client, title, pm) => {
+      const created = await createClientCase({ clientId: client._id, input: { title, caseType: "eb2_niw", projectManagerId: pm, priority: "high" }, actor });
+      if (!created.case) throw new Error("Search fixture provisioning failed.");
+      const workspace = await CaseWorkspace.findOne({ case: created.case._id });
+      const category = await DocumentCategory.findOne({ case: created.case._id, templateKey: "identity_civil_documents" });
+      return { caseDoc: created.case, workspace, category };
+    };
+    const a = await make(clients[0], "Zorblax assigned case", roles.pm.id);
+    const b = await make(clients[1], "Zorblax other team case", roles.operations_admin.id);
+    const c = await make(clients[2], '=HYPERLINK("http://evil.example","click")', roles.pm.id);
+    await WorkspaceMember.create({ workspace: a.workspace._id, memberType: "employee", adminUser: roles.evidence_collector.id, workspaceRole: "contributor", status: "active" });
+    const doc = (x, name, status) => CaseDocument.create({ case: x.caseDoc._id, workspace: x.workspace._id, category: x.category._id, uploadedByType: "employee", uploadedByAdmin: roles.pm.id, originalName: name + ".pdf", displayName: name, storageKey: "k/" + name, mimeType: "application/pdf", detectedMimeType: "application/pdf", extension: "pdf", size: 1, checksum: "x", visibility: "employees_only", status });
+    await doc(a, "Zorblax assigned passport", "pending_review");
+    await doc(b, "Zorblax other team passport", "pending_review");
+    await doc(c, "Formula case passport", "pending_review");
+    const tomorrow = new Date(Date.now() + 86400000);
+    await Task.create({ case: a.caseDoc._id, title: "Zorblax assigned task", assignee: roles.pm.id, dueDate: tomorrow });
+    await Task.create({ case: b.caseDoc._id, title: "Zorblax other team task", assignee: roles.operations_admin.id, dueDate: tomorrow });
+    await USCISFiling.create({ case: a.caseDoc._id, workspace: a.workspace._id, title: "Zorblax I-140", formType: "I-140", receiptNumber: "IOE5550001111", currentStatusTitle: "Case Was Received" });
+    await WorkspaceChannel.create({ case: a.caseDoc._id, workspace: a.workspace._id, name: "Zorblax confidential review", slug: "zorblax-confidential", channelType: "private", visibility: "restricted_members", order: 99 });
+    return {
+      a: { id: String(a.caseDoc._id), number: a.caseDoc.caseNumber },
+      b: { id: String(b.caseDoc._id), number: b.caseDoc.caseNumber },
+      c: { id: String(c.caseDoc._id), number: c.caseDoc.caseNumber },
+      receipt: "IOE5550001111",
+    };
+  }
+  app.post("/__browser_search_fixture", async (_req, res) => {
+    try {
+      searchFixture = searchFixture || provisionSearchFixture();
+      res.json(await searchFixture);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
   // One reminder pass against the disposable database, exactly as the production worker would run it.
   app.post("/__browser_run_reminders", async (_req, res) => {
     try {

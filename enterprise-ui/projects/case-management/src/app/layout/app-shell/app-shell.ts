@@ -1,13 +1,14 @@
 import { Component, signal, inject, HostListener, Injector, afterNextRender } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { Navigation } from '../navigation/navigation';
+import { GlobalSearchComponent } from '../../features/search/global-search.component';
 import { AuthService } from '../../core/auth/auth.service';
 import { DOCUMENT } from '@angular/common';
 
 @Component({
   selector: 'ih-app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, Navigation],
+  imports: [RouterOutlet, RouterLink, Navigation, GlobalSearchComponent],
   templateUrl: './app-shell.html',
   styleUrl: './app-shell.scss',
 })

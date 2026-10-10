@@ -14,7 +14,8 @@
     "password_changed",
     "session_revoked",
     "permission_denied",
-    "csrf_rejected"
+    "csrf_rejected",
+    "report_exported"
   ],
   "resultValues": ["success", "failure", "denied"],
   "actorTypeValues": ["client", "admin_user", "env_fallback", "anonymous", "system"],

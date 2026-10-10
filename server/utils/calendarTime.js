@@ -66,11 +66,11 @@ const addDays = (dateStr, n) => DateTime.fromISO(dateStr, { zone: 'utc' }).plus(
  * A bounded query window. `from`/`to` are inclusive calendar dates in the viewer's zone. Date-only sources are compared
  * by UTC date; exact instants by [start of `from`, end of `to`] in that zone. An unbounded or oversized range is refused.
  */
-function queryWindow({ from, to, zone }) {
+function queryWindow({ from, to, zone, maxDays = MAX_RANGE_DAYS }) {
   if (!isDateString(from) || !isDateString(to)) return { error: 'from and to must be dates in the form YYYY-MM-DD.' };
   if (to < from) return { error: 'to must not be before from.' };
   const days = daysBetween(from, to) + 1;
-  if (days > MAX_RANGE_DAYS) return { error: `The range may cover at most ${MAX_RANGE_DAYS} days.` };
+  if (days > maxDays) return { error: `The range may cover at most ${maxDays} days.` };
   return {
     from,
     to,
