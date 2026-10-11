@@ -248,3 +248,9 @@ test('errors: unknown routes and unparseable bodies answer with the JSON envelop
   assert.equal(bad.body.error.code, 'invalid_request');
   assert.doesNotMatch(JSON.stringify(bad.body), /SyntaxError|at JSON/);
 });
+
+test('the web app never loads .env on its own: only server.js and the CLI scripts may', () => {
+  // A module that calls dotenv.config() when required would point this very test process at the real database.
+  const loaded = Object.keys(require.cache).filter((file) => /node_modules[\\/]dotenv[\\/]/.test(file));
+  assert.deepEqual(loaded, []);
+});

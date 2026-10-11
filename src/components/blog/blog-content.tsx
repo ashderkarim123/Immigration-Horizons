@@ -9,17 +9,23 @@ function publicImageUrl(url: string | undefined) {
   return url?.startsWith("/uploads/") ? `${adminOrigin}${url}` : url;
 }
 
+// The same allowlist the CMS applies when a post is saved (server/utils/blogHtml.js). Both sides assert it against
+// docs/architecture/blog-schema-contract.json, so the stored and the rendered HTML cannot drift apart.
+export const BLOG_HTML_ALLOWED_TAGS = [
+  "p", "br", "h2", "h3", "h4", "strong", "em", "b", "i", "ul", "ol", "li",
+  "blockquote", "a", "img", "hr",
+];
+export const BLOG_HTML_ALLOWED_ATTRIBUTES = {
+  a: ["href", "title", "target", "rel"],
+  img: ["src", "alt", "title", "width", "height"],
+};
+export const BLOG_HTML_ALLOWED_SCHEMES = ["http", "https", "mailto"];
+
 export function sanitizeBlogHtml(html: string) {
   return sanitizeHtml(html, {
-    allowedTags: [
-      "p", "br", "h2", "h3", "h4", "strong", "em", "b", "i", "ul", "ol", "li",
-      "blockquote", "a", "img", "hr",
-    ],
-    allowedAttributes: {
-      a: ["href", "title", "target", "rel"],
-      img: ["src", "alt", "title", "width", "height"],
-    },
-    allowedSchemes: ["http", "https", "mailto"],
+    allowedTags: BLOG_HTML_ALLOWED_TAGS,
+    allowedAttributes: BLOG_HTML_ALLOWED_ATTRIBUTES,
+    allowedSchemes: BLOG_HTML_ALLOWED_SCHEMES,
     transformTags: {
       img: (tagName, attributes) => {
         const src = publicImageUrl(attributes.src);

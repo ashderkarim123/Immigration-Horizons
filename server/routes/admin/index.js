@@ -33,6 +33,15 @@ const { ROLE_LABELS, getRole, can, requireCapability, canManageTask } = require(
 const { csvCell } = require('../../utils/csv');
 const { recordSecurityEvent } = require('../../utils/securityEvents');
 const { authenticateAdmin, sessionIdentity } = require('../../services/adminAuthentication');
+// CMS business rules live in services shared with the JSON Admin API (ADR-029); these routes only adapt form fields.
+const { contextOf, firstMessage } = require('../../services/cms/common');
+const blogService = require('../../services/cms/blog');
+const faqService = require('../../services/cms/faqs');
+const testimonialService = require('../../services/cms/testimonials');
+const mediaService = require('../../services/cms/media');
+const seoService = require('../../services/cms/seo');
+const settingsService = require('../../services/cms/settings');
+const userAdmin = require('../../services/adminUserManagement');
 const { DUE_SOON_DAYS, overdueTaskMatch, dueSoonTaskMatch, isOverdue, isDueSoon } = require('../../utils/taskDeadlines');
 const attachLeadOps = require('./leadOps');
 const { ASSIGNMENT_SLOTS } = attachLeadOps;
@@ -716,33 +725,34 @@ router.get('/admin/blog/new', (req, res) => {
   });
 });
 
+/** Form fields -> the shape services/cms/blog reads. publishDate is a wall-clock time in the organisation zone. */
+function blogInput(req, { isUpdate }) {
+  const { title, slug, category, excerpt, content, tags, author, readingTime, published, publishDate } = req.body;
+  const isPublished = isChecked(published);
+  const input = {
+    title,
+    slug: slug || '',
+    category,
+    excerpt,
+    content,
+    tags: tags ? String(tags).split(',') : [],
+    author: author || '',
+    readingTime: Math.trunc(Number(readingTime)) || 0,
+    published: isPublished,
+  };
+  if (req.file) input.coverImage = `/uploads/${req.file.filename}`;
+  else if (req.body.coverImageUrl || !isUpdate) input.coverImage = req.body.coverImageUrl || '';
+  // publishDate arrives as a timezone-less "datetime-local" string (the
+  // form label tells the editor which zone it's read in) — parse it as
+  // wall-clock time in that zone, not as UTC.
+  if (publishDate) input.publishDate = zonedTimeToUtc(publishDate, organizationTimezone());
+  else if (isPublished) input.publishDate = null; // published with no date: the service stamps "now"
+  return input;
+}
+
 router.post('/admin/blog', requireCapability('blog.manage'), uploadSingle('coverImage'), async (req, res) => {
   try {
-    const { title, slug, category, excerpt, content, tags, author, readingTime, published, publishDate } = req.body;
-
-    const postData = {
-      title,
-      slug: slug || undefined,
-      category,
-      excerpt,
-      content,
-      tags: tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-      author: author || 'Immigration Horizons Team',
-      readingTime: Number(readingTime) || 0,
-      coverImage: req.file ? `/uploads/${req.file.filename}` : (req.body.coverImageUrl || ''),
-      published: isChecked(published),
-    };
-
-    // publishDate arrives as a timezone-less "datetime-local" string (the
-    // form label tells the editor which zone it's read in) — parse it as
-    // wall-clock time in that zone, not as UTC.
-    if (publishDate) postData.publishDate = zonedTimeToUtc(publishDate, organizationTimezone());
-    // If published but no publishDate, set it
-    if (postData.published && !postData.publishDate) {
-      postData.publishDate = new Date();
-    }
-
-    await BlogPost.create(postData);
+    await blogService.create(contextOf(req), blogInput(req, { isUpdate: false }));
     res.redirect('/admin/blog');
   } catch (err) {
     res.render('admin/blog/form', {
@@ -754,7 +764,7 @@ router.post('/admin/blog', requireCapability('blog.manage'), uploadSingle('cover
       publishDateLocal: req.body.publishDate || '',
       timezone: timezoneLabel(organizationTimezone()),
       categories,
-      error: err.message,
+      error: firstMessage(err),
       currentPage: 'blog',
     });
   }
@@ -780,31 +790,11 @@ router.get('/admin/blog/:id/edit', async (req, res) => {
 
 router.put('/admin/blog/:id', requireCapability('blog.manage'), uploadSingle('coverImage'), async (req, res) => {
   try {
-    const { title, slug, category, excerpt, content, tags, author, readingTime, published, publishDate } = req.body;
-
-    const update = {
-      title,
-      category,
-      excerpt,
-      content,
-      tags: tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-      author: author || 'Immigration Horizons Team',
-      readingTime: Number(readingTime) || 0,
-      published: isChecked(published),
-    };
-
-    if (slug && slug.trim()) update.slug = slug.trim();
-    if (req.file) update.coverImage = `/uploads/${req.file.filename}`;
-    else if (req.body.coverImageUrl) update.coverImage = req.body.coverImageUrl;
-    if (publishDate) update.publishDate = zonedTimeToUtc(publishDate, organizationTimezone());
-    if (update.published && !update.publishDate) {
-      update.publishDate = new Date();
-    }
-
-    await BlogPost.findByIdAndUpdate(req.params.id, { $set: update }, { runValidators: true });
+    await blogService.update(contextOf(req), req.params.id, blogInput(req, { isUpdate: true }));
     res.redirect('/admin/blog');
   } catch (err) {
-    const post = await BlogPost.findById(req.params.id).lean();
+    if (err.status === 404) return res.redirect('/admin/blog');
+    const post = await blogService.find(req.params.id).catch(() => null);
     res.render('admin/blog/form', {
       title: 'Edit Blog Post | Admin',
       post: { ...post, ...req.body },
@@ -815,59 +805,31 @@ router.put('/admin/blog/:id', requireCapability('blog.manage'), uploadSingle('co
         (post ? formatForDateTimeLocalInput(post.publishDate, organizationTimezone()) : ''),
       timezone: timezoneLabel(organizationTimezone()),
       categories,
-      error: err.message,
+      error: firstMessage(err),
       currentPage: 'blog',
     });
   }
 });
 
 router.delete('/admin/blog/:id', requireCapability('blog.manage'), async (req, res) => {
-  try {
-    await BlogPost.findByIdAndDelete(req.params.id);
-    res.redirect('/admin/blog');
-  } catch (err) {
-    res.redirect('/admin/blog');
-  }
+  await blogService.remove(contextOf(req), req.params.id).catch(() => {});
+  res.redirect('/admin/blog');
 });
 
 router.post('/admin/blog/:id/toggle-publish', requireCapability('blog.manage'), async (req, res) => {
   try {
-    const post = await BlogPost.findById(req.params.id);
-    if (post) {
-      post.published = !post.published;
-      await post.save();
-    }
-    res.redirect('/admin/blog');
-  } catch (err) {
-    res.redirect('/admin/blog');
-  }
+    const post = await blogService.find(req.params.id);
+    await blogService.setPublished(contextOf(req), req.params.id, !post.published);
+  } catch (err) { /* a missing post is not an error worth a page */ }
+  res.redirect('/admin/blog');
 });
 
 // ========================================================================
 // SEO MANAGER
 // ========================================================================
 
-const SEO_PAGES = [
-  { ref: 'home', label: 'Homepage' },
-  { ref: 'about', label: 'About' },
-  { ref: 'contact', label: 'Contact' },
-  { ref: 'services', label: 'Services' },
-  { ref: 'blog', label: 'Blog' },
-  { ref: 'reviews', label: 'Reviews' },
-  { ref: 'consultation', label: 'Consultation' },
-  { ref: 'privacy', label: 'Privacy Policy' },
-  { ref: 'terms', label: 'Terms' },
-  { ref: 'resources', label: 'Resources' },
-  { ref: '404', label: '404 Page' },
-  { ref: 'eb2-niw', label: 'EB-2 NIW Landing', pageType: 'landing' },
-  { ref: 'eb1a', label: 'EB-1A Landing', pageType: 'landing' },
-  { ref: 'o1-visa', label: 'O-1 Visa Landing', pageType: 'landing' },
-];
-
-// Add service pages to SEO list
-servicesList.forEach((s) => {
-  SEO_PAGES.push({ ref: `service-${s.slug}`, label: `Service: ${s.name}`, pageType: 'service' });
-});
+// The page registry is owned by services/cms/seo.js, shared with the Admin API.
+const { SEO_PAGES } = seoService;
 
 router.get('/admin/seo', async (req, res) => {
   try {
@@ -894,17 +856,12 @@ router.get('/admin/seo', async (req, res) => {
 
 router.get('/admin/seo/:pageRef/edit', async (req, res) => {
   try {
-    const seoMeta = await SEOMeta.findOne({ pageRef: req.params.pageRef }).lean();
-    const pageInfo = SEO_PAGES.find((p) => p.ref === req.params.pageRef) || {
-      ref: req.params.pageRef,
-      label: req.params.pageRef,
-      pageType: 'custom',
-    };
-
+    // Only a registered page, or a custom record that already exists, can be edited.
+    const { page, stored } = await seoService.resolve(req.params.pageRef);
     res.render('admin/seo/form', {
-      title: `SEO: ${pageInfo.label} | Admin`,
-      seo: seoMeta || { pageRef: req.params.pageRef, pageType: pageInfo.pageType || 'static' },
-      pageInfo,
+      title: `SEO: ${page.label} | Admin`,
+      seo: stored || { pageRef: page.ref, pageType: page.pageType || 'static' },
+      pageInfo: page,
       error: null,
       currentPage: 'seo',
     });
@@ -913,7 +870,7 @@ router.get('/admin/seo/:pageRef/edit', async (req, res) => {
   }
 });
 
-router.post('/admin/seo/:pageRef', async (req, res) => {
+router.post('/admin/seo/:pageRef', requireCapability('seo.manage'), async (req, res) => {
   try {
     const {
       seoTitle, metaDescription, keywords, canonicalUrl,
@@ -921,34 +878,20 @@ router.post('/admin/seo/:pageRef', async (req, res) => {
       slug, robots, noindex, schemaType,
     } = req.body;
 
-    await SEOMeta.findOneAndUpdate(
-      { pageRef: req.params.pageRef },
-      {
-        pageRef: req.params.pageRef,
-        seoTitle: seoTitle || '',
-        metaDescription: metaDescription || '',
-        keywords: keywords || '',
-        canonicalUrl: canonicalUrl || '',
-        ogTitle: ogTitle || '',
-        ogDescription: ogDescription || '',
-        ogImage: ogImage || '',
-        twitterImage: twitterImage || '',
-        slug: slug || '',
-        robots: robots || 'index,follow',
-        noindex: noindex === 'on' || noindex === 'true',
-        schemaType: schemaType || 'WebPage',
-      },
-      { upsert: true, new: true }
-    );
+    await seoService.save(contextOf(req), req.params.pageRef, {
+      seoTitle, metaDescription, keywords, canonicalUrl, ogTitle, ogDescription, ogImage, twitterImage, slug, robots, schemaType,
+      noindex: noindex === 'on' || noindex === 'true',
+    });
 
     res.redirect('/admin/seo');
   } catch (err) {
+    if (err.status === 404) return res.redirect('/admin/seo');
     const pageInfo = SEO_PAGES.find((p) => p.ref === req.params.pageRef) || { label: req.params.pageRef };
     res.render('admin/seo/form', {
       title: `SEO: ${pageInfo.label} | Admin`,
       seo: { ...req.body, pageRef: req.params.pageRef },
       pageInfo,
-      error: err.message,
+      error: firstMessage(err),
       currentPage: 'seo',
     });
   }
@@ -996,27 +939,35 @@ router.get('/admin/testimonials/new', (req, res) => {
   });
 });
 
+/** Form fields -> the shape services/cms/testimonials reads. */
+function testimonialInput(req, { isUpdate }) {
+  const { name, country, profession, service, review, rating, verificationUrl, featured, displayOrder, status } = req.body;
+  const input = {
+    name,
+    country: country || '',
+    profession: profession || '',
+    review,
+    rating: Math.trunc(Number(rating)) || 5,
+    verificationUrl: verificationUrl || '',
+    featured: featured === 'on' || featured === 'true',
+    displayOrder: Math.trunc(Number(displayOrder)) || 0,
+    status: status || 'published',
+  };
+  if (service !== undefined) input.service = service;
+  if (req.file) input.photo = `/uploads/${req.file.filename}`;
+  else if (req.body.photoUrl || !isUpdate) input.photo = req.body.photoUrl || '';
+  return input;
+}
+
 router.post('/admin/testimonials', requireCapability('testimonials.manage'), uploadSingle('photo'), async (req, res) => {
   try {
-    const { name, country, profession, review, rating, verificationUrl, featured, displayOrder, status } = req.body;
-    await Testimonial.create({
-      name,
-      country: country || '',
-      profession: profession || '',
-      review,
-      rating: Number(rating) || 5,
-      photo: req.file ? `/uploads/${req.file.filename}` : (req.body.photoUrl || ''),
-      verificationUrl: verificationUrl || '',
-      featured: featured === 'on' || featured === 'true',
-      displayOrder: Number(displayOrder) || 0,
-      status: status || 'published',
-    });
+    await testimonialService.create(contextOf(req), testimonialInput(req, { isUpdate: false }));
     res.redirect('/admin/testimonials');
   } catch (err) {
     res.render('admin/testimonials/form', {
       title: 'New Testimonial | Admin',
       testimonial: req.body,
-      error: err.message,
+      error: firstMessage(err),
       currentPage: 'testimonials',
     });
   }
@@ -1039,41 +990,23 @@ router.get('/admin/testimonials/:id/edit', async (req, res) => {
 
 router.put('/admin/testimonials/:id', requireCapability('testimonials.manage'), uploadSingle('photo'), async (req, res) => {
   try {
-    const { name, country, profession, review, rating, verificationUrl, featured, displayOrder, status } = req.body;
-    const update = {
-      name,
-      country: country || '',
-      profession: profession || '',
-      review,
-      rating: Number(rating) || 5,
-      verificationUrl: verificationUrl || '',
-      featured: featured === 'on' || featured === 'true',
-      displayOrder: Number(displayOrder) || 0,
-      status: status || 'published',
-    };
-    if (req.file) update.photo = `/uploads/${req.file.filename}`;
-    else if (req.body.photoUrl) update.photo = req.body.photoUrl;
-
-    await Testimonial.findByIdAndUpdate(req.params.id, { $set: update }, { runValidators: true });
+    await testimonialService.update(contextOf(req), req.params.id, testimonialInput(req, { isUpdate: true }));
     res.redirect('/admin/testimonials');
   } catch (err) {
-    const testimonial = await Testimonial.findById(req.params.id).lean();
+    if (err.status === 404) return res.redirect('/admin/testimonials');
+    const testimonial = await Testimonial.findById(req.params.id).lean().catch(() => null);
     res.render('admin/testimonials/form', {
       title: 'Edit Testimonial | Admin',
       testimonial: { ...testimonial, ...req.body },
-      error: err.message,
+      error: firstMessage(err),
       currentPage: 'testimonials',
     });
   }
 });
 
 router.delete('/admin/testimonials/:id', requireCapability('testimonials.manage'), async (req, res) => {
-  try {
-    await Testimonial.findByIdAndDelete(req.params.id);
-    res.redirect('/admin/testimonials');
-  } catch (err) {
-    res.redirect('/admin/testimonials');
-  }
+  await testimonialService.remove(contextOf(req), req.params.id).catch(() => {});
+  res.redirect('/admin/testimonials');
 });
 
 // ========================================================================
@@ -1124,25 +1057,30 @@ router.get('/admin/faqs/new', (req, res) => {
   });
 });
 
+/** Form fields -> the shape services/cms/faqs reads. */
+function faqInput(req) {
+  const { question, answer, category, displayOrder, showOnHomepage, showOnServicePage, schemaEnabled, status } = req.body;
+  return {
+    question,
+    answer,
+    category: category || 'General',
+    displayOrder: Math.trunc(Number(displayOrder)) || 0,
+    showOnHomepage: showOnHomepage === 'on' || showOnHomepage === 'true',
+    showOnServicePage: showOnServicePage || '',
+    schemaEnabled: schemaEnabled === 'on' || schemaEnabled === 'true',
+    status: status || 'published',
+  };
+}
+
 router.post('/admin/faqs', requireCapability('faqs.manage'), async (req, res) => {
   try {
-    const { question, answer, category, displayOrder, showOnHomepage, showOnServicePage, schemaEnabled, status } = req.body;
-    await FAQ.create({
-      question,
-      answer,
-      category: category || 'General',
-      displayOrder: Number(displayOrder) || 0,
-      showOnHomepage: showOnHomepage === 'on' || showOnHomepage === 'true',
-      showOnServicePage: showOnServicePage || '',
-      schemaEnabled: schemaEnabled === 'on' || schemaEnabled === 'true',
-      status: status || 'published',
-    });
+    await faqService.create(contextOf(req), faqInput(req));
     res.redirect('/admin/faqs');
   } catch (err) {
     res.render('admin/faqs/form', {
       title: 'New FAQ | Admin',
       faq: req.body,
-      error: err.message,
+      error: firstMessage(err),
       currentPage: 'faqs',
       serviceSlugs: servicesList.map((s) => s.slug),
     });
@@ -1167,26 +1105,15 @@ router.get('/admin/faqs/:id/edit', async (req, res) => {
 
 router.put('/admin/faqs/:id', requireCapability('faqs.manage'), async (req, res) => {
   try {
-    const { question, answer, category, displayOrder, showOnHomepage, showOnServicePage, schemaEnabled, status } = req.body;
-    await FAQ.findByIdAndUpdate(req.params.id, {
-      $set: {
-        question,
-        answer,
-        category: category || 'General',
-        displayOrder: Number(displayOrder) || 0,
-        showOnHomepage: showOnHomepage === 'on' || showOnHomepage === 'true',
-        showOnServicePage: showOnServicePage || '',
-        schemaEnabled: schemaEnabled === 'on' || schemaEnabled === 'true',
-        status: status || 'published',
-      },
-    }, { runValidators: true });
+    await faqService.update(contextOf(req), req.params.id, faqInput(req));
     res.redirect('/admin/faqs');
   } catch (err) {
-    const faq = await FAQ.findById(req.params.id).lean();
+    if (err.status === 404) return res.redirect('/admin/faqs');
+    const faq = await FAQ.findById(req.params.id).lean().catch(() => null);
     res.render('admin/faqs/form', {
       title: 'Edit FAQ | Admin',
       faq: { ...faq, ...req.body },
-      error: err.message,
+      error: firstMessage(err),
       currentPage: 'faqs',
       serviceSlugs: servicesList.map((s) => s.slug),
     });
@@ -1194,12 +1121,8 @@ router.put('/admin/faqs/:id', requireCapability('faqs.manage'), async (req, res)
 });
 
 router.delete('/admin/faqs/:id', requireCapability('faqs.manage'), async (req, res) => {
-  try {
-    await FAQ.findByIdAndDelete(req.params.id);
-    res.redirect('/admin/faqs');
-  } catch (err) {
-    res.redirect('/admin/faqs');
-  }
+  await faqService.remove(contextOf(req), req.params.id).catch(() => {});
+  res.redirect('/admin/faqs');
 });
 
 // ========================================================================
@@ -1257,18 +1180,8 @@ router.get('/admin/media', async (req, res) => {
 
 router.post('/admin/media/upload', requireCapability('media.manage'), uploadSingle('file'), async (req, res) => {
   try {
-    if (!req.file) throw new Error('No file uploaded');
     const { folder, altText } = req.body;
-    await Media.create({
-      originalName: req.file.originalname,
-      filename: req.file.filename,
-      mimeType: req.file.mimetype,
-      size: req.file.size,
-      url: `/uploads/${req.file.filename}`,
-      altText: altText || '',
-      folder: folder || '/',
-      uploadedBy: req.session.adminUser?.name || 'Admin',
-    });
+    await mediaService.register(contextOf(req), req.file, { folder, altText, uploadedBy: req.session.adminUser?.name || 'Admin' });
     res.redirect(req.headers.referer || '/admin/media');
   } catch (err) {
     console.error('[admin/media/upload]', err.message);
@@ -1277,28 +1190,17 @@ router.post('/admin/media/upload', requireCapability('media.manage'), uploadSing
 });
 
 router.delete('/admin/media/:id', requireCapability('media.manage'), async (req, res) => {
-  try {
-    const media = await Media.findById(req.params.id);
-    if (media) {
-      const fs = require('fs');
-      const path = require('path');
-      const filePath = path.join(__dirname, '..', '..', 'public', media.url);
-      try { fs.unlinkSync(filePath); } catch (_) { /* file may not exist on disk */ }
-      await Media.findByIdAndDelete(req.params.id);
-    }
-    res.redirect('/admin/media');
-  } catch (err) {
-    res.redirect('/admin/media');
-  }
+  // The service removes the file first and keeps the record if that fails, so nothing is orphaned.
+  await mediaService.remove(contextOf(req), req.params.id).catch((err) => console.error('[admin/media/delete]', err.message));
+  res.redirect('/admin/media');
 });
 
 router.post('/admin/media/:id/alt', requireCapability('media.manage'), async (req, res) => {
   try {
-    const { altText } = req.body;
-    await Media.findByIdAndUpdate(req.params.id, { altText: altText || '' });
+    await mediaService.updateAlt(contextOf(req), req.params.id, req.body.altText);
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(err.status || 500).json({ ok: false, error: firstMessage(err) });
   }
 });
 
@@ -1333,21 +1235,13 @@ router.get('/admin/settings', async (req, res) => {
 
 router.post('/admin/settings', requireCapability('settings.manage'), async (req, res) => {
   try {
-    const { group, ...keys } = req.body;
+    // Only the keys in the settings registry are stored; the form's own bookkeeping fields are not settings.
+    const { group, _csrf, _method, ...values } = req.body;
     if (!group) throw new Error('Group is required');
-
-    for (const [key, value] of Object.entries(keys)) {
-      if (key === 'group') continue;
-      await Setting.findOneAndUpdate(
-        { group, key },
-        { value: value || '' },
-        { upsert: true }
-      );
-    }
-
+    await settingsService.saveGroup(contextOf(req), group, values);
     res.redirect('/admin/settings');
   } catch (err) {
-    console.error('[admin/settings]', err.message);
+    console.error('[admin/settings]', firstMessage(err));
     res.redirect('/admin/settings');
   }
 });
@@ -1384,31 +1278,14 @@ router.get('/admin/contact-form', async (req, res) => {
 // USER MANAGEMENT (ADR-016 employee credential lifecycle)
 // ========================================================================
 
-/** Generates a cryptographically strong temporary password (24 hex chars = 96 bits). */
-function generateTempPassword() {
-  return crypto.randomBytes(20).toString('base64url').slice(0, 24);
-}
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /** One-shot message shown on the next Users page view (success or error). */
 function userNotice(req, type, message) {
   req.session.usersNotice = { type, message };
 }
 
-/** Who is acting, for the append-only security log. */
-function adminActor(req) {
-  const sessionUser = req.session.adminUser;
-  return {
-    actorType: sessionUser && sessionUser.id ? 'admin_user' : 'env_fallback',
-    actorAdminId: sessionUser && sessionUser.id ? sessionUser.id : null,
-    actorName: (sessionUser && sessionUser.name) || 'Admin',
-  };
-}
-
-/** Another active Super Admin exists besides `excludeId`, so the last one can never be demoted or disabled. */
-async function hasOtherActiveSuperAdmin(excludeId) {
-  return (await AdminUser.countDocuments({ role: 'super_admin', isActive: true, _id: { $ne: excludeId } })) > 0;
+/** Shown once on the next Users page view, then cleared from the session. Never written to any log or audit event. */
+function flashTempCredential(req, user, password, purpose) {
+  req.session.tempCredential = { userId: String(user._id), name: user.name, email: user.email, password, purpose };
 }
 
 function renderUserForm(res, { user, editMode, error, status = 200 }) {
@@ -1462,201 +1339,60 @@ router.get('/admin/users/:id/edit', requireCapability('users.manage'), async (re
 });
 
 /**
- * POST /admin/users — create employee account (ADR-016)
- *
- * The administrator provides name/email/role/jobTitle/department.
- * The server generates a strong temporary password.
- * mustChangePassword=true is set — the employee is forced to change on first login.
- * The temporary credential is shown ONCE in the next page view.
- * It is NEVER stored in plaintext, logs, or audit events.
+ * POST /admin/users — create employee account (ADR-016).
+ * The rules (who may create whom, the generated temporary password, the audit event) live in
+ * services/adminUserManagement.js, shared with the Admin API. The credential is shown once on the next page view.
  */
 router.post('/admin/users', requireCapability('users.manage'), async (req, res) => {
   try {
-    const { name, role, jobTitle, department } = req.body;
-    const email = String(req.body.email || '').trim().toLowerCase();
-    if (!name || !email || !role) {
-      throw new Error('Name, email, and role are required.');
-    }
-    if (!EMAIL_PATTERN.test(email)) {
-      throw new Error('Enter a valid email address.');
-    }
-    // Privilege escalation guard: only super_admin can create super_admin
-    if (role === 'super_admin' && getRole(req) !== 'super_admin') {
-      throw new Error('Only a Super Admin can create another Super Admin account.');
-    }
-    const validRoles = Object.keys(ROLE_LABELS);
-    if (!validRoles.includes(role)) {
-      throw new Error('Invalid role.');
-    }
-    if (await AdminUser.exists({ email })) {
-      throw new Error('An account with that email already exists.');
-    }
-
-    const tempPassword = generateTempPassword();
-
-    const newUser = await AdminUser.create({
-      name,
-      email,
-      password: tempPassword, // pre-save hook hashes it
-      role,
-      jobTitle: jobTitle || '',
-      department: department || '',
-      mustChangePassword: true,
-      credentialIssuedAt: new Date(),
-      passwordChangedAt: null,
-      isActive: true,
-    });
-
-    // Record provisioning event — never write the credential itself
-    await recordSecurityEvent({
-      type: 'login_succeeded', // closest existing type; extend contract additively if needed
-      result: 'success',
-      surface: 'admin_cms',
-      ...adminActor(req),
-      subjectEmail: newUser.email,
-      req,
-      meta: { action: 'employee_account_created', role },
-    });
-
-    // Store temp credential in session — shown once, then cleared
-    // NEVER write it to any log, analytics, or ActivityLog
-    req.session.tempCredential = {
-      userId: String(newUser._id),
-      name: newUser.name,
-      email: newUser.email,
-      password: tempPassword, // cleared from session after one view
-      purpose: 'created',
-    };
-
+    const { user, temporaryPassword } = await userAdmin.create(contextOf(req), req.body);
+    flashTempCredential(req, user, temporaryPassword, 'created');
     res.redirect('/admin/users');
   } catch (err) {
-    renderUserForm(res, { user: req.body, editMode: false, error: err.message, status: 400 });
+    renderUserForm(res, { user: req.body, editMode: false, error: firstMessage(err), status: 400 });
   }
 });
 
 /**
  * PATCH /admin/users/:id — update name/email/role/jobTitle/department/isActive.
  * (HTML forms reach this via POST …?_method=PATCH.)
- * When isActive is set to false, all EmployeeSession rows are revoked immediately.
- * The email is the sign-in identifier, so changing it also revokes sessions.
  */
 router.patch('/admin/users/:id', requireCapability('users.manage'), async (req, res) => {
-  const target = mongoose.Types.ObjectId.isValid(req.params.id) ? await AdminUser.findById(req.params.id) : null;
-  if (!target) return res.redirect('/admin/users');
-
-  const fail = (message, status = 400) =>
-    { const { password, ...safe } = target.toObject(); return renderUserForm(res, { user: { ...safe, ...req.body, _id: target._id }, editMode: true, error: message, status }); };
-
   try {
-    const { name, role, jobTitle, department, isActive } = req.body;
-    const email = req.body.email === undefined ? undefined : String(req.body.email).trim().toLowerCase();
-
-    // Privilege guard: only super_admin may promote/demote super_admin
-    if (target.role === 'super_admin' && getRole(req) !== 'super_admin') {
-      return res.status(403).send('Only a Super Admin can modify another Super Admin account.');
-    }
-    if (role === 'super_admin' && getRole(req) !== 'super_admin') {
-      return res.status(403).send('Only a Super Admin can assign the Super Admin role.');
-    }
-    if (role && !Object.keys(ROLE_LABELS).includes(role)) return fail('Invalid role.');
-    if (email !== undefined && !EMAIL_PATTERN.test(email)) return fail('Enter a valid email address.');
-    if (name !== undefined && !String(name).trim()) return fail('Name is required.');
-
-    const emailChanging = email !== undefined && email !== target.email;
-    if (emailChanging && (await AdminUser.exists({ email, _id: { $ne: target._id } }))) {
-      return fail('Another account already uses that email.');
-    }
-
-    const wasActive = target.isActive;
-    const becomingInactive = wasActive && isActive === 'false';
-    const losingSuperAdmin = target.role === 'super_admin' && ((role && role !== 'super_admin') || becomingInactive);
-    if (losingSuperAdmin && !(await hasOtherActiveSuperAdmin(target._id))) {
-      return fail('This is the only active Super Admin. Create or promote another one first.');
-    }
-
-    if (name) target.name = String(name).trim();
-    if (emailChanging) target.email = email;
-    if (role) target.role = role;
-    if (jobTitle !== undefined) target.jobTitle = jobTitle;
-    if (department !== undefined) target.department = department;
-    if (isActive !== undefined) target.isActive = isActive !== 'false';
-
-    await target.save();
-
-    // Revoke all EmployeeSession rows when the account is deactivated or its sign-in email changes (ADR-016)
-    if (becomingInactive || emailChanging) {
-      await EmployeeSession.deleteMany({ adminUser: target._id });
-    }
-    if (becomingInactive) {
-      await recordSecurityEvent({
-        type: 'session_revoked',
-        result: 'success',
-        surface: 'admin_cms',
-        ...adminActor(req),
-        subjectEmail: target.email,
-        req,
-        meta: { action: 'account_deactivated' },
-      });
-    }
-
-    userNotice(req, 'success', `Saved ${target.name}.${emailChanging ? ` They now sign in with ${target.email}.` : ''}`);
+    const { name, email, role, jobTitle, department, isActive } = req.body;
+    const { user, emailChanged } = await userAdmin.update(contextOf(req), req.params.id, {
+      name, email, role: role || undefined, jobTitle, department,
+      isActive: isActive === undefined ? undefined : isActive !== 'false',
+    });
+    userNotice(req, 'success', `Saved ${user.name}.${emailChanged ? ` They now sign in with ${user.email}.` : ''}`);
     res.redirect('/admin/users');
   } catch (err) {
-    console.error('[admin/users/patch]', err.message);
-    fail('Could not save changes. Please try again.', 500);
+    if (err.status === 404) return res.redirect('/admin/users');
+    if (err.status === 403) return res.status(403).send(err.message);
+    const target = await AdminUser.findById(req.params.id).select('-password').lean().catch(() => null);
+    const expected = !!err.fieldErrors; // a rule the admin can fix, as opposed to a fault
+    if (!expected) console.error('[admin/users/patch]', err.message);
+    renderUserForm(res, {
+      user: { ...target, ...req.body, _id: req.params.id },
+      editMode: true,
+      error: expected ? firstMessage(err) : 'Could not save changes. Please try again.',
+      status: expected ? 400 : 500,
+    });
   }
 });
 
 /**
- * POST /admin/users/:id/reset-credentials — generate new temp password,
- * revoke all existing EmployeeSession rows, force first-login setup again.
- * Works for every employee and admin (they share one account model) and also
- * clears a lockout, since a forgotten password usually ends in one.
+ * POST /admin/users/:id/reset-credentials — new temporary password, Staff sessions revoked, lockout cleared,
+ * first-login setup forced again. Works for every employee and admin (they share one account model).
  */
 router.post('/admin/users/:id/reset-credentials', requireCapability('users.manage'), async (req, res) => {
   try {
-    const target = mongoose.Types.ObjectId.isValid(req.params.id) ? await AdminUser.findById(req.params.id) : null;
-    if (!target) return res.redirect('/admin/users');
-
-    // Privilege guard
-    if (target.role === 'super_admin' && getRole(req) !== 'super_admin') {
-      return res.status(403).send('Only a Super Admin can reset another Super Admin\'s credentials.');
-    }
-
-    const tempPassword = generateTempPassword();
-    target.password = tempPassword; // pre-save hook hashes
-    target.mustChangePassword = true;
-    target.credentialIssuedAt = new Date();
-    target.passwordChangedAt = null;
-    await target.save();
-    // Counters are written with updateOne, never save() (ADR-012 §3)
-    await AdminUser.updateOne({ _id: target._id }, { $set: { failedLoginCount: 0, lockedUntil: null } });
-
-    // Revoke all existing sessions — employee must log in fresh with new temp
-    await EmployeeSession.deleteMany({ adminUser: target._id });
-
-    // Audit reset — never record the credential
-    await recordSecurityEvent({
-      type: 'password_reset_completed',
-      result: 'success',
-      surface: 'admin_cms',
-      ...adminActor(req),
-      subjectEmail: target.email,
-      req,
-      meta: { action: 'admin_credential_reset' },
-    });
-
-    // Show temp credential once
-    req.session.tempCredential = {
-      userId: String(target._id),
-      name: target.name,
-      email: target.email,
-      password: tempPassword,
-      purpose: 'reset',
-    };
-
+    const { user, temporaryPassword } = await userAdmin.resetCredentials(contextOf(req), req.params.id);
+    flashTempCredential(req, user, temporaryPassword, 'reset');
     res.redirect('/admin/users');
   } catch (err) {
+    if (err.status === 404) return res.redirect('/admin/users');
+    if (err.status === 403) return res.status(403).send(err.message);
     console.error('[admin/users/reset-credentials]', err.message);
     userNotice(req, 'error', 'Could not reset the password. Please try again.');
     res.redirect('/admin/users');
@@ -1665,30 +1401,10 @@ router.post('/admin/users/:id/reset-credentials', requireCapability('users.manag
 
 router.delete('/admin/users/:id', requireCapability('users.delete'), async (req, res) => {
   try {
-    const currentUserId = req.session.adminUser && req.session.adminUser.id;
-    if (currentUserId && String(currentUserId) === String(req.params.id)) {
-      return res.status(400).send('You cannot delete your own account while logged in as it.');
-    }
-
-    const target = await AdminUser.findById(req.params.id);
-    if (!target) return res.redirect('/admin/users');
-
-    if (target.role === 'super_admin') {
-      const remainingSuperAdmins = await AdminUser.countDocuments({
-        role: 'super_admin',
-        isActive: true,
-        _id: { $ne: target._id },
-      });
-      if (remainingSuperAdmins === 0) {
-        return res.status(400).send('Cannot delete the last remaining Super Admin account.');
-      }
-    }
-
-    // Revoke sessions before deleting
-    await EmployeeSession.deleteMany({ adminUser: target._id });
-    await AdminUser.findByIdAndDelete(req.params.id);
+    await userAdmin.remove(contextOf(req), req.params.id);
     res.redirect('/admin/users');
   } catch (err) {
+    if (err.status === 400 || err.status === 403) return res.status(err.status).send(err.message);
     res.redirect('/admin/users');
   }
 });

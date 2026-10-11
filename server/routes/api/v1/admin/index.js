@@ -25,6 +25,9 @@ router.use(requireAdminSession, adminCsrf);
 
 router.get('/me', (req, res) => res.json({ data: adminDto(req.admin), meta: { requestId: req.id } }));
 
+router.use('/', require('./content'));
+router.use('/', require('./platform'));
+
 router.use((req, res, next) => next(createApiError(404, 'not_found', 'Not found.')));
 router.use(apiErrorHandler);
 
