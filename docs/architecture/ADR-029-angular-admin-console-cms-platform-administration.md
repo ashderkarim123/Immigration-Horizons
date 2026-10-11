@@ -756,3 +756,33 @@ Phase 14 is complete when:
 After Phase 14, Immigration Horizons will have a complete modern Angular administrative application operating on the same CMS/platform data as the legacy EJS console.
 
 A separate release gate can then package/canary/cut over `admin.immigrationhorizons.com` and eventually retire the EJS presentation layer without changing the underlying authoritative data.
+
+## Implementation notes (Phase 14)
+
+Recorded where the implementation chose between options this ADR left open, or differs from its wording.
+
+- **Multipart CSRF is verified before the upload is parsed, not after.** The Admin API carries the token in the
+  `X-CSRF-Token` header, so it does not need the body. Verifying first means a forged upload never reaches the disk.
+  The EJS path is unchanged (token in the form body, verified after multer). A body `_csrf` field alone is not accepted
+  by the Admin API.
+- **Trusted origin is same-origin**, not "any Immigration Horizons host": the request's own `Host`, or `ADMIN_URL`
+  when set. Localhost is additionally accepted outside production for `ng serve`.
+- **Blog HTML was already sanitized when rendered** by the public site. Phase 14 adds the same allowlist at save time
+  (`server/utils/blogHtml.js`), for both consoles, and pins the two lists to one contract
+  (`docs/architecture/blog-schema-contract.json`). Existing posts are not rewritten.
+- **`seo.manage`** was added (super_admin, admin, editor) and applied to the EJS SEO save too, which previously had no
+  capability check beyond being signed in. Nobody gains or loses access.
+- **SecurityEvent types added:** `admin_user_created`, `admin_user_updated`, `admin_user_deleted`,
+  `admin_credentials_reset`, `admin_staff_sessions_revoked`, `admin_content_mutated`, `admin_settings_updated`.
+  Activation and deactivation are `admin_user_updated` with `meta.action`. The EJS console now records these as well;
+  it no longer records account creation as `login_succeeded`.
+- **Security events are paged by `hasMore`**, with no total, and no index was added.
+- **The settings allowlist is the EJS form's field list.** The model's `email` group has no supported keys and is not
+  exposed. The EJS save no longer stores its own `_csrf` field as a setting.
+- **SEO edits target registered pages only**, or a custom record that already exists. This also applies to the EJS
+  console, which previously upserted any typed reference.
+- **The public site does not read `FAQ`, `Testimonial`, `SEOMeta`, `Setting` or `Media` documents today** — its FAQs,
+  testimonials and metadata are code-owned. Only Blog content written here appears on the public site. The Admin
+  Console manages those collections faithfully, but wiring the public site to them is separate, undecided work.
+- **Deployment tooling was not extended.** CI builds and browser-tests the Admin Console; packaging it into a release
+  directory is left to the Admin Console release gate, together with the nginx decision.

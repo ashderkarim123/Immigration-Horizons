@@ -40,6 +40,26 @@ Two ways to authenticate:
 | `/admin/contact-form` | Read-only integration status (MongoDB / Sheets / Email) |
 | `/admin/users` | Admin user management |
 
+## Admin API (`/api/v1/admin`, ADR-029)
+
+The JSON API behind the Angular Admin Console (`enterprise-ui/projects/admin-console`). It manages the same
+collections as the EJS pages above, through the same services (`services/cms/*`, `services/adminUserManagement.js`,
+`services/adminAuthentication.js`), so the two consoles cannot disagree on validation or privilege rules. The EJS
+console stays in place as the rollback surface.
+
+- **Identity:** the CMS session cookie of a real, active `AdminUser` with `admin.cms.access`, re-read on every request.
+  The Staff (`ih_staff_session`) and Client cookies are never accepted, and the environment break-glass login is refused.
+- **Mount order (do not change):** Staff API → `express-session` → Admin API → EJS CSRF middleware → EJS routes
+  (`app.js`). The Staff API must stay outside the session.
+- **CSRF:** every mutation, including sign-in, needs the session token in `X-CSRF-Token` (from
+  `GET /session/bootstrap`, or the one a successful login returns) and a same-origin `Origin`. Set `ADMIN_URL` if a
+  proxy rewrites `Host`.
+- **Capabilities:** reads need the console gate; writes need `blog.manage`, `faqs.manage`, `testimonials.manage`,
+  `media.manage`, `seo.manage`, `settings.manage`, `users.manage` / `users.delete`, `security_events.view`.
+- **Contract:** `openapi/v1.yaml`. Tests: `test/integration/admin-api-*.integration.test.js`.
+- **Never import a module that loads `.env`** (`server.js`, `scripts/*`, `workers/*`) from application code: a test
+  process would pick up the real database URI. A test in `admin-api-auth` fails if that happens.
+
 ## Notes
 
 - Uploaded files are stored locally in `public/uploads/`.
