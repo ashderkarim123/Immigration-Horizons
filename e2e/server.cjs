@@ -5,10 +5,14 @@ const os = require("node:os");
 const fs = require("node:fs/promises");
 const { startTestDb, stopTestDb } = require("../server/test/helpers/testDb");
 const port = 3180;
+// Phase 14: the Angular Admin Console is served on its own origin, at "/", exactly as its production build expects.
+const adminPort = 3181;
 Object.assign(process.env, {
   NODE_ENV: "development",
   SITE_URL: `http://localhost:${port}`,
   NEXT_PUBLIC_SITE_URL: `http://localhost:${port}`,
+  // The CMS builds public preview links from this; here the public site is this same fixture.
+  PUBLIC_SITE_URL: `http://localhost:${port}`,
   APP_TIMEZONE: "UTC",
   PRIVATE_DOCUMENT_ROOT: path.join(
     os.tmpdir(),
@@ -145,6 +149,7 @@ async function main() {
     categoryId: String(category._id),
     requestId: String(request.request._id),
     leadId: String(lead._id),
+    adminOrigin: `http://localhost:${adminPort}`,
   };
   // Use the release build: no cold route compilation or development overlays.
   const nextApp = require("next")({ dev: false, hostname: "localhost", port });
@@ -285,11 +290,20 @@ async function main() {
     res.sendFile(path.join(staticRoot, "index.html")),
   );
   const serverApp = createApp();
-  app.use((req, res, next) =>
-    /^\/(api\/v1|admin|css|images|js)(\/|$)/.test(req.path)
-      ? serverApp(req, res, next)
-      : next(),
-  );
+  const isServerPath = (req) => /^\/(api\/v1|admin|css|images|js|uploads)(\/|$)/.test(req.path);
+  app.use((req, res, next) => (isServerPath(req) ? serverApp(req, res, next) : next()));
+
+  // Phase 14 — the Admin Console origin: its static build at "/", with the same Express app behind /api/v1, /uploads
+  // and the legacy EJS console at /admin (the rollback surface, which shares the CMS session).
+  const adminRoot = path.resolve(__dirname, "../enterprise-ui/dist/admin-console/browser");
+  const adminApp = express();
+  adminApp.use((req, res, next) => (isServerPath(req) ? serverApp(req, res, next) : next()));
+  adminApp.use(express.static(adminRoot));
+  adminApp.get("*", (_req, res) => res.sendFile(path.join(adminRoot, "index.html")));
+  const adminServer = adminApp.listen(adminPort, "localhost");
+  // Media uploaded during the run lands in the real (git-ignored) upload directory; remember what was already there.
+  const uploadsDir = path.resolve(__dirname, "../server/public/uploads");
+  const uploadsBefore = new Set(await fs.readdir(uploadsDir).catch(() => []));
   app.use((req, res) => nextApp.getRequestHandler()(req, res));
   const server = app.listen(port, "localhost", () =>
     console.log(`Browser fixtures ready at http://localhost:${port}`),
@@ -297,6 +311,10 @@ async function main() {
   const shutdown = async () => {
     setTimeout(() => process.exit(0), 5000).unref();
     server.close();
+    adminServer.close();
+    for (const name of await fs.readdir(uploadsDir).catch(() => [])) {
+      if (!uploadsBefore.has(name)) await fs.rm(path.join(uploadsDir, name), { force: true });
+    }
     await nextApp.close();
     await stopTestDb();
     const documentRoot = path.resolve(process.env.PRIVATE_DOCUMENT_ROOT);

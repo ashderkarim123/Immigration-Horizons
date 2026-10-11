@@ -147,4 +147,5 @@ function verifyCsrf(req, res, next) {
   return next();
 }
 
-module.exports = { csrfProtection, verifyCsrf };
+// issueToken/tokensMatch are shared with the JSON Admin API (middleware/api/adminAuth.js): one token, one comparison.
+module.exports = { csrfProtection, verifyCsrf, issueToken, tokensMatch };

@@ -153,6 +153,15 @@
       "admin",
       "editor"
     ],
+    "seo.manage": [
+      "super_admin",
+      "admin",
+      "editor"
+    ],
+    "security_events.view": [
+      "super_admin",
+      "admin"
+    ],
     "csv.export": [
       "super_admin",
       "admin",

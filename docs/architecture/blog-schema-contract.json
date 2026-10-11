@@ -2,5 +2,14 @@
   "_comment": "Canonical test-time contract for BlogPost, authored by server/models/BlogPost.js and read by src/lib/models/BlogPost.ts.",
   "collection": "blogposts",
   "categories": ["EB-2 NIW", "EB-1A", "USCIS Updates", "Success Stories", "Immigration Tips"],
-  "requiredFields": ["title", "slug", "excerpt", "content"]
+  "requiredFields": ["title", "slug", "excerpt", "content"],
+  "_allowedHtmlComment": "The one Blog HTML allowlist (ADR-029). Applied when a post is saved (server/utils/blogHtml.js) and again when it is rendered (src/components/blog/blog-content.tsx); both assert these lists.",
+  "allowedHtml": {
+    "tags": ["p", "br", "h2", "h3", "h4", "strong", "em", "b", "i", "ul", "ol", "li", "blockquote", "a", "img", "hr"],
+    "attributes": {
+      "a": ["href", "title", "target", "rel"],
+      "img": ["src", "alt", "title", "width", "height"]
+    },
+    "schemes": ["http", "https", "mailto"]
+  }
 }

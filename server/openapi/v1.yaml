@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: Immigration Horizons Staff API
+  title: Immigration Horizons Staff and Admin API
   version: "1.0"
-  description: Canonical JSON API for the Angular Enterprise UI.
+  description: Canonical JSON API for the Angular Enterprise UI — the Staff application (/staff) and the Admin Console (/admin).
 servers:
   - url: /api/v1
 paths:
@@ -2291,3 +2291,680 @@ paths:
         '403': { description: "Missing reports.view or csv.export, or scope=firm without cases.view_all" }
         '422': { description: "validation_error, including an export over the row cap" }
         '429': { description: "rate_limited" }
+  # ===========================================================================================================
+  # Admin API (Phase 14, ADR-029) — /api/v1/admin/*
+  #
+  # Identity is the CMS express-session cookie (cmsSession) of a real, active AdminUser holding admin.cms.access;
+  # the account is re-read on every request. The Staff (ih_staff_session) and Client (ih_portal_session) cookies
+  # are never accepted here, and the environment break-glass login is refused. Every POST/PUT/PATCH/DELETE needs
+  # the session CSRF token in X-CSRF-Token and a same-origin Origin/Referer. All responses carry X-Request-Id and
+  # Cache-Control: no-store. Errors use { error: { code, message, fieldErrors, requestId } }; fieldErrors is a
+  # list of { field, message } or null.
+  # ===========================================================================================================
+  /admin/session/bootstrap:
+    get:
+      tags: [Admin session]
+      summary: Session-bound CSRF token and whether an administrator is signed in
+      security: []
+      responses:
+        '200':
+          description: "{ data: { authenticated: boolean, csrfToken: string } } — never a session id or cookie value"
+  /admin/session/login:
+    post:
+      tags: [Admin session]
+      summary: Sign in a DB-backed administrator
+      description: >
+        Requires the bootstrap CSRF token. Shares lockout, deactivation and the admin.cms.access gate with the legacy EJS login. The
+        session id is regenerated on success, so the response carries the NEW CSRF token. Every refusal is the same generic 401.
+      security: []
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: "{ data: { admin: AdminProfile, csrfToken: string } }"
+          headers:
+            Set-Cookie: { schema: { type: string }, description: HttpOnly CMS session cookie }
+        '401': { description: "unauthenticated — invalid email or password (also locked, inactive, no CMS access, or the break-glass credential)" }
+        '403': { description: "csrf_invalid — missing/wrong token or untrusted origin" }
+        '422': { description: "validation_error" }
+        '429': { description: "rate_limited" }
+  /admin/session/logout:
+    post:
+      tags: [Admin session]
+      summary: End the CMS session (audited)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      responses:
+        '200': { description: "{ data: { signedOut: true } } — also when no session exists" }
+        '403': { description: "csrf_invalid" }
+  /admin/me:
+    get:
+      tags: [Admin session]
+      summary: The signed-in administrator and their capabilities
+      responses:
+        '200':
+          description: Profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AdminProfile' }
+        '401': { $ref: '#/components/responses/AdminUnauthenticated' }
+  /admin/dashboard:
+    get:
+      tags: [Admin content]
+      summary: Website/platform totals
+      description: >
+        Real counts of blog posts (total/published/drafts), FAQs, testimonials, media items and SEO entries, plus recent posts.
+        users is null without users.manage and recentSecurityEvents is null without security_events.view — never a fake zero.
+        No case-work metrics.
+      responses:
+        '200': { description: Dashboard }
+        '401': { $ref: '#/components/responses/AdminUnauthenticated' }
+  /admin/blog:
+    get:
+      tags: [Admin content]
+      summary: List blog posts (newest first, without bodies)
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 100 }, description: Literal match on title or excerpt }
+        - { name: status, in: query, schema: { type: string, enum: [published, draft] } }
+        - { name: category, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200': { description: "{ data: { items: BlogPost[], page, limit, total, totalPages, categories } }" }
+        '401': { $ref: '#/components/responses/AdminUnauthenticated' }
+    post:
+      tags: [Admin content]
+      summary: Create a post (blog.manage)
+      description: >
+        A draft unless published is true. The slug is generated from the title when blank and must be unique. Content is sanitized
+        to the Blog HTML allowlist before it is stored (scripts, styles, iframes, forms, event handlers and javascript:/data: URLs
+        are removed).
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BlogPostInput' }
+      responses:
+        '201': { description: The created post }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '409': { description: "conflict — the slug is already used (fieldErrors: slug)" }
+        '422': { description: "validation_error" }
+  /admin/blog/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [Admin content]
+      summary: One post, with its content
+      responses:
+        '200': { description: BlogPost }
+        '404': { description: "not_found" }
+    patch:
+      tags: [Admin content]
+      summary: Update the supplied fields (blog.manage)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BlogPostInput' }
+      responses:
+        '200': { description: The updated post }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+        '409': { description: "conflict — slug" }
+        '422': { description: "validation_error" }
+    delete:
+      tags: [Admin content]
+      summary: Delete a post (blog.manage)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      responses:
+        '200': { description: "{ data: { deleted: true } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+  /admin/blog/{id}/publish:
+    post:
+      tags: [Admin content]
+      summary: Publish or unpublish a post (blog.manage)
+      description: Publishing a post that has no publish date stamps the current time.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/CsrfToken' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [published], properties: { published: { type: boolean } } }
+      responses:
+        '200': { description: The updated post }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+        '422': { description: "validation_error" }
+  /admin/faqs:
+    get:
+      tags: [Admin content]
+      summary: List FAQs in display order
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [published, draft] } }
+        - { name: category, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200': { description: "{ data: { items: Faq[], page, limit, total, totalPages, categories, statuses, serviceSlugs } }" }
+    post:
+      tags: [Admin content]
+      summary: Create an FAQ (faqs.manage)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FaqInput' }
+      responses:
+        '201': { description: The created FAQ }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '422': { description: "validation_error" }
+  /admin/faqs/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [Admin content]
+      summary: One FAQ
+      responses:
+        '200': { description: Faq }
+        '404': { description: "not_found" }
+    patch:
+      tags: [Admin content]
+      summary: Update the supplied fields (faqs.manage)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FaqInput' }
+      responses:
+        '200': { description: The updated FAQ }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+        '422': { description: "validation_error" }
+    delete:
+      tags: [Admin content]
+      summary: Delete an FAQ (faqs.manage)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      responses:
+        '200': { description: "{ data: { deleted: true } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+  /admin/testimonials:
+    get:
+      tags: [Admin content]
+      summary: List testimonials in display order
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: status, in: query, schema: { type: string, enum: [published, draft, archived] } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200': { description: "{ data: { items: Testimonial[], page, limit, total, totalPages, statuses } }" }
+    post:
+      tags: [Admin content]
+      summary: Create a testimonial (testimonials.manage)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TestimonialInput' }
+      responses:
+        '201': { description: The created testimonial }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '422': { description: "validation_error — rating is 1-5; verificationUrl must be an http(s) URL" }
+  /admin/testimonials/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [Admin content]
+      summary: One testimonial
+      responses:
+        '200': { description: Testimonial }
+        '404': { description: "not_found" }
+    patch:
+      tags: [Admin content]
+      summary: Update the supplied fields (testimonials.manage)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TestimonialInput' }
+      responses:
+        '200': { description: The updated testimonial }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+        '422': { description: "validation_error" }
+    delete:
+      tags: [Admin content]
+      summary: Delete a testimonial (testimonials.manage)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      responses:
+        '200': { description: "{ data: { deleted: true } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+  /admin/media:
+    get:
+      tags: [Admin content]
+      summary: List the public media library (newest first)
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 100 }, description: Literal match on file name or alt text }
+        - { name: mimeType, in: query, schema: { type: string, enum: [image/png, image/jpeg, image/webp, image/gif] } }
+        - { name: folder, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Page' }
+        - { name: limit, in: query, schema: { type: integer, default: 30, maximum: 60 } }
+      responses:
+        '200': { description: "{ data: { items: MediaItem[], page, limit, total, totalPages, folders, mimeTypes } } — url is a public path, never a filesystem path" }
+    post:
+      tags: [Admin content]
+      summary: Upload one image (media.manage)
+      description: >
+        multipart/form-data. The existing policy applies unchanged — png, jpg, jpeg, webp or gif by extension AND MIME type, 5 MB,
+        sanitized filename, no SVG. The CSRF token is the X-CSRF-Token header (a body field is not accepted), so the request is
+        verified before any file is written.
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                altText: { type: string, maxLength: 300 }
+      responses:
+        '201': { description: The stored MediaItem }
+        '403': { description: "forbidden, or csrf_invalid" }
+        '413': { description: "file_too_large" }
+        '422': { description: "validation_error — missing file, disallowed type, or alt text too long" }
+  /admin/media/{id}/alt:
+    patch:
+      tags: [Admin content]
+      summary: Update alt text (media.manage)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/CsrfToken' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { altText: { type: string, maxLength: 300 } } }
+      responses:
+        '200': { description: The updated MediaItem }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+        '422': { description: "validation_error" }
+  /admin/media/{id}:
+    delete:
+      tags: [Admin content]
+      summary: Delete an image and its file (media.manage)
+      description: The file is removed first. If the filesystem refuses, the record is kept and the call fails; a file that is already gone is not an error.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/CsrfToken' }
+      responses:
+        '200': { description: "{ data: { deleted: true } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+        '500': { description: "media_delete_failed — the record was kept" }
+  /admin/services:
+    get:
+      tags: [Admin content]
+      summary: The code-owned service catalogue (read-only)
+      responses:
+        '200': { description: "{ data: { items: [{ slug, title, tagline, publicUrl, seoPageRef, seo: { configured, seoTitle, hasDescription, noindex } }] } }" }
+  /admin/seo:
+    get:
+      tags: [Admin content]
+      summary: Every registered page with its SEO metadata (defaults where none is saved)
+      responses:
+        '200': { description: "{ data: { items: SeoPage[], robotsDirectives, schemaTypes } }" }
+  /admin/seo/{pageRef}:
+    parameters: [{ name: pageRef, in: path, required: true, schema: { type: string }, description: A registered page reference, or a custom record that already exists }]
+    get:
+      tags: [Admin content]
+      summary: One page's SEO metadata
+      responses:
+        '200': { description: SeoPage }
+        '404': { description: "not_found — not a registered page and no stored record" }
+    put:
+      tags: [Admin content]
+      summary: Replace a page's SEO metadata (seo.manage)
+      description: >
+        Omitted fields return to their defaults. canonicalUrl, ogImage and twitterImage must be http(s) URLs or root-relative paths;
+        robots is a comma-separated list of allowed directives; schemaType and slug are allowlisted. A new record cannot be created
+        for an unregistered pageRef.
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SeoInput' }
+      responses:
+        '200': { description: The saved SeoPage }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+        '422': { description: "validation_error" }
+  /admin/settings:
+    get:
+      tags: [Admin platform]
+      summary: Supported setting groups with their fields and values (settings.manage)
+      description: Only the server's allowlist of groups and keys is returned; nothing stored outside it is exposed. No setting is a credential.
+      responses:
+        '200': { description: "{ data: { groups: [{ group, title, description, fields: [{ key, label, type, maxLength, value }] }] } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+  /admin/settings/{group}:
+    put:
+      tags: [Admin platform]
+      summary: Save keys of one group (settings.manage)
+      description: Keys not supplied are left unchanged. An unknown key refuses the whole save. Audited with the group and key names only.
+      parameters:
+        - { name: group, in: path, required: true, schema: { type: string, enum: [general, social, analytics, seo_defaults, contact_form] } }
+        - { $ref: '#/components/parameters/CsrfToken' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [values]
+              properties:
+                values: { type: object, additionalProperties: { type: string } }
+      responses:
+        '200': { description: The saved group }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found — unsupported group" }
+        '422': { description: "validation_error — unknown key, wrong type or too long" }
+  /admin/integration-status:
+    get:
+      tags: [Admin platform]
+      summary: Which integrations are configured (settings.manage)
+      description: Booleans and fixed labels only. Never a key, secret, address, connection string or path.
+      responses:
+        '200':
+          description: "{ data: { mongo: { status }, email: { configured, transport }, googleSheets: { configured }, uscisCaseStatus: { configured, enabled }, calendar: { practiceTimeZoneConfigured, practiceTimeZoneInvalid }, reminders: { enabled }, checkedAt } }"
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+  /admin/users:
+    get:
+      tags: [Admin platform]
+      summary: List employee accounts (users.manage)
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 100 }, description: Literal match on name or email }
+        - { name: role, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+        - { $ref: '#/components/parameters/Page' }
+        - { name: limit, in: query, schema: { type: integer, default: 25, maximum: 100 } }
+      responses:
+        '200': { description: "{ data: { items: AdminUser[], page, limit, total, totalPages, roles: [{ code, label, assignable }] } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+    post:
+      tags: [Admin platform]
+      summary: Create an employee account (users.manage)
+      description: >
+        The server generates a temporary password and returns it ONCE, in this response only (Cache-Control no-store). Only its bcrypt
+        hash is stored; it is never logged, never written to a security event and never returned again. The employee must replace
+        it at first sign-in. Only a Super Admin may create a Super Admin.
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, role]
+              properties:
+                name: { type: string, maxLength: 120 }
+                email: { type: string }
+                role: { type: string }
+                jobTitle: { type: string, maxLength: 120 }
+                department: { type: string, maxLength: 120 }
+      responses:
+        '201':
+          description: "{ data: { user: AdminUser, temporaryCredential: { password, purpose: created } } }"
+          headers:
+            Cache-Control: { schema: { type: string, enum: [no-store] } }
+        '403': { description: "forbidden — missing users.manage, or a non-Super-Admin creating a Super Admin" }
+        '409': { description: "conflict — email already in use" }
+        '422': { description: "validation_error" }
+  /admin/users/{id}:
+    parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+    get:
+      tags: [Admin platform]
+      summary: One account (users.manage)
+      description: Safe account state only — no password, hash, or failed-login counters; locked is a boolean.
+      responses:
+        '200': { description: AdminUser }
+        '404': { description: "not_found" }
+    patch:
+      tags: [Admin platform]
+      summary: Update name, email, role, job title, department or active state (users.manage)
+      description: >
+        Only a Super Admin may change a Super Admin or grant that role. The last active Super Admin cannot be demoted or
+        deactivated. Deactivation and a changed sign-in email revoke the account's Staff sessions; a deactivated or demoted
+        administrator is refused by the Admin API and the EJS console on their next request.
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                role: { type: string }
+                jobTitle: { type: string }
+                department: { type: string }
+                isActive: { type: boolean }
+      responses:
+        '200': { description: The updated AdminUser }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+        '409': { description: "conflict — email already in use" }
+        '422': { description: "validation_error, including the last-Super-Admin rule" }
+    delete:
+      tags: [Admin platform]
+      summary: Delete an account (users.manage AND users.delete)
+      parameters: [{ $ref: '#/components/parameters/CsrfToken' }]
+      responses:
+        '200': { description: "{ data: { deleted: true } }" }
+        '400': { description: "invalid_request — your own account, or the last Super Admin" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+  /admin/users/{id}/reset-credentials:
+    post:
+      tags: [Admin platform]
+      summary: Issue a new temporary password (users.manage)
+      description: Returns the new temporary password ONCE (no-store), clears the lockout, forces password setup again and revokes the account's Staff sessions.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/CsrfToken' }
+      responses:
+        '200':
+          description: "{ data: { user: AdminUser, temporaryCredential: { password, purpose: reset } } }"
+          headers:
+            Cache-Control: { schema: { type: string, enum: [no-store] } }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+  /admin/users/{id}/revoke-sessions:
+    post:
+      tags: [Admin platform]
+      summary: Revoke the account's Staff application sessions (users.manage)
+      description: Deletes EmployeeSession rows only. It does not end CMS sessions; those end on the next request when the account is deactivated or loses admin.cms.access.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/CsrfToken' }
+      responses:
+        '200': { description: "{ data: { user: AdminUser, revokedStaffSessions: integer } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+  /admin/roles:
+    get:
+      tags: [Admin platform]
+      summary: Read-only role and capability reference (users.manage)
+      description: Derived from the code-owned permission map. Roles cannot be created or changed through the API.
+      responses:
+        '200': { description: "{ data: { roles: [{ code, label, cmsAccess, capabilityCount, groups: [{ domain, label, capabilities }] }] } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+  /admin/security-events:
+    get:
+      tags: [Admin platform]
+      summary: Read the append-only security log, newest first (security_events.view)
+      description: >
+        GET only — no route creates, changes, deletes or clears an entry. Paged by hasMore rather than a total; page x limit may
+        not exceed 10,000 and a from/to range may cover at most 400 days.
+      parameters:
+        - { name: type, in: query, schema: { type: string } }
+        - { name: result, in: query, schema: { type: string, enum: [success, failure, denied] } }
+        - { name: surface, in: query, schema: { type: string, enum: [portal, staff, admin_cms] } }
+        - { name: actorType, in: query, schema: { type: string, enum: [client, admin_user, env_fallback, anonymous, system] } }
+        - { name: actorAdminId, in: query, schema: { type: string } }
+        - { name: subjectEmail, in: query, schema: { type: string }, description: Exact, normalized match }
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { $ref: '#/components/parameters/Page' }
+        - { name: limit, in: query, schema: { type: integer, default: 25, maximum: 100 } }
+      responses:
+        '200': { description: "{ data: { items: SecurityEvent[], page, limit, hasMore, filters } }" }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '422': { description: "validation_error — unknown filter value, bad date, or a range/depth beyond the bounds" }
+  /admin/security-events/{id}:
+    get:
+      tags: [Admin platform]
+      summary: One security event (security_events.view)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200':
+          description: SecurityEvent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SecurityEvent' }
+        '403': { $ref: '#/components/responses/AdminForbidden' }
+        '404': { description: "not_found" }
+components:
+  securitySchemes:
+    cmsSession:
+      type: apiKey
+      in: cookie
+      name: connect.sid
+      description: HttpOnly CMS session cookie. Admin API only; never accepted by /staff/*.
+  parameters:
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema: { type: string }
+      description: The session-bound token from /admin/session/bootstrap (or the one returned by a successful login).
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, default: 20, maximum: 100 }
+  responses:
+    AdminUnauthenticated:
+      description: "unauthenticated — no live administrator session"
+    AdminForbidden:
+      description: "forbidden — the administrator's role lacks the capability (or csrf_invalid for an unverified mutation)"
+  schemas:
+    AdminProfile:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: object, properties: { code: { type: string }, label: { type: string } } }
+        jobTitle: { type: string }
+        department: { type: string }
+        capabilities: { type: array, items: { type: string } }
+    BlogPostInput:
+      type: object
+      properties:
+        title: { type: string, maxLength: 200 }
+        slug: { type: string, description: "Lowercase letters, numbers and hyphens; blank to generate or keep" }
+        category: { type: string }
+        excerpt: { type: string, maxLength: 300 }
+        content: { type: string, description: HTML; sanitized to the allowlist before storage }
+        coverImage: { type: string, description: "http(s) URL or a /uploads/ path" }
+        author: { type: string }
+        tags: { type: array, items: { type: string }, maxItems: 20 }
+        readingTime: { type: integer, minimum: 0 }
+        published: { type: boolean }
+        publishDate: { type: string, format: date-time, nullable: true }
+    FaqInput:
+      type: object
+      properties:
+        question: { type: string, maxLength: 300 }
+        answer: { type: string, maxLength: 5000 }
+        category: { type: string }
+        displayOrder: { type: integer, minimum: 0 }
+        showOnHomepage: { type: boolean }
+        showOnServicePage: { type: string, description: "A service slug, or empty" }
+        schemaEnabled: { type: boolean }
+        status: { type: string, enum: [published, draft] }
+    TestimonialInput:
+      type: object
+      properties:
+        name: { type: string, maxLength: 120 }
+        country: { type: string }
+        profession: { type: string }
+        service: { type: string }
+        review: { type: string, maxLength: 3000 }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        photo: { type: string }
+        verificationUrl: { type: string, description: "http(s) URL" }
+        featured: { type: boolean }
+        displayOrder: { type: integer, minimum: 0 }
+        status: { type: string, enum: [published, draft, archived] }
+    SeoInput:
+      type: object
+      properties:
+        seoTitle: { type: string, maxLength: 200 }
+        metaDescription: { type: string, maxLength: 500 }
+        keywords: { type: string }
+        canonicalUrl: { type: string }
+        ogTitle: { type: string }
+        ogDescription: { type: string }
+        ogImage: { type: string }
+        twitterImage: { type: string }
+        slug: { type: string }
+        robots: { type: string }
+        noindex: { type: boolean }
+        schemaType: { type: string }
+    SecurityEvent:
+      type: object
+      description: An explicit allowlist. meta carries only the keys registered for the event type; no credential, token, hash, request body or path is ever included.
+      properties:
+        id: { type: string }
+        type: { type: string }
+        result: { type: string }
+        surface: { type: string }
+        actorType: { type: string }
+        actorAdmin: { type: object, nullable: true, properties: { id: { type: string } } }
+        actorName: { type: string }
+        subjectEmail: { type: string }
+        ipMasked: { type: string, description: "e.g. 203.0.113.x — the full address is not returned" }
+        createdAt: { type: string, format: date-time }
+        meta: { type: object, additionalProperties: true }

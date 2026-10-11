@@ -41,6 +41,14 @@ keeps its own session check and row-level policy.
   (`ih_portal_session`) and `EmployeeSession` (`ih_staff_session`) are
   separate collections and cookies. Do not merge them behind a shared
   abstraction with a `type` field.
+- **Two JSON APIs in `server/`, mounted on opposite sides of `express-session`** (ADR-029). `/api/v1/staff` sits
+  before it and authenticates only `EmployeeSession`; `/api/v1/admin` sits after it and authenticates only the CMS
+  session of a DB-backed `AdminUser`. Do not move either mount, and do not let one identity reach the other's routes.
+- **Never import `server/server.js`, `server/scripts/*` or `server/workers/*` from application code.** They call
+  `dotenv.config()` when required, so the web app — and every test process that loads it — would pick up the real
+  `MONGODB_URI` from `server/.env`. Copy the one-line check you need instead.
+- **CMS rules live in services shared by both consoles** (`server/services/cms/*`, `adminUserManagement.js`,
+  `adminAuthentication.js`). Change a validation or privilege rule there, never in an EJS route or an API route.
 - **Cross-app models are mirrored, not shared** (separate deployables).
   Each mirror pair has a schema-contract fixture under
   `docs/architecture/*-contract.json` asserted from both sides. Add a field

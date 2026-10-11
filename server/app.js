@@ -19,7 +19,10 @@ const helmet = require('helmet');
 
 const adminRoutes = require('./routes/admin/index');
 const apiRoutes = require('./routes/api/v1/index');
+const adminApiRoutes = require('./routes/api/v1/admin/index');
 const { csrfProtection } = require('./middleware/csrf');
+
+const isApiPath = (req) => req.path.startsWith('/api/v1/');
 
 function createApp() {
   const app = express();
@@ -140,9 +143,12 @@ function createApp() {
 
   app.use(session(sessionConfig));
 
-  // ----- JSON API Mount -----
-  // Mounted before CSRF so that the API handles its own CSRF/origin checks 
-  // via the trustedOrigin middleware and is not required to submit an EJS token.
+  // ----- Admin API (ADR-029) -----
+  // After express-session, because its identity IS the CMS session; before the
+  // EJS CSRF middleware, because it verifies the same session token itself from
+  // the X-CSRF-Token header and answers in JSON. The Staff API above stays
+  // outside the session on purpose — do not move either mount.
+  app.use('/api/v1/admin', adminApiRoutes);
 
   // ----- CSRF -----
   // After the session (it stores the token there) and after the body
@@ -168,6 +174,7 @@ function createApp() {
 
   // ----- 404 -----
   app.use((req, res) => {
+    if (isApiPath(req)) return res.status(404).json({ error: { code: 'not_found', message: 'Not found.', fieldErrors: null, requestId: req.id || null } });
     res.status(404).send('Not found. Go to <a href="/admin">/admin</a>.');
   });
 
@@ -178,6 +185,13 @@ function createApp() {
   app.use((err, req, res, next) => {
     console.error('[unhandled route error]', err && err.message ? err.message : err);
     if (res.headersSent) return next(err);
+    // A body-parser failure happens before any API router runs; an API caller still gets the JSON envelope.
+    if (isApiPath(req)) {
+      const status = err.status || 500;
+      return res.status(status).json({
+        error: { code: status === 413 ? 'payload_too_large' : status < 500 ? 'invalid_request' : 'server_error', message: status < 500 ? 'The request could not be processed.' : 'Internal Server Error', fieldErrors: null, requestId: req.id || null },
+      });
+    }
     res.status(err.status || 500).send(
       `Something went wrong: ${isProduction ? 'please try again.' : err.message}. ` +
         '<a href="/admin">Back to admin</a>.'

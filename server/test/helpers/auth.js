@@ -105,3 +105,25 @@ async function loginStaffAs(agent, { email, password }) {
   return agent;
 }
 module.exports = { seedAdminUser, loginAs, expectCmsDenied, loginStaffAs, uniqueEmail, readCsrfToken, attachCsrf };
+
+const ADMIN_API_ORIGIN = 'http://localhost:4000';
+/**
+ * Signs an agent into the JSON Admin API through the real bootstrap + login routes, then makes every later mutating
+ * call carry what the Angular console sends: the same-origin `Origin` and the session's `X-CSRF-Token`. The
+ * undecorated verbs stay on `agent.bare` for tests that must prove a request without them is refused.
+ */
+async function loginAdminApi(agent, { email, password }) {
+  const boot = await agent.get('/api/v1/admin/session/bootstrap');
+  const res = await agent.post('/api/v1/admin/session/login').set('Origin', ADMIN_API_ORIGIN).set('X-CSRF-Token', boot.body.data.csrfToken).send({ email, password });
+  assert.equal(res.status, 200, `[test auth] Admin API login failed for ${email}: ${JSON.stringify(res.body)}`);
+  agent.csrfToken = res.body.data.csrfToken;
+  agent.bare = {};
+  for (const method of ['post', 'put', 'patch', 'delete']) {
+    const original = agent[method].bind(agent);
+    agent.bare[method] = original;
+    agent[method] = (url) => original(url).set('Origin', ADMIN_API_ORIGIN).set('X-CSRF-Token', agent.csrfToken);
+  }
+  return agent;
+}
+module.exports.loginAdminApi = loginAdminApi;
+module.exports.ADMIN_API_ORIGIN = ADMIN_API_ORIGIN;

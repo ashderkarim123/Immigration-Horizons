@@ -145,6 +145,10 @@ const CAPABILITIES = {
   'faqs.manage': ['super_admin', 'admin', 'editor'],
   'testimonials.manage': ['super_admin', 'admin', 'editor'],
   'media.manage': ['super_admin', 'admin', 'editor'],
+  // Phase 14 (ADR-029). SEO edits were open to every CMS session; this names that right without changing who holds it.
+  'seo.manage': ['super_admin', 'admin', 'editor'],
+  // Reading the append-only security log is admin-tier: an editor manages content, not accounts or audit.
+  'security_events.view': ['super_admin', 'admin'],
 
   // Reporting.
   'csv.export': MANAGER_ROLES,

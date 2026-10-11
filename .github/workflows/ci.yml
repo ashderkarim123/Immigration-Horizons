@@ -49,6 +49,9 @@ jobs:
         working-directory: enterprise-ui
       - run: npx ng build case-management
         working-directory: enterprise-ui
+      # Phase 14: the Admin Console journey runs against its production build, served at "/" on its own origin.
+      - run: npx ng build admin-console
+        working-directory: enterprise-ui
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

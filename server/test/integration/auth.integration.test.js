@@ -195,10 +195,13 @@ test('note creation persists a real InternalNote document', async () => {
 
 test('settings.manage: an admin update upserts a real Setting document', async () => {
   const agent = await loggedInAs('admin');
-  const res = await agent.post('/admin/settings').send({ group: 'general', siteName: 'Immigration Horizons' });
+  // companyName is a registered setting; since Phase 14 the route stores only keys in the settings allowlist.
+  const res = await agent.post('/admin/settings').send({ group: 'general', companyName: 'Immigration Horizons', siteName: 'not a registered key' });
   assert.equal(res.status, 302);
+  assert.equal(await Setting.countDocuments(), 0, 'an unregistered key refuses the whole save');
 
-  const setting = await Setting.findOne({ group: 'general', key: 'siteName' });
+  assert.equal((await agent.post('/admin/settings').send({ group: 'general', companyName: 'Immigration Horizons' })).status, 302);
+  const setting = await Setting.findOne({ group: 'general', key: 'companyName' });
   assert.ok(setting);
   assert.equal(setting.value, 'Immigration Horizons');
 });
