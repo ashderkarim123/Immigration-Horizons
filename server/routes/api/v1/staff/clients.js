@@ -11,6 +11,7 @@
  * - ClientUser.name does not exist — derive displayName from firstName + lastName
  */
 const express = require('express');
+const escapeRegex = require('../../../../utils/escapeRegex');
 const router = express.Router();
 const mongoose = require('mongoose');
 
@@ -99,7 +100,7 @@ router.get('/', requireApiCapability('clients.view'), async (req, res, next) => 
 
     if (req.query.search) {
       // Escape regex metacharacters — never execute arbitrary regex
-      const escaped = req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escaped = escapeRegex(req.query.search);
       const pattern = new RegExp(escaped, 'i');
       query.$or = [
         { firstName: pattern },

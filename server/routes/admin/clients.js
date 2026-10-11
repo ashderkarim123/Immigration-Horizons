@@ -7,6 +7,7 @@ const CaseWorkspace = require('../../models/CaseWorkspace');
 
 const { requireCapability, can } = require('../../utils/permissions');
 const { actorFromSession } = require('../../utils/actorSnapshot');
+const escapeRegex = require('../../utils/escapeRegex');
 const clientAccountService = require('../../services/clientAccountService');
 
 const MAX_PAGE_LIMIT = 100;
@@ -17,11 +18,6 @@ function parseBoundedInt(value, fallback, min, max) {
   const n = parseInt(value, 10);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, n));
-}
-
-/** Escapes a user-supplied search string before it reaches a RegExp. */
-function escapeRegex(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**

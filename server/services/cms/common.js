@@ -12,7 +12,7 @@ const notFound = (what) => createApiError(404, 'not_found', `${what} was not fou
 const conflict = (field, message) => createApiError(409, 'conflict', message, [{ field, message }]);
 
 const isId = (id) => typeof id === 'string' && /^[a-f0-9]{24}$/i.test(id) && mongoose.Types.ObjectId.isValid(id);
-const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegex = require('../../utils/escapeRegex');
 /** A literal, case-insensitive, length-bounded search term — never a caller-supplied pattern. */
 const searchRegex = (value) => {
   const term = typeof value === 'string' ? value.trim().slice(0, 100) : '';
@@ -26,6 +26,10 @@ function pageParams(query = {}, { defaultLimit = 20, maxLimit = 100 } = {}) {
   return { page, limit, skip: (page - 1) * limit };
 }
 const paged = (items, total, { page, limit }) => ({ items, page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) });
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Where the public website lives; preview links are built from it. */
+const publicOrigin = () => (process.env.PUBLIC_SITE_URL || 'https://immigrationhorizons.com').replace(/\/+$/, '');
 
 const isHttpUrl = (value) => {
   try { return ['http:', 'https:'].includes(new URL(value).protocol); } catch { return false; }
@@ -55,7 +59,7 @@ const READERS = {
   email(value) {
     const read = READERS.text(value, { max: 254 });
     if (read.error || read.value === '') return read;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(read.value) ? { value: read.value.toLowerCase() } : { error: 'must be a valid email address.' };
+    return EMAIL_PATTERN.test(read.value) ? { value: read.value.toLowerCase() } : { error: 'must be a valid email address.' };
   },
   date(value) {
     if (value === null || value === '') return { value: null };
@@ -115,4 +119,4 @@ const auditContent = (ctx, resourceType, resourceId, action) =>
 /** The sentence an EJS form shows for a service error: the first field message, else the error's own. */
 const firstMessage = (error) => (error && error.fieldErrors && error.fieldErrors[0] && error.fieldErrors[0].message) || (error && error.message) || 'Something went wrong.';
 
-module.exports = { invalid, notFound, conflict, isId, searchRegex, pageParams, paged, isHttpUrl, isAssetUrl, normalize, contextOf, auditContent, firstMessage };
+module.exports = { EMAIL_PATTERN, publicOrigin, invalid, notFound, conflict, isId, searchRegex, pageParams, paged, isHttpUrl, isAssetUrl, normalize, contextOf, auditContent, firstMessage };

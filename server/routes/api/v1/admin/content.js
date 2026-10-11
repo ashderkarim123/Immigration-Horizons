@@ -6,7 +6,7 @@
 const express = require('express');
 const multer = require('multer');
 const upload = require('../../../../middleware/upload');
-const { createApiError } = require('../../../../middleware/api/apiError');
+const { createApiError, handle } = require('../../../../middleware/api/apiError');
 const { requireAdminCapability: needs } = require('../../../../middleware/api/adminAuth');
 const { can } = require('../../../../utils/permissions');
 const { contextOf } = require('../../../../services/cms/common');
@@ -19,12 +19,6 @@ const seo = require('../../../../services/cms/seo');
 
 const router = express.Router();
 
-/** Runs an async handler and sends `{ data, meta }`; a thrown service error reaches the API error handler. */
-const handle = (fn, status = 200) => async (req, res, next) => {
-  try {
-    res.status(status).json({ data: await fn(req), meta: { requestId: req.id } });
-  } catch (error) { next(error); }
-};
 const manage = (req, capability) => ({ canManage: can(req, capability) });
 
 router.get('/dashboard', handle((req) => dashboard.overview({

@@ -9,6 +9,7 @@
  * - Client population uses firstName + lastName (not name)
  */
 const express = require('express');
+const escapeRegex = require('../../../../utils/escapeRegex');
 const router = express.Router();
 const mongoose = require('mongoose');
 
@@ -173,7 +174,7 @@ router.get('/', requireApiCapability('cases.view'), async (req, res, next) => {
     if (req.query.priority) query.priority = req.query.priority;
 
     if (req.query.search) {
-      const escaped = req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escaped = escapeRegex(req.query.search);
       const pattern = new RegExp(escaped, 'i');
       // Client first: staff look a matter up by the client's name. Bounded, and the access restriction below still applies.
       const clients = await ClientUser.find({ $or: [{ firstName: pattern }, { lastName: pattern }, { email: pattern }, ...nameParts(req.query.search)] }).select('_id').limit(200).lean();

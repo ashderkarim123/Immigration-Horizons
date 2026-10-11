@@ -8,7 +8,7 @@
 const MIN_QUERY_LENGTH = 2;
 const MAX_QUERY_LENGTH = 80;
 
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegex = require('../../utils/escapeRegex');
 
 /** Trimmed text of 2..80 visible characters with no control characters, or an error message. */
 function parseQuery(raw) {

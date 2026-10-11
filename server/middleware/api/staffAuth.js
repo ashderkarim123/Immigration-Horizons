@@ -78,26 +78,8 @@ function requirePasswordSetupComplete(req, res, next) {
  * Depends on utils/permissions.js to check capabilities based on req.staff.role.
  */
 function requireApiCapability(capability) {
-  const { CAPABILITIES } = require('../../utils/permissions');
-  
-  return (req, res, next) => {
-    if (!req.staff || !req.staff.role) {
-      return next(createApiError(403, 'forbidden', 'Missing role'));
-    }
-
-    const role = req.staff.role;
-    const allowedRoles = CAPABILITIES[capability];
-
-    if (!Array.isArray(allowedRoles)) {
-      return next(createApiError(403, 'forbidden', 'Unknown capability'));
-    }
-
-    if (role === 'super_admin' || allowedRoles.includes(role)) {
-      return next();
-    }
-
-    return next(createApiError(403, 'forbidden', `Missing capability: ${capability}`));
-  };
+  const { can } = require('../../utils/permissions');
+  return (req, res, next) => (can(req, capability) ? next() : next(createApiError(403, 'forbidden', `Missing capability: ${capability}`)));
 }
 
 module.exports = {

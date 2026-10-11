@@ -23,7 +23,7 @@ const { staffAuthMiddleware, hashToken, EMPLOYEE_SESSION_COOKIE_NAME } = require
 
 // Precomputed dummy hash for constant-time rejection of unknown accounts
 // (prevents timing oracle revealing whether an email address exists).
-const DUMMY_HASH = '$2a$12$KIX0Y3FfTMBiP9oV4i1DcuUGSJOThsRBbwdB0hGimj63E2T8BYVJO';
+const { DUMMY_HASH } = require('../../../../services/adminAuthentication');
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

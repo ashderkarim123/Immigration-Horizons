@@ -39,7 +39,7 @@ const id = (v) => (v ? String(v._id || v) : null);
 const text = (v) => (typeof v === 'string' ? v.trim() : '');
 const invalid = (errors) => ({ outcome: 'validation_error', errors });
 const isId = (v) => mongoose.Types.ObjectId.isValid(v) && String(new mongoose.Types.ObjectId(v)) === String(v);
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegex = require('../utils/escapeRegex');
 const actorOf = (staff) => ({ type: 'admin_user', id: staff._id, name: staff.name || 'Employee' });
 
 /** undefined = field absent, null = cleared, Date = valid; throws a field message for an invalid value. */

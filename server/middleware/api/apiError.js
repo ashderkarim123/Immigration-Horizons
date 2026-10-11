@@ -32,4 +32,11 @@ function createApiError(status, code, message, fieldErrors = null) {
   return error;
 }
 
-module.exports = { apiErrorHandler, createApiError };
+/** Runs an async handler and sends `{ data, meta }`; a thrown error reaches the API error handler. */
+const handle = (fn, status = 200) => async (req, res, next) => {
+  try {
+    res.status(status).json({ data: await fn(req), meta: { requestId: req.id } });
+  } catch (error) { next(error); }
+};
+
+module.exports = { apiErrorHandler, createApiError, handle };

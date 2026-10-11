@@ -5,9 +5,8 @@
  */
 const SEOMeta = require('../../models/admin/SEOMeta');
 const servicesList = require('../../utils/services');
-const { invalid, notFound, normalize, auditContent } = require('./common');
+const { invalid, notFound, normalize, auditContent, publicOrigin } = require('./common');
 
-const publicOrigin = () => (process.env.PUBLIC_SITE_URL || 'https://immigrationhorizons.com').replace(/\/+$/, '');
 
 const STATIC_PAGES = [
   { ref: 'home', label: 'Homepage', path: '/' },
