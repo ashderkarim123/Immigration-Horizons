@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const { activeTransport } = require('./mailer');
 const { practiceTimeZone } = require('../utils/calendarTime');
 const { readConfig: readUscisConfig } = require('./uscis/torchProvider');
+const { readConfig: readMailConfig } = require('./mail/graph');
 
 const MONGO_STATES = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
 
@@ -19,6 +20,8 @@ function status(env = process.env) {
     email: { configured: transport !== 'none', transport },
     googleSheets: { configured: has('GOOGLE_SERVICE_ACCOUNT_EMAIL', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_SHEET_ID') },
     uscisCaseStatus: { configured: !!(uscis.clientId && uscis.clientSecret && uscis.oauthUrl && uscis.baseUrl), enabled: uscis.enabled },
+    // Shared Outlook mailbox (ADR-030): configured means all four settings are present; nothing is sent to Microsoft here.
+    outlookMail: { configured: readMailConfig(env).configured },
     calendar: { practiceTimeZoneConfigured: zone.configured, practiceTimeZoneInvalid: zone.invalid },
     // What this process is configured to do; whether the separate worker process is actually running is not observable here.
     // Same test as workers/calendarReminderWorker.js isEnabled(). That module is NOT imported here on purpose: it loads

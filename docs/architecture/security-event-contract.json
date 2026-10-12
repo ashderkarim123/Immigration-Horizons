@@ -22,7 +22,9 @@
     "admin_credentials_reset",
     "admin_staff_sessions_revoked",
     "admin_content_mutated",
-    "admin_settings_updated"
+    "admin_settings_updated",
+    "mail_sent",
+    "mail_case_linked"
   ],
   "resultValues": ["success", "failure", "denied"],
   "actorTypeValues": ["client", "admin_user", "env_fallback", "anonymous", "system"],

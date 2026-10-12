@@ -95,6 +95,11 @@ export const routes: Routes = [
           import('./features/reports/reports.component').then((m) => m.ReportsComponent),
       },
       {
+        path: 'mail',
+        loadComponent: () =>
+          import('./features/mail/mail.component').then((m) => m.MailComponent),
+      },
+      {
         path: 'calendar',
         loadComponent: () =>
           import('./features/calendar/calendar.component').then((m) => m.CalendarComponent),

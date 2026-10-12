@@ -64,6 +64,7 @@ export interface IntegrationStatus {
   mongo: { status: string };
   email: { configured: boolean; transport: string };
   googleSheets: { configured: boolean };
+  outlookMail: { configured: boolean };
   uscisCaseStatus: { configured: boolean; enabled: boolean };
   calendar: { practiceTimeZoneConfigured: boolean; practiceTimeZoneInvalid: boolean };
   reminders: { enabled: boolean };

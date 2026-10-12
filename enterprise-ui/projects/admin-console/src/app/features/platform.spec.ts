@@ -61,7 +61,7 @@ describe('Settings', () => {
 
 describe('Integrations', () => {
   const status = (over: Partial<IntegrationStatus> = {}): IntegrationStatus => ({
-    mongo: { status: 'connected' }, email: { configured: true, transport: 'smtp' }, googleSheets: { configured: false }, uscisCaseStatus: { configured: true, enabled: false },
+    mongo: { status: 'connected' }, email: { configured: true, transport: 'smtp' }, googleSheets: { configured: false }, outlookMail: { configured: true }, uscisCaseStatus: { configured: true, enabled: false },
     calendar: { practiceTimeZoneConfigured: false, practiceTimeZoneInvalid: true }, reminders: { enabled: false }, checkedAt: '2026-10-11T09:00:00.000Z', ...over,
   });
 
@@ -69,7 +69,7 @@ describe('Integrations', () => {
     const t = mount(IntegrationsComponent, admin);
     await t.respond('GET', '/integration-status', status());
     const rows = Object.fromEntries(Array.from(t.root.querySelectorAll('tbody tr')).map((r) => [r.children[0].textContent?.trim(), r.children[1].textContent?.trim()]));
-    expect(rows).toEqual({ Database: 'Connected', Email: 'Configured', 'Google Sheets': 'Not configured', 'USCIS case status': 'Configured, switched off', 'Practice time zone': 'Invalid value', 'Calendar reminders': 'Switched off' });
+    expect(rows).toEqual({ Database: 'Connected', Email: 'Configured', 'Google Sheets': 'Not configured', 'Outlook mailbox': 'Configured', 'USCIS case status': 'Configured, switched off', 'Practice time zone': 'Invalid value', 'Calendar reminders': 'Switched off' });
     expect(t.root.textContent).toContain('Sending through SMTP');
     expect(t.root.querySelector('input, select, textarea, form')).toBeNull();
   });

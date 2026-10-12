@@ -2861,6 +2861,155 @@ paths:
                   data: { $ref: '#/components/schemas/SecurityEvent' }
         '403': { $ref: '#/components/responses/AdminForbidden' }
         '404': { description: "not_found" }
+  # ===========================================================================================================
+  # Shared Outlook mailbox (ADR-030) — /api/v1/staff/mail/*. Staff session cookie; mutations also need a trusted Origin.
+  # The server reads and sends as ONE mailbox (MS_GRAPH_MAILBOX) through Microsoft Graph; callers cannot name another.
+  # Microsoft's own errors are never returned: 502 mail_unavailable / mail_refused, 503 mail_busy / mail_not_configured.
+  # ===========================================================================================================
+  /staff/mail/status:
+    get:
+      tags: [Staff mail]
+      summary: Whether the shared mailbox is connected, and whether this employee may send (mail.view)
+      responses:
+        '200': { description: "{ data: { configured, mailbox, canSend } } — mailbox is null when not configured" }
+        '403': { description: "forbidden — no mail.view" }
+  /staff/mail/messages:
+    get:
+      tags: [Staff mail]
+      summary: List the inbox or sent items, newest first (mail.view)
+      description: Paged by hasMore. 120 requests per minute per employee. Each item carries linkCount, never the case names.
+      parameters:
+        - { name: folder, in: query, schema: { type: string, enum: [inbox, sent], default: inbox } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 25, default: 20 } }
+      responses:
+        '200': { description: "{ data: { items, page, limit, hasMore, folder } }" }
+        '403': { description: "forbidden" }
+        '422': { description: "validation_error — unknown folder" }
+        '429': { description: "rate_limited" }
+        '503': { description: "mail_not_configured, or mail_busy" }
+    post:
+      tags: [Staff mail]
+      summary: Send a new plain-text message from the shared mailbox (mail.send)
+      description: >
+        At most 20 recipients per list and 30 in total; subject up to 255 characters; body up to 100,000. Sent as plain text and saved in
+        the mailbox's Sent Items. With caseId, the case is checked first (a case the employee cannot open is a 404 and nothing is sent)
+        and the sent message is linked to it. Audited as mail_sent with counts only. 20 per minute per employee.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, subject, body]
+              properties:
+                to: { type: array, items: { type: string } }
+                cc: { type: array, items: { type: string } }
+                subject: { type: string, maxLength: 255 }
+                body: { type: string, maxLength: 100000 }
+                caseId: { type: string }
+      responses:
+        '201': { description: "{ data: { id, link } } — link is null unless caseId was given" }
+        '403': { description: "forbidden — no mail.send, or untrusted origin" }
+        '404': { description: "not_found — the case" }
+        '422': { description: "validation_error, with a field error per problem" }
+        '429': { description: "rate_limited" }
+        '502': { description: "mail_unavailable / mail_refused — nothing was sent, and no draft is left behind" }
+  /staff/mail/messages/{id}:
+    get:
+      tags: [Staff mail]
+      summary: Read one message (mail.view)
+      description: >
+        The body is sanitized on the server: no script, style, form, image, inline CSS or handler; links open in a new tab with
+        noopener. Plain-text messages are returned as text. links lists only cases this employee may open; the rest are counted in
+        hiddenLinkCount. Inline images are not listed as attachments.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: "A message with body, bodyType, cc, attachments, links, linkCount, hiddenLinkCount" }
+        '404': { description: "not_found — unknown or malformed id" }
+  /staff/mail/messages/{id}/read:
+    post:
+      tags: [Staff mail]
+      summary: Mark a message read or unread (mail.view)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [isRead], properties: { isRead: { type: boolean } } }
+      responses:
+        '200': { description: "{ data: { isRead } }" }
+        '422': { description: "validation_error" }
+  /staff/mail/messages/{id}/attachments/{attachmentId}:
+    get:
+      tags: [Staff mail]
+      summary: Download a file attachment (mail.view)
+      description: >
+        Always served as application/octet-stream with Content-Disposition: attachment and nosniff, never rendered by the browser.
+        Only file attachments (not forwarded messages); at most 25 MB.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: attachmentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: The file bytes, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '404': { description: "not_found" }
+        '413': { description: "too_large" }
+        '422': { description: "validation_error — not a file attachment" }
+  /staff/mail/messages/{id}/reply:
+    post:
+      tags: [Staff mail]
+      summary: Reply, or reply to all, as the shared mailbox (mail.send)
+      description: The original is quoted by Microsoft below the reply. Recipients come from the original; they cannot be changed here.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, maxLength: 100000 }
+                all: { type: boolean, default: false }
+                caseId: { type: string }
+      responses:
+        '201': { description: "{ data: { id, link } }" }
+        '403': { description: "forbidden" }
+        '404': { description: "not_found — the message or the case" }
+        '422': { description: "validation_error" }
+        '429': { description: "rate_limited" }
+  /staff/mail/messages/{id}/links:
+    post:
+      tags: [Staff mail]
+      summary: Link a message to a case (mail.view, cases.view, and the employee's own access to the case)
+      description: >
+        Idempotent. Only a display snapshot is stored — subject, sender and date — never the body, recipients or attachments. The
+        message id must exist in the shared mailbox. A case the employee cannot open is a 404.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [caseId], properties: { caseId: { type: string } } }
+      responses:
+        '201': { description: The MailCaseLink }
+        '404': { description: "not_found — the message or the case" }
+  /staff/mail/links/{linkId}:
+    delete:
+      tags: [Staff mail]
+      summary: Remove a link (mail.view, cases.view, access to the linked case)
+      parameters: [{ name: linkId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: "{ data: { deleted: true } }" }
+        '404': { description: "not_found — also when the case is not one the employee can open" }
+  /staff/cases/{caseId}/mail:
+    get:
+      tags: [Staff mail]
+      summary: Emails linked to a case (mail.view, cases.view, access to the case)
+      parameters: [{ name: caseId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: "{ data: { items: MailCaseLink[] } } — newest first, at most 200" }
+        '404': { description: "not_found" }
 components:
   securitySchemes:
     cmsSession:
