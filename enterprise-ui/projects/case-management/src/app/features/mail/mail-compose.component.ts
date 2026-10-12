@@ -79,6 +79,8 @@ export class MailComposeComponent {
   readonly replyTo = input<MailMessage | null>(null);
   /** Start a reply with "reply to everyone" ticked. */
   readonly startAll = input(false);
+  /** Address to start a new message with (for example the client being viewed). */
+  readonly prefillTo = input('');
   readonly sent = output<MailSendResult>();
   readonly closed = output<void>();
 
@@ -96,7 +98,7 @@ export class MailComposeComponent {
     // A fresh form every time the dialog opens: never carry a previous message's text into the next one.
     effect(() => {
       if (!this.open()) return;
-      this.to.set(''); this.cc.set(''); this.subject.set(''); this.body.set(''); this.all.set(this.startAll()); this.caseId.set('');
+      this.to.set(this.prefillTo()); this.cc.set(''); this.subject.set(''); this.body.set(''); this.all.set(this.startAll()); this.caseId.set('');
       this.error.set(''); this.errors.set({}); this.sending.set(false);
     });
   }

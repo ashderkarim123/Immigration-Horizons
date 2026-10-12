@@ -46,6 +46,8 @@ const NOTIFICATION_TYPES = [
   // Phase 12 — calendar reminders (ADR-027).
   'calendar_deadline_reminder',
   'calendar_appointment_reminder',
+  // ADR-030 — a new email in the shared mailbox (website consultation emails use 'new_lead').
+  'mail_received',
 ];
 
 const RECIPIENT_TYPES = ['employee', 'client'];

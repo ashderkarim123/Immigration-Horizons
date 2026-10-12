@@ -10,6 +10,8 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 
 const mailbox = require('../../../../services/mail/mailbox');
+const contacts = require('../../../../services/mail/contacts');
+const ClientUser = require('../../../../models/ClientUser');
 const { readConfig, MailError } = require('../../../../services/mail/graph');
 const caseManagement = require('../../../../services/caseManagement');
 const MailCaseLink = require('../../../../models/MailCaseLink');
@@ -83,15 +85,23 @@ router.get('/mail/status', requireApiCapability('mail.view'), route(async (req, 
   respond(res, req, { configured: config.configured, mailbox: config.configured ? config.mailbox : null, canSend: can(req, 'mail.send') });
 }));
 
+// GET /api/v1/staff/mail/unread  (the count shown beside Mail in the menu)
+router.get('/mail/unread', requireApiCapability('mail.view'), readLimiter, route(async (req, res) => {
+  respond(res, req, { unread: await mailbox.unreadCount() });
+}));
+
 // GET /api/v1/staff/mail/messages?folder=inbox|sent&page=&limit=
 router.get('/mail/messages', requireApiCapability('mail.view'), readLimiter, route(async (req, res) => {
-  respond(res, req, await mailbox.list({ folder: req.query.folder || 'inbox', page: Number(req.query.page) || 1, limit: Number(req.query.limit) || 20 }));
+  const page = await mailbox.list({ folder: req.query.folder || 'inbox', page: Number(req.query.page) || 1, limit: Number(req.query.limit) || 20 });
+  await contacts.attach(req, page.items);
+  respond(res, req, page);
 }));
 
 // GET /api/v1/staff/mail/messages/:id
 router.get('/mail/messages/:id', requireApiCapability('mail.view'), readLimiter, route(async (req, res) => {
   const id = messageId(req);
   const message = await mailbox.get(id);
+  await contacts.attach(req, [message]);
   // Links are shown only for cases this employee may open; the rest are counted, never named.
   const links = await MailCaseLink.find({ messageId: id }).sort({ createdAt: -1 }).lean();
   const visible = [];
@@ -176,6 +186,15 @@ router.delete('/mail/links/:linkId', trustedOriginMiddleware, requireApiCapabili
   await MailCaseLink.deleteOne({ _id: link._id });
   await audit(req, 'mail_case_linked', { action: 'unlinked', caseId: String(link.case) });
   respond(res, req, { deleted: true });
+}));
+
+// GET /api/v1/staff/clients/:id/mail  — messages to or from this client's address (mail.view + clients.view)
+router.get('/clients/:id/mail', requireApiCapability('mail.view'), requireApiCapability('clients.view'), readLimiter, route(async (req, res) => {
+  const client = mongoose.Types.ObjectId.isValid(req.params.id) ? await ClientUser.findById(req.params.id).select('email status').lean() : null;
+  if (!client || client.status === 'disabled') throw createApiError(404, 'not_found', 'Client not found.');
+  const items = await mailbox.withParticipant(client.email);
+  await contacts.attach(req, items);
+  respond(res, req, { items, address: client.email });
 }));
 
 // GET /api/v1/staff/cases/:caseId/mail

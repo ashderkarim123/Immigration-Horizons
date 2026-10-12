@@ -13,7 +13,9 @@ const LIMITS = { recipients: 20, totalRecipients: 30, subject: 255, body: 100000
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ID_PATTERN = /^[A-Za-z0-9_\-=+/]{8,512}$/;
 const PART_ID_PATTERN = /^[A-Za-z0-9_\-=+/]{1,1024}$/; // attachment ids
-const LIST_FIELDS = 'id,subject,from,toRecipients,receivedDateTime,sentDateTime,isRead,hasAttachments,bodyPreview,importance';
+const LIST_FIELDS = 'id,subject,from,replyTo,toRecipients,receivedDateTime,sentDateTime,isRead,hasAttachments,bodyPreview,importance';
+// The website's own enquiry email (src/lib/leads.ts): sent from our domain, reply-to = the person who filled in the form.
+const LEAD_SUBJECT = /^New (Consultation Request|Contact Message)\b/i;
 
 class MailInputError extends Error {
   constructor(errors) {
@@ -43,7 +45,26 @@ function sanitizeMailHtml(html) {
   }).trim();
 }
 
-const listItem = (message, linkCount = 0) => ({
+/**
+ * What kind of email this is, and who the other party is. A website enquiry (from our own domain, with the visitor in
+ * reply-to) is the visitor; any other inbox message is its sender; a sent message is its first recipient.
+ */
+function classify(message, folder = null) {
+  const own = graph.readConfig().mailbox;
+  const from = person(message.from);
+  const first = (list) => (list && list[0] ? person(list[0]) : null);
+  // A message we sent (its folder, or when unknown, its sender) concerns whoever it was sent to.
+  if (folder === 'sent' || (folder === null && from.address === own)) return { kind: 'mail', contact: first(message.toRecipients) };
+  const reply = first(message.replyTo);
+  const ownDomain = own.split('@')[1];
+  if (LEAD_SUBJECT.test(String(message.subject || '')) && reply && reply.address && ownDomain && from.address.endsWith(`@${ownDomain}`)) {
+    return { kind: /consultation/i.test(message.subject) ? 'consultation' : 'contact', contact: reply };
+  }
+  return { kind: 'mail', contact: from.address && from.address !== own ? from : null };
+}
+
+const listItem = (message, linkCount = 0, folder = null) => ({
+  ...classify(message, folder),
   id: message.id,
   subject: String(message.subject || '').slice(0, 300),
   from: person(message.from),
@@ -74,7 +95,7 @@ async function list({ folder = 'inbox', page = 1, limit = 20 } = {}) {
   const rows = (data && data.value) || [];
   const shown = rows.slice(0, size);
   const counts = await linkCounts(shown.map((row) => row.id));
-  return { items: shown.map((row) => listItem(row, counts.get(row.id) || 0)), page: pageNumber, limit: size, hasMore: rows.length > size, folder };
+  return { items: shown.map((row) => listItem(row, counts.get(row.id) || 0, folder)), page: pageNumber, limit: size, hasMore: rows.length > size, folder };
 }
 
 async function get(id) {
@@ -207,7 +228,32 @@ const linkDto = (link) => ({
   linkedAt: link.createdAt,
 });
 
+/** Unread messages received since `sinceIso`, newest first (for the new-mail watcher). Read messages are skipped on purpose. */
+async function newUnread(sinceIso, { top = 50 } = {}) {
+  const data = await graph.call('/mailFolders/inbox/messages', {
+    query: { $select: LIST_FIELDS, $filter: `receivedDateTime ge ${sinceIso} and isRead eq false`, $orderby: 'receivedDateTime desc', $top: top },
+  });
+  return ((data && data.value) || []).map((row) => listItem(row));
+}
+
+async function unreadCount() {
+  const folder = await graph.call('/mailFolders/inbox', { query: { $select: 'unreadItemCount' } });
+  return Math.max(0, Number(folder && folder.unreadItemCount) || 0);
+}
+
+/** Messages to or from one address, newest first, across folders (Microsoft's participants search). */
+async function withParticipant(address, { top = 20 } = {}) {
+  const wanted = String(address || '').trim().toLowerCase();
+  // The address is placed inside a quoted search expression, so anything that could end the quote is refused outright.
+  if (!EMAIL_PATTERN.test(wanted) || wanted.includes('"') || wanted.includes('\\')) return [];
+  const data = await graph.call('/messages', { query: { $search: `"participants:${wanted}"`, $select: LIST_FIELDS, $top: top } });
+  const rows = ((data && data.value) || []).slice().sort((a, b) => String(b.receivedDateTime || b.sentDateTime).localeCompare(String(a.receivedDateTime || a.sentDateTime)));
+  const counts = await linkCounts(rows.map((row) => row.id));
+  return rows.map((row) => listItem(row, counts.get(row.id) || 0));
+}
+
 module.exports = {
+  newUnread, unreadCount, withParticipant, classify,
   list, get, setRead, attachment, sendNew, reply, snapshot, linkDto, sanitizeMailHtml, validateOutgoing, isMessageId,
   MailInputError, LIMITS, FOLDERS,
 };

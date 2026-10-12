@@ -35,7 +35,7 @@ export class CreateCase implements OnInit {
   options = signal<IntakeOptions | null>(null);
   error = signal(''); saving = signal(false);
   source = 'client'; sourceId = ''; title = ''; caseType = ''; managerId = ''; priority = 'medium'; targetDate = ''; description = ''; search = '';
-  ngOnInit() { const consultationId = this.route.snapshot.queryParamMap.get('consultationId'); if (consultationId) { this.source = 'consultation'; this.sourceId = consultationId; } this.load(); }
+  ngOnInit() { const clientId = this.route.snapshot.queryParamMap.get('clientId'); if (clientId) { this.source = 'client'; this.sourceId = clientId; this.search = this.route.snapshot.queryParamMap.get('search') || ''; } const consultationId = this.route.snapshot.queryParamMap.get('consultationId'); if (consultationId) { this.source = 'consultation'; this.sourceId = consultationId; } this.load(); }
   load() {
     this.error.set('');
     this.api.get<IntakeOptions>('/staff/case-intake', { search: this.search }).subscribe({

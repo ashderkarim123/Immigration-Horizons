@@ -7,13 +7,14 @@
           [routerLink]="item.path"
           routerLinkActive="active"
           ariaCurrentWhenActive="page"
-          [attr.aria-label]="item.label"
+          [attr.aria-label]="item.badge ? item.label + ', ' + item.badge + ' unread' : item.label"
           [attr.title]="collapsed() ? item.label : null">
           <span class="nav-icon" aria-hidden="true">
             <ih-icon [name]="item.icon" [size]="20" />
           </span>
           @if (!collapsed()) {
             <span class="nav-label">{{ item.label }}</span>
+            @if (item.badge) { <span class="nav-badge" aria-hidden="true">{{ item.badge > 99 ? '99+' : item.badge }}</span> }
           }
         </a>
       </li>

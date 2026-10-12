@@ -55,6 +55,9 @@ if (isProduction && !app.locals.hasPersistentSessionStore) {
   process.exit(1);
 }
 
+// New-mail alerts for the shared mailbox (ADR-030): a no-op unless MAIL_WATCH_ENABLED=true and the mailbox is connected.
+require('./services/mail/mailWatcher').startFromEnv();
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Immigration Horizons Admin running at http://localhost:${PORT}/admin`);

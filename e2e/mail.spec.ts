@@ -24,7 +24,7 @@ test("mail: read, download, reply, link to a case, and the specialist has no mai
   const subject = (await (await pm.page.request.post("/__browser_mail_fixture")).json()).subject as string;
 
   // ── open the inbox from the navigation ──
-  await pm.page.getByRole("link", { name: "Mail", exact: true }).click();
+  await pm.page.getByRole("link", { name: /^Mail(, \d+ unread)?$/ }).click(); // the unread badge is part of the link name
   await expect(pm.page).toHaveURL(/\/staff\/mail/);
   await expect(pm.page.getByText("Shared mailbox: info@immigrationhorizons.com")).toBeVisible();
   const row = pm.page.locator(".list-pane .row", { hasText: subject });
@@ -76,7 +76,7 @@ test("mail: read, download, reply, link to a case, and the specialist has no mai
 
   // ── a specialist on the same case has no Mail: no navigation entry, no tab, and the API refuses ──
   const writer = await staff(browser, "petition_writer");
-  await expect(writer.page.getByRole("link", { name: "Mail", exact: true })).toHaveCount(0);
+  await expect(writer.page.getByRole("link", { name: /^Mail(, \d+ unread)?$/ })).toHaveCount(0);
   await writer.page.goto(`/staff/cases/${writer.data.caseId}`, { waitUntil: "domcontentloaded" });
   await expect(writer.page.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
   await expect(writer.page.getByRole("button", { name: "Emails", exact: true })).toHaveCount(0);
