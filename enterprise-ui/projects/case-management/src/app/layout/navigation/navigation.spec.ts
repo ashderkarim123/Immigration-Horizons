@@ -50,7 +50,35 @@ describe('Navigation', () => {
     const all = labels(['cases.view', 'uscis_tracking.view', 'calendar.view']);
     expect(all).toEqual(expect.arrayContaining(['Dashboard', 'Cases', 'Tasks', 'Deadlines', 'Calendar', 'Tracking']));
     TestBed.resetTestingModule();
-    expect(labels([])).toEqual(['Dashboard', 'Tasks']);
+    expect(labels([])).toEqual(['Dashboard', 'Tasks', 'Notifications']);
+  });
+
+  it('groups the menu by what a person comes to do, shows only groups with something in them, and reaches leads, consultations and planning', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: MailUnreadService, useValue: { count: signal(0), start: () => undefined, stop: () => undefined, refresh: () => undefined } }, { provide: AuthService, useValue: { capabilities: signal(['cases.view', 'clients.view', 'leads.view', 'queries.view', 'channels.view', 'sprints.manage', 'reports.view']) } }] });
+    const fixture = TestBed.createComponent(Navigation);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const groups = Array.from(el.querySelectorAll('.nav-group')).map((g) => [g.getAttribute('aria-label'), Array.from(g.querySelectorAll('a')).map((a) => a.textContent?.trim())]);
+    expect(groups).toEqual([
+      ['Workspace', ['Dashboard', 'Tasks', 'Notifications']],
+      ['Clients and leads', ['Clients', 'Leads', 'Consultations']],
+      ['Case work', ['Cases', 'Deadlines']],
+      ['Communication', ['Messages']],
+      ['Operations', ['Team planning', 'Reports']],
+    ]);
+    const href = (label: string) => Array.from(el.querySelectorAll('a')).find((a) => a.textContent?.trim() === label)?.getAttribute('href');
+    expect([href('Leads'), href('Consultations'), href('Team planning'), href('Notifications')]).toEqual(['/intake', '/consultations', '/planning', '/notifications']);
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: MailUnreadService, useValue: { count: signal(0), start: () => undefined, stop: () => undefined, refresh: () => undefined } }, { provide: AuthService, useValue: { capabilities: signal([]) } }] });
+    const bare = TestBed.createComponent(Navigation);
+    bare.detectChanges();
+    expect(Array.from((bare.nativeElement as HTMLElement).querySelectorAll('.nav-group')).map((g) => g.getAttribute('aria-label'))).toEqual(['Workspace']);
+    // collapsed: icons only, no headings, every link still named
+    bare.componentRef.setInput('collapsed', true);
+    bare.detectChanges();
+    expect((bare.nativeElement as HTMLElement).querySelector('.nav-heading')).toBeNull();
+    expect((bare.nativeElement as HTMLElement).querySelector('a')?.getAttribute('aria-label')).toBe('Dashboard');
   });
 });
 

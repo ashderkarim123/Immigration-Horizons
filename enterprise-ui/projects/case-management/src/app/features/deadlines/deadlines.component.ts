@@ -1,22 +1,22 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ApiService } from '../../core/api/api.service';
 import { DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { SkeletonComponent } from '../../shared/skeleton.component';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../shared/error-state.component';
+import { CaseLabelComponent } from '../../shared/case-label.component';
 
 @Component({
   selector: 'ih-deadlines',
   standalone: true,
   imports: [
     DatePipe,
-    RouterLink,
     FormsModule,
     SkeletonComponent,
     EmptyStateComponent,
-    ErrorStateComponent
+    ErrorStateComponent,
+    CaseLabelComponent
   ],
   templateUrl: './deadlines.component.html',
   styleUrls: ['../dashboard/dashboard.scss', '../cases/cases.scss']

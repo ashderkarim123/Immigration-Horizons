@@ -38,7 +38,7 @@ export interface TaskItem {
   createdAt: string;
   updatedAt: string;
   assignee: { id: string; displayName: string } | null;
-  case: { id: string; caseNumber: string; title: string } | null;
+  case: { id: string; caseNumber: string; title: string; clientName?: string; caseType?: string | null } | null;
   lead: { id: string; displayName: string } | null;
   actions: TaskActions;
 }

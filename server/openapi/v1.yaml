@@ -65,10 +65,17 @@ paths:
           description: Validation error
   /staff/dashboard:
     get:
-      summary: Get dashboard metrics
+      summary: The signed-in employee's home page data, client first
+      description: >
+        Counts and rows limited to what this employee may see (their assigned cases, or every case with cases.view_all; `scope`
+        says which). `clientCases` lists the most recently active cases by client: client name, service, stage, manager, the next
+        open task and what is pending; the case number is a reference. `myTasks` are full task objects with `case.clientName` and
+        the server's own `actions`. `recentActivity` is the case timeline for the same cases, without housekeeping events.
+        `casesAwaitingClientDocuments` / `casesAwaitingReview` are null when the employee has none of the queues behind them.
+        Wherever a Staff response refers to a case ({ id, caseNumber, title }) it also carries `clientName` and `caseType`.
       responses:
         '200':
-          description: Metrics data
+          description: "{ data: { scope, workspaceLabel, activeClients, myCases, tasksDueToday, myOpenTasks, myOverdueTasks, newAssignedCases, casesAwaitingClientDocuments, casesAwaitingReview, upcomingDeadlines, clientCases, myTasks, recentActivity, workQueues, employeeWorkload, ... } }"
   /staff/cases:
     get:
       summary: List cases with search and stage filters

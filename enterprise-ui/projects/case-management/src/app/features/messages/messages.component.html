@@ -43,8 +43,8 @@
             <span class="row-main">
               <span class="row-top">
                 @if (item.case) {
-                  <strong class="case-no">{{ item.case.caseNumber }}</strong>
-                  <span class="case-name">{{ item.case.title }}</span>
+                  <strong class="case-no">{{ item.case.clientName || item.case.title }}</strong>
+                  <span class="case-name">{{ item.case.clientName ? item.case.title + ' · ' : '' }}Ref {{ item.case.caseNumber }}</span>
                 }
                 <span class="channel-name">#{{ item.channelName }}</span>
                 <span class="audience audience-{{ item.audience }}">{{ audienceLabel(item) }}</span>

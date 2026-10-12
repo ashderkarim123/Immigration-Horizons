@@ -215,7 +215,7 @@ import { barPercent, formatDate, formatGenerated, formatPeriod, parseFilters, pa
                           <th scope="row">{{ day(r.date) }}@if (r.overdue) { <span class="flag"> Overdue</span> }</th>
                           <td>{{ r.kindLabel }}</td>
                           <td><a [routerLink]="r.link.path" [queryParams]="r.link.queryParams">{{ r.title }}</a></td>
-                          <td><a [routerLink]="['/cases', r.case.id]">{{ r.case.caseNumber }}</a></td>
+                          <td><a [routerLink]="['/cases', r.case.id]">{{ r.case.clientName || r.case.title || r.case.caseNumber }}</a><div class="sub">Ref {{ r.case.caseNumber }}</div></td>
                           <td>{{ r.status }}</td>
                         </tr>
                       }
@@ -239,9 +239,9 @@ import { barPercent, formatDate, formatGenerated, formatPeriod, parseFilters, pa
                     <div class="table-responsive">
                       <table class="data-table">
                         <caption class="sr-only">{{ queue.label }} by case</caption>
-                        <thead><tr><th scope="col">Case</th><th scope="col">Title</th><th scope="col" class="num">Items</th></tr></thead>
+                        <thead><tr><th scope="col">Client</th><th scope="col">Case</th><th scope="col" class="num">Items</th></tr></thead>
                         <tbody>
-                          @for (r of queue.rows; track r.caseId) { <tr><th scope="row"><a [routerLink]="r.link.path" [queryParams]="r.link.queryParams">{{ r.caseNumber || 'No case' }}</a></th><td>{{ r.caseTitle }}</td><td class="num">{{ r.count }}</td></tr> }
+                          @for (r of queue.rows; track r.caseId) { <tr><th scope="row"><a [routerLink]="r.link.path" [queryParams]="r.link.queryParams">{{ r.clientName || r.caseTitle }}</a></th><td>{{ r.clientName ? r.caseTitle : '' }}@if (r.caseNumber) { <div class="sub">Ref {{ r.caseNumber }}</div> }</td><td class="num">{{ r.count }}</td></tr> }
                         </tbody>
                       </table>
                     </div>
@@ -281,6 +281,7 @@ import { barPercent, formatDate, formatGenerated, formatPeriod, parseFilters, pa
   `,
   styles: [`
     .generated { color: #4b5563; font-size: .8125rem; margin: 0; }
+    .sub { color: #4b5563; font-size: .75rem; font-weight: 400; }
     .tabs { display: flex; flex-wrap: wrap; gap: .25rem; border-bottom: 1px solid #d1d5db; margin-bottom: 1rem; }
     .tab { padding: .5rem .875rem; text-decoration: none; color: #1e3a5f; border-bottom: 3px solid transparent; font-weight: 500; }
     .tab.on { border-bottom-color: #1e3a5f; font-weight: 700; }

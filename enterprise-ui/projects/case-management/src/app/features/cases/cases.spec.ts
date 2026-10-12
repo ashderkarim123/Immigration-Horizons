@@ -75,7 +75,9 @@ describe('Cases directory', () => {
     fixture.detectChanges();
 
     const link = fixture.nativeElement.querySelector('a.case-link') as HTMLAnchorElement;
-    expect(link.textContent?.trim()).toBe('IH-2026-AAA111');
+    // client first: the row is named by the client, the case number is a reference under it
+    expect(link.textContent?.trim()).toBe('Casey Client');
+    expect(link.closest('td')?.textContent).toContain('Ref IH-2026-AAA111');
     expect(link.getAttribute('href')).toBe('/cases/64b0f0f0f0f0f0f0f0f0f0a1');
     expect(fixture.componentInstance.totalItems()).toBe(23);
     expect(fixture.componentInstance.totalPages()).toBe(3);

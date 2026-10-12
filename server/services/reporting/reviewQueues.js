@@ -72,6 +72,7 @@ async function run(req, ctx, query = {}) {
       return {
         caseId: g._id ? String(g._id) : null,
         caseNumber: c ? c.caseNumber : null,
+        clientName: c ? c.clientName : '',
         caseTitle: g._id ? (c ? c.title : 'Unavailable case') : 'Not on a case yet',
         count: g.count,
         link: g._id ? { path: `/cases/${g._id}`, queryParams: r.tab ? { tab: r.tab } : {} } : { path: '/consultations', queryParams: {} },
@@ -81,8 +82,8 @@ async function run(req, ctx, query = {}) {
   });
 
   const table = {
-    columns: [{ key: 'queue', label: 'Queue' }, { key: 'caseNumber', label: 'Case number' }, { key: 'caseTitle', label: 'Case title' }, { key: 'count', label: 'Count' }],
-    rows: queues.filter((q) => q.available).flatMap((q) => q.all.map((r) => ({ queue: q.label, caseNumber: r.caseNumber || '', caseTitle: r.caseTitle, count: r.count }))),
+    columns: [{ key: 'queue', label: 'Queue' }, { key: 'clientName', label: 'Client' }, { key: 'caseNumber', label: 'Case number' }, { key: 'caseTitle', label: 'Case title' }, { key: 'count', label: 'Count' }],
+    rows: queues.filter((q) => q.available).flatMap((q) => q.all.map((r) => ({ queue: q.label, clientName: r.clientName || '', caseNumber: r.caseNumber || '', caseTitle: r.caseTitle, count: r.count }))),
   };
   return { data: { snapshot: { queues: queues.map(({ all, ...rest }) => rest), rowLimit: ROW_LIMIT } }, table };
 }

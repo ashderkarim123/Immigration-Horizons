@@ -69,10 +69,7 @@
               </td>
               <td>
                 @if (item.case) {
-                  <div>
-                    <a [routerLink]="['/cases', item.case.id]" class="case-link">{{ item.case.caseNumber }}</a>
-                  </div>
-                  <div class="case-type-sub text-truncate" style="max-width: 200px" [title]="item.case.title">{{ item.case.title }}</div>
+                  <ih-case-label [case]="item.case"></ih-case-label>
                 } @else {
                   <span class="text-secondary">Unlinked</span>
                 }

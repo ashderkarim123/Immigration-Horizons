@@ -10,6 +10,7 @@ const ClientCase = require('../models/ClientCase');
 const { can } = require('../utils/permissions');
 const { encodeCursor, decodeCursor, cursorFilter, changedFilter, boundedLimit } = require('../utils/messageCursor');
 const { hasActiveEmployeeMembership } = require('./casePolicy');
+const { addClientNames } = require('./caseRef');
 const caseManagement = require('./caseManagement');
 const collaborationPolicy = require('./collaborationPolicy');
 const readStateService = require('./readStateService');
@@ -179,13 +180,14 @@ async function loadInbox(req, { filter = 'all', search = '', page = 1, limit = 2
   const caseById = new Map(cases.map((c) => [String(c._id), c]));
 
   const needle = String(search || '').trim().toLowerCase();
+  const clientNames = new Map((await addClientNames(cases.map((c) => ({ id: id(c) })))).map((r) => [r.id, r]));
   let items = visible.map(({ channel, message }) => {
     const c = caseById.get(String(channel.case));
     return {
       channelId: id(channel),
       channelName: channel.name,
       audience: audienceOf(channel),
-      case: c ? { id: id(c), caseNumber: c.caseNumber, title: c.title } : null,
+      case: c ? { id: id(c), caseNumber: c.caseNumber, title: c.title, clientName: clientNames.get(id(c)).clientName, caseType: clientNames.get(id(c)).caseType } : null,
       latestMessage: {
         senderName: message.senderDisplayName,
         senderType: message.senderType,
@@ -198,7 +200,7 @@ async function loadInbox(req, { filter = 'all', search = '', page = 1, limit = 2
 
   const unreadTotal = items.filter((i) => i.unreadCount > 0).length;
   if (filter === 'unread') items = items.filter((i) => i.unreadCount > 0);
-  if (needle) items = items.filter((i) => [i.channelName, i.case && i.case.caseNumber, i.case && i.case.title].some((v) => String(v || '').toLowerCase().includes(needle)));
+  if (needle) items = items.filter((i) => [i.channelName, i.case && i.case.caseNumber, i.case && i.case.title, i.case && i.case.clientName].some((v) => String(v || '').toLowerCase().includes(needle)));
 
   // already newest-first from the aggregation; a stable sort puts unread conversations on top
   items.sort((a, b) => Number(b.unreadCount > 0) - Number(a.unreadCount > 0));

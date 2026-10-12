@@ -89,7 +89,7 @@ interface Sprint {
         <article>
           <h3>{{ task.title }}</h3>
           <p>
-            {{ task.case?.caseNumber || task.lead?.displayName || 'General work' }} ·
+            {{ task.case?.clientName || task.case?.title || task.lead?.displayName || 'General work' }}@if (task.case) { <span> (Ref {{ task.case.caseNumber }})</span> } ·
             {{ task.assignee?.displayName || 'Unassigned' }} · {{ task.status }}
           </p>
           @if (canManage() && task.actions.canAssign) {

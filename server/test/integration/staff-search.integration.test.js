@@ -261,7 +261,7 @@ test('every result has exactly the documented keys, a safe in-app href, and no r
   }
   assert.ok(total >= 12);
   const task = groupOf(res, 'tasks').items[0];
-  assert.deepEqual(Object.keys(task.case).sort(), ['caseNumber', 'id', 'title']);
+  assert.deepEqual(Object.keys(task.case).sort(), ['caseNumber', 'caseType', 'clientName', 'id', 'title']);
   const forbidden = ['_id', '__v', 'storageKey', 'checksum', 'passwordHash', 'answers', 'sections', 'internalNotes', 'internalReviewNote', 'internalResponse', 'notes', 'description', 'phone'];
   const rawKeys = new Set();
   JSON.stringify(res.body, (k, v) => { rawKeys.add(k); return v; });

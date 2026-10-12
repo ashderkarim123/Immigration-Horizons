@@ -154,7 +154,9 @@ describe('CalendarComponent', () => {
     expect(link.textContent).toContain('Draft cover letter');
     expect(link.getAttribute('href')).toBe('/cases/c1?tab=tasks');
     expect(panel.textContent).toContain('All day');
-    expect(panel.textContent).toContain('IH-2026-AAA111');
+    // the case is named for people (client, else its title); the number stays as the link's title
+    expect(panel.textContent).toContain('Alpha petition');
+    expect(panel.querySelector('a[href="/cases/c1"]')?.getAttribute('title')).toBe('Ref IH-2026-AAA111');
   });
 
 

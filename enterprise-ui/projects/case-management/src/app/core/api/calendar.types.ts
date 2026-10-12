@@ -59,7 +59,7 @@ export interface CalendarItem {
   sourceId: string;
   sourceField: 'targetFilingDate' | 'dueDate' | 'scheduledFor' | 'responseDueAt' | null;
   kind: CalendarKind;
-  case: { id: string; caseNumber: string; title: string } | null;
+  case: { id: string; caseNumber: string; title: string; clientName?: string; caseType?: string | null } | null;
   title: string;
   description: string;
   time: CalendarTime;

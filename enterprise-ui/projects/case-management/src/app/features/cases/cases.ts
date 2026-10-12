@@ -11,6 +11,7 @@ import { SkeletonComponent } from '../../shared/skeleton.component';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../shared/error-state.component';
 import { CASE_STAGES } from '../../core/api/case-catalog';
+import { caseTypeLabel } from '../../shared/case-label.component';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
@@ -135,6 +136,8 @@ export class Cases implements OnInit {
       queryParamsHandling: ''
     });
   }
+
+  readonly typeLabel = caseTypeLabel;
 
   getClientDisplayName(c: CaseListItem): string {
     return c.primaryClient?.displayName || 'Unassigned';

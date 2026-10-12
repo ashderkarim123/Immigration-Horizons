@@ -18,6 +18,7 @@ const CaseDocument = require('../../../../models/CaseDocument');
 const CaseActivity = require('../../../../models/CaseActivity');
 const WorkspaceMember = require('../../../../models/WorkspaceMember');
 const AdminUser = require('../../../../models/admin/User');
+const ClientUser = require('../../../../models/ClientUser');
 
 // staffAuthMiddleware + requirePasswordSetupComplete applied by staff/index.js
 const { requireApiCapability, staffAuthMiddleware } = require('../../../../middleware/api/staffAuth');
@@ -34,6 +35,14 @@ const {
 const { can } = require('../../../../utils/permissions');
 const { createApiError } = require('../../../../middleware/api/apiError');
 const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedOrigin');
+
+/** "First Last" typed in full matches a client whose first and last names match the two halves. */
+function nameParts(search) {
+  const words = String(search).trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return [];
+  const rx = (w) => new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  return [{ firstName: rx(words[0]), lastName: rx(words.slice(1).join(' ')) }];
+}
 
 // ─── Serializers ─────────────────────────────────────────────────────────────
 
@@ -166,7 +175,9 @@ router.get('/', requireApiCapability('cases.view'), async (req, res, next) => {
     if (req.query.search) {
       const escaped = req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const pattern = new RegExp(escaped, 'i');
-      query.$or = [{ caseNumber: pattern }, { title: pattern }];
+      // Client first: staff look a matter up by the client's name. Bounded, and the access restriction below still applies.
+      const clients = await ClientUser.find({ $or: [{ firstName: pattern }, { lastName: pattern }, { email: pattern }, ...nameParts(req.query.search)] }).select('_id').limit(200).lean();
+      query.$or = [{ caseNumber: pattern }, { title: pattern }, { primaryClient: { $in: clients.map((c) => c._id) } }];
     }
 
     if (req.query.scope === 'unassigned') {

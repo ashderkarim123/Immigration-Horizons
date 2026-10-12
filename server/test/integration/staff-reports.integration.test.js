@@ -320,7 +320,7 @@ test('review queues match the Dashboard work queues, add the extra workflow queu
   assert.equal(queues.queries_unanswered.count, 1);
   assert.equal(queues.queries_overdue.count, 1);
   for (const q of Object.values(queues)) assert.ok(q.rows.every((r) => r.caseNumber === 'IH-2026-ALPHA1'), `${q.key} only lists the PM’s case`);
-  assert.deepEqual(Object.keys(queues.document_review.rows[0]).sort(), ['caseId', 'caseNumber', 'caseTitle', 'count', 'link']);
+  assert.deepEqual(Object.keys(queues.document_review.rows[0]).sort(), ['caseId', 'caseNumber', 'caseTitle', 'clientName', 'count', 'link']);
 
   const admin = Object.fromEntries((await get(w.admin.agent, 'review-queues')).body.data.snapshot.queues.map((q) => [q.key, q]));
   assert.equal(admin.document_review.count, 2);
@@ -418,7 +418,7 @@ test('the export equals the screen row for row, never contains another team’s 
   const admin = parseCsv((await csv(w.admin.agent, 'report=review-queues')).body).map((r) => r.join('|')).join('\n');
   assert.ok(admin.includes('BETA22'), 'an admin’s firm scope does include it');
   const narrowed = parseCsv((await csv(w.admin.agent, 'report=review-queues&scope=firm&source=document_review&caseType=o1')).body);
-  assert.deepEqual(narrowed.slice(1).map((r) => [r[0], r[1]]), [['Documents to review', 'IH-2026-BETA22']], 'filters narrow the export exactly as they narrow the screen');
+  assert.deepEqual(narrowed.slice(1).map((r) => [r[0], r[2]]), [['Documents to review', 'IH-2026-BETA22']], 'filters narrow the export exactly as they narrow the screen');
   assert.equal((await csv(w.pm.agent, 'report=review-queues&scope=firm')).status, 403, 'the export refuses firm scope too');
   assert.equal(parseCsv((await csv(w.pm.agent, 'report=pipeline&caseType=o1')).body).slice(1).filter((r) => r[0].includes('snapshot')).every((r) => r[2] === '0'), true);
 });
@@ -437,13 +437,13 @@ test('formula-shaped, comma, quote and newline values are encoded safely', async
   const text = (await csv(w.pm.agent, 'report=review-queues&source=document_review')).body;
   assert.ok(text.includes(`"'=HYPERLINK(""http://evil.example"",""click"")"`), 'neutralized with a leading apostrophe and quotes doubled');
   const rows = parseCsv(text);
-  assert.equal(rows[1][2], `'=HYPERLINK("http://evil.example","click")`);
+  assert.equal(rows[1][3], `'=HYPERLINK("http://evil.example","click")`);
 
   for (const [title, expected] of [['+SUM(A1)', "'+SUM(A1)"], ['-2+3', "'-2+3"], ['@cmd', "'@cmd"], ['Plain, with "quotes"\nand a newline', 'Plain, with "quotes"\nand a newline']]) {
     await ClientCase.updateOne({ _id: w.a.caseDoc._id }, { title });
     const parsed = parseCsv((await csv(w.pm.agent, 'report=review-queues&source=document_review')).body);
-    assert.equal(parsed[1][2], expected, title);
-    assert.equal(parsed[1].length, 4, 'a comma or newline inside a value never splits the record');
+    assert.equal(parsed[1][3], expected, title);
+    assert.equal(parsed[1].length, 5, 'a comma or newline inside a value never splits the record');
   }
 });
 

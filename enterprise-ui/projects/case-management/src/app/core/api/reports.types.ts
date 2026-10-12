@@ -74,7 +74,7 @@ export interface DeadlineRow {
   kind: string;
   kindLabel: string;
   title: string;
-  case: { id: string; caseNumber: string; title: string };
+  case: { id: string; caseNumber: string; title: string; clientName?: string; caseType?: string | null };
   status: string;
   person: string | null;
   overdue: boolean;
@@ -99,6 +99,7 @@ export interface DeadlinesReport {
 export interface QueueRow {
   caseId: string | null;
   caseNumber: string | null;
+  clientName?: string;
   caseTitle: string;
   count: number;
   link: { path: string; queryParams: Record<string, string> };

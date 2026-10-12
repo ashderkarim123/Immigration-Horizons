@@ -7,26 +7,27 @@ import { TASK_STATUSES, TaskItem, TaskStatus } from '../../core/api/task.types';
 import { TaskFormDialogComponent } from '../../shared/task-form-dialog.component';
 import { ToastService } from '../../shared/toast.service';
 import { DatePipe } from '@angular/common';
-import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { StatusBadgeComponent } from '../../shared/status-badge.component';
 import { PaginationComponent } from '../../shared/pagination.component';
 import { SkeletonComponent } from '../../shared/skeleton.component';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../shared/error-state.component';
+import { CaseLabelComponent } from '../../shared/case-label.component';
 
 @Component({
   selector: 'ih-tasks',
   standalone: true,
   imports: [
     DatePipe,
-    RouterLink,
     FormsModule,
     StatusBadgeComponent,
     PaginationComponent,
     SkeletonComponent,
     EmptyStateComponent,
     ErrorStateComponent,
+    CaseLabelComponent,
     TaskFormDialogComponent
   ],
   templateUrl: './tasks.component.html',

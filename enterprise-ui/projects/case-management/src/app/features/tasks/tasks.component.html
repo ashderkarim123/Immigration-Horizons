@@ -67,6 +67,7 @@
     >
       <option value="">Any Due Date</option>
       <option value="overdue">Overdue</option>
+      <option value="today">Due today</option>
       <option value="upcoming">Upcoming</option>
     </select>
   </div>
@@ -109,10 +110,7 @@
               </td>
               <td>
                 @if (t.case) {
-                  <div>
-                    <a [routerLink]="['/cases', t.case.id]" class="case-link">{{ t.case.caseNumber }}</a>
-                  </div>
-                  <div class="case-type-sub text-truncate" style="max-width: 200px" [title]="t.case.title">{{ t.case.title }}</div>
+                  <ih-case-label [case]="t.case" [queryParams]="{ tab: 'tasks' }"></ih-case-label>
                 } @else if (t.lead) {
                   <div>Consultation</div>
                   <div class="case-type-sub text-truncate" style="max-width: 200px" [title]="t.lead.displayName">{{ t.lead.displayName }}</div>

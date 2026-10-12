@@ -11,7 +11,8 @@
     <input
       type="search"
       class="form-control"
-      placeholder="Search by case # or title..."
+      placeholder="Search by client name, case title or number..."
+      aria-label="Search cases"
       [ngModel]="searchQuery()"
       (ngModelChange)="searchQuery.set($event)"
       (keyup.enter)="onFilterChange()"
@@ -73,9 +74,9 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Case Number</th>
-            <th>Title & Type</th>
             <th>Client</th>
+            <th>Service & matter</th>
+            <th>Managed by</th>
             <th>Stage</th>
             <th>Priority</th>
             <th>Target Filing</th>
@@ -85,13 +86,14 @@
           @for (c of cases(); track c.id) {
             <tr>
               <td class="font-medium">
-                <a [routerLink]="['/cases', c.id]" class="case-link">{{ c.caseNumber }}</a>
+                <a [routerLink]="['/cases', c.id]" class="case-link">{{ getClientDisplayName(c) }}</a>
+                <div class="case-type-sub">Ref {{ c.caseNumber }}</div>
               </td>
               <td>
-                <div class="case-title">{{ c.title }}</div>
-                <div class="case-type-sub">{{ c.caseType }}</div>
+                <div class="case-title">{{ typeLabel(c.caseType) }}</div>
+                <div class="case-type-sub">{{ c.title }}</div>
               </td>
-              <td>{{ getClientDisplayName(c) }}</td>
+              <td>{{ c.projectManager?.name || 'Unassigned' }}</td>
               <td>
                 <ih-status-badge [status]="c.currentStage"></ih-status-badge>
               </td>

@@ -86,7 +86,7 @@ type PaletteState = 'idle' | 'loading' | 'results' | 'empty' | 'error';
                         <span class="option-meta">
                           <span class="type-badge">{{ noun(item.type) }}</span>
                           @if (item.statusLabel) { <span>{{ item.statusLabel }}</span> }
-                          @if (item.case && item.type !== 'cases') { <span>{{ item.case.caseNumber }}</span> }
+                          @if (item.case) { <span>{{ item.case.clientName || item.case.caseNumber }}</span> }
                         </span>
                       </div>
                     }

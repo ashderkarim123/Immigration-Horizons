@@ -1,107 +1,200 @@
 <div class="page-header">
   <h1>Dashboard</h1>
   <p class="page-subtitle">{{ metrics()?.workspaceLabel || 'Staff case-management overview' }}</p>
-  <p>@if (auth.capabilities().includes('leads.view')) { <a routerLink="/intake">Lead intake</a> · } @if (auth.capabilities().includes('sprints.manage')) { <a routerLink="/planning">Team planning</a> · } <a routerLink="/notifications">My notifications</a></p>
 </div>
 
 @if (isLoading()) {
-  <div class="loading-state">Loading dashboard...</div>
+  <div class="loading-state" role="status">Loading dashboard...</div>
 } @else if (error()) {
   <div class="alert alert-error" role="alert">{{ error() }} <button type="button" (click)="load()">Retry</button></div>
 } @else if (metrics(); as m) {
-  <div class="metrics-grid">
-    @if (auth.capabilities().includes('queries.view')) {
-      <a routerLink="/consultations" [queryParams]="{ queue: 'unanswered' }" class="metric-card"><div class="metric-value">{{ m.unansweredQueries }}</div><div class="metric-label">Unanswered consultations and questions</div></a>
-      <a routerLink="/consultations" [queryParams]="{ queue: 'scheduling' }" class="metric-card"><div class="metric-value">{{ m.queriesAwaitingScheduling }}</div><div class="metric-label">Awaiting consultation scheduling</div></a>
-    }
-    @if (auth.capabilities().includes('cases.view')) { <a routerLink="/cases" class="metric-card">
-      <div class="metric-value">{{ m.myCases }}</div>
-      <div class="metric-label">Active Cases</div>
-    </a> }
-    @if (auth.capabilities().includes('channels.view')) { <a routerLink="/messages" [queryParams]="{ filter: 'unread' }" class="metric-card">
-      <div class="metric-value">{{ m.unreadClientMessages }}</div>
-      <div class="metric-label">Unread conversations</div>
-    </a> }
-    @if (auth.capabilities().includes('cases.view')) { <a routerLink="/deadlines" class="metric-card">
-      <div class="metric-value">{{ m.upcomingDeadlines }}</div>
-      <div class="metric-label">Upcoming Deadlines</div>
-    </a> }
-    @if (m.uscisActionRequired != null) { <a routerLink="/tracking" class="metric-card">
-      <div class="metric-value">{{ m.uscisActionRequired }}</div>
-      <div class="metric-label">USCIS action required</div>
-    </a> }
-    <a routerLink="/tasks" class="metric-card">
-      <div class="metric-value">{{ m.myOpenTasks }}</div>
-      <div class="metric-label">Open Tasks</div>
-    </a>
+  <!-- Overview: every card opens the records it counts -->
+  <section aria-labelledby="dash-overview">
+    <h2 id="dash-overview" class="sr-only">Overview</h2>
+    <div class="metrics-grid">
+      @if (has('cases.view')) {
+        <a [routerLink]="has('clients.view') ? '/clients' : '/cases'" class="metric-card"><div class="metric-value">{{ m.activeClients ?? 0 }}</div><div class="metric-label">{{ mine() }}Active clients</div></a>
+        <a routerLink="/cases" class="metric-card"><div class="metric-value">{{ m.myCases }}</div><div class="metric-label">{{ mine() }}Active cases</div></a>
+      }
+      <a routerLink="/tasks" [queryParams]="{ due: 'today' }" class="metric-card"><div class="metric-value">{{ m.tasksDueToday ?? 0 }}</div><div class="metric-label">Tasks due today</div></a>
+      <a routerLink="/tasks" [queryParams]="{ due: 'overdue' }" class="metric-card" [class.metric-alert]="m.myOverdueTasks > 0"><div class="metric-value">{{ m.myOverdueTasks }}</div><div class="metric-label">Overdue tasks</div></a>
+      @if (m.casesAwaitingClientDocuments != null) {
+        <a routerLink="/work-queues" [queryParams]="{ queue: 'requested_documents' }" class="metric-card"><div class="metric-value">{{ m.casesAwaitingClientDocuments }}</div><div class="metric-label">Cases awaiting client documents</div></a>
+      }
+      @if (m.casesAwaitingReview != null) {
+        <a routerLink="/work-queues" [queryParams]="{ queue: reviewQueue() }" class="metric-card"><div class="metric-value">{{ m.casesAwaitingReview }}</div><div class="metric-label">Cases awaiting internal review</div></a>
+      }
+      @if (has('cases.view')) {
+        <a routerLink="/deadlines" class="metric-card"><div class="metric-value">{{ m.upcomingDeadlines }}</div><div class="metric-label">Upcoming deadlines</div></a>
+        <a routerLink="/cases" [queryParams]="{ scope: 'mine' }" class="metric-card"><div class="metric-value">{{ m.newAssignedCases ?? 0 }}</div><div class="metric-label">New assigned cases (7 days)</div></a>
+      }
+      @if (has('queries.view')) {
+        <a routerLink="/consultations" [queryParams]="{ queue: 'unanswered' }" class="metric-card"><div class="metric-value">{{ m.unansweredQueries }}</div><div class="metric-label">Unanswered consultations and questions</div></a>
+        <a routerLink="/consultations" [queryParams]="{ queue: 'scheduling' }" class="metric-card"><div class="metric-value">{{ m.queriesAwaitingScheduling }}</div><div class="metric-label">Awaiting consultation scheduling</div></a>
+      }
+      @if (has('channels.view')) {
+        <a routerLink="/messages" [queryParams]="{ filter: 'unread' }" class="metric-card"><div class="metric-value">{{ m.unreadClientMessages }}</div><div class="metric-label">Unread conversations</div></a>
+      }
+      @if (m.uscisActionRequired != null) {
+        <a routerLink="/tracking" class="metric-card"><div class="metric-value">{{ m.uscisActionRequired }}</div><div class="metric-label">USCIS action required</div></a>
+      }
+    </div>
+  </section>
+
+  <div class="dashboard-sections">
+    <!-- My tasks -->
+    <section class="section-card" aria-labelledby="dash-tasks">
+      <div class="section-head">
+        <h2 id="dash-tasks">My tasks</h2>
+        <a routerLink="/tasks">All my tasks ({{ m.myOpenTasks }})</a>
+      </div>
+      @if (taskNotice()) { <p class="notice" role="status">{{ taskNotice() }}</p> }
+      @if (taskError()) { <p class="notice notice-error" role="alert">{{ taskError() }}</p> }
+      @if (m.myTasks.length) {
+        <ul class="task-list" role="list">
+          @for (t of m.myTasks; track t.id) {
+            <li class="task-row" [class.late]="isOverdue(t.dueDate)">
+              <div class="task-main">
+                @if (t.case) {
+                  <ih-case-label class="inline" [case]="t.case" [queryParams]="{ tab: 'tasks' }"></ih-case-label>
+                } @else if (t.lead) {
+                  <span class="who">{{ t.lead.displayName }} <span class="muted">· Consultation</span></span>
+                } @else {
+                  <span class="muted">General work</span>
+                }
+                <div class="task-title">{{ t.title }}</div>
+                <div class="task-meta">
+                  <span [class.flag-late]="isOverdue(t.dueDate)">{{ t.dueDate ? (isOverdue(t.dueDate) ? 'Overdue · ' : 'Due ') + (t.dueDate | date: 'mediumDate') : 'No due date' }}</span>
+                  <ih-status-badge [status]="t.priority" [variant]="t.priority === 'urgent' ? 'danger' : t.priority === 'high' ? 'warning' : 'neutral'"></ih-status-badge>
+                </div>
+              </div>
+              <div class="task-actions">
+                @if (t.actions.canChangeStatus) {
+                  <label class="sr-only" [for]="'task-status-' + t.id">Status of {{ t.title }}</label>
+                  <select class="form-select" [id]="'task-status-' + t.id" [ngModel]="t.status" (ngModelChange)="setTaskStatus(t, $event)" [disabled]="savingTask() === t.id">
+                    @for (s of statuses; track s.value) { <option [value]="s.value">{{ s.label }}</option> }
+                  </select>
+                  <button type="button" class="btn btn-sm" (click)="setTaskStatus(t, 'completed')" [disabled]="savingTask() === t.id">Mark complete<span class="sr-only">: {{ t.title }}</span></button>
+                } @else {
+                  <ih-status-badge [status]="t.status"></ih-status-badge>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="empty-state">No open tasks are assigned to you.</p>
+      }
+    </section>
+
+    <!-- Attention required -->
+    <section class="section-card" aria-labelledby="dash-attention">
+      <div class="section-head"><h2 id="dash-attention">Attention required</h2></div>
+      @if (activeQueues().length) {
+        <ul class="queue-list" role="list">
+          @for (queue of activeQueues(); track queue.key) {
+            <li>
+              <a class="queue-title" routerLink="/work-queues" [queryParams]="{ queue: queue.key }">{{ queue.label }} <span class="count">{{ queue.count }}</span></a>
+              <ul class="queue-cases" role="list">
+                @for (item of queue.items; track item.caseId) {
+                  <li><a [routerLink]="['/cases', item.caseId]" [queryParams]="{ tab: queue.tab }">{{ item.clientName || item.title }}</a> <span class="muted">{{ typeLabel(item.caseType) }} · {{ item.count }}</span></li>
+                }
+              </ul>
+            </li>
+          }
+        </ul>
+      } @else if (m.workQueues?.length) {
+        <p class="empty-state" role="status">Nothing is blocked, overdue or waiting for review.</p>
+      } @else {
+        <p class="empty-state">Work that needs attention on your cases appears here.</p>
+      }
+    </section>
   </div>
 
-  @if (activeQueues().length) {
-    <h2 class="queue-heading">Needs attention</h2>
-    <div class="metrics-grid">
-      @for (queue of activeQueues(); track queue.key) {
-        <a routerLink="/work-queues" [queryParams]="{ queue: queue.key }" class="metric-card"><div class="metric-value">{{ queue.count }}</div><div class="metric-label">{{ queue.label }}</div></a>
+  <!-- My clients and active cases -->
+  @if (has('cases.view')) {
+    <section class="section-card wide" aria-labelledby="dash-clients">
+      <div class="section-head">
+        <h2 id="dash-clients">{{ mine() }}Clients and active cases</h2>
+        <div class="head-tools">
+          <label class="sr-only" for="dash-client-filter">Filter these clients</label>
+          <input id="dash-client-filter" type="search" class="form-control" placeholder="Filter by client, service or next action" [ngModel]="clientFilter()" (ngModelChange)="clientFilter.set($event)" />
+          <a routerLink="/cases">All cases</a>
+        </div>
+      </div>
+      @if (!(m.clientCases || []).length) {
+        <p class="empty-state">No active cases yet. Cases you are assigned to appear here.</p>
+      } @else if (!clientCases().length) {
+        <p class="empty-state" role="status">No client or case here matches “{{ clientFilter() }}”. Search all cases instead.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table client-table">
+            <caption class="sr-only">Most recently active cases, by client</caption>
+            <thead>
+              <tr><th scope="col">Client</th><th scope="col">Stage</th><th scope="col">Next action</th><th scope="col">Waiting on</th><th scope="col">Deadline</th><th scope="col">Assigned to</th><th scope="col">Last activity</th></tr>
+            </thead>
+            <tbody>
+              @for (c of clientCases(); track c.id) {
+                <tr>
+                  <th scope="row">
+                    <a class="client-name" [routerLink]="['/cases', c.id]">{{ c.client?.name || c.title }}</a>
+                    <div class="sub">{{ typeLabel(c.caseType) }}@if (c.client?.name && c.title) { · {{ c.title }} }</div>
+                    <div class="sub ref">Ref {{ c.caseNumber }}@if (c.client?.id) { · <a [routerLink]="['/clients', c.client?.id]">Client profile</a> }</div>
+                  </th>
+                  <td>
+                    <span class="badge">{{ stageLabel(c.currentStage) }}</span>
+                    @if (c.priority === 'urgent' || c.priority === 'high') { <div><ih-status-badge [status]="c.priority" [variant]="c.priority === 'urgent' ? 'danger' : 'warning'"></ih-status-badge></div> }
+                  </td>
+                  <td>
+                    @if (c.nextAction; as next) {
+                      <a [routerLink]="['/cases', c.id]" [queryParams]="{ tab: 'tasks' }">{{ next.title }}</a>
+                      <div class="sub" [class.flag-late]="isOverdue(next.dueDate)">{{ next.dueDate ? (isOverdue(next.dueDate) ? 'Overdue · ' : 'Due ') + (next.dueDate | date: 'mediumDate') : 'No due date' }}@if (next.assignee) { · {{ next.assignee }} }</div>
+                    } @else {
+                      <span class="muted">No open task</span>
+                    }
+                  </td>
+                  <td>
+                    <div>{{ c.pending.openTasks }} open {{ c.pending.openTasks === 1 ? 'task' : 'tasks' }}</div>
+                    @if (c.pending.documentRequests) { <div class="sub"><a [routerLink]="['/cases', c.id]" [queryParams]="{ tab: 'documents' }">{{ c.pending.documentRequests }} client {{ c.pending.documentRequests === 1 ? 'document' : 'documents' }} requested</a></div> }
+                  </td>
+                  <td [class.flag-late]="isOverdue(c.targetFilingDate)">{{ c.targetFilingDate ? (c.targetFilingDate | date: 'mediumDate') : 'Not set' }}</td>
+                  <td>{{ c.projectManager?.name || 'Unassigned' }}</td>
+                  <td class="muted">{{ c.updatedAt | date: 'mediumDate' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
-    </div>
-  } @else if (m.workQueues?.length) {
-    <p role="status">Your work queues are clear. Open a case or create new work to continue.</p>
+    </section>
   }
-  <div class="dashboard-sections">
-    @if (m.employeeWorkload?.length) {
-      <div class="section-card"><h3>Employee workload</h3><p>Open assigned work across the firm.</p><div class="table-responsive"><table class="data-table"><thead><tr><th>Employee</th><th>Open tasks</th><th>Overdue</th></tr></thead><tbody>@for (employee of m.employeeWorkload; track employee.employeeId) { <tr><td><a routerLink="/tasks" [queryParams]="{scope:'all',assignee:employee.employeeId}">{{ employee.name }}</a></td><td>{{ employee.openTasks }}</td><td>{{ employee.overdueTasks }}</td></tr> }</tbody></table></div></div>
-    }
-    <!-- Recent Cases -->
-    <div class="section-card">
-      <h3>Recent Cases</h3>
-      @if (m.recentCases.length) {
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Case Number</th>
-              <th>Type</th>
-              <th>Stage</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (c of m.recentCases; track c.id) {
-              <tr>
-                <td><a [routerLink]="['/cases', c.id]">{{ c.caseNumber }}</a></td>
-                <td>{{ caseTypeLabel(c.caseType) }}</td>
-                <td><span class="badge">{{ c.currentStage }}</span></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      } @else {
-        <p class="empty-state">No recent cases.</p>
-      }
-    </div>
 
-    <!-- My Tasks -->
-    <div class="section-card">
-      <h3>My Tasks</h3>
-      @if (m.myTasks.length) {
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Task</th>
-              <th>Status</th>
-              <th>Due</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (t of m.myTasks; track t.id) {
-              <tr>
-                <td><a routerLink="/tasks">{{ t.title }}</a></td>
-                <td><span class="badge">{{ t.status }}</span></td>
-                <td>{{ t.dueDate ? (t.dueDate | date) : 'None' }}</td>
-              </tr>
+  <div class="dashboard-sections">
+    <!-- Recent activity -->
+    @if (has('cases.view')) {
+      <section class="section-card" aria-labelledby="dash-activity">
+        <div class="section-head"><h2 id="dash-activity">Recent activity</h2></div>
+        @if ((m.recentActivity || []).length) {
+          <ul class="activity-list" role="list">
+            @for (a of m.recentActivity; track a.id) {
+              <li>
+                <a class="client-name" [routerLink]="['/cases', a.case.id]">{{ a.case.clientName || a.case.title || 'Case' }}</a>
+                <span class="activity-message">{{ a.message }}</span>
+                <span class="sub">{{ a.actorName }} · {{ a.createdAt | date: 'medium' }}@if (a.case.caseNumber) { · Ref {{ a.case.caseNumber }} }</span>
+              </li>
             }
-          </tbody>
-        </table>
-      } @else {
-        <p class="empty-state">No active tasks.</p>
-      }
-    </div>
+          </ul>
+        } @else {
+          <p class="empty-state">Nothing has happened on your cases yet.</p>
+        }
+      </section>
+    }
+
+    @if (m.employeeWorkload?.length) {
+      <section class="section-card" aria-labelledby="dash-workload">
+        <div class="section-head"><h2 id="dash-workload">Team workload</h2></div>
+        <div class="table-responsive"><table class="data-table"><caption class="sr-only">Open and overdue tasks by employee</caption><thead><tr><th scope="col">Employee</th><th scope="col">Open tasks</th><th scope="col">Overdue</th></tr></thead><tbody>@for (employee of m.employeeWorkload; track employee.employeeId) { <tr><th scope="row"><a routerLink="/tasks" [queryParams]="{scope:'all',assignee:employee.employeeId}">{{ employee.name }}</a></th><td>{{ employee.openTasks }}</td><td [class.flag-late]="employee.overdueTasks > 0">{{ employee.overdueTasks }}</td></tr> }</tbody></table></div>
+      </section>
+    }
   </div>
 }

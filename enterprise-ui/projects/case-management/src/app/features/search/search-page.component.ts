@@ -76,7 +76,8 @@ const TYPES = Object.keys(SEARCH_TYPE_NOUN) as SearchType[];
                       <span class="type-badge">{{ noun(item.type) }}</span>
                       @if (item.statusLabel) { <span>{{ item.statusLabel }}</span> }
                       @for (c of item.context; track c) { <span>{{ c }}</span> }
-                      @if (item.case && item.type !== 'cases') { <span>Case {{ item.case.caseNumber }}</span> }
+                      @if (item.case?.clientName) { <span>Client {{ item.case?.clientName }}</span> }
+                      @if (item.case && item.type !== 'cases') { <span>Ref {{ item.case.caseNumber }}</span> }
                     </span>
                   </li>
                 }

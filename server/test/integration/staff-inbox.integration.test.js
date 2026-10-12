@@ -97,7 +97,8 @@ test('lists conversations unread first, then newest activity, with case, channel
   assert.equal(unreadTotal, 1);
   assert.deepEqual(items.map((i) => i.channelName), ['Client & Team', 'Updates', 'Strategy'], 'unread first, then newest activity');
 
-  assert.deepEqual(items[0].case, { id: String(a.caseDoc._id), caseNumber: a.caseDoc.caseNumber, title: 'Alpha petition' });
+  assert.deepEqual(items[0].case, { id: String(a.caseDoc._id), caseNumber: a.caseDoc.caseNumber, title: 'Alpha petition', clientName: items[0].case.clientName, caseType: a.caseDoc.caseType });
+  assert.ok(items[0].case.clientName, 'the conversation names the client');
   assert.equal(items[0].audience, 'client_and_team');
   assert.equal(items[0].unreadCount, 1);
   assert.deepEqual([items[0].latestMessage.senderName, items[0].latestMessage.senderType, items[0].latestMessage.preview], ['Casey', 'client', 'First question from Alpha']);

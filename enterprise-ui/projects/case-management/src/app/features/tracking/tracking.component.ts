@@ -59,7 +59,7 @@ export const TRACKING_VIEWS: { key: TrackingView; label: string; params: Record<
             <caption class="sr-only">{{ currentView().label }}</caption>
             <thead>
               <tr>
-                <th scope="col">Case</th><th scope="col">Client</th><th scope="col">Form</th><th scope="col">Receipt</th><th scope="col">Current status</th>
+                <th scope="col">Client</th><th scope="col">Case</th><th scope="col">Form</th><th scope="col">Receipt</th><th scope="col">Current status</th>
                 <th scope="col">Updated</th><th scope="col">Action required</th><th scope="col">Due</th><th scope="col">Source</th><th scope="col">PM</th>
               </tr>
             </thead>
@@ -68,11 +68,15 @@ export const TRACKING_VIEWS: { key: TrackingView; label: string; params: Record<
                 <tr>
                   <td>
                     @if (r.case; as c) {
-                      <a [routerLink]="['/cases', c.id]" [queryParams]="{ tab: 'tracking', filing: r.id }" class="case-link">{{ c.caseNumber }}</a>
-                      <div class="case-type-sub">{{ c.title }}</div>
+                      <a [routerLink]="['/cases', c.id]" [queryParams]="{ tab: 'tracking', filing: r.id }" class="case-link">{{ r.client?.displayName || c.title }}</a>
+                    } @else { {{ r.client?.displayName || '—' }} }
+                  </td>
+                  <td>
+                    @if (r.case; as c) {
+                      <div>{{ c.title }}</div>
+                      <div class="case-type-sub">Ref {{ c.caseNumber }}</div>
                     } @else { — }
                   </td>
-                  <td>{{ r.client?.displayName || '—' }}</td>
                   <td>
                     @if (r.case; as c) { <a [routerLink]="['/cases', c.id]" [queryParams]="{ tab: 'tracking', filing: r.id }">{{ r.formType }}</a> } @else { {{ r.formType }} }
                     @if (r.archived) { <span class="case-type-sub"> (archived)</span> }

@@ -204,3 +204,5 @@ button:disabled { cursor: not-allowed; opacity: .6; }
 .data-table th { color: var(--ih-text-secondary); background: var(--ih-gray-50); font-weight: 600; }
 .table-responsive { overflow-x: auto; }
 .link-btn { border: 0; background: none; color: var(--ih-brand-700); padding: .25rem 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+/* Text for screen readers only (labels that sighted users get from layout). */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
