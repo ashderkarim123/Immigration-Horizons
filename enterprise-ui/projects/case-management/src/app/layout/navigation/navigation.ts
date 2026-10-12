@@ -38,6 +38,7 @@ export class Navigation {
     if (caps.includes('channels.view')) {
       items.push({ label: 'Messages', path: '/messages', icon: 'message-square' });
     }
+    if (caps.includes('mail.view')) items.push({ label: 'Mail', path: '/mail', icon: 'mail' });
     if (caps.includes('cases.view')) items.push({ label: 'Deadlines', path: '/deadlines', icon: 'clock' });
     if (caps.includes('calendar.view')) items.push({ label: 'Calendar', path: '/calendar', icon: 'calendar' });
     if (caps.includes('uscis_tracking.view')) items.push({ label: 'Tracking', path: '/tracking', icon: 'file-text' });

@@ -101,6 +101,8 @@ const MODELS = [
   require('../models/USCISStatusEvent'),
   // Phase 12 — manual calendar events (ADR-027). Staff-only writer; the portal only reads.
   require('../models/CaseCalendarEvent'),
+  // ADR-030 — links between shared-mailbox messages and cases. Staff-only writer.
+  require('../models/MailCaseLink'),
 ];
 
 const isDryRun = process.argv.includes('--dry-run');

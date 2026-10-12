@@ -18,13 +18,14 @@ import { EvidenceTabComponent } from './evidence-tab/evidence-tab.component';
 import { TasksTabComponent } from './tasks-tab/tasks-tab.component';
 import { TrackingTabComponent } from './tracking-tab/tracking-tab.component';
 import { CalendarTabComponent } from './calendar-tab/calendar-tab.component';
+import { MailTabComponent } from './mail-tab/mail-tab.component';
 import { DocumentsTabComponent } from './documents-tab/documents-tab.component';
 import { ChatTabComponent } from './chat-tab/chat-tab.component';
 import { FormsTabComponent } from './forms-tab/forms-tab.component';
 import { PetitionTabComponent } from './petition-tab/petition-tab.component';
 import { PacketTabComponent } from './packet-tab/packet-tab.component';
 
-const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 'chat', 'forms', 'petition', 'packet', 'tracking', 'calendar'] as const;
+const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 'chat', 'forms', 'petition', 'packet', 'tracking', 'calendar', 'mail'] as const;
 
 @Component({
   selector: 'ih-case-detail',
@@ -42,6 +43,7 @@ const TABS = ['overview', 'team', 'activity', 'tasks', 'evidence', 'documents', 
     TasksTabComponent,
     TrackingTabComponent,
     CalendarTabComponent,
+    MailTabComponent,
     DocumentsTabComponent,
     ChatTabComponent,
     FormsTabComponent,
@@ -60,7 +62,7 @@ export class CaseDetailComponent implements OnInit {
     { label: 'Overview', tabs: [{ key: 'overview', label: 'Overview' }] },
     { label: 'Client inputs', tabs: [{ key: 'documents', label: 'Documents' }, { key: 'evidence', label: 'Evidence' }, { key: 'forms', label: 'Smart forms' }] },
     { label: 'Case work', tabs: [{ key: 'tasks', label: 'Tasks' }, { key: 'petition', label: 'Petition' }, { key: 'packet', label: 'Filing packet' }, { key: 'tracking', label: 'Case Tracking' }, { key: 'calendar', label: 'Calendar' }] },
-    { label: 'Communication', tabs: [{ key: 'chat', label: 'Messages' }] },
+    { label: 'Communication', tabs: [{ key: 'chat', label: 'Messages' }, { key: 'mail', label: 'Emails' }] },
     { label: 'Management', tabs: [{ key: 'team', label: 'Team' }, { key: 'activity', label: 'Activity' }] },
   ];
   selectTab(tab: string) {

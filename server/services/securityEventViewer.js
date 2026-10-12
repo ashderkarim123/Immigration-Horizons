@@ -30,6 +30,8 @@ const SAFE_META_KEYS = {
   admin_staff_sessions_revoked: ADMIN_ACTION_KEYS,
   admin_content_mutated: ['resourceType', 'resourceId', 'action'],
   admin_settings_updated: ['group', 'keys'],
+  mail_sent: ['kind', 'recipientCount', 'linked'],
+  mail_case_linked: ['action', 'caseId'],
 };
 const DEFAULT_META_KEYS = ['reason', 'action'];
 const isPrimitive = (value) => ['string', 'number', 'boolean'].includes(typeof value);

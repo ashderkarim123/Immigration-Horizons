@@ -309,6 +309,10 @@
       <ih-calendar-tab [caseId]="caseId()" [initialEventId]="initialEventId()"></ih-calendar-tab>
     }
 
+    @if (activeTab() === 'mail') {
+      <ih-mail-tab [caseId]="caseId()"></ih-mail-tab>
+    }
+
     @if (activeTab() === 'documents') {
       <ih-documents-tab [caseId]="caseId()" [createOnLoad]="createAction() === 'request'"></ih-documents-tab>
     }

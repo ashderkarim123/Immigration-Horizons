@@ -31,6 +31,9 @@ const SECURITY_EVENT_TYPES = [
   'admin_staff_sessions_revoked',
   'admin_content_mutated',
   'admin_settings_updated',
+  // ADR-030: the shared mailbox. Metadata is counts and ids only — never an address, subject or body.
+  'mail_sent',
+  'mail_case_linked',
 ];
 
 const SECURITY_EVENT_RESULTS = ['success', 'failure', 'denied'];

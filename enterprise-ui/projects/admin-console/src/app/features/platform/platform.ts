@@ -171,6 +171,10 @@ export class IntegrationsComponent {
           { name: 'Email', ok: s.email.configured, state: configured(s.email.configured), detail: s.email.configured ? `Sending through ${s.email.transport === 'smtp' ? 'SMTP' : 'Resend'}` : 'Notifications are logged but not delivered' },
           { name: 'Google Sheets', ok: s.googleSheets.configured, state: configured(s.googleSheets.configured), detail: 'Service-account credentials for spreadsheet sync' },
           {
+            name: 'Outlook mailbox', ok: s.outlookMail.configured, state: configured(s.outlookMail.configured),
+            detail: s.outlookMail.configured ? 'Shared inbox in the Staff portal' : 'The Mail section in the Staff portal shows "not connected"',
+          },
+          {
             name: 'USCIS case status', ok: s.uscisCaseStatus.configured && s.uscisCaseStatus.enabled,
             state: !s.uscisCaseStatus.configured ? 'Not configured' : s.uscisCaseStatus.enabled ? 'Enabled' : 'Configured, switched off',
             detail: 'Automatic status checks for tracked filings',

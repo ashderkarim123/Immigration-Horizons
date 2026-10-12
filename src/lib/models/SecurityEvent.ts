@@ -38,6 +38,8 @@ export const SECURITY_EVENT_TYPES = [
   "admin_staff_sessions_revoked",
   "admin_content_mutated",
   "admin_settings_updated",
+  "mail_sent",
+  "mail_case_linked",
 ] as const;
 
 export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number];

@@ -281,6 +281,27 @@ async function main() {
       res.status(500).json({ error: String(error) });
     }
   });
+  // ADR-030: the shared mailbox against an in-memory fake Microsoft (never the network). One inbound message, created on demand.
+  const fakeGraph = require("../server/test/helpers/fakeGraph");
+  fakeGraph.useConfig();
+  const mailbox = fakeGraph.install();
+  let mailFixture = null;
+  app.post("/__browser_mail_fixture", (_req, res) => {
+    if (!mailFixture) {
+      const message = mailbox.add("inbox", {
+        subject: "Question about my EB-2 petition",
+        from: { name: "Alex Applicant", address: "alex@example.com" },
+        body: { contentType: "html", content: "<p>Hello team, when is the filing date?</p><script>window.__mailPwned = 1</script>" },
+        attachments: [{ id: "att-1", name: "passport.pdf", contentType: "application/pdf", bytes: Buffer.from("%PDF-1.4 synthetic") }],
+        hasAttachments: true,
+      });
+      mailFixture = { id: message.id, subject: message.subject };
+    }
+    res.json(mailFixture);
+  });
+  app.get("/__browser_mail_state", (_req, res) =>
+    res.json({ sent: mailbox.sent().map((m) => ({ subject: m.subject, body: m.body.content })), unread: [...mailbox.state.messages.values()].filter((m) => m.folder === "inbox" && !m.isRead).length }),
+  );
   app.post("/__browser_shutdown", (_req, res) => {
     res.json({ stopped: true });
     setImmediate(shutdown);

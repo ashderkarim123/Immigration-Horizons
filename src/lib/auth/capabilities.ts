@@ -555,6 +555,18 @@ export const CAPABILITIES: Record<string, string[]> = {
     "pm",
     "uscis_forms_specialist"
   ],
+  "mail.view": [
+    "super_admin",
+    "admin",
+    "operations_admin",
+    "pm"
+  ],
+  "mail.send": [
+    "super_admin",
+    "admin",
+    "operations_admin",
+    "pm"
+  ],
   "calendar.view": [
     "super_admin",
     "admin",

@@ -273,6 +273,11 @@ const CAPABILITIES = {
   'uscis_tracking.manage': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
   'uscis_tracking.sync': ['super_admin', 'admin', 'operations_admin', 'pm', 'uscis_forms_specialist'],
 
+  // Shared Outlook mailbox (ADR-030). Reading and sending are separate rights; linking a message to a case also needs the
+  // employee's own access to that case. Specialists and reviewers have no mailbox access by default.
+  'mail.view': ['super_admin', 'admin', 'operations_admin', 'pm'],
+  'mail.send': ['super_admin', 'admin', 'operations_admin', 'pm'],
+
   // Phase 12 — unified calendar (ADR-027). calendar.view is never a bypass: every source still needs its own
   // capability (cases.view, documents.view, queries.view, uscis_tracking.view) plus case row access.
   'calendar.view': ['super_admin', 'admin', 'operations_admin', 'pm', 'petition_writer', 'business_plan_specialist', 'recommendation_letter_specialist', 'uscis_forms_specialist', 'evidence_collector', 'reviewer'],
