@@ -18,6 +18,7 @@ const {
   createInitialConsultationInteraction,
 } = require("../../../../services/interactionService");
 const { memberCaseIds } = require("../../../../services/casePolicy");
+const { addClientNames } = require("../../../../services/caseRef");
 const { leadScope } = require("../../../../services/leadPolicy");
 const {
   taskActionContext,
@@ -422,6 +423,8 @@ router.get(
       Sprint.find().sort({ startDate: -1 }).limit(100).lean(),
       populated(Task.find(filter).sort({ dueDate: 1 }).limit(500)).lean(),
     ]);
+    const taskDtos = tasks.map((task) => ({ ...serializeTask(task, taskAccess(req, task, ctx)), sprintId: task.sprint || null }));
+    await addClientNames(taskDtos.map((t) => t.case));
     respond(req, res, {
       sprints: sprints.map((s) => ({
         id: s._id,
@@ -431,10 +434,7 @@ router.get(
         endDate: s.endDate,
         status: s.status,
       })),
-      tasks: tasks.map((task) => ({
-        ...serializeTask(task, taskAccess(req, task, ctx)),
-        sprintId: task.sprint || null,
-      })),
+      tasks: taskDtos,
       canManage: can(req, "sprints.manage"),
     });
   }),

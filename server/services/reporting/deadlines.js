@@ -83,12 +83,13 @@ function exportTable(all) {
       { key: 'date', label: 'Date' },
       { key: 'kindLabel', label: 'Type' },
       { key: 'title', label: 'Title' },
+      { key: 'clientName', label: 'Client' },
       { key: 'caseNumber', label: 'Case number' },
       { key: 'caseTitle', label: 'Case title' },
       { key: 'status', label: 'Status' },
       { key: 'person', label: 'Assignee' },
     ],
-    rows: all.map((r) => ({ date: r.date, kindLabel: r.kindLabel, title: r.title, caseNumber: r.case.caseNumber, caseTitle: r.case.title, status: r.status, person: r.person || '' })),
+    rows: all.map((r) => ({ date: r.date, kindLabel: r.kindLabel, title: r.title, clientName: r.case.clientName || '', caseNumber: r.case.caseNumber, caseTitle: r.case.title, status: r.status, person: r.person || '' })),
   };
 }
 

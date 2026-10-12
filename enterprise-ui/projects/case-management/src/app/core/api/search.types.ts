@@ -13,7 +13,7 @@ export interface SearchResult {
   title: string;
   subtitle: string | null;
   statusLabel: string | null;
-  case: { id: string; caseNumber: string; title: string } | null;
+  case: { id: string; caseNumber: string; title: string; clientName?: string; caseType?: string | null } | null;
   context: string[];
   updatedAt: string | null;
   /** A server-owned in-app path such as /cases/:id?tab=tasks. */

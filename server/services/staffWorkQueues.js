@@ -8,6 +8,7 @@ const CasePetition = require('../models/CasePetition');
 const FilingPacket = require('../models/FilingPacket');
 const { accessibleCaseIdFilter } = require('./casePolicy');
 const { can } = require('../utils/permissions');
+const { clientDisplayName } = require('./caseRef');
 
 // A queue's capability and filters live next to its destination. The UI never
 // guesses work access from role names, and every destination rechecks policy.
@@ -43,7 +44,7 @@ function definitions(req) {
 async function loadWorkQueues(req, { caseId = null } = {}) {
   if (!can(req, 'cases.view')) return [];
   const restriction = await accessibleCaseIdFilter(req);
-  const cases = await ClientCase.find({ $and: [restriction || {}, caseId ? { _id: caseId } : { archivedAt: null }] }).select('title caseNumber').lean();
+  const cases = await ClientCase.find({ $and: [restriction || {}, caseId ? { _id: caseId } : { archivedAt: null }] }).select('title caseNumber caseType primaryClient').populate('primaryClient', 'firstName lastName email').lean();
   const byId = new Map(cases.map(c => [String(c._id), c]));
   return Promise.all(definitions(req).map(async definition => {
     const rows = await definition.model.aggregate([
@@ -54,7 +55,7 @@ async function loadWorkQueues(req, { caseId = null } = {}) {
     return {
       key: definition.key, label: definition.label, tab: definition.tab,
       count: rows.reduce((sum, row) => sum + row.count, 0),
-      items: rows.map(row => ({ caseId: String(row._id), title: byId.get(String(row._id)).title, caseNumber: byId.get(String(row._id)).caseNumber, count: row.count })),
+      items: rows.map(row => ({ caseId: String(row._id), title: byId.get(String(row._id)).title, caseNumber: byId.get(String(row._id)).caseNumber, clientName: clientDisplayName(byId.get(String(row._id)).primaryClient), caseType: byId.get(String(row._id)).caseType, count: row.count })),
     };
   }));
 }

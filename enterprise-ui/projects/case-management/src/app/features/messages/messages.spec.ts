@@ -110,7 +110,7 @@ describe('Navigation', () => {
     expect(fixture.componentInstance.navItems().map((i) => i.label)).not.toContain('Messages');
 
     auth.capabilities.set(['cases.view', 'channels.view']);
-    expect(fixture.componentInstance.navItems().map((i) => i.label)).toEqual(['Dashboard', 'Cases', 'Tasks', 'Messages', 'Deadlines']);
+    expect(fixture.componentInstance.navItems().map((i) => i.label)).toEqual(['Dashboard', 'Tasks', 'Notifications', 'Cases', 'Deadlines', 'Messages']);
   });
 });
 

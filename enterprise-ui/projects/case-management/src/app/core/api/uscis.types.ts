@@ -104,7 +104,7 @@ export interface UscisCaseList {
 
 /** A row of the cross-case queue: the filing plus where it lives. */
 export interface UscisQueueRow extends UscisFiling {
-  case: { id: string; caseNumber: string; title: string } | null;
+  case: { id: string; caseNumber: string; title: string; clientName?: string; caseType?: string | null } | null;
   client: { displayName: string } | null;
   projectManager: { name: string } | null;
 }

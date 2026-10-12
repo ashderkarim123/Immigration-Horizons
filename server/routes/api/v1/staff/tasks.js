@@ -16,6 +16,7 @@ const { taskActionContext, taskAccess, serializeTask, loadTaskDto, populated } =
 const { memberCaseIds } = require('../../../../services/casePolicy');
 const { can } = require('../../../../utils/permissions');
 const { createApiError } = require('../../../../middleware/api/apiError');
+const { addClientNames } = require('../../../../services/caseRef');
 const { loadCaseAndWorkspace } = require('../../../../services/caseManagement');
 
 const notFound = () => createApiError(404, 'not_found', 'Task not found.');
@@ -54,6 +55,11 @@ router.get('/', staffAuthMiddleware, route(async (req, res, next) => {
   if (req.query.due === 'overdue') {
     query.dueDate = { $ne: null, $lt: new Date() };
     query.status = { $ne: 'completed' };
+  } else if (req.query.due === 'today') {
+    // The same UTC day the dashboard's "due today" card counts, so the card and the list agree.
+    const start = new Date(); start.setUTCHours(0, 0, 0, 0);
+    query.dueDate = { $gte: start, $lt: new Date(start.getTime() + 86400000) };
+    query.status = { $ne: 'completed' };
   } else if (req.query.due === 'upcoming') {
     query.dueDate = { $ne: null, $gte: new Date() };
     query.status = { $ne: 'completed' };
@@ -74,9 +80,12 @@ router.get('/', staffAuthMiddleware, route(async (req, res, next) => {
     Task.countDocuments(query),
   ]);
 
+  const dtos = items.map((t) => serializeTask(t, taskAccess(req, t, ctx)));
+  await addClientNames(dtos.map((t) => t.case));
+
   res.json({
     data: {
-      items: items.map((t) => serializeTask(t, taskAccess(req, t, ctx))),
+      items: dtos,
       total,
       page,
       totalPages: Math.ceil(total / limit),

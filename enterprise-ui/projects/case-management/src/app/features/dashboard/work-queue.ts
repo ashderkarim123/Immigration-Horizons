@@ -7,9 +7,9 @@ import { WorkQueue } from '../../core/api/dashboard.types';
 @Component({ selector: 'ih-work-queue', standalone: true, imports: [RouterLink],
   template: `<a routerLink="/dashboard">← Dashboard</a>
     @if (queue(); as q) { <h1>{{ q.label }}</h1><p>{{ q.count }} items across {{ q.items.length }} cases you can access.</p>
-      <ul class="queue-list">@for (item of q.items; track item.caseId) { <li><a [routerLink]="['/cases', item.caseId]" [queryParams]="{ tab: q.tab }">{{ item.title }} · {{ item.caseNumber }} <strong>{{ item.count }} items</strong></a></li> } @empty { <li>No work currently needs attention in this queue.</li> }</ul>
+      <ul class="queue-list">@for (item of q.items; track item.caseId) { <li><a [routerLink]="['/cases', item.caseId]" [queryParams]="{ tab: q.tab }"><span><strong>{{ item.clientName || item.title }}</strong><span class="ref">{{ item.clientName ? item.title + ' · ' : '' }}Ref {{ item.caseNumber }}</span></span> <strong>{{ item.count }} {{ item.count === 1 ? 'item' : 'items' }}</strong></a></li> } @empty { <li>No work currently needs attention in this queue.</li> }</ul>
     } @else if (error()) { <p role="alert">{{ error() }}</p><button type="button" (click)="load()">Retry</button> } @else { <p role="status">Loading work queue…</p> }`,
-  styles: [`.queue-list { list-style: none; padding: 0; } li { margin: .75rem 0; } li a { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; padding: 1rem; border: 1px solid var(--ih-border-light); border-radius: .5rem; background: var(--ih-bg-primary); }`],
+  styles: [`.queue-list { list-style: none; padding: 0; } li { margin: .75rem 0; } li a { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; padding: 1rem; border: 1px solid var(--ih-border-light); border-radius: .5rem; background: var(--ih-bg-primary); } .ref { display: block; font-size: .8125rem; color: var(--ih-text-secondary); }`],
 })
 export class WorkQueuePage implements OnInit {
   private api = inject(ApiService); private route = inject(ActivatedRoute);

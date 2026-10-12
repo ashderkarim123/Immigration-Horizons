@@ -77,7 +77,7 @@ test('list: newest first, paged by hasMore, one token for many calls, and only t
   const first = (await agent.get(`${API}/messages`).query({ limit: 2 })).body.data;
   assert.deepEqual(first.items.map((i) => i.subject), ['Message 5', 'Message 4']);
   assert.deepEqual([first.page, first.limit, first.hasMore, first.folder], [1, 2, true, 'inbox']);
-  assert.deepEqual(Object.keys(first.items[0]).sort(), ['from', 'hasAttachments', 'id', 'important', 'isRead', 'linkCount', 'preview', 'receivedAt', 'sentAt', 'subject', 'to']);
+  assert.deepEqual(Object.keys(first.items[0]).sort(), ['contact', 'from', 'hasAttachments', 'id', 'important', 'isRead', 'kind', 'linkCount', 'preview', 'receivedAt', 'sentAt', 'subject', 'to']);
   const last = (await agent.get(`${API}/messages`).query({ limit: 2, page: 3 })).body.data;
   assert.deepEqual([last.items.map((i) => i.subject), last.hasMore], [['Message 1'], false]);
   assert.deepEqual((await agent.get(`${API}/messages`).query({ folder: 'sent' })).body.data.items.map((i) => i.subject), ['Sent one']);

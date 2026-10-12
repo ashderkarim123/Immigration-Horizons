@@ -11,6 +11,7 @@
 const Task = require('../models/admin/Task');
 const { memberCaseIds } = require('./casePolicy');
 const { can } = require('../utils/permissions');
+const { addClientNames } = require('./caseRef');
 
 const id = (v) => (v ? String(v._id || v) : '');
 
@@ -57,7 +58,9 @@ const populated = (query) =>
 async function loadTaskDto(req, taskId, ctx) {
   const task = await populated(Task.findById(taskId)).lean();
   if (!task) return null;
-  return serializeTask(task, taskAccess(req, task, ctx || (await taskActionContext(req))));
+  const dto = serializeTask(task, taskAccess(req, task, ctx || (await taskActionContext(req))));
+  await addClientNames([dto.case]);
+  return dto;
 }
 
 /**

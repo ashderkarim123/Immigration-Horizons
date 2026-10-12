@@ -4,14 +4,16 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ActivatedRoute, ParamMap, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
-import { MailCaseLink, MailListItem, MailMessage, MailStatus } from '../../core/api/mail.types';
+import { signal } from '@angular/core';
+import { MailUnreadService } from '../../core/api/mail-unread.service';
+import { MailCaseLink, MailContact, MailListItem, MailMessage, MailStatus } from '../../core/api/mail.types';
 import { MailComponent } from './mail.component';
 import { parseAddresses } from './mail-compose.component';
 
 const meta = { requestId: 'r' };
 const BASE = '/api/v1/staff/mail';
 const item = (over: Partial<MailListItem> = {}): MailListItem => ({
-  id: 'AAMk-1=', subject: 'Question about my petition', from: { name: 'Alex Applicant', address: 'alex@example.com' }, to: [{ name: '', address: 'info@immigrationhorizons.com' }],
+  id: 'AAMk-1=', kind: 'mail', contact: null, subject: 'Question about my petition', from: { name: 'Alex Applicant', address: 'alex@example.com' }, to: [{ name: '', address: 'info@immigrationhorizons.com' }],
   receivedAt: '2026-10-01T12:00:00.000Z', sentAt: null, isRead: false, hasAttachments: false, important: false, preview: 'Hello, I have a question', linkCount: 0, ...over,
 });
 const message = (over: Partial<MailMessage> = {}): MailMessage => ({
@@ -25,6 +27,7 @@ describe('MailComponent', () => {
   let fixture: ComponentFixture<MailComponent>;
   let params: BehaviorSubject<ParamMap>;
   let navigate: ReturnType<typeof vi.spyOn>;
+  const unread = { refresh: vi.fn(), count: signal(0), start: vi.fn(), stop: vi.fn() };
   const el = () => fixture.nativeElement as HTMLElement;
   const text = () => (el().textContent ?? '').replace(/\s+/g, ' ');
   const settle = async () => { fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); };
@@ -39,7 +42,7 @@ describe('MailComponent', () => {
 
   async function mount(query: Record<string, string> = {}, s: MailStatus = status(), list: MailListItem[] = [item()]) {
     params = new BehaviorSubject(convertToParamMap(query));
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: ActivatedRoute, useValue: { queryParamMap: params } }] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: MailUnreadService, useValue: unread }, { provide: ActivatedRoute, useValue: { queryParamMap: params } }] });
     http = TestBed.inject(HttpTestingController);
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(MailComponent);
@@ -79,6 +82,7 @@ describe('MailComponent', () => {
     expect(mark.request.body).toEqual({ isRead: true });
     expect(el().querySelector('.row.unread')).toBeNull();
     expect(button('Mark as unread')).toBeTruthy();
+    expect(unread.refresh).toHaveBeenCalled(); // the number beside Mail follows
   });
 
   it('never runs markup that slips through: a script or handler in the body is inert in the page', async () => {
@@ -222,5 +226,61 @@ describe('parseAddresses', () => {
   it('splits on commas, semicolons and spaces and drops blanks', () => {
     expect(parseAddresses(' a@b.co, c@d.co;; e@f.co  ')).toEqual(['a@b.co', 'c@d.co', 'e@f.co']);
     expect(parseAddresses('')).toEqual([]);
+  });
+});
+
+describe('MailComponent correspondents', () => {
+  const contact = (over: Partial<MailContact> = {}): MailContact => ({ name: 'Alex Applicant', address: 'alex@example.com', client: null, lead: null, ...over });
+  const lead = { id: 'L1', name: 'Alex Applicant', status: 'new', service: 'EB-2 NIW', canConvert: true };
+  let http: HttpTestingController;
+  let fixture: ComponentFixture<MailComponent>;
+  const el = () => fixture.nativeElement as HTMLElement;
+  const settle = async () => { fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); };
+
+  async function open(listItem: MailListItem, detail: MailMessage, s: MailStatus = status()) {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), { provide: MailUnreadService, useValue: { refresh: vi.fn(), count: signal(0), start: vi.fn(), stop: vi.fn() } }, { provide: ActivatedRoute, useValue: { queryParamMap: new BehaviorSubject(convertToParamMap({ message: listItem.id })) } }] });
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(MailComponent);
+    fixture.detectChanges();
+    http.expectOne((r) => r.url === `${BASE}/status`).flush({ data: s, meta });
+    await settle();
+    http.expectOne((r) => r.url === `${BASE}/messages`).flush({ data: { items: [listItem], page: 1, limit: 20, hasMore: false, folder: 'inbox' }, meta });
+    http.expectOne((r) => r.url.startsWith(`${BASE}/messages/`)).flush({ data: detail, meta });
+    await settle();
+  }
+  afterEach(() => http.verify());
+
+  it('a client who writes in: the list is tagged, and the panel links to the client, the enquiry, and a new message to them', async () => {
+    const c = contact({ client: { id: 'C1', name: 'Alex Applicant' }, lead });
+    await open(item({ isRead: true, contact: c }), message({ isRead: true, contact: c }));
+    expect(el().querySelector('.row .flag.client')?.textContent).toBe('Client');
+    const panel = el().querySelector('.contact')!;
+    expect(panel.textContent).toContain('Alex Applicant');
+    expect(panel.textContent).toContain('alex@example.com');
+    expect(panel.querySelector('a[href="/clients/C1"]')?.textContent).toBe('Open client');
+    expect(panel.querySelector('a[href="/intake/L1"]')?.textContent).toBe('Open consultation');
+    const convert = panel.querySelector('a[href^="/cases/new"]')!;
+    expect(convert.getAttribute('href')).toBe('/cases/new?consultationId=L1');
+    expect(convert.textContent).toBe('Create case from inquiry');
+    (Array.from(panel.querySelectorAll('button')).find((b) => b.textContent?.includes('New message to Alex Applicant')) as HTMLButtonElement).click();
+    await settle();
+    expect((el().querySelector('#mail-to') as HTMLInputElement).value).toBe('alex@example.com');
+  });
+
+  it('a website enquiry is named as one and points at the saved consultation; one that cannot be converted offers no conversion', async () => {
+    const c = contact({ lead: { ...lead, canConvert: false } });
+    await open(item({ isRead: true, kind: 'consultation', contact: c }), message({ isRead: true, kind: 'consultation', contact: c }));
+    expect(el().querySelector('.row .flag.lead')?.textContent).toBe('Consultation request');
+    expect(el().querySelector('.contact')?.textContent).toContain('Website consultation request');
+    expect(el().querySelector('.contact a[href="/intake/L1"]')).toBeTruthy();
+    expect(el().querySelector('.contact a[href^="/cases/new"]')).toBeNull();
+  });
+
+  it('someone we do not know is said to be unknown, and a reader who cannot send gets no "new message" button', async () => {
+    await open(item({ isRead: true, contact: contact() }), message({ isRead: true, contact: contact() }), status({ canSend: false }));
+    const panel = el().querySelector('.contact')!;
+    expect(panel.textContent).toContain('Not in your clients or consultations.');
+    expect(panel.querySelector('button')).toBeNull();
+    expect(panel.querySelector('a')).toBeNull();
   });
 });

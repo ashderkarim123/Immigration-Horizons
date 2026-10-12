@@ -77,7 +77,7 @@ describe('SearchPageComponent', () => {
     expect(links).toEqual(['/cases/c1', '/cases/c1?tab=tasks']);
     expect(text()).toContain('Show all cases results');
     expect(text()).toContain('Task');
-    expect(text()).toContain('Case IH-2026-ALPHA1');
+    expect(text()).toContain('Ref IH-2026-ALPHA1');
   });
 
   it('only the sources the server offers appear as filters, and a source can be chosen from the list', () => {

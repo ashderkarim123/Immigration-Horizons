@@ -2,8 +2,19 @@
 export interface MailPerson { name: string; address: string }
 export type MailFolder = 'inbox' | 'sent';
 
+/** Who the other party is in our records. Each match is present only if this employee may already see that record. */
+export interface MailContact {
+  name: string;
+  address: string;
+  client: { id: string; name: string } | null;
+  lead: { id: string; name: string; status: string; service: string; canConvert: boolean } | null;
+}
+
 export interface MailListItem {
   id: string;
+  /** 'consultation' and 'contact' are the website's own enquiry emails; the contact is then the visitor. */
+  kind: 'mail' | 'consultation' | 'contact';
+  contact: MailContact | null;
   subject: string;
   from: MailPerson;
   to: MailPerson[];

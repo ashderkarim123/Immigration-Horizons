@@ -65,10 +65,17 @@ paths:
           description: Validation error
   /staff/dashboard:
     get:
-      summary: Get dashboard metrics
+      summary: The signed-in employee's home page data, client first
+      description: >
+        Counts and rows limited to what this employee may see (their assigned cases, or every case with cases.view_all; `scope`
+        says which). `clientCases` lists the most recently active cases by client: client name, service, stage, manager, the next
+        open task and what is pending; the case number is a reference. `myTasks` are full task objects with `case.clientName` and
+        the server's own `actions`. `recentActivity` is the case timeline for the same cases, without housekeeping events.
+        `casesAwaitingClientDocuments` / `casesAwaitingReview` are null when the employee has none of the queues behind them.
+        Wherever a Staff response refers to a case ({ id, caseNumber, title }) it also carries `clientName` and `caseType`.
       responses:
         '200':
-          description: Metrics data
+          description: "{ data: { scope, workspaceLabel, activeClients, myCases, tasksDueToday, myOpenTasks, myOverdueTasks, newAssignedCases, casesAwaitingClientDocuments, casesAwaitingReview, upcomingDeadlines, clientCases, myTasks, recentActivity, workQueues, employeeWorkload, ... } }"
   /staff/cases:
     get:
       summary: List cases with search and stage filters
@@ -2873,11 +2880,32 @@ paths:
       responses:
         '200': { description: "{ data: { configured, mailbox, canSend } } — mailbox is null when not configured" }
         '403': { description: "forbidden — no mail.view" }
+  /staff/mail/unread:
+    get:
+      tags: [Staff mail]
+      summary: Number of unread messages in the inbox, for the menu badge (mail.view)
+      responses:
+        '200': { description: "{ data: { unread } }" }
+        '403': { description: "forbidden — no mail.view" }
+        '503': { description: "mail_not_configured, or mail_busy" }
+  /staff/clients/{id}/mail:
+    get:
+      tags: [Staff mail]
+      summary: Emails to and from one client, newest first (mail.view and clients.view)
+      description: Searches the shared mailbox for the client's own address only. 404 for an unknown, malformed or disabled client. 120 requests per minute per employee.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: "{ data: { address, items } } — items as in the message list" }
+        '403': { description: "forbidden" }
+        '404': { description: "not_found" }
+        '503': { description: "mail_not_configured, or mail_busy" }
   /staff/mail/messages:
     get:
       tags: [Staff mail]
       summary: List the inbox or sent items, newest first (mail.view)
-      description: Paged by hasMore. 120 requests per minute per employee. Each item carries linkCount, never the case names.
+      description: >
+        Paged by hasMore. 120 requests per minute per employee. Each item carries linkCount, never the case names, plus kind (mail, consultation or contact — the
+        last two are website enquiries) and contact: the correspondent with the client and/or consultation enquiry they match, limited to what this employee may see.
       parameters:
         - { name: folder, in: query, schema: { type: string, enum: [inbox, sent], default: inbox } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 1 } }

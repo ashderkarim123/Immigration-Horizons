@@ -16,8 +16,8 @@ const ACTIONS: Record<string, { label: string; capability: string; tab: string }
 @Component({ selector: 'ih-create-work', standalone: true, imports: [RouterLink, FormsModule],
   template: `<h1>{{ action?.label || 'Create work' }}</h1><p>Choose the case where this work belongs.</p>
     @if (error()) { <p role="alert">{{ error() }}</p> } @else {
-      <form (ngSubmit)="load()"><label>Find a case <input name="search" [(ngModel)]="search" placeholder="Case title or number" /></label> <button type="submit">Search</button></form>
-      <ul>@for (c of cases(); track c.id) { <li><a [routerLink]="['/cases', c.id]" [queryParams]="{ tab: action?.tab, action: kind }">{{ c.title }} · {{ c.caseNumber }} → {{ action?.label }}</a></li> } @empty { <li>{{ loading() ? 'Loading cases…' : 'No accessible cases match. Try another search.' }}</li> }</ul>
+      <form (ngSubmit)="load()"><label>Find a case <input name="search" [(ngModel)]="search" placeholder="Client name, case title or number" /></label> <button type="submit">Search</button></form>
+      <ul>@for (c of cases(); track c.id) { <li><a [routerLink]="['/cases', c.id]" [queryParams]="{ tab: action?.tab, action: kind }">{{ c.primaryClient?.displayName || c.title }} · {{ c.title }} (Ref {{ c.caseNumber }}) → {{ action?.label }}</a></li> } @empty { <li>{{ loading() ? 'Loading cases…' : 'No accessible cases match. Try another search.' }}</li> }</ul>
     }`,
   styles: [`li { margin: 1rem 0; } input { padding: .6rem; border: 1px solid var(--ih-border-medium); border-radius: .3rem; }`],
 })

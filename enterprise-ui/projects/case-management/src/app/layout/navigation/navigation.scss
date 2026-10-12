@@ -60,3 +60,30 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.nav-badge {
+  margin-left: auto;
+  min-width: 1.35rem;
+  padding: 0 .4rem;
+  border-radius: 999px;
+  background: var(--ih-accent-500);
+  color: var(--ih-brand-900);
+  font-size: .6875rem;
+  font-weight: 700;
+  line-height: 1.35rem;
+  text-align: center;
+}
+
+.nav-group + .nav-group {
+  margin-top: var(--ih-space-4);
+}
+
+.nav-heading {
+  margin: 0 0 var(--ih-space-1);
+  padding: 0 var(--ih-space-3);
+  color: var(--ih-gray-400);
+  font-size: .6875rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}

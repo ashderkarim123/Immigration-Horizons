@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { MailApi } from '../../core/api/mail-api.service';
+import { MailUnreadService } from '../../core/api/mail-unread.service';
 import { MailAttachment, MailFolder, MailListItem, MailMessage, MailStatus } from '../../core/api/mail.types';
 import { EmptyStateComponent } from '../../shared/empty-state.component';
 import { ErrorStateComponent } from '../../shared/error-state.component';
@@ -64,6 +65,8 @@ const FOLDERS: { key: MailFolder; label: string }[] = [{ key: 'inbox', label: 'I
                     <span class="subject">{{ m.subject || '(no subject)' }}@if (!m.isRead) { <span class="sr-only"> (unread)</span> }</span>
                     <span class="preview">{{ m.preview }}</span>
                     <span class="flags">
+                      @if (m.kind === 'consultation') { <span class="flag lead">Consultation request</span> } @else if (m.kind === 'contact') { <span class="flag lead">Contact message</span> }
+                      @if (m.contact?.client) { <span class="flag client">Client</span> }
                       @if (m.hasAttachments) { <span class="flag">Attachment</span> }
                       @if (m.linkCount) { <span class="flag linked">Linked to {{ m.linkCount }} {{ m.linkCount === 1 ? 'case' : 'cases' }}</span> }
                     </span>
@@ -109,6 +112,25 @@ const FOLDERS: { key: MailFolder; label: string }[] = [{ key: 'inbox', label: 'I
                 </div>
               </header>
 
+              @if (m.contact; as c) {
+                <section class="contact card" aria-label="About this correspondent">
+                  <div>
+                    <strong>{{ c.client?.name || c.lead?.name || c.name || c.address }}</strong>
+                    <span class="muted"> &lt;{{ c.address }}&gt;</span>
+                    @if (m.kind !== 'mail') { <span class="flag lead">{{ m.kind === 'consultation' ? 'Website consultation request' : 'Website contact message' }}</span> }
+                    @if (c.client) { <span class="flag client">Client</span> }
+                    @if (c.lead) { <span class="flag lead">Enquiry: {{ c.lead.service || 'consultation' }}</span> }
+                  </div>
+                  <div class="actions">
+                    @if (c.client) { <a class="btn btn-sm" [routerLink]="['/clients', c.client.id]">Open client</a> }
+                    @if (c.lead) { <a class="btn btn-sm" [routerLink]="['/intake', c.lead.id]">Open consultation</a> }
+                    @if (c.lead?.canConvert) { <a class="btn btn-sm btn-primary" routerLink="/cases/new" [queryParams]="{ consultationId: c.lead!.id }">Create case from inquiry</a> }
+                    @if (status()!.canSend) { <button type="button" class="btn btn-sm" (click)="startCompose(null, false, c.address)">New message to {{ c.client?.name || c.name || c.address }}</button> }
+                    @if (!c.client && !c.lead) { <span class="muted">Not in your clients or consultations.</span> }
+                  </div>
+                </section>
+              }
+
               @if (linking()) {
                 <div class="link-box card">
                   <ih-case-picker label="Case" (picked)="linkTarget.set($event?.id ?? '')" />
@@ -151,7 +173,7 @@ const FOLDERS: { key: MailFolder; label: string }[] = [{ key: 'inbox', label: 'I
       </div>
     }
 
-    <ih-mail-compose [open]="composing()" [replyTo]="replyTo()" [startAll]="replyAll()" (sent)="onSent($event)" (closed)="composing.set(false)" />
+    <ih-mail-compose [open]="composing()" [replyTo]="replyTo()" [startAll]="replyAll()" [prefillTo]="composeTo()" (sent)="onSent($event)" (closed)="composing.set(false)" />
   `,
   styles: `
     .page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; }
@@ -180,6 +202,10 @@ const FOLDERS: { key: MailFolder; label: string }[] = [{ key: 'inbox', label: 'I
     .preview { font-size: var(--ih-font-size-xs); color: var(--ih-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .flags { display: flex; gap: .4rem; flex-wrap: wrap; }
     .flag { font-size: .6875rem; padding: .05rem .45rem; border-radius: 999px; background: var(--ih-gray-100); color: var(--ih-gray-700); }
+    .flag.lead { background: #e0f2fe; color: #075985; }
+    .flag.client { background: #dcfce7; color: #166534; }
+    .contact { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .6rem; padding: .7rem .9rem; margin-bottom: 1rem; }
+    .contact .actions { margin: 0; }
     .flag.linked { background: var(--ih-accent-100); color: var(--ih-accent-700); }
     .pager { display: flex; align-items: center; justify-content: center; gap: .75rem; padding: .6rem; }
     .head h2 { font-size: var(--ih-font-size-xl); margin: 0 0 .5rem; overflow-wrap: anywhere; }
@@ -232,6 +258,8 @@ export class MailComponent implements OnInit {
   protected readonly composing = signal(false);
   protected readonly replyTo = signal<MailMessage | null>(null);
   protected readonly replyAll = signal(false);
+  protected readonly composeTo = signal('');
+  private readonly unread = inject(MailUnreadService);
   protected readonly linking = signal(false);
   protected readonly linkTarget = signal('');
   protected readonly busy = signal(false);
@@ -297,14 +325,16 @@ export class MailComponent implements OnInit {
       next: () => {
         this.message.update((current) => (current && current.id === message.id ? { ...current, isRead } : current));
         this.items.update((list) => list.map((item) => (item.id === message.id ? { ...item, isRead } : item)));
+        this.unread.refresh(); // keep the number beside Mail in step
       },
       error: () => undefined, // reading must not fail because the unread marker could not be changed
     });
   }
   protected toggleRead(message: MailMessage): void { this.markRead(message, !message.isRead); }
 
-  protected startCompose(reply: MailMessage | null, all: boolean): void {
+  protected startCompose(reply: MailMessage | null, all: boolean, to = ''): void {
     this.replyTo.set(reply);
+    this.composeTo.set(to);
     this.replyAll.set(all);
     this.composing.set(true);
   }

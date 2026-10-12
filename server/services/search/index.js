@@ -9,6 +9,7 @@
  * durations and counts.
  */
 const ClientCase = require('../../models/ClientCase');
+const { clientDisplayName } = require('../caseRef');
 const { can } = require('../../utils/permissions');
 const { parseQuery, rankedSearch, matchOf } = require('./engine');
 const { SOURCES, SOURCE_TYPES, asId } = require('./sources');
@@ -99,8 +100,8 @@ async function caseLabels(groups) {
     if (id) ids.add(id);
   }
   if (!ids.size) return new Map();
-  const cases = await ClientCase.find({ _id: { $in: [...ids] } }).select('caseNumber title').lean();
-  return new Map(cases.map((c) => [String(c._id), { id: String(c._id), caseNumber: c.caseNumber, title: c.title }]));
+  const cases = await ClientCase.find({ _id: { $in: [...ids] } }).select('caseNumber title caseType primaryClient').populate('primaryClient', 'firstName lastName email').lean();
+  return new Map(cases.map((c) => [String(c._id), { id: String(c._id), caseNumber: c.caseNumber, title: c.title, clientName: clientDisplayName(c.primaryClient), caseType: c.caseType }]));
 }
 
 function toResult(type, row, q, cases) {

@@ -302,7 +302,7 @@ test('clients list/detail: search param, flat pagination, displayName, cases[].i
 // A8 — dashboard
 // ---------------------------------------------------------------------------
 
-test('GET /staff/dashboard: recentCases and myTasks are serialized with id, not raw documents', async () => {
+test('GET /staff/dashboard: clientCases and myTasks are serialized with id, not raw documents', async () => {
   const { caseDoc } = await seedCase();
   const { agent, user } = await staffAgent('super_admin');
   const Task = require('../../models/admin/Task');
@@ -310,7 +310,7 @@ test('GET /staff/dashboard: recentCases and myTasks are serialized with id, not 
 
   const res = await agent.get('/api/v1/staff/dashboard');
   assert.equal(res.status, 200);
-  const { recentCases, myTasks } = res.body.data;
+  const { clientCases: recentCases, myTasks } = res.body.data;
   assert.equal(recentCases[0].id, String(caseDoc._id));
   assert.equal(recentCases[0]._id, undefined);
   assert.equal(recentCases[0].__v, undefined);

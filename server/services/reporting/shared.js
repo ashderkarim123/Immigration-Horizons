@@ -3,6 +3,7 @@ const AdminUser = require('../../models/admin/User');
 const ClientCase = require('../../models/ClientCase');
 const T = require('../../utils/calendarTime');
 const { can } = require('../../utils/permissions');
+const { clientDisplayName } = require('../caseRef');
 
 /** Names for a set of employee ids in one query; a missing account is labelled, never dropped. */
 async function employeeNames(ids) {
@@ -12,12 +13,12 @@ async function employeeNames(ids) {
   return new Map(users.map((u) => [String(u._id), u.name || 'Unnamed employee']));
 }
 
-/** Case number/title for a set of case ids in one query. */
+/** Case number/title and the client's name for a set of case ids in one query. */
 async function caseLabels(ids) {
   const unique = [...new Set(ids.filter(Boolean).map(String))];
   if (!unique.length) return new Map();
-  const cases = await ClientCase.find({ _id: { $in: unique } }).select('caseNumber title').lean();
-  return new Map(cases.map((c) => [String(c._id), { caseNumber: c.caseNumber, title: c.title }]));
+  const cases = await ClientCase.find({ _id: { $in: unique } }).select('caseNumber title primaryClient').populate('primaryClient', 'firstName lastName email').lean();
+  return new Map(cases.map((c) => [String(c._id), { caseNumber: c.caseNumber, title: c.title, clientName: clientDisplayName(c.primaryClient) }]));
 }
 
 /**

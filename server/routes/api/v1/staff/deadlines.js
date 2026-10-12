@@ -6,6 +6,7 @@ const Task = require('../../../../models/admin/Task');
 const { staffAuthMiddleware } = require('../../../../middleware/api/staffAuth');
 const { accessibleCaseIdFilter, memberCaseIds } = require('../../../../services/casePolicy');
 const { can } = require('../../../../utils/permissions');
+const { addClientNames } = require('../../../../services/caseRef');
 
 // GET /api/v1/staff/deadlines
 router.get('/', staffAuthMiddleware, async (req, res, next) => {
@@ -86,6 +87,7 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
     }
 
     deadlines.sort((a, b) => new Date(a.date) - new Date(b.date));
+    await addClientNames(deadlines.map((d) => d.case));
 
     res.json({
       data: { deadlines },

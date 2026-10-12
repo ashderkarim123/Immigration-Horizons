@@ -64,10 +64,29 @@ the problem is diagnosable; the secret, tokens, addresses and message content ar
 
 The Integrations page shows whether the mailbox is configured. Nothing else about it is exposed there.
 
+### New-mail alerts
+
+A watcher (`services/mail/mailWatcher.js`) is started by the admin server and is **off** unless `MAIL_WATCH_ENABLED=true` and the mailbox is configured. Every
+`MAIL_WATCH_INTERVAL_MS` (default 2 min, minimum 1 min) it lists unread inbox mail from the last `MAIL_WATCH_LOOKBACK_MINUTES` (default 60) and creates one in-app
+notification per message per recipient. Recipients are active admin users who are `super_admin` or hold `mail.view` (Project Manager and above). A message
+the website itself generated ("New Consultation Request" / "New Contact Message", from our own domain, with a Reply-To) is a `new_lead` notification; anything else
+is `mail_received`. The dedupe key is `mail:new:<message id>:<person>`, so a restart or an overlapping window never alerts twice. Failures back off (doubling,
+capped) and log only counts and Microsoft error codes. The Staff menu shows an unread count beside Mail, polled once a minute while the tab is visible, from
+`GET /staff/mail/unread`. There is no per-employee opt-out in this version.
+
+### Matching emails to clients and enquiries
+
+`services/mail/contacts.js` resolves the correspondent of each listed or opened message (the sender; the first recipient for sent mail; the Reply-To for website
+enquiries) to a client account (by normalised email, requires `clients.view`) and/or a consultation enquiry (case-insensitive email, within the employee's lead
+scope, requires `leads.view`). The match is shown as a tag and a panel with links; "Create case from inquiry" appears only when the enquiry is tied to a client
+account, has no case yet, and the employee has `cases.create`. The client page lists mail to and from the client (`GET /staff/clients/:id/mail`, needs `mail.view`
+and `clients.view`) and offers Email client (`mail.send`), Create case (`cases.create`) and, per case, Send forms. Forms belong to a case, so Send forms opens that
+case's Forms tab. Every check is repeated on the server.
+
 ## Not in this version
 
-Search, folders and rules, sending attachments, HTML composition, drafts, per-employee mailboxes, automatic matching of emails to clients, and webhooks/push
-(the page reads on load). Mail also does not appear in global search, to avoid indexing message content.
+Search, folders and rules, sending attachments, HTML composition, drafts, per-employee mailboxes, automatic *linking* of emails to cases (matching to clients and
+enquiries is shown, not stored), and webhooks/push (the page reads on load; alerts are polled). Mail also does not appear in global search, to avoid indexing message content.
 
 ## Operational notes
 

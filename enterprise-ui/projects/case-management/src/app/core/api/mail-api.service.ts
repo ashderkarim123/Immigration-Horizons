@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
-import { MailCaseLink, MailFolder, MailMessage, MailPage, MailRequest, MailSendResult, MailStatus } from './mail.types';
+import { MailCaseLink, MailFolder, MailListItem, MailMessage, MailPage, MailRequest, MailSendResult, MailStatus } from './mail.types';
 
 const BASE = '/staff/mail';
 // An id is opaque and may contain "=", "+" or "/": it always travels URL-encoded.
@@ -12,6 +12,8 @@ export class MailApi {
   private readonly api = inject(ApiService);
 
   status(): Observable<MailStatus> { return this.api.get<MailStatus>(`${BASE}/status`).pipe(map((r) => r.data)); }
+  unread(): Observable<{ unread: number }> { return this.api.get<{ unread: number }>(`${BASE}/unread`).pipe(map((r) => r.data)); }
+  clientMail(clientId: string): Observable<{ items: MailListItem[]; address: string }> { return this.api.get<{ items: MailListItem[]; address: string }>(`/staff/clients/${encodeURIComponent(clientId)}/mail`).pipe(map((r) => r.data)); }
   list(folder: MailFolder, page: number): Observable<MailPage> { return this.api.get<MailPage>(`${BASE}/messages`, { folder, page, limit: 20 }).pipe(map((r) => r.data)); }
   get(id: string): Observable<MailMessage> { return this.api.get<MailMessage>(path(id)).pipe(map((r) => r.data)); }
   setRead(id: string, isRead: boolean): Observable<{ isRead: boolean }> { return this.api.post<{ isRead: boolean }>(`${path(id)}/read`, { isRead }).pipe(map((r) => r.data)); }

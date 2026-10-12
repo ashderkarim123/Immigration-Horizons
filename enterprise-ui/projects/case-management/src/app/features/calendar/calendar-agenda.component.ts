@@ -29,7 +29,7 @@ import { formatDay, isOverdue, timeLabel } from './calendar-model';
                   } @else {
                     <a [routerLink]="item.link.path" [queryParams]="item.link.queryParams">{{ item.title }}</a>
                   }
-                  @if (showCase() && item.case) { <span class="muted"> · <a [routerLink]="['/cases', item.case.id]">{{ item.case.caseNumber }}</a></span> }
+                  @if (showCase() && item.case) { <span class="muted"> · <a [routerLink]="['/cases', item.case.id]" [attr.title]="'Ref ' + item.case.caseNumber">{{ item.case.clientName || item.case.title || item.case.caseNumber }}</a></span> }
                   @if (item.person) { <span class="muted"> · {{ item.person }}</span> }
                   @if (overdue(item)) { <span class="flag flag-late">Overdue</span> }
                   @if (item.actionRequired) { <span class="flag flag-action">Action required</span> }

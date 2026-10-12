@@ -26,6 +26,7 @@ function install() {
   };
   const wire = (m) => ({
     id: m.id, subject: m.subject, from: { emailAddress: { name: m.from.name, address: m.from.address } },
+    replyTo: (m.replyTo || []).map((p) => ({ emailAddress: p })),
     toRecipients: m.to.map((p) => ({ emailAddress: p })), ccRecipients: m.cc.map((p) => ({ emailAddress: p })),
     receivedDateTime: m.receivedDateTime, sentDateTime: m.receivedDateTime, isRead: m.isRead, hasAttachments: m.hasAttachments,
     bodyPreview: m.body.content.replace(/<[^>]+>/g, ' ').trim().slice(0, 255), importance: m.importance, body: m.body, conversationId: 'conv-1',
@@ -50,9 +51,21 @@ function install() {
     if (state.failNext) { const status = state.failNext; state.failNext = null; return json({ error: { code: 'x', message: 'Microsoft secret detail' } }, status); }
 
     let m;
+    if (rest === '/mailFolders/inbox' && method === 'GET') {
+      return json({ id: 'inbox', unreadItemCount: [...state.messages.values()].filter((x) => x.folder === 'inbox' && !x.isRead).length });
+    }
+    if (rest === '/messages' && method === 'GET' && url.searchParams.get('$search')) {
+      const term = url.searchParams.get('$search').replace(/^"participants:|"$/g, '').toLowerCase();
+      const rows = [...state.messages.values()].filter((x) => x.folder !== 'drafts' && [x.from, ...x.to, ...x.cc].some((p) => p.address.toLowerCase() === term));
+      return json({ value: rows.slice(0, Number(url.searchParams.get('$top') || 25)).map(wire) });
+    }
     if ((m = rest.match(/^\/mailFolders\/(inbox|sentitems)\/messages$/)) && method === 'GET') {
       const top = Number(url.searchParams.get('$top')); const skip = Number(url.searchParams.get('$skip') || 0);
-      const rows = [...state.messages.values()].filter((x) => x.folder === m[1]).sort((a, b) => b.receivedDateTime.localeCompare(a.receivedDateTime));
+      const filter = url.searchParams.get('$filter') || '';
+      const since = (filter.match(/receivedDateTime ge (\S+)/) || [])[1];
+      const rows = [...state.messages.values()].filter((x) => x.folder === m[1])
+        .filter((x) => !since || x.receivedDateTime >= since).filter((x) => !/isRead eq false/.test(filter) || !x.isRead)
+        .sort((a, b) => b.receivedDateTime.localeCompare(a.receivedDateTime));
       return json({ value: rows.slice(skip, skip + top).map(wire) });
     }
     if ((m = rest.match(/^\/messages$/)) && method === 'POST') {
@@ -62,7 +75,7 @@ function install() {
     if ((m = rest.match(/^\/messages\/([^/]+)\/(createReply|createReplyAll)$/)) && method === 'POST') {
       const original = state.messages.get(m[1]);
       if (!original) return json({}, 404);
-      const draft = add('drafts', { subject: `RE: ${original.subject}`, body: { contentType: 'html', content: JSON.parse(init.body).comment }, replyTo: original.id, all: m[2] === 'createReplyAll' });
+      const draft = add('drafts', { subject: `RE: ${original.subject}`, body: { contentType: 'html', content: JSON.parse(init.body).comment }, inReplyTo: original.id, all: m[2] === 'createReplyAll' });
       return json({ id: draft.id }, 201);
     }
     if ((m = rest.match(/^\/messages\/([^/]+)\/send$/)) && method === 'POST') {

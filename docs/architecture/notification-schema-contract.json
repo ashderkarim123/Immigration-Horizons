@@ -43,7 +43,8 @@
     "uscis_status_changed",
     "uscis_action_required",
     "calendar_deadline_reminder",
-    "calendar_appointment_reminder"
+    "calendar_appointment_reminder",
+    "mail_received"
   ],
   "clientEligibleTypeValues": [
     "query_scheduled",

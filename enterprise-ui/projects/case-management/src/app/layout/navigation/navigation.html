@@ -1,22 +1,28 @@
 <nav class="nav-menu" aria-label="Staff navigation">
-  <ul class="nav-list" role="list">
-    @for (item of navItems(); track item.path) {
-      <li>
-        <a
-          class="nav-link"
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          ariaCurrentWhenActive="page"
-          [attr.aria-label]="item.label"
-          [attr.title]="collapsed() ? item.label : null">
-          <span class="nav-icon" aria-hidden="true">
-            <ih-icon [name]="item.icon" [size]="20" />
-          </span>
-          @if (!collapsed()) {
-            <span class="nav-label">{{ item.label }}</span>
-          }
-        </a>
-      </li>
-    }
-  </ul>
+  @for (group of navGroups(); track group.label) {
+    <div class="nav-group" role="group" [attr.aria-label]="group.label">
+      @if (!collapsed()) { <p class="nav-heading" aria-hidden="true">{{ group.label }}</p> }
+      <ul class="nav-list" role="list">
+        @for (item of group.items; track item.path) {
+          <li>
+            <a
+              class="nav-link"
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              ariaCurrentWhenActive="page"
+              [attr.aria-label]="item.badge ? item.label + ', ' + item.badge + ' unread' : item.label"
+              [attr.title]="collapsed() ? item.label : null">
+              <span class="nav-icon" aria-hidden="true">
+                <ih-icon [name]="item.icon" [size]="20" />
+              </span>
+              @if (!collapsed()) {
+                <span class="nav-label">{{ item.label }}</span>
+                @if (item.badge) { <span class="nav-badge" aria-hidden="true">{{ item.badge > 99 ? '99+' : item.badge }}</span> }
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+  }
 </nav>
