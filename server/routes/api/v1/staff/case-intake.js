@@ -12,6 +12,8 @@ const { CASE_TYPES, CASE_STAGES } = require('../../../../utils/caseConstants');
 const { requireApiCapability } = require('../../../../middleware/api/staffAuth');
 const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedOrigin');
 const { createApiError } = require('../../../../middleware/api/apiError');
+const { clientDisplayName } = require('../../../../services/caseRef');
+const escapeRegex = require('../../../../utils/escapeRegex');
 
 function leadScope(req) {
   return can(req, 'cases.view_all') ? {} : { $or: [{ owner: req.staff._id }, { 'assignees.user': req.staff._id }] };
@@ -31,7 +33,7 @@ router.get('/case-intake', requireApiCapability('cases.create'), async (req, res
   try {
     const filter = { ...(await clientScope(req)), status: { $ne: 'disabled' } };
     if (typeof req.query.search === 'string' && req.query.search.trim()) {
-      const pattern = new RegExp(req.query.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const pattern = new RegExp(escapeRegex(req.query.search.trim()), 'i');
       filter.$or = [{ firstName: pattern }, { lastName: pattern }, { email: pattern }];
     }
     const [clients, consultations, managers] = await Promise.all([
@@ -40,7 +42,7 @@ router.get('/case-intake', requireApiCapability('cases.create'), async (req, res
       AdminUser.find({ isActive: true, role: { $in: CAPABILITIES['cases.manage'] }, ...(!can(req, 'cases.assign') ? { _id: req.staff._id } : {}) }).select('name role').sort({ name: 1 }).lean(),
     ]);
     res.json({ data: {
-      clients: clients.map(c => ({ id: c._id, label: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email })),
+      clients: clients.map(c => ({ id: c._id, label: clientDisplayName(c) })),
       consultations: consultations.map(c => ({ id: c._id, label: `${c.name} — ${c.service}`, clientId: c.clientUser })),
       managers: managers.map(u => ({ id: u._id, label: u.name })),
       caseTypes: CASE_TYPES,

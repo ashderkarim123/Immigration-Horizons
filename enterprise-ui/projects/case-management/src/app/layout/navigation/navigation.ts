@@ -68,7 +68,4 @@ export class Navigation {
     ];
     return groups.filter((group) => group.items.length);
   });
-
-  /** Every entry in menu order, without the grouping. */
-  readonly navItems = computed<NavItem[]>(() => this.navGroups().flatMap((group) => group.items));
 }

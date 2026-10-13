@@ -67,7 +67,7 @@ The Integrations page shows whether the mailbox is configured. Nothing else abou
 ### New-mail alerts
 
 A watcher (`services/mail/mailWatcher.js`) is started by the admin server and is **off** unless `MAIL_WATCH_ENABLED=true` and the mailbox is configured. Every
-`MAIL_WATCH_INTERVAL_MS` (default 2 min, minimum 1 min) it lists unread inbox mail from the last `MAIL_WATCH_LOOKBACK_MINUTES` (default 60) and creates one in-app
+2 minutes it lists unread inbox mail from the last 60 minutes (two constants in the file; not configurable until someone needs to tune them) and creates one in-app
 notification per message per recipient. Recipients are active admin users who are `super_admin` or hold `mail.view` (Project Manager and above). A message
 the website itself generated ("New Consultation Request" / "New Contact Message", from our own domain, with a Reply-To) is a `new_lead` notification; anything else
 is `mail_received`. The dedupe key is `mail:new:<message id>:<person>`, so a restart or an overlapping window never alerts twice. Failures back off (doubling,

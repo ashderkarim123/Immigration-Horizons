@@ -31,6 +31,7 @@ const { CASE_TYPES, CASE_STAGES } = require('../../utils/caseConstants');
 const { INTERACTION_STATUS_LABELS, INTERACTION_TYPE_LABELS } = require('../../utils/interactionConstants');
 const { normalizeReceipt } = require('../../utils/uscisConstants');
 const { escapeRegex } = require('./engine');
+const { clientDisplayName } = require('../caseRef');
 
 const label = (value) => (value ? String(value).replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()) : '');
 const CASE_TYPE_LABEL = Object.fromEntries(CASE_TYPES.map((t) => [t.value, t.label]));
@@ -83,7 +84,7 @@ const SOURCES = {
     project: { firstName: 1, lastName: 1, email: 1, status: 1, updatedAt: 1, _fullName: 1 },
     caseOf: () => null,
     dto: (row) => ({
-      title: [row.firstName, row.lastName].filter(Boolean).join(' ') || row.email,
+      title: clientDisplayName(row),
       subtitle: row.email,
       statusLabel: label(row.status),
       context: [],

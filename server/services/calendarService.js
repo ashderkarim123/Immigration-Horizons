@@ -20,7 +20,7 @@ const ConsultationInteraction = require('../models/ConsultationInteraction');
 const USCISFiling = require('../models/USCISFiling');
 const CaseCalendarEvent = require('../models/CaseCalendarEvent');
 const { memberCaseIds } = require('./casePolicy');
-const { clientDisplayName } = require('./caseRef');
+const { caseRefs } = require('./caseRef');
 const { accessibleInteractionFilter } = require('./interactionPolicy');
 const { getOrCreatePreferences } = require('./notificationService');
 const { can } = require('../utils/permissions');
@@ -108,7 +108,7 @@ const inIds = (ids, field = 'case') => (ids ? { [field]: { $in: ids.map((i) => n
 // Each returns plain rows (already restricted to what the actor may see) mapped to CalendarItems; case labels are
 // filled in afterwards in one query.
 
-const caseRef = (c) => (c && c.caseNumber ? { id: id(c), caseNumber: c.caseNumber, title: c.title, clientName: clientDisplayName(c.primaryClient), caseType: c.caseType || null } : null);
+const caseRef = (c) => (c && c.caseNumber ? { id: id(c), caseNumber: c.caseNumber, title: c.title } : null);
 const base = (over) => ({ sourceField: null, case: null, description: '', priority: null, actionRequired: false, person: null, clientVisible: false, actions: { canEdit: false, canCancel: false }, ...over });
 const caseLink = (caseId, tab) => ({ path: `/cases/${caseId}`, queryParams: tab ? { tab } : {} });
 
@@ -342,10 +342,9 @@ function viewerZone(req, requested) {
 async function fillCaseLabels(items) {
   const needed = [...new Set(items.filter((i) => i.case).map((i) => i.case.id))];
   if (!needed.length) return;
-  const rows = await ClientCase.find({ _id: { $in: needed } }).select('caseNumber title caseType primaryClient').populate('primaryClient', 'firstName lastName email').lean();
-  const byId = new Map(rows.map((c) => [id(c), c]));
+  const byId = await caseRefs(needed);
   for (const item of items) {
-    if (item.case) item.case = caseRef(byId.get(item.case.id)) || item.case;
+    if (item.case) item.case = byId.get(item.case.id) || item.case;
   }
 }
 

@@ -9,8 +9,8 @@ const { leadScope } = require('../leadPolicy');
 const { can } = require('../../utils/permissions');
 
 const MAX_ADDRESSES = 50;
-const escape = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const displayName = (user) => [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+const escape = require('../../utils/escapeRegex');
+const { clientDisplayName: displayName } = require('../caseRef');
 
 /** @returns {Promise<Map<string, { client: object|null, lead: object|null }>>} keyed by lowercased address */
 async function resolve(req, addresses) {

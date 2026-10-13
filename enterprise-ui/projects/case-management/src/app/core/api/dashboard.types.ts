@@ -45,10 +45,7 @@ export interface DashboardMetrics {
   /** Null when the actor has none of the queues behind the card. */
   casesAwaitingClientDocuments?: number | null;
   casesAwaitingReview?: number | null;
-  unassignedCases: number;
   upcomingDeadlines: number;
-  documentsAwaitingReview: number;
-  overdueDocumentRequests: number;
   unansweredQueries: number;
   queriesAwaitingScheduling: number;
   unreadClientMessages: number;

@@ -5,12 +5,11 @@ const WorkspaceMessage = require('../models/WorkspaceMessage');
 const WorkspaceMember = require('../models/WorkspaceMember');
 const ChannelMember = require('../models/ChannelMember');
 const CaseDocument = require('../models/CaseDocument');
-const ClientCase = require('../models/ClientCase');
 
 const { can } = require('../utils/permissions');
 const { encodeCursor, decodeCursor, cursorFilter, changedFilter, boundedLimit } = require('../utils/messageCursor');
 const { hasActiveEmployeeMembership } = require('./casePolicy');
-const { addClientNames } = require('./caseRef');
+const { caseRefs, clientDisplayName } = require('./caseRef');
 const caseManagement = require('./caseManagement');
 const collaborationPolicy = require('./collaborationPolicy');
 const readStateService = require('./readStateService');
@@ -176,18 +175,15 @@ async function loadInbox(req, { filter = 'all', search = '', page = 1, limit = 2
     if (workspaceMemberId) Object.assign(unread, await readStateService.getUnreadCountsForChannels({ channelIds, workspaceMemberId, selfAdminId: req.staff._id }));
   }
 
-  const cases = await ClientCase.find({ _id: { $in: [...new Set(visible.map((v) => String(v.channel.case)))] } }).select('caseNumber title').lean();
-  const caseById = new Map(cases.map((c) => [String(c._id), c]));
+  const caseById = await caseRefs(visible.map((v) => v.channel.case));
 
   const needle = String(search || '').trim().toLowerCase();
-  const clientNames = new Map((await addClientNames(cases.map((c) => ({ id: id(c) })))).map((r) => [r.id, r]));
   let items = visible.map(({ channel, message }) => {
-    const c = caseById.get(String(channel.case));
     return {
       channelId: id(channel),
       channelName: channel.name,
       audience: audienceOf(channel),
-      case: c ? { id: id(c), caseNumber: c.caseNumber, title: c.title, clientName: clientNames.get(id(c)).clientName, caseType: clientNames.get(id(c)).caseType } : null,
+      case: caseById.get(String(channel.case)) || null,
       latestMessage: {
         senderName: message.senderDisplayName,
         senderType: message.senderType,
@@ -335,7 +331,7 @@ async function listMembers(channel) {
       memberType: m.memberType,
       displayName:
         m.memberType === 'client'
-          ? [m.clientUser?.firstName, m.clientUser?.lastName].filter(Boolean).join(' ') || m.clientUser?.email || 'Client'
+          ? clientDisplayName(m.clientUser) || 'Client'
           : m.adminUser?.name || 'Team Member',
       channelMemberId: channelMemberByWorkspaceMember.get(String(m._id)) || null,
     }));

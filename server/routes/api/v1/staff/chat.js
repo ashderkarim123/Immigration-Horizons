@@ -74,8 +74,7 @@ function channelParam(check) {
 // GET /api/v1/staff/inbox?filter=unread|all&search=&page=&limit=
 router.get('/inbox', requireApiCapability('channels.view'), route(async (req, res) => {
   const filter = req.query.filter === 'unread' ? 'unread' : 'all';
-  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 25, 1), 100);
+  const { page, limit } = require('../../../../middleware/api/route').paging(req);
   return response(res, req, await chat.loadInbox(req, { filter, search: req.query.search, page, limit }));
 }));
 

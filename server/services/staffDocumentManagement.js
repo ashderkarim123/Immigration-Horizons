@@ -7,6 +7,7 @@ const DocumentRequest = require('../models/DocumentRequest');
 const WorkspaceMember = require('../models/WorkspaceMember');
 const EvidenceRequirement = require('../models/EvidenceRequirement');
 const caseManagement = require('./caseManagement');
+const { clientDisplayName } = require('./caseRef');
 const documentPolicy = require('./documentPolicy');
 
 function id(value) {
@@ -16,7 +17,7 @@ function id(value) {
 function person(value, type) {
   if (!value) return null;
   const displayName = type === 'client'
-    ? [value.firstName, value.lastName].filter(Boolean).join(' ') || value.email || 'Client'
+    ? clientDisplayName(value) || 'Client'
     : value.name || value.email || 'Employee';
   return { id: id(value), type, displayName };
 }

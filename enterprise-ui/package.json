@@ -3,10 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "prestart": "node scripts/setenv.js",
     "start": "ng serve case-management",
     "start:admin": "ng serve admin-console",
-    "prebuild": "node scripts/setenv.js",
     "build": "ng build case-management && ng build admin-console",
     "build:cm": "ng build case-management",
     "build:admin": "ng build admin-console",
@@ -30,7 +28,6 @@
     "@angular/build": "^22.1.7",
     "@angular/cli": "^22.1.7",
     "@angular/compiler-cli": "^22.1.0",
-    "dotenv": "^17.4.2",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",

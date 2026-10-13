@@ -101,9 +101,6 @@ test('the watcher: describe(), switches and the loop (backoff, no overlap, safe 
   assert.equal(watcher.isEnabled({ ...fake.ENV, MAIL_WATCH_ENABLED: 'true' }), true);
   assert.equal(watcher.isEnabled({ MAIL_WATCH_ENABLED: 'true' }), false, 'and only when the mailbox is connected');
   assert.equal(watcher.startFromEnv({}, () => {}), null);
-  assert.equal(watcher.intervalFrom({ MAIL_WATCH_INTERVAL_MS: '1000' }), 60000, 'never faster than a minute');
-  assert.equal(watcher.intervalFrom({}), 120000);
-  assert.deepEqual([watcher.lookbackFrom({ MAIL_WATCH_LOOKBACK_MINUTES: '1' }), watcher.lookbackFrom({}), watcher.lookbackFrom({ MAIL_WATCH_LOOKBACK_MINUTES: '99999' })], [5, 60, 1440]);
 
   const delays = []; const logs = []; let pending; const results = [{ checked: 2, notified: 2 }, new (class extends Error { constructor() { super('Microsoft secret detail'); this.code = 'refused'; } })(), new Error('boom'), { checked: 0, notified: 0 }];
   const loop = watcher.startLoop({

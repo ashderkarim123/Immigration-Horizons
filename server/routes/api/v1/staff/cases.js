@@ -36,12 +36,14 @@ const {
 const { can } = require('../../../../utils/permissions');
 const { createApiError } = require('../../../../middleware/api/apiError');
 const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedOrigin');
+const { clientDisplayName } = require('../../../../services/caseRef');
+const { paging } = require('../../../../middleware/api/route');
 
 /** "First Last" typed in full matches a client whose first and last names match the two halves. */
 function nameParts(search) {
   const words = String(search).trim().split(/\s+/).filter(Boolean);
   if (words.length < 2) return [];
-  const rx = (w) => new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  const rx = (w) => new RegExp(escapeRegex(w), 'i');
   return [{ firstName: rx(words[0]), lastName: rx(words.slice(1).join(' ')) }];
 }
 
@@ -66,7 +68,7 @@ function serializeCaseListItem(c) {
     primaryClient: client
       ? {
           id: client._id,
-          displayName: [client.firstName || '', client.lastName || ''].filter(Boolean).join(' ') || client.email,
+          displayName: clientDisplayName(client),
           email: client.email,
         }
       : null,
@@ -93,7 +95,7 @@ function serializeCaseDetail(c) {
     primaryClient: client
       ? {
           id: client._id,
-          displayName: [client.firstName || '', client.lastName || ''].filter(Boolean).join(' ') || client.email,
+          displayName: clientDisplayName(client),
           firstName: client.firstName || '',
           lastName: client.lastName || '',
           email: client.email,
@@ -126,7 +128,7 @@ function serializeMember(m) {
     client: cli
       ? {
           id: cli._id,
-          displayName: [cli.firstName || '', cli.lastName || ''].filter(Boolean).join(' ') || cli.email,
+          displayName: clientDisplayName(cli),
           email: cli.email,
         }
       : null,
@@ -162,9 +164,7 @@ function serializeActivity(a) {
 // staffAuth + requirePasswordSetupComplete already applied by parent router
 router.get('/', requireApiCapability('cases.view'), async (req, res, next) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 25, 1), 100);
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = paging(req);
 
     const showArchived = req.query.archived === 'true';
     const query = showArchived ? {} : { archivedAt: null };
@@ -350,9 +350,7 @@ router.get('/:id/activity', staffAuthMiddleware, requireApiCapability('cases.vie
     const hasAccess = await canViewCase(req, workspace._id);
     if (!hasAccess) return next(createApiError(404, 'not_found', 'Case not found.'));
 
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 50);
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = paging(req, { limit: 20, max: 50 });
 
     const [activity, total] = await Promise.all([
       CaseActivity.find({ case: caseId })

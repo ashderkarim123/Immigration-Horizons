@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 
 const ClientCase = require('../../../../models/ClientCase');
-const CaseDocument = require('../../../../models/CaseDocument');
 const DocumentRequest = require('../../../../models/DocumentRequest');
 const ConsultationInteraction = require('../../../../models/ConsultationInteraction');
 const Task = require('../../../../models/admin/Task');
@@ -82,11 +81,8 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
 
     const [
       myCases,
-      unassignedCases,
       upcomingCaseDeadlines,
       upcomingTaskDeadlines,
-      documentsAwaitingReview,
-      overdueDocumentRequests,
       unansweredQueries,
       queriesAwaitingScheduling,
       unreadClientMessages,
@@ -94,13 +90,6 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
       myOverdueTasks,
     ] = await Promise.all([
       canSeeCases ? ClientCase.countDocuments({ ...caseScope, archivedAt: null }) : Promise.resolve(0),
-
-      can(req, 'cases.assign') || can(req, 'cases.view_all')
-        ? ClientCase.countDocuments({
-            archivedAt: null,
-            $or: [{ projectManager: null }, { projectManager: { $exists: false } }],
-          })
-        : Promise.resolve(0),
 
       canSeeCases
         ? ClientCase.countDocuments({
@@ -116,22 +105,6 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
         status: { $ne: 'completed' },
         dueDate: { $ne: null, $gte: new Date(), $lte: daysFromNow(UPCOMING_DEADLINE_DAYS) },
       }),
-
-      canSeeDocuments
-        ? CaseDocument.countDocuments({
-            ...caseIdScope,
-            status: { $in: ['uploaded', 'pending_review'] },
-            archivedAt: null,
-          })
-        : Promise.resolve(0),
-
-      canSeeDocuments
-        ? DocumentRequest.countDocuments({
-            ...caseIdScope,
-            status: 'open',
-            dueDate: { $ne: null, $lt: new Date() },
-          })
-        : Promise.resolve(0),
 
       canSeeQueries
         ? ConsultationInteraction.countDocuments(scopedQuery({ status: { $in: ACTIVE_UNANSWERED_STATUSES } }))
@@ -246,10 +219,7 @@ router.get('/', staffAuthMiddleware, async (req, res, next) => {
         // null (not 0) when the actor cannot see USCIS tracking, so the card is hidden rather than misleadingly empty
         uscisActionRequired: can(req, 'uscis_tracking.view') ? await require('../../../../services/uscisTracking').countActionRequired(req) : null,
         myCases,
-        unassignedCases,
         upcomingDeadlines,
-        documentsAwaitingReview,
-        overdueDocumentRequests,
         unansweredQueries,
         queriesAwaitingScheduling,
         unreadClientMessages,

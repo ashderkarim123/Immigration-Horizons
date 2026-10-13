@@ -8,6 +8,7 @@ const policy = require('../../../../services/interactionPolicy');
 const service = require('../../../../services/interactionService');
 const { isValidTimezone, zonedTimeToUtc } = require('../../../../utils/timezone');
 const constants = require('../../../../utils/interactionConstants');
+const escapeRegex = require('../../../../utils/escapeRegex');
 const { requireApiCapability } = require('../../../../middleware/api/staffAuth');
 const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedOrigin');
 const { createApiError } = require('../../../../middleware/api/apiError');
@@ -29,11 +30,11 @@ router.get('/', requireApiCapability('queries.view'), route(async (req, res) => 
   if (req.query.queue === 'scheduling') Object.assign(filter, { type: 'scheduled_consultation', scheduledFor: null, status: { $in: constants.ACTIVE_UNANSWERED_STATUSES } });
   if (req.query.queue === 'mine') filter.assignedTo = req.staff._id;
   if (typeof req.query.search === 'string' && req.query.search.trim()) {
-    const pattern = new RegExp(req.query.search.slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const pattern = new RegExp(escapeRegex(req.query.search.slice(0, 100)), 'i');
     filter.$or = [{ subject: pattern }, { interactionNumber: pattern }];
   }
   const match = { $and: [filter, await scope(req)] };
-  const page = Math.max(1, Number.parseInt(req.query.page) || 1); const limit = Math.min(100, Math.max(1, Number.parseInt(req.query.limit) || 25));
+  const { page, limit } = require('../../../../middleware/api/route').paging(req);
   const [items, total] = await Promise.all([Interaction.find(match).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(), Interaction.countDocuments(match)]);
   respond(req, res, { items: items.map(dto), total, page, totalPages: Math.max(1, Math.ceil(total / limit)), pageSize: limit });
 }));

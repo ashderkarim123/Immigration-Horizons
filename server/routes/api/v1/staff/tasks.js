@@ -17,22 +17,16 @@ const { memberCaseIds } = require('../../../../services/casePolicy');
 const { can } = require('../../../../utils/permissions');
 const { createApiError } = require('../../../../middleware/api/apiError');
 const { addClientNames } = require('../../../../services/caseRef');
+const escapeRegex = require('../../../../utils/escapeRegex');
 const { loadCaseAndWorkspace } = require('../../../../services/caseManagement');
 
 const notFound = () => createApiError(404, 'not_found', 'Task not found.');
-const route = (fn) => async (req, res, next) => {
-  try {
-    await fn(req, res, next);
-  } catch (err) {
-    next(err);
-  }
-};
+const { route, paging } = require('../../../../middleware/api/route');
 const toFieldErrors = (errors) => Object.entries(errors).map(([field, message]) => ({ field, message }));
 
 // GET /api/v1/staff/tasks
 router.get('/', staffAuthMiddleware, route(async (req, res, next) => {
-  const page = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(Math.max(parseInt(req.query.limit) || 25, 1), 100);
+  const { page, limit } = paging(req);
   const query = {};
 
   const scope = req.query.scope || 'mine';
@@ -66,7 +60,7 @@ router.get('/', staffAuthMiddleware, route(async (req, res, next) => {
   }
 
   if (req.query.search) {
-    query.title = new RegExp(String(req.query.search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    query.title = new RegExp(escapeRegex(req.query.search), 'i');
   }
 
   // Tasks of cases the actor is not a member of never appear (removed members lose access at once).

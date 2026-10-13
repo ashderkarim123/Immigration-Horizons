@@ -27,7 +27,6 @@
 .link-btn.danger { color: #b91c1c; }
 .link-btn.center { align-self: center; }
 .file-label { display: inline-block; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .file-label:focus-within { outline: 2px solid #1d4ed8; outline-offset: 2px; }
 .composer { display: grid; gap: .5rem; border-top: 1px solid #e5e7eb; padding-top: .75rem; }
 .composer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }

@@ -92,9 +92,7 @@ function serializeCaseForClientDetail(c) {
 // staffAuth + requirePasswordSetupComplete already applied by parent router
 router.get('/', requireApiCapability('clients.view'), async (req, res, next) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 25, 1), 100);
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = require('../../../../middleware/api/route').paging(req);
 
     const query = {};
 
