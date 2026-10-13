@@ -66,6 +66,51 @@ router.get('/crm/board', requireApiCapability('leads.view'), handle(async (req, 
   });
 }));
 
+
+/**
+ * Cohort funnel report: leads CREATED in the requested UTC date window.
+ * "Converted" means linked to a ClientCase as of today; no invented
+ * historical stage-entry times or close rates. All rows honor leadScope.
+ */
+router.get('/crm/funnel', requireApiCapability('leads.view'), handle(async (req, res) => {
+  const today = new Date();
+  const endDefault = today.toISOString().slice(0, 10);
+  const startDefault = new Date(today.getTime() - 29 * 86400000).toISOString().slice(0, 10);
+  const from = req.query.from === undefined ? startDefault : req.query.from;
+  const to = req.query.to === undefined ? endDefault : req.query.to;
+  const parseDay = (value) => {
+    if (typeof value !== 'string' || !/^\d{4}-\d\d-\d\d$/.test(value)) return null;
+    const date = new Date(value + 'T00:00:00.000Z');
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value ? date : null;
+  };
+  const first = parseDay(from), last = parseDay(to);
+  if (!first || !last || last < first || (last - first) / 86400000 > 365) {
+    throw invalid('Choose a valid UTC date range of no more than 366 days.');
+  }
+  const exclusiveEnd = new Date(last.getTime() + 86400000);
+  const [facet] = await Lead.aggregate([
+    { $match: { $and: [await leadScope(req), { createdAt: { $gte: first, $lt: exclusiveEnd } }] } },
+    { $facet: {
+      stages: [{ $group: { _id: mongoStageExpression(), count: { $sum: 1 } } }],
+      sources: [{ $group: { _id: { $ifNull: ['$leadSource', 'Website Form'] }, count: { $sum: 1 } } }, { $sort: { count: -1, _id: 1 } }],
+      conversion: [{ $group: {
+        _id: null, total: { $sum: 1 },
+        converted: { $sum: { $cond: [{ $ne: [{ $ifNull: ['$convertedCase', null] }, null] }, 1, 0] } },
+      } }],
+    } },
+  ]);
+  const totals = new Map(facet.stages.map((row) => [row._id, row.count]));
+  const total = facet.conversion[0]?.total || 0;
+  const converted = facet.conversion[0]?.converted || 0;
+  reply(req, res, {
+    from, to, timezone: 'UTC', cohort: 'createdAt', total, converted,
+    conversionRatePct: total ? Math.round(converted / total * 1000) / 10 : 0,
+    stages: STAGES.map((stage) => ({ ...stage, count: totals.get(stage.value) || 0 })),
+    sources: facet.sources.map((row) => ({ source: row._id, count: row.count })),
+    note: 'Conversion is case-linked as of now, not an historical close rate.',
+  });
+}));
+
 router.get('/crm/leads/:id', requireApiCapability('leads.view'), handle(async (req, res) => {
   reply(req, res, { lead: dto(await scopedLead(req)), stages: STAGES, lostReasons: LOST_REASONS });
 }));
