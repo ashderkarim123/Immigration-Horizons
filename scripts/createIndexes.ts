@@ -44,6 +44,8 @@ import { SecurityEvent } from "../src/lib/models/SecurityEvent";
 import { SmartFormTemplate } from "../src/lib/models/SmartFormTemplate";
 import { CaseSmartForm } from "../src/lib/models/CaseSmartForm";
 import { SmartFormAudit } from "../src/lib/models/SmartFormAudit";
+import { EvidenceTemplate } from "../src/lib/models/EvidenceTemplate";
+import { EvidenceRequirement } from "../src/lib/models/EvidenceRequirement";
 
 // Cycle 2 case/workspace/membership models are also declared here even
 // though server/ is their primary writer (see
@@ -96,6 +98,9 @@ const MODELS = [
   // this account, or from this host" answerable during an incident rather
   // than a collection scan.
   SecurityEvent,
+  // Phase 05 — mirrored evidence models need an explicit production index path.
+  EvidenceTemplate,
+  EvidenceRequirement,
   // Phase 08 — Smart Forms (ADR-021 §30). Dual-writer with the admin CMS for
   // case_smart_forms / smart_form_audits; templates are written only by its seeder.
   SmartFormTemplate,
