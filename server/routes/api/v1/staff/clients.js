@@ -11,6 +11,7 @@
  * - ClientUser.name does not exist — derive displayName from firstName + lastName
  */
 const express = require('express');
+const escapeRegex = require('../../../../utils/escapeRegex');
 const router = express.Router();
 const mongoose = require('mongoose');
 
@@ -91,15 +92,13 @@ function serializeCaseForClientDetail(c) {
 // staffAuth + requirePasswordSetupComplete already applied by parent router
 router.get('/', requireApiCapability('clients.view'), async (req, res, next) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit) || 25, 1), 100);
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = require('../../../../middleware/api/route').paging(req);
 
     const query = {};
 
     if (req.query.search) {
       // Escape regex metacharacters — never execute arbitrary regex
-      const escaped = req.query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escaped = escapeRegex(req.query.search);
       const pattern = new RegExp(escaped, 'i');
       query.$or = [
         { firstName: pattern },

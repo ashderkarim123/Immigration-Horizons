@@ -16,9 +16,8 @@ const EmployeeSession = require('../models/EmployeeSession');
 const { createApiError } = require('../middleware/api/apiError');
 const { ROLE_LABELS, ALL_ROLES, CAPABILITIES, can } = require('../utils/permissions');
 const { recordSecurityEvent } = require('../utils/securityEvents');
-const { invalid, notFound, conflict, isId, searchRegex, pageParams, paged } = require('./cms/common');
+const { invalid, notFound, conflict, isId, searchRegex, pageParams, paged, EMAIL_PATTERN } = require('./cms/common');
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LAST_SUPER_ADMIN = 'This is the only active Super Admin. Create or promote another one first.';
 
 /** 24 URL-safe characters from 20 random bytes (~140 bits). */

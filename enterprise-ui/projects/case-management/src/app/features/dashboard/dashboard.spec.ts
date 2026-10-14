@@ -26,7 +26,7 @@ const clientCase = (over: Partial<DashboardClientCase> = {}): DashboardClientCas
 });
 const payload = (over: Partial<DashboardMetrics> = {}): DashboardMetrics => ({
   role: 'pm', scope: 'mine', myCases: 4, activeClients: 3, tasksDueToday: 2, newAssignedCases: 1, casesAwaitingClientDocuments: 2, casesAwaitingReview: 1,
-  unassignedCases: 0, upcomingDeadlines: 1, documentsAwaitingReview: 0, overdueDocumentRequests: 0, unansweredQueries: 0, queriesAwaitingScheduling: 0,
+  upcomingDeadlines: 1, unansweredQueries: 0, queriesAwaitingScheduling: 0,
   unreadClientMessages: 2, myOpenTasks: 3, myOverdueTasks: 1, workQueues: [], clientCases: [clientCase()], recentActivity: [], myTasks: [task()], ...over,
 });
 

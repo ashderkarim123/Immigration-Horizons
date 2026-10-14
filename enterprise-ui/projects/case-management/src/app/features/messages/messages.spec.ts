@@ -107,10 +107,10 @@ describe('Navigation', () => {
     const fixture = TestBed.createComponent(Navigation);
 
     auth.capabilities.set(['cases.view']);
-    expect(fixture.componentInstance.navItems().map((i) => i.label)).not.toContain('Messages');
+    expect(fixture.componentInstance.navGroups().flatMap((g) => g.items).map((i) => i.label)).not.toContain('Messages');
 
     auth.capabilities.set(['cases.view', 'channels.view']);
-    expect(fixture.componentInstance.navItems().map((i) => i.label)).toEqual(['Dashboard', 'Tasks', 'Notifications', 'Cases', 'Deadlines', 'Messages']);
+    expect(fixture.componentInstance.navGroups().flatMap((g) => g.items).map((i) => i.label)).toEqual(['Dashboard', 'Tasks', 'Notifications', 'Cases', 'Deadlines', 'Messages']);
   });
 });
 
@@ -121,8 +121,8 @@ describe('Navigation: Tracking', () => {
     const fixture = TestBed.createComponent(Navigation);
 
     auth.capabilities.set(['cases.view']);
-    expect(fixture.componentInstance.navItems().map((i) => i.label)).not.toContain('Tracking');
+    expect(fixture.componentInstance.navGroups().flatMap((g) => g.items).map((i) => i.label)).not.toContain('Tracking');
     auth.capabilities.set(['cases.view', 'uscis_tracking.view']);
-    expect(fixture.componentInstance.navItems().map((i) => i.label)).toContain('Tracking');
+    expect(fixture.componentInstance.navGroups().flatMap((g) => g.items).map((i) => i.label)).toContain('Tracking');
   });
 });

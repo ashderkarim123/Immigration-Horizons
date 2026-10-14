@@ -19,6 +19,7 @@ const {
 } = require("../../../../services/interactionService");
 const { memberCaseIds } = require("../../../../services/casePolicy");
 const { addClientNames } = require("../../../../services/caseRef");
+const escapeRegex = require("../../../../utils/escapeRegex");
 const { leadScope } = require("../../../../services/leadPolicy");
 const {
   taskActionContext,
@@ -36,13 +37,7 @@ const { createApiError } = require("../../../../middleware/api/apiError");
 const { can } = require("../../../../utils/permissions");
 const { logActivity } = require("../../../../utils/activity");
 const { notifyMany } = require("../../../../utils/notify");
-const route = (fn) => async (req, res, next) => {
-  try {
-    await fn(req, res);
-  } catch (error) {
-    next(error);
-  }
-};
+const { route } = require("../../../../middleware/api/route");
 const respond = (req, res, data) =>
   res.json({ data, meta: { requestId: req.id } });
 const missing = () =>
@@ -86,7 +81,7 @@ router.get(
       filter.status = req.query.status;
     if (req.query.search) {
       const pattern = new RegExp(
-        text(req.query.search, 100).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        escapeRegex(text(req.query.search, 100)),
         "i",
       );
       filter.$or = [{ name: pattern }, { email: pattern }];

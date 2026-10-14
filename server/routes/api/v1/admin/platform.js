@@ -3,6 +3,7 @@
  * reference and the read-only security log. Every route names the capability it needs; none trusts the role snapshot.
  */
 const express = require('express');
+const { handle } = require('../../../../middleware/api/apiError');
 const { requireAdminCapability: needs } = require('../../../../middleware/api/adminAuth');
 const { contextOf } = require('../../../../services/cms/common');
 const settings = require('../../../../services/cms/settings');
@@ -11,12 +12,6 @@ const users = require('../../../../services/adminUserManagement');
 const securityEvents = require('../../../../services/securityEventViewer');
 
 const router = express.Router();
-
-const handle = (fn, status = 200) => async (req, res, next) => {
-  try {
-    res.status(status).json({ data: await fn(req), meta: { requestId: req.id } });
-  } catch (error) { next(error); }
-};
 
 // ---- Settings and integration status ----
 router.get('/settings', needs('settings.manage'), handle(async () => ({ groups: await settings.list() })));

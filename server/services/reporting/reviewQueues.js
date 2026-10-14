@@ -16,7 +16,7 @@ const { definitions } = require('../staffWorkQueues');
 const { accessibleInteractionFilter } = require('../interactionPolicy');
 const { ACTIVE_UNANSWERED_STATUSES } = require('../../utils/interactionConstants');
 const { can } = require('../../utils/permissions');
-const { caseLabels } = require('./shared');
+const { caseRefs } = require('../caseRef');
 const { ReportInputError } = require('./context');
 
 const ROW_LIMIT = 100;
@@ -64,7 +64,7 @@ async function run(req, ctx, query = {}) {
     }),
   );
 
-  const labels = await caseLabels(results.flatMap((r) => (r.grouped || []).map((g) => g._id)));
+  const labels = await caseRefs(results.flatMap((r) => (r.grouped || []).map((g) => g._id)));
   const queues = results.map((r) => {
     if (!r.available) return r;
     const all = r.grouped.map((g) => {

@@ -12,15 +12,14 @@ const notificationService = require('../notificationService');
 const { CAPABILITIES } = require('../../utils/permissions');
 const mailbox = require('./mailbox');
 const graph = require('./graph');
+const escapeRegex = require('../../utils/escapeRegex');
 
-const DEFAULT_INTERVAL_MS = 2 * 60 * 1000;
-const MIN_INTERVAL_MS = 60 * 1000;
+const INTERVAL_MS = 2 * 60 * 1000;
 const MAX_BACKOFF_MS = 15 * 60 * 1000;
-const DEFAULT_LOOKBACK_MINUTES = 60;
+// Also the catch-up window after a restart; the dedupe key makes an overlap harmless.
+const LOOKBACK_MINUTES = 60;
 
 const isEnabled = (env = process.env) => env.MAIL_WATCH_ENABLED === 'true' && graph.readConfig(env).configured;
-const intervalFrom = (env = process.env) => Math.max(MIN_INTERVAL_MS, Number(env.MAIL_WATCH_INTERVAL_MS) || DEFAULT_INTERVAL_MS);
-const lookbackFrom = (env = process.env) => Math.min(24 * 60, Math.max(5, Number(env.MAIL_WATCH_LOOKBACK_MINUTES) || DEFAULT_LOOKBACK_MINUTES));
 
 /** Active employees whose role may read the mailbox. */
 const recipients = () => AdminUser.find({ isActive: true, role: { $in: [...new Set(['super_admin', ...CAPABILITIES['mail.view']])] } }).select('name').lean();
@@ -36,7 +35,7 @@ function describe(message) {
 }
 
 /** @returns {Promise<{ checked: number, notified: number }>} */
-async function checkNewMail({ now = new Date(), lookbackMinutes = DEFAULT_LOOKBACK_MINUTES } = {}) {
+async function checkNewMail({ now = new Date(), lookbackMinutes = LOOKBACK_MINUTES } = {}) {
   const since = new Date(now.getTime() - lookbackMinutes * 60 * 1000).toISOString();
   const messages = await mailbox.newUnread(since);
   if (!messages.length) return { checked: 0, notified: 0 };
@@ -48,7 +47,7 @@ async function checkNewMail({ now = new Date(), lookbackMinutes = DEFAULT_LOOKBA
     // A website enquiry points at the saved consultation, so the notification can open the lead as well as the email.
     let lead = null;
     if (type === 'new_lead' && message.contact && message.contact.address) {
-      lead = await Consultation.findOne({ email: new RegExp(`^${message.contact.address.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }).sort({ createdAt: -1 }).select('_id').lean();
+      lead = await Consultation.findOne({ email: new RegExp(`^${escapeRegex(message.contact.address)}$`, 'i') }).sort({ createdAt: -1 }).select('_id').lean();
     }
     for (const person of people) {
       const { created } = await notificationService.createNotificationOnce({
@@ -72,7 +71,7 @@ async function checkNewMail({ now = new Date(), lookbackMinutes = DEFAULT_LOOKBA
  * The polling loop, separated from the process so it can be tested. Passes never overlap; a failing pass backs off (doubling,
  * capped) and the first success resets it. Logs counts only — never an address, subject or message id.
  */
-function startLoop({ run, intervalMs = DEFAULT_INTERVAL_MS, log = console.log, schedule = setTimeout, cancel = clearTimeout, maxBackoffMs = MAX_BACKOFF_MS }) {
+function startLoop({ run, intervalMs = INTERVAL_MS, log = console.log, schedule = setTimeout, cancel = clearTimeout, maxBackoffMs = MAX_BACKOFF_MS }) {
   let timer = null;
   let stopped = false;
   let failures = 0;
@@ -98,8 +97,8 @@ function startLoop({ run, intervalMs = DEFAULT_INTERVAL_MS, log = console.log, s
 /** Starts the watcher in this process when MAIL_WATCH_ENABLED=true and the mailbox is connected; otherwise does nothing. */
 function startFromEnv(env = process.env, log = console.log) {
   if (!isEnabled(env)) return null;
-  log(`[mail-watch] on: every ${Math.round(intervalFrom(env) / 1000)}s, looking back ${lookbackFrom(env)} min`);
-  return startLoop({ run: () => checkNewMail({ lookbackMinutes: lookbackFrom(env) }), intervalMs: intervalFrom(env), log });
+  log(`[mail-watch] on: every ${INTERVAL_MS / 1000}s, looking back ${LOOKBACK_MINUTES} min`);
+  return startLoop({ run: () => checkNewMail({ lookbackMinutes: LOOKBACK_MINUTES }), intervalMs: INTERVAL_MS, log });
 }
 
-module.exports = { checkNewMail, startLoop, startFromEnv, isEnabled, intervalFrom, lookbackFrom, describe, DEFAULT_INTERVAL_MS, MIN_INTERVAL_MS };
+module.exports = { checkNewMail, startLoop, startFromEnv, isEnabled, describe };

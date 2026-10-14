@@ -78,11 +78,6 @@ function isManager(req) {
   return !!role && MANAGER_ROLES.includes(role);
 }
 
-function isReadOnly(req) {
-  const role = getRole(req);
-  return !!role && READ_ONLY_ROLES.includes(role);
-}
-
 /** Route guard: blocks read-only roles (and missing roles) from any mutating request. */
 function blockReadOnly(req, res, next) {
   const role = getRole(req);
@@ -357,12 +352,9 @@ module.exports = {
   READ_ONLY_ROLES,
   TASK_OWNERSHIP_ROLES,
   getRole,
-  isManager,
-  isReadOnly,
   blockReadOnly,
   requireManager,
   CAPABILITIES,
-  getCurrentRole,
   can,
   requireCapability,
   isTaskOwner,

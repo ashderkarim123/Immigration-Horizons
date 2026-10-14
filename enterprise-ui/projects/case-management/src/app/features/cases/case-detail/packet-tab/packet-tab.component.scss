@@ -6,7 +6,6 @@
 .link-btn { background: none; border: 0; padding: 0; color: #1d4ed8; font-weight: 600; cursor: pointer; font-size: .85rem; text-align: left; }
 .link-btn.danger { color: #b91c1c; }
 .link-btn.push { margin-left: auto; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .workspace { display: grid; gap: .75rem; }
 .head { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
 .head h3 { margin: 0; font-size: 1.1rem; }

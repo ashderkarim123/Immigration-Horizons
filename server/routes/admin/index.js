@@ -1,4 +1,5 @@
 const express = require('express');
+const escapeRegex = require('../../utils/escapeRegex');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
@@ -363,7 +364,7 @@ router.get('/admin/leads', async (req, res) => {
       if (createdTo) filter.createdAt.$lte = createdTo;
     }
     if (search) {
-      const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const safe = escapeRegex(search);
       andClauses.push({
         $or: [
           { name: { $regex: safe, $options: 'i' } },
@@ -621,7 +622,7 @@ router.get('/admin/leads/export/csv', requireCapability('csv.export'), async (re
     if (status !== 'all') filter.status = status;
     if (service !== 'all') filter.service = service;
     if (search) {
-      const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const safe = escapeRegex(search);
       filter.$or = [
         { name: { $regex: safe, $options: 'i' } },
         { email: { $regex: safe, $options: 'i' } },
@@ -680,7 +681,7 @@ router.get('/admin/blog', async (req, res) => {
     else if (status === 'draft') filter.published = false;
     if (category && category !== 'all') filter.category = category;
     if (search) {
-      const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const safe = escapeRegex(search);
       filter.$or = [
         { title: { $regex: safe, $options: 'i' } },
         { excerpt: { $regex: safe, $options: 'i' } },
@@ -1417,7 +1418,7 @@ router.get('/admin/search', async (req, res) => {
   const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, MAX_SEARCH_LENGTH) : '';
   if (!q) return res.redirect('/admin');
 
-  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const safe = escapeRegex(q);
 
   try {
     const [blogs, leads, testimonials, faqs] = await Promise.all([

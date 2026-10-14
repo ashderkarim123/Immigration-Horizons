@@ -110,7 +110,6 @@ export const TRACKING_VIEWS: { key: TrackingView; label: string; params: Record<
   styles: [`
     .receipt { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; letter-spacing: .04em; font-size: .8125rem; white-space: nowrap; }
     .action { color: #92400e; } .overdue { color: #991b1b; font-weight: 600; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .filters-bar .filter-group[role='group'] { display: flex; flex-wrap: wrap; gap: .375rem; }
   `]
 })

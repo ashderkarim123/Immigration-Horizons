@@ -26,6 +26,7 @@ const { can } = require('../utils/permissions');
 const { categoryForTitle, toPlainText } = require('./uscis/statusCatalog');
 const { ProviderError } = require('./uscis/torchProvider');
 const C = require('../utils/uscisConstants');
+const { clientDisplayName } = require('./caseRef');
 
 const EVENT_PAGE = 100;
 const MAX_FUTURE_MS = 24 * 60 * 60 * 1000; // allows clock skew, not a made-up future status
@@ -39,7 +40,7 @@ const id = (v) => (v ? String(v._id || v) : null);
 const text = (v) => (typeof v === 'string' ? v.trim() : '');
 const invalid = (errors) => ({ outcome: 'validation_error', errors });
 const isId = (v) => mongoose.Types.ObjectId.isValid(v) && String(new mongoose.Types.ObjectId(v)) === String(v);
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegex = require('../utils/escapeRegex');
 const actorOf = (staff) => ({ type: 'admin_user', id: staff._id, name: staff.name || 'Employee' });
 
 /** undefined = field absent, null = cleared, Date = valid; throws a field message for an invalid value. */
@@ -533,7 +534,7 @@ async function queryFilings(req, query, providerStatus) {
     return {
       ...toFilingDto(f, filingActions(req, f, providerStatus)),
       case: c ? { id: id(c), caseNumber: c.caseNumber, title: c.title } : null,
-      client: c && c.primaryClient ? { displayName: [c.primaryClient.firstName, c.primaryClient.lastName].filter(Boolean).join(' ') || c.primaryClient.email } : null,
+      client: c && c.primaryClient ? { displayName: clientDisplayName(c.primaryClient) } : null,
       projectManager: c && c.projectManager ? { name: c.projectManager.name || '' } : null,
     };
   });

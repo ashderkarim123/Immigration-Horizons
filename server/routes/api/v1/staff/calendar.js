@@ -24,13 +24,7 @@ const router = express.Router();
 
 const respond = (res, req, data, status = 200) => res.status(status).json({ data, meta: { requestId: req.id } });
 const notFound = (what) => createApiError(404, 'not_found', `${what} not found.`);
-const route = (fn) => async (req, res, next) => {
-  try {
-    await fn(req, res, next);
-  } catch (err) {
-    next(err);
-  }
-};
+const { route } = require('../../../../middleware/api/route');
 const fieldErrors = (errors) => Object.entries(errors).map(([field, message]) => ({ field, message }));
 const body = (req) => (req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {});
 

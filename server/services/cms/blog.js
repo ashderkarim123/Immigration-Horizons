@@ -3,7 +3,7 @@ const slugify = require('slugify');
 const BlogPost = require('../../models/BlogPost');
 const categories = require('../../utils/blogCategories');
 const { sanitizeBlogContent, hasVisibleContent } = require('../../utils/blogHtml');
-const { invalid, notFound, conflict, isId, searchRegex, pageParams, paged, normalize, auditContent } = require('./common');
+const { invalid, notFound, conflict, isId, searchRegex, pageParams, paged, normalize, auditContent, publicOrigin } = require('./common');
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const DEFAULT_AUTHOR = 'Immigration Horizons Team';
@@ -23,7 +23,6 @@ const SPEC = {
   publishDate: { type: 'date', label: 'Publish date' },
 };
 
-const publicOrigin = () => (process.env.PUBLIC_SITE_URL || 'https://immigrationhorizons.com').replace(/\/+$/, '');
 /** The same rule the public site applies (src/lib/blogs.ts): published, and not scheduled for the future. */
 const isLive = (post, now = new Date()) => !!post.published && (!post.publishDate || post.publishDate <= now);
 

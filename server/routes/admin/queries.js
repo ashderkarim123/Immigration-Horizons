@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const escapeRegex = require('../../utils/escapeRegex');
 
 const ConsultationInteraction = require('../../models/ConsultationInteraction');
 const InteractionHistory = require('../../models/InteractionHistory');
@@ -115,7 +116,7 @@ module.exports = function attachQueries(router) {
         }
 
         if (search) {
-          const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const safe = escapeRegex(search);
           filter.$and = (filter.$and || []).concat([
             { $or: [{ subject: { $regex: safe, $options: 'i' } }, { interactionNumber: { $regex: safe, $options: 'i' } }] },
           ]);

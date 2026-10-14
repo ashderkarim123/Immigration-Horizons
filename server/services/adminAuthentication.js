@@ -78,4 +78,4 @@ async function authenticateAdmin({ email, password, req, via }) {
   return { ok: true, user };
 }
 
-module.exports = { authenticateAdmin, sessionIdentity, normalizeEmail };
+module.exports = { authenticateAdmin, sessionIdentity, normalizeEmail, DUMMY_HASH };
