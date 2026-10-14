@@ -10,14 +10,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --conditions=react-server --import tsx --test --test-concurrency=1 test/*.test.ts",
+    "test": "node --conditions=react-server --import tsx --test --test-concurrency=1 test/*.test.ts test/*.test.mjs",
     "test:e2e": "playwright test",
     "db:indexes": "node --conditions=react-server --import tsx scripts/createIndexes.ts",
     "db:indexes:dry-run": "node --conditions=react-server --import tsx scripts/createIndexes.ts --dry-run",
     "mail:check": "node --conditions=react-server --import tsx scripts/checkMail.ts",
     "og:generate": "node --conditions=react-server --import tsx scripts/generateOgImage.tsx",
     "db:migrate": "node --conditions=react-server --import tsx scripts/migrate.ts",
-    "db:purge": "node --conditions=react-server --import tsx scripts/purgeRetention.ts"
+    "db:purge": "node --conditions=react-server --import tsx scripts/purgeRetention.ts",
+    "seo:audit": "python3 scripts/seo/audit.py",
+    "seo:google": "node scripts/seo/google.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

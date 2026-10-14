@@ -51,6 +51,7 @@ const rules = {
   resendKey: (v) => (/^re_/.test(v) ? '' : 'does not look like a Resend key'),
   gtm: (v) => (/^GTM-[A-Z0-9]+$/.test(v) ? '' : 'must look like GTM-XXXXXXX'),
   ga: (v) => (v === 'off' || /^G-[A-Z0-9]+$/.test(v) ? '' : 'must look like G-XXXXXXXXXX, or "off" when GA4 lives inside GTM'),
+  gaTransport: (v) => (['direct', 'gtm', 'off'].includes(v) ? '' : 'must be direct, gtm or off'),
   timezone: (v) => (/^[A-Za-z_]+(\/[A-Za-z_+-]+)+$|^UTC$/.test(v) ? '' : 'must be an IANA timezone such as America/New_York'),
 };
 
@@ -72,6 +73,7 @@ const PROFILES = {
     ['NEXT_PUBLIC_SITE_URL', 'publicUrl', true],
     ['NEXT_PUBLIC_GTM_ID', 'gtm', false],
     ['NEXT_PUBLIC_GA_MEASUREMENT_ID', 'ga', false],
+    ['NEXT_PUBLIC_GA_TRANSPORT', 'gaTransport', false],
   ],
   server: [
     ...COMMON,
