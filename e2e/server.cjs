@@ -27,6 +27,13 @@ Object.assign(process.env, {
   ADMIN_USERNAME: "",
   ADMIN_PASSWORD: "",
 });
+// Node closes an idle keep-alive socket after 5 s. A journey that works in the browser for a while and then makes an API
+// call on its reused request connection sometimes lands on a socket the server just closed and fails with ECONNRESET:
+// a harness flake, not an app error. Keep idle sockets longer than any pause a journey takes.
+function keepConnectionsOpen(server) {
+  server.keepAliveTimeout = 120_000;
+  server.headersTimeout = 125_000;
+}
 async function main() {
   const uri = await startTestDb();
   process.env.MONGODB_URI = uri;
@@ -322,6 +329,7 @@ async function main() {
   adminApp.use(express.static(adminRoot));
   adminApp.get("*", (_req, res) => res.sendFile(path.join(adminRoot, "index.html")));
   const adminServer = adminApp.listen(adminPort, "localhost");
+  keepConnectionsOpen(adminServer);
   // Media uploaded during the run lands in the real (git-ignored) upload directory; remember what was already there.
   const uploadsDir = path.resolve(__dirname, "../server/public/uploads");
   const uploadsBefore = new Set(await fs.readdir(uploadsDir).catch(() => []));
@@ -329,6 +337,7 @@ async function main() {
   const server = app.listen(port, "localhost", () =>
     console.log(`Browser fixtures ready at http://localhost:${port}`),
   );
+  keepConnectionsOpen(server);
   const shutdown = async () => {
     setTimeout(() => process.exit(0), 5000).unref();
     server.close();
