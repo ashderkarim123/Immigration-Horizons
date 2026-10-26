@@ -200,7 +200,7 @@ npm run db:indexes:dry-run
 
 Review the list. It is **additive `createIndexes()` only** — never `syncIndexes()`, nothing is dropped. Confirm it includes the collections added through Filing Packets, in particular:
 
-`case_smart_forms`, `smart_form_templates`, `smart_form_audits`, `case_petitions`, `petition_versions`, `filing_packets`, `filing_packet_versions`
+`evidencetemplates`, `evidencerequirements`, `employee_sessions`, `case_smart_forms`, `smart_form_templates`, `smart_form_audits`, `case_petitions`, `petition_versions`, `filing_packets`, `filing_packet_versions`
 
 (plus the earlier case/document/chat/notification collections if they were never built in production).
 
@@ -213,7 +213,7 @@ cd /srv/immigration-horizons/current
 npm run db:migrate
 ```
 
-Review each migration's counts and its "left untouched" samples. **Do not bulk-apply.** The runner registers 001 (notification recipient identity), 002 (link consultations to clients), 003 (link tasks to cases). Smart Forms, Petitions and Filing Packets are lazy/additive and need **no** migration or backfill. (Note: `scripts/migrations/004-seed-evidence-templates.ts` exists in the repo but is not registered in the runner — do not expect `db:migrate` to run it.)
+Review each migration's counts and its "left untouched" samples. **Do not bulk-apply.** The runner registers 001 (notification recipient identity), 002 (link consultations to clients), 003 (link tasks to cases), and 004 (seed evidence templates). Smart Forms, Petitions and Filing Packets are lazy/additive and need **no** migration or backfill. Migration 004 inserts missing evidence templates; review and build their indexes before an approved apply.
 
 ## 12. Apply production indexes (only after approval)
 
@@ -230,7 +230,7 @@ Record the printed counts. Verify (mongosh, read-only) for at least one new coll
 db.case_smart_forms.getIndexes()        db.case_petitions.getIndexes()        db.filing_packets.getIndexes()
 ```
 
-Expect the unique `{case, templateKey, templateVersion}`, `{case, sequence}` (petitions and packets) and `{packet|petition, versionNumber}` indexes. These unique indexes are what make provisioning and version numbering safe under concurrency, so **do not enable Angular staff traffic before they exist**.
+Expect the unique `{case, templateKey, templateVersion}`, `{case, sequence}` (petitions and packets) and `{packet|petition, versionNumber}` indexes. Evidence also needs unique `{key, version}` on `evidencetemplates` and partial unique `{case, templateKey, templateVersion, templateItemKey}` on `evidencerequirements`, with the schema's exact partial filter. These unique indexes are what make provisioning and version numbering safe under concurrency, so **do not enable Angular staff traffic before they exist**.
 
 ## 13. Apply a migration (only if explicitly approved as required for launch)
 
