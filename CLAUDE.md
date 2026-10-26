@@ -75,7 +75,7 @@ the conventions that will bite you):
 | Host | Application | Where |
 |---|---|---|
 | `immigrationhorizons.com` | Public marketing site — **the only indexed one** | `src/app/(site)/**` |
-| `app.immigrationhorizons.com` | SaaS: client portal + staff app | `src/app/(app)/**` |
+| `app.immigrationhorizons.com` | Client portal (`/portal/*`, Next.js) · **staff app (`/staff/*`, Angular)** · staff API (`/api/v1/*`, Express) | `src/app/(app)/**` · `enterprise-ui/` · `server/routes/api/v1/` |
 | `admin.immigrationhorizons.com` | Express/EJS admin CMS | `server/` |
 
 ```
@@ -199,6 +199,10 @@ Before completing any task, also check: desktop/tablet/mobile rendering, forms, 
 
 ## Build status
 
+> **Other agents: read `AGENTS.md` first.** It holds the staff-platform map (Angular app + `/api/v1/staff`), the rules each past bug
+> taught us, the production-safety rules, and the current state. This file is the product, brand and standards layer. The cycle
+> numbers below are the original portal plan; the Angular phases and Stabilization work are recorded in `docs/implementation/`.
+
 The marketing site is done. The platform is being built in numbered
 **cycles** from `.claude/immigration_horizons_implementation_plan/immigration_horizons_implementation_plan/NN_*.md`,
 one cycle per session. `docs/implementation/IMPLEMENTATION_STATUS.md` is the
@@ -220,7 +224,11 @@ authoritative per-cycle record — **read it before starting anything.**
 | 10 | Security, privacy & audit | ✅ ADR-012 |
 | — | Pluggable mail transport (SMTP + Resend) | ✅ ADR-013 |
 | 11 | Migrations · indexes · retention | ✅ ADR-014 |
-| **12** | **Testing · QA · acceptance — next** | ⬜ |
+| Angular 1–10 | Staff app: cases, tasks, evidence, documents, chat, Smart Forms, petition work, filing packets | ✅ ADR-015…023 |
+| Release Gate 01 | Angular staff production cutover (`/staff`) | ✅ ADR-024 |
+| Stabilization 01 | Angular/API contract repair, Evidence, Tasks, Messages inbox | ✅ merged and deployed |
+| 11 (roadmap) | USCIS Tracking | ⬜ not started, gated (see `AGENTS.md`) |
+| 12 | Testing · QA · acceptance | ⬜ per-phase suites exist; the Stabilization two-session QA checklist is still to be run |
 | 13–14 | Deployment · analytics | 🔨 partial |
 
 Marketing-site work that was never finished (low priority, unrelated to the
