@@ -41,6 +41,12 @@ keeps its own session check and row-level policy.
   (`ih_portal_session`) and `EmployeeSession` (`ih_staff_session`) are
   separate collections and cookies. Do not merge them behind a shared
   abstraction with a `type` field.
+- **Unverified portal sessions exist, and only three places accept them** (ADR-033). A consultation submission for a
+  brand-new email creates a `pending` account with no password and signs it in to a powerless session. Every normal
+  guard (`getSessionActor`, `requireClient`, every `/api/portal` route) still requires `status: "active"` and rejects it.
+  The opt-ins are `getUnverifiedSession*` in `session.ts`, used only by the `/portal` welcome screen, `resend-activation`
+  and `/portal/welcome`. Never hand a session to an account that already exists (anyone can type anyone's email into the form),
+  and never show an unverified session any data. Activation destroys every earlier session of the account it adopts.
 - **Two JSON APIs in `server/`, mounted on opposite sides of `express-session`** (ADR-029). `/api/v1/staff` sits
   before it and authenticates only `EmployeeSession`; `/api/v1/admin` sits after it and authenticates only the CMS
   session of a DB-backed `AdminUser`. Do not move either mount, and do not let one identity reach the other's routes.

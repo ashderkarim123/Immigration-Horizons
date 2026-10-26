@@ -26,6 +26,8 @@
 | `lead_form_submit_attempt` | Deliberate public submit action | `form_name`; `page_type` | App via GTM | No |
 | `form_error` | Server rejects validation/rate limit; no accepted lead | `form_name`; `error_category`, optional field **names** from predefined list only | App via GTM | No |
 | `generate_lead` | Server accepts consultation or contact enquiry exactly once | `form_name`, `event_version`. No client ID, case, contact info, message or raw campaign fields | App via GTM/approved consented transport | **Yes — primary** |
+| `thank_you_view` | The thank-you page after an **accepted** contact or consultation form was viewed (ADR-033). A view, not a conversion: a refresh or a direct visit can repeat it, and neither can ever count as a lead | `form_name`; `page_type`; `event_version` | App via GTM or direct GA4 (one owner) | No |
+| `sign_up` | The consultation submission **created a client-portal account**, reported once with the lead and before the page leaves (ADR-033). GA4 recommended event | `method=consultation_form`; `event_version` | App via GTM or direct GA4 (one owner) | Optional: owner decides |
 | `cta_consultation_click` | Clicks navigational CTA to free consultation | `cta_id`; `cta_placement`; `page_type` | App via GTM | No |
 | `click_whatsapp` | Intent to open a WhatsApp chat | `cta_placement`; `page_type`; `link_type=whatsapp` | App via GTM | No (secondary intent) |
 | `click_phone` | Intent to dial | `cta_placement`; `page_type`; `link_type=phone` | App via GTM | No (secondary intent) |
@@ -98,3 +100,9 @@ UTMs are case-sensitive. Lowercase source/medium/campaign strings. Ad-platform s
 - https://support.google.com/tagmanager/answer/6107056
 - https://developers.google.com/tag-platform/security/guides/consent
 - https://support.google.com/analytics/answer/6366371
+
+## Portal sign-up and activation measurement (ADR-033)
+
+- **`sign_up`** is sent by the public site when a submission creates a portal account. It is sent from the form, not the portal, because the portal is deliberately untagged (private surface; plan section 3, rule 5).
+- **Portal activation** (the visitor verifying their email) is **not** a GA4 event, for the same reason. It is recorded as the `activation_completed` security event, which staff can see.
+- The thank-you pages (`/contact/thank-you`, `/consultation/thank-you`) are `noindex` and outside the sitemap. A GA4 destination (URL) goal on them is possible but can be reached by a direct visit; prefer the `generate_lead` key event, which only the server's acceptance can produce.
