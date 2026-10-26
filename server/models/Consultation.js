@@ -48,6 +48,24 @@ const ConsultationSchema = new mongoose.Schema(
 
     priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
 
+    // Phase 15 sales CRM is separate from petition/delivery operational status.
+    // All fields optional: historical records require NO production backfill.
+    crmStage: { type: String, enum: [
+      'new', 'assigned', 'contacted', 'qualified', 'consultation_scheduled',
+      'proposal_sent', 'decision_pending', 'won', 'lost', 'client_created',
+    ], default: null },
+    crmLostReason: { type: String, enum: [
+      'budget', 'ineligible', 'unresponsive', 'other_provider', 'timing', 'other',
+    ], default: null },
+    crmNextFollowUpAt: { type: Date, default: null },
+    crmQuote: {
+      type: new mongoose.Schema({
+        amountMinor: { type: Number, min: 0, required: true },
+        currency: { type: String, enum: ['USD', 'GBP', 'CAD', 'EUR', 'AUD', 'PKR'], required: true },
+        note: { type: String, maxlength: 500, default: '' },
+      }, { _id: false }),
+      default: null,
+    },
     deliveryStatus: {
       type: String,
       enum: ['drafting', 'internal_review', 'client_review', 'ready', 'delivered'],
