@@ -2001,3 +2001,20 @@ DB regression checks encountered MongoDB startup `open: Operation not
 permitted`; browser download also failed. Review exact-SHA CI separately.
 No merge, deployment, database operation or Google tag publication occurred.
 Phase 11 remains on hold.
+
+## Phase 15 — Admin release gate, CRM pipeline, branch consolidation — 2026-10-26
+
+Seven unmerged branches (evidence index fix, agent docs, Phase 11 prompt,
+Admin release-gate plan, SEO audit, CRM pipeline, Next.js 16.3.6) were
+consolidated on `release/phase-15-integration` with no source conflicts; ADRs
+renumbered to 031 (Admin release gate) and 032 (Google SEO reporting) because
+030 and 026 were already taken on `main`. `deploy.sh` now packages the Angular
+Admin Console into `static/admin-console/` beside `static/staff/`, verified by
+`scripts/deploy/verify-admin-build.js`; nothing is routed to it. The missing
+favicon and apple-touch icons were added. Two time-bomb tests in
+`portal-calendar.integration.test.ts` were fixed.
+
+Not done, by design: production nginx, index apply, deploy, EJS retirement.
+The evidence-collection indexes remain **unapplied in production**.
+See `PHASE_15_ADMIN_RELEASE_GATE_REPORT.md`, `ANGULAR_ADMIN_CUTOVER_RUNBOOK.md`
+and `CRM_STAFF_PRODUCT_COMPLETION_MATRIX.md`.
