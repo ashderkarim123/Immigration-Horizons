@@ -110,7 +110,7 @@ chmod 700 "$SHARED/private-documents"
 # ---------------------------------------------------------------------------
 # Install and build
 # ---------------------------------------------------------------------------
-log "Installing dependencies (npm ci: Next.js app, admin/API, Angular staff)"
+log "Installing dependencies (npm ci: Next.js app, admin/API, Angular staff + admin)"
 # --include=dev is required here, not optional: `next build` needs
 # tailwindcss, @tailwindcss/postcss, and typescript, all devDependencies.
 # npm's own docs warn that a bare `npm ci` silently omits devDependencies
@@ -156,6 +156,26 @@ cp -R "$STAFF_DIST/." "$STAFF_STATIC/"
 # Wrong base href, missing entry bundle, or a bundle pointing at another origin fails HERE,
 # before the symlink moves.
 node "$RELEASE/scripts/deploy/verify-staff-build.js" "$STAFF_STATIC"
+# ---------------------------------------------------------------------------
+# Angular admin console (Phase 15, ADR-031) — packaged, NOT served
+# ---------------------------------------------------------------------------
+# Same rules as the staff app: built in this release, copied into its OWN
+# subdirectory (static/admin-console/) so neither bundle can overwrite the
+# other, and verified before the symlink moves. The EJS admin CMS keeps serving
+# the admin host until the operator runs the Admin cutover runbook.
+log "Building the Angular admin console (admin-console, base href /)"
+( cd "$RELEASE/enterprise-ui" && NG_CLI_ANALYTICS=false npx --no-install ng build admin-console )
+
+ADMIN_DIST="$RELEASE/enterprise-ui/dist/admin-console/browser"
+ADMIN_STATIC="$RELEASE/static/admin-console"
+[[ -f "$ADMIN_DIST/index.html" ]] || die "Angular admin build produced no index.html at $ADMIN_DIST."
+
+mkdir -p "$ADMIN_STATIC"
+cp -R "$ADMIN_DIST/." "$ADMIN_STATIC/"
+[[ -f "$ADMIN_STATIC/index.html" ]] || die "static/admin-console/index.html is missing after the copy."
+[[ -f "$STAFF_STATIC/index.html" ]] || die "static/staff/index.html was lost while adding the admin bundle."
+node "$RELEASE/scripts/deploy/verify-admin-build.js" "$ADMIN_STATIC"
+
 # nginx's worker user must be able to read these through the `current` symlink.
 chmod -R a+rX "$RELEASE/static"
 # The static output is all that ships; the toolchain would only cost disk per release.
@@ -200,7 +220,8 @@ HEALTHY=0
 check "http://127.0.0.1:3000/"      "web (marketing)" && \
 check "http://127.0.0.1:4000/admin/login" "admin CMS" && \
 check "http://127.0.0.1:4000/api/v1/health" "canonical staff API" && \
-[[ -f "$CURRENT/static/staff/index.html" ]] && echo "    OK   Angular staff files in the active release" && HEALTHY=1
+[[ -f "$CURRENT/static/staff/index.html" ]] && echo "    OK   Angular staff files in the active release" && \
+[[ -f "$CURRENT/static/admin-console/index.html" ]] && echo "    OK   Angular admin files in the active release" && HEALTHY=1
 
 if [[ "$HEALTHY" -ne 1 ]]; then
   warn "The new release is not serving."
@@ -232,5 +253,6 @@ git -C "$CACHE" worktree prune
 
 trap - ERR
 log "Deployed ${TIMESTAMP}-${SHA} — $SUBJECT"
-echo "    Angular staff files: $CURRENT/static/staff (not served until the app-host routing cutover — the proxy config was NOT changed)"
+echo "    Angular staff files: $CURRENT/static/staff (served after the app-host routing cutover)"
+echo "    Angular admin files: $CURRENT/static/admin-console (packaged, NOT served: the admin host still runs the EJS CMS until the Admin cutover runbook is followed. The proxy config was NOT changed)"
 echo "    rollback: ln -sfn <previous-release> $CURRENT && pm2 reload all"

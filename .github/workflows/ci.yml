@@ -194,3 +194,12 @@ jobs:
       - name: Build admin-console
         run: npx ng build admin-console
         working-directory: enterprise-ui
+
+      # Phase 15 (ADR-031): the Admin bundle deploy.sh will package into static/admin-console/.
+      # Fails on a wrong base href, a missing entry bundle, a dev origin, a secret-shaped value,
+      # or the Staff app having been copied into the Admin tree.
+      - name: Verify the admin build is releasable at the host root
+        run: node scripts/deploy/verify-admin-build.js enterprise-ui/dist/admin-console/browser
+
+      - name: deploy.sh is valid bash
+        run: bash -n scripts/deploy/deploy.sh

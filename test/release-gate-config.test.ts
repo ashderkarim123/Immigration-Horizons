@@ -166,7 +166,8 @@ test("deploy.sh builds, copies and verifies the Angular staff app BEFORE activat
   assert.match(body, /STAFF_STATIC="\$RELEASE\/static\/staff"/, "assets live INSIDE the release, so a symlink rollback rolls the UI back");
   assert.match(body, /\[\[ -f "\$STAFF_STATIC\/index\.html" \]\] \|\| die/, "a missing index fails the deploy");
   assert.doesNotMatch(body, /npm install\b/, "reproducible installs only");
-  assert.doesNotMatch(body, /ng build admin-console/, "admin-console is not built or served in this release");
+  // Phase 15 (ADR-031) packages admin-console into static/admin-console/; test/release-admin-build.test.ts covers that.
+  // It is packaged, never served: deploy.sh has no nginx step (see the next test).
 });
 
 test("deploy.sh health check covers the canonical API and the staff files, and never touches nginx", () => {
