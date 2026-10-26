@@ -61,7 +61,7 @@ describe('Navigation', () => {
     const groups = Array.from(el.querySelectorAll('.nav-group')).map((g) => [g.getAttribute('aria-label'), Array.from(g.querySelectorAll('a')).map((a) => a.textContent?.trim())]);
     expect(groups).toEqual([
       ['Workspace', ['Dashboard', 'Tasks', 'Notifications']],
-      ['Clients and leads', ['Clients', 'Leads', 'Consultations']],
+      ['Clients and leads', ['Clients', 'Leads', 'CRM pipeline', 'Consultations']],
       ['Case work', ['Cases', 'Deadlines']],
       ['Communication', ['Messages']],
       ['Operations', ['Team planning', 'Reports']],

@@ -39,6 +39,11 @@ beforeEach(clearCollections);
 const PASSWORD = "correct-horse-battery-staple";
 const NOW = new Date("2026-10-14T12:00:00.000Z");
 const day = (s: string) => new Date(`${s}T00:00:00.000Z`);
+// The portal route reads the REAL clock and hides anything already over, so tests that go through it
+// need dates relative to today. Fixed 2026-10 dates passed on the day they were written and then rotted.
+const DAY_MS = 24 * 60 * 60 * 1000;
+const inDays = (n: number) => new Date(Date.now() + n * DAY_MS);
+const ymd = (d: Date) => d.toISOString().slice(0, 10);
 
 const INTERNAL = {
   title: "INTERNAL: weak spot in the beneficiary's employment history",
@@ -75,7 +80,7 @@ const request = (ctx: Ctx, over: Record<string, unknown> = {}) =>
 const manual = (ctx: Ctx, over: Record<string, unknown> = {}) =>
   CaseCalendarEvent.create({
     case: ctx.caseDoc._id, workspace: ctx.workspace._id, internalTitle: INTERNAL.title, internalDescription: INTERNAL.description, allDay: false,
-    startAt: new Date("2026-10-20T18:30:00Z"), timeZone: "America/New_York", location: "Internal conference room 4", meetingUrl: "https://meet.example.com/internal-room",
+    startAt: inDays(6), timeZone: "America/New_York", location: "Internal conference room 4", meetingUrl: "https://meet.example.com/internal-room",
     clientVisible: true, clientTitle: "Interview preparation", clientDescription: "Bring your passport.", ...over,
   });
 
@@ -87,14 +92,18 @@ const itemsFor = (ctx: Ctx, now = NOW) => getClientCalendar({ caseId: String(ctx
 
 test("the client sees their own document due date, appointment, shared event and client-visible USCIS date, in date order", async () => {
   const ctx = await seed();
-  await request(ctx);
+  // Spread over the coming fortnight, in the order the client should see them: appointment, event, document, USCIS.
+  const appointmentAt = inDays(4);
+  const documentDue = ymd(inDays(8));
+  const uscisDue = ymd(inDays(13));
+  await request(ctx, { dueDate: day(documentDue) });
   await ConsultationInteraction.create({
     interactionNumber: `INT-${Math.random()}`, scopeType: "case", clientUser: ctx.owner.user._id, case: ctx.caseDoc._id, workspace: ctx.workspace._id,
-    subject: "Strategy call", description: "d", type: "scheduled_consultation", status: "scheduled", scheduledFor: new Date("2026-10-18T18:30:00Z"), timezone: "America/New_York", createdByType: "admin",
+    subject: "Strategy call", description: "d", type: "scheduled_consultation", status: "scheduled", scheduledFor: appointmentAt, timezone: "America/New_York", createdByType: "admin",
   });
-  await manual(ctx);
+  const sharedEvent = await manual(ctx);
   const filing = await USCISFiling.create({ case: ctx.caseDoc._id, workspace: ctx.workspace._id, title: "I-140 petition", formType: "I-140", clientVisible: true });
-  await USCISStatusEvent.create({ filing: filing._id, case: ctx.caseDoc._id, workspace: ctx.workspace._id, statusCategory: "rfe_issued", statusTitle: "Request for Evidence", occurredAt: new Date("2026-10-01"), observedAt: NOW, source: "manual", actionRequired: true, responseDueAt: day("2026-10-27"), clientVisible: true });
+  await USCISStatusEvent.create({ filing: filing._id, case: ctx.caseDoc._id, workspace: ctx.workspace._id, statusCategory: "rfe_issued", statusTitle: "Request for Evidence", occurredAt: new Date("2026-10-01"), observedAt: NOW, source: "manual", actionRequired: true, responseDueAt: day(uscisDue), clientVisible: true });
 
   const res = await call(ctx.caseDoc._id, ctx.owner.cookie);
   assert.equal(res.status, 200);
@@ -102,10 +111,10 @@ test("the client sees their own document due date, appointment, shared event and
   assert.deepEqual(items.map((i: { kind: string }) => i.kind), ["appointment", "event", "document_due", "uscis_response"]);
 
   const [appointment, event, document, uscis] = items;
-  assert.deepEqual([appointment.title, appointment.mode, appointment.startAt, appointment.timeZone], ["Strategy call", "datetime", "2026-10-18T18:30:00.000Z", "America/New_York"]);
-  assert.deepEqual([event.title, event.description, event.startAt, event.timeZone], ["Interview preparation", "Bring your passport.", "2026-10-20T18:30:00.000Z", "America/New_York"]);
-  assert.deepEqual([document.title, document.mode, document.date, document.href], ["Document due: Passport copy", "date", "2026-10-22", `/portal/cases/${ctx.caseDoc._id}/documents`]);
-  assert.deepEqual([uscis.title, uscis.date, uscis.description, uscis.href], ["USCIS response due: I-140 petition", "2026-10-27", "Request for Evidence", `/portal/cases/${ctx.caseDoc._id}/uscis`]);
+  assert.deepEqual([appointment.title, appointment.mode, appointment.startAt, appointment.timeZone], ["Strategy call", "datetime", appointmentAt.toISOString(), "America/New_York"]);
+  assert.deepEqual([event.title, event.description, event.startAt, event.timeZone], ["Interview preparation", "Bring your passport.", sharedEvent.startAt!.toISOString(), "America/New_York"]);
+  assert.deepEqual([document.title, document.mode, document.date, document.href], ["Document due: Passport copy", "date", documentDue, `/portal/cases/${ctx.caseDoc._id}/documents`]);
+  assert.deepEqual([uscis.title, uscis.date, uscis.description, uscis.href], ["USCIS response due: I-140 petition", uscisDue, "Request for Evidence", `/portal/cases/${ctx.caseDoc._id}/uscis`]);
 });
 
 test("internal manual events, Staff tasks, the internal target filing date and internal query deadlines never appear", async () => {
