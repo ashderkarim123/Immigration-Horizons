@@ -10,6 +10,7 @@ const { trustedOriginMiddleware } = require('../../../../middleware/api/trustedO
 const { createApiError } = require('../../../../middleware/api/apiError');
 const { leadScope } = require('../../../../services/leadPolicy');
 const { logActivity } = require('../../../../utils/activity');
+const { can } = require('../../../../utils/permissions');
 const { STAGES, STAGE_VALUES, LOST_REASONS, resolveStage, mongoStageExpression, normalizeEmail } = require('../../../../services/crmPipeline');
 
 const handle = (action) => async (req, res, next) => {
@@ -112,7 +113,7 @@ router.get('/crm/funnel', requireApiCapability('leads.view'), handle(async (req,
 }));
 
 router.get('/crm/leads/:id', requireApiCapability('leads.view'), handle(async (req, res) => {
-  reply(req, res, { lead: dto(await scopedLead(req)), stages: STAGES, lostReasons: LOST_REASONS });
+  reply(req, res, { lead: dto(await scopedLead(req)), stages: STAGES, lostReasons: LOST_REASONS, canEdit: can(req, 'leads.edit') });
 }));
 
 // Normalized email only. Suggestions are never automatically merged, and the

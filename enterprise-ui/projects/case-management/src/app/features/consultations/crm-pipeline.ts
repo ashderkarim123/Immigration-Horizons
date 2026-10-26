@@ -13,7 +13,7 @@ interface CrmLead {
   quote: { amountMinor: number; currency: string; note: string } | null;
 }
 interface Lane { value: string; label: string; total: number; truncated: boolean; items: CrmLead[]; }
-interface Detail { lead: CrmLead; stages: {value: string; label: string}[]; lostReasons: string[]; }
+interface Detail { lead: CrmLead; stages: {value: string; label: string}[]; lostReasons: string[]; canEdit: boolean; }
 
 @Component({
   selector: 'ih-crm-pipeline', standalone: true, imports: [FormsModule, RouterLink, DatePipe],
@@ -31,6 +31,7 @@ interface Detail { lead: CrmLead; stages: {value: string; label: string}[]; lost
       <p><a [routerLink]="['/intake', data.lead.id]">Open intake and tasks</a>
         @if (data.lead.caseId) { · <a [routerLink]="['/cases', data.lead.caseId]">Open converted case</a> }
       </p>
+      @if (data.canEdit) {
       <form (ngSubmit)="save()" class="crm-form">
         <h3>CRM details</h3>
         <label for="crm-stage">Sales stage</label>
@@ -61,6 +62,7 @@ interface Detail { lead: CrmLead; stages: {value: string; label: string}[]; lost
         <p class="hint">This is an internal indicative amount, not an invoice or an emailed offer.</p>
         <button class="btn btn-primary" type="submit" [disabled]="busy() || (stage === 'lost' && !lostReason)">Save CRM details</button>
       </form>
+      } @else { <p role="note">You can view CRM details but cannot change them.</p> }
       <h3>Possible duplicates (same email)</h3>
       <button type="button" (click)="loadDuplicates()" [disabled]="busy()">Check possible duplicates</button>
       @if (duplicates(); as matches) {

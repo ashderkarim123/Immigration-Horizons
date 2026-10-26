@@ -53,6 +53,12 @@ describe('Navigation', () => {
     expect(labels([])).toEqual(['Dashboard', 'Tasks', 'Notifications']);
   });
 
+  it('restricts CRM navigation to staff with leads.view', () => {
+    expect(labels(['cases.view'])).not.toContain('CRM pipeline');
+    TestBed.resetTestingModule();
+    expect(labels(['leads.view'])).toContain('CRM pipeline');
+  });
+
   it('groups the menu by what a person comes to do, shows only groups with something in them, and reaches leads, consultations and planning', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: MailUnreadService, useValue: { count: signal(0), start: () => undefined, stop: () => undefined, refresh: () => undefined } }, { provide: AuthService, useValue: { capabilities: signal(['cases.view', 'clients.view', 'leads.view', 'queries.view', 'channels.view', 'sprints.manage', 'reports.view']) } }] });
     const fixture = TestBed.createComponent(Navigation);
@@ -61,13 +67,13 @@ describe('Navigation', () => {
     const groups = Array.from(el.querySelectorAll('.nav-group')).map((g) => [g.getAttribute('aria-label'), Array.from(g.querySelectorAll('a')).map((a) => a.textContent?.trim())]);
     expect(groups).toEqual([
       ['Workspace', ['Dashboard', 'Tasks', 'Notifications']],
-      ['Clients and leads', ['Clients', 'Leads', 'Consultations']],
+      ['Clients and leads', ['Clients', 'Leads', 'CRM pipeline', 'Consultations']],
       ['Case work', ['Cases', 'Deadlines']],
       ['Communication', ['Messages']],
       ['Operations', ['Team planning', 'Reports']],
     ]);
     const href = (label: string) => Array.from(el.querySelectorAll('a')).find((a) => a.textContent?.trim() === label)?.getAttribute('href');
-    expect([href('Leads'), href('Consultations'), href('Team planning'), href('Notifications')]).toEqual(['/intake', '/consultations', '/planning', '/notifications']);
+    expect([href('Leads'), href('CRM pipeline'), href('Consultations'), href('Team planning'), href('Notifications')]).toEqual(['/intake', '/crm', '/consultations', '/planning', '/notifications']);
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: MailUnreadService, useValue: { count: signal(0), start: () => undefined, stop: () => undefined, refresh: () => undefined } }, { provide: AuthService, useValue: { capabilities: signal([]) } }] });

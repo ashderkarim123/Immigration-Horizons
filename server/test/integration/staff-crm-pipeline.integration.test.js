@@ -125,3 +125,32 @@ test('converted leads are concealed from a non-member, including duplicate sugge
   assert.equal((await admin.agent.get(url(visible.id) + '/duplicates')).body.data.items.length, 1);
   assert.equal((await admin.agent.get(url(hidden.id))).status, 200);
 });
+
+test('UTC created-date funnel reports source attribution and linked-case conversion, rejects bad ranges', async () => {
+  const admin = await as('admin');
+  await createLead({ status: 'new', leadSource: 'Referral', createdAt: new Date('2026-10-10T23:00:00Z') });
+  await createLead({ status: 'closed', leadSource: 'Referral', convertedCase: new mongoose.Types.ObjectId(), createdAt: new Date('2026-10-11T00:00:00Z') });
+  await createLead({ status: 'new', leadSource: 'Facebook', createdAt: new Date('2026-08-01T00:00:00Z') });
+  const response = await admin.agent.get('/api/v1/staff/crm/funnel?from=2026-10-10&to=2026-10-11');
+  assert.equal(response.status, 200, JSON.stringify(response.body));
+  const data = response.body.data;
+  assert.equal(data.total, 2);
+  assert.equal(data.converted, 1);
+  assert.equal(data.conversionRatePct, 50);
+  assert.equal(data.timezone, 'UTC');
+  assert.equal(data.sources.find(item => item.source === 'Referral').count, 2);
+  assert.equal(data.stages.find(item => item.value === 'client_created').count, 1);
+  for (const query of ['from=2026-02-30&to=2026-03-01', 'from=2025-01-01&to=2026-10-01', 'from=2026-10-12&to=2026-10-01']) {
+    assert.equal((await admin.agent.get('/api/v1/staff/crm/funnel?' + query)).status, 422);
+  }
+});
+
+test('CRM funnel never counts converted leads outside live case membership', async () => {
+  const viewer = await as('viewer');
+  const admin = await as('admin');
+  await createLead({ leadSource: 'Referral', createdAt: new Date('2026-10-10T00:00:00Z') });
+  await createLead({ leadSource: 'Facebook', convertedCase: new mongoose.Types.ObjectId(), createdAt: new Date('2026-10-10T00:00:00Z') });
+  const url = '/api/v1/staff/crm/funnel?from=2026-10-10&to=2026-10-10';
+  assert.equal((await viewer.agent.get(url)).body.data.total, 1);
+  assert.equal((await admin.agent.get(url)).body.data.total, 2);
+});
