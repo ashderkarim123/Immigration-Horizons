@@ -1,16 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 
 import { submitContact } from "@/app/(site)/contact/actions";
 import type { FormState } from "@/app/(site)/consultation/actions";
-import { useFormTracking } from "@/components/analytics/use-form-tracking";
+import { trackFormAttempt, useFormTracking } from "@/components/analytics/use-form-tracking";
 import { Button } from "@/components/ui/button";
 import { contact, whatsappLink } from "@/lib/content/site";
+import { trackingFromSearch, type TrackingParams } from "@/lib/tracking";
 
-import { Field, Honeypot, TextArea, TextInput } from "./fields";
+import { Field, Honeypot, TextArea, TextInput, TrackingFields } from "./fields";
 
 const initialState: FormState = { status: "idle" };
 
@@ -26,6 +27,15 @@ function SubmitButton() {
 export function ContactForm() {
   const [state, formAction] = useActionState(submitContact, initialState);
   useFormTracking("contact", state);
+
+  // Read in the browser so /contact stays a static page. These are only the page's own query-string
+  // campaign parameters, submitted with the form; nothing is stored in the browser.
+  const [tracking, setTracking] = useState<TrackingParams>({});
+  useEffect(() => {
+    // Hydration-safe: the query string is not known on the server, so it is read once after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTracking(trackingFromSearch(window.location.search));
+  }, []);
 
   if (state.status === "success") {
     return (
@@ -50,8 +60,9 @@ export function ContactForm() {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-5" noValidate>
+    <form action={formAction} onSubmit={() => trackFormAttempt("contact")} className="flex flex-col gap-5" noValidate>
       <Honeypot />
+      <TrackingFields params={tracking as Record<string, string>} />
 
       {state.status === "error" && state.message ? (
         <p

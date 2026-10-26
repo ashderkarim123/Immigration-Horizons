@@ -11,6 +11,7 @@ export function WhatsAppFab() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
+      data-cta-placement="floating"
       className="shadow-lifted fixed right-5 bottom-5 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white transition-transform duration-200 ease-(--ease-out-soft) motion-safe:hover:scale-105"
     >
       <svg viewBox="0 0 32 32" width="28" height="28" fill="currentColor" aria-hidden>

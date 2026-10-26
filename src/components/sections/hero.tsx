@@ -37,7 +37,7 @@ function HeroLink({
 
 export function Hero() {
   return (
-    <section className="bg-navy-950 relative overflow-hidden">
+    <section data-cta-placement="hero" className="bg-navy-950 relative overflow-hidden">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.16),transparent_55%)]"

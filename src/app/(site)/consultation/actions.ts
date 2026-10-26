@@ -1,17 +1,26 @@
 "use server";
 
-import { redirect } from "next/navigation";
-
 import { deliverLead } from "@/lib/leads";
 import { isRateLimited } from "@/lib/rate-limit";
 import { caseCategories, supportServices } from "@/lib/content/services";
 import { linkOrInviteAfterConsultation } from "@/lib/auth/invitations";
+import { trackingFromForm } from "@/lib/tracking";
 
 export type FormState = {
   status: "idle" | "success" | "error";
   message?: string;
   /** Field-level errors keyed by field name. */
   errors?: Record<string, string>;
+  /**
+   * True only when the server genuinely took the enquiry. The honeypot answer
+   * is a "success" for the bot's benefit but is never accepted, so analytics
+   * can count real leads exactly once (Phase 16).
+   */
+  accepted?: boolean;
+  /** Why a submission was rejected, for the `form_error` analytics event. */
+  errorCategory?: "validation" | "rate_limit" | "delivery";
+  /** Where the browser goes next. Always a portal path chosen by the server. */
+  redirectTo?: string;
 };
 
 const validServiceValues = new Set(
@@ -19,24 +28,6 @@ const validServiceValues = new Set(
 );
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function readTracking(formData: FormData): Record<string, string> {
-  const keys = [
-    "utm_source",
-    "utm_medium",
-    "utm_campaign",
-    "utm_term",
-    "utm_content",
-    "gclid",
-    "fbclid",
-  ];
-  const out: Record<string, string> = {};
-  for (const key of keys) {
-    const value = formData.get(key);
-    if (typeof value === "string" && value.trim()) out[key] = value.trim();
-  }
-  return out;
-}
 
 export async function submitConsultation(
   _prev: FormState,
@@ -51,6 +42,7 @@ export async function submitConsultation(
     return {
       status: "error",
       message: "Too many requests. Please wait a minute and try again.",
+      errorCategory: "rate_limit",
     };
   }
 
@@ -74,6 +66,7 @@ export async function submitConsultation(
       status: "error",
       message: "Please correct the highlighted fields.",
       errors,
+      errorCategory: "validation",
     };
   }
 
@@ -84,7 +77,7 @@ export async function submitConsultation(
     phone,
     service,
     message,
-    tracking: readTracking(formData),
+    tracking: trackingFromForm(formData),
   });
 
   if (!delivered) {
@@ -92,6 +85,7 @@ export async function submitConsultation(
       status: "error",
       message:
         "Something went wrong sending your request. Please try again, or reach us directly on WhatsApp.",
+      errorCategory: "delivery",
     };
   }
 
@@ -103,11 +97,14 @@ export async function submitConsultation(
     ? await linkOrInviteAfterConsultation({ email, name, consultationId })
     : "skipped_no_db";
 
-  // Server Action redirects use next/navigation's redirect(), which throws
-  // a control-flow signal Next.js turns into a real client-side navigation
-  // — this function does not return past this point on the success path.
-  if (outcome === "linked_existing_client") {
-    redirect("/portal/login?next=/portal/consultations");
-  }
-  redirect("/portal/check-email");
+  // The browser navigates, not the server: a server redirect would leave the
+  // page before its analytics hook could report this accepted lead, and the
+  // portal pages are deliberately untagged. The form reports, then follows
+  // `redirectTo`; without JavaScript the success panel offers it as a link.
+  return {
+    status: "success",
+    accepted: true,
+    message: "Thanks, your request has been received.",
+    redirectTo: outcome === "linked_existing_client" ? "/portal/login?next=/portal/consultations" : "/portal/check-email",
+  };
 }

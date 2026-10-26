@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 
 import { submitConsultation, type FormState } from "@/app/(site)/consultation/actions";
-import { useFormTracking } from "@/components/analytics/use-form-tracking";
+import { trackFormAttempt, useFormTracking } from "@/components/analytics/use-form-tracking";
 import { Button } from "@/components/ui/button";
 import { caseCategories, supportServices } from "@/lib/content/services";
 import { contact, whatsappLink } from "@/lib/content/site";
@@ -47,6 +47,16 @@ export function ConsultationForm({
   const service = useRef(defaultService ?? "");
   useFormTracking("consultation", state, () => ({ service: service.current }));
 
+  // The server decides where an accepted request goes next (portal check-email or sign-in). The browser
+  // follows it only after the lead event above has been queued: gtag sends it as a beacon, and a
+  // navigation in the same tick can cut it off. The portal is untagged, so this is the last chance to count it.
+  useEffect(() => {
+    const target = state.redirectTo;
+    if (state.status !== "success" || !state.accepted || !target?.startsWith("/portal/")) return;
+    const timer = setTimeout(() => window.location.assign(target), 400);
+    return () => clearTimeout(timer);
+  }, [state]);
+
   if (state.status === "success") {
     return (
       <div className="rounded-panel border-navy-200 bg-navy-50 flex flex-col items-center gap-4 border p-10 text-center">
@@ -57,6 +67,11 @@ export function ConsultationForm({
         <p className="text-ink-600 max-w-md text-[0.9375rem] leading-relaxed">
           {state.message}
         </p>
+        {state.redirectTo ? (
+          <Button href={state.redirectTo} variant="primary">
+            Continue
+          </Button>
+        ) : null}
         <Button
           href={whatsappLink(contact.whatsappPrimary)}
           variant="outline"
@@ -76,6 +91,7 @@ export function ConsultationForm({
         const { name, value } = e.target as unknown as HTMLSelectElement;
         if (name === "service") service.current = value;
       }}
+      onSubmit={() => trackFormAttempt("consultation")}
       className="flex flex-col gap-5"
       noValidate
     >

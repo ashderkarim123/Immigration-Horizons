@@ -3,6 +3,7 @@
 import { deliverLead } from "@/lib/leads";
 import { isRateLimited } from "@/lib/rate-limit";
 import type { FormState } from "@/app/(site)/consultation/actions";
+import { trackingFromForm } from "@/lib/tracking";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,6 +19,7 @@ export async function submitContact(
     return {
       status: "error",
       message: "Too many requests. Please wait a minute and try again.",
+      errorCategory: "rate_limit",
     };
   }
 
@@ -37,21 +39,24 @@ export async function submitContact(
       status: "error",
       message: "Please correct the highlighted fields.",
       errors,
+      errorCategory: "validation",
     };
   }
 
-  const { delivered } = await deliverLead({ kind: "contact", name, email, message });
+  const { delivered } = await deliverLead({ kind: "contact", name, email, message, tracking: trackingFromForm(formData) });
 
   if (!delivered) {
     return {
       status: "error",
       message:
         "Something went wrong sending your message. Please try again, or reach us directly on WhatsApp.",
+      errorCategory: "delivery",
     };
   }
 
   return {
     status: "success",
+    accepted: true,
     message: "Thanks for reaching out — we'll get back to you by email shortly.",
   };
 }

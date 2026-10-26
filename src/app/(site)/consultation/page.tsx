@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CalendarCheck, Clock, MessageCircle, ShieldCheck } from "lucide-react";
 
 import { ConsultationForm } from "@/components/forms/consultation-form";
+import { sanitizeTracking } from "@/lib/tracking";
 import { Breadcrumbs } from "@/components/service/breadcrumbs";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/container";
@@ -23,16 +24,6 @@ export const metadata: Metadata = {
     url: "/consultation",
   },
 };
-
-const TRACKING_KEYS = [
-  "utm_source",
-  "utm_medium",
-  "utm_campaign",
-  "utm_term",
-  "utm_content",
-  "gclid",
-  "fbclid",
-] as const;
 
 const assurances = [
   {
@@ -73,11 +64,7 @@ export default async function ConsultationPage({
     (s) => s.slug === serviceParam || s.name === serviceParam,
   );
 
-  const tracking: Record<string, string> = {};
-  for (const key of TRACKING_KEYS) {
-    const value = first(params[key]);
-    if (value) tracking[key] = value;
-  }
+  const tracking = sanitizeTracking((key) => first(params[key]));
 
   return (
     <>
