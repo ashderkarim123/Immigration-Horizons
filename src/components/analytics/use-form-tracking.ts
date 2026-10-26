@@ -29,6 +29,9 @@ export function useFormTracking(formName: FormName, state: FormState, getParams?
     const event = formOutcomeEvent(state);
     if (event === "generate_lead") {
       trackEvent("generate_lead", { form_name: formName, ...getParams?.() });
+      // The submission also created a portal account: its own event, reported with the lead and
+      // before the page leaves (the portal is untagged, so this is the only chance to count it).
+      if (state.newPortalAccount) trackEvent("sign_up", { method: "consultation_form" });
     } else if (event === "form_error") {
       trackEvent("form_error", {
         form_name: formName,

@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 
 import { submitConsultation, type FormState } from "@/app/(site)/consultation/actions";
 import { trackFormAttempt, useFormTracking } from "@/components/analytics/use-form-tracking";
+import { useAcceptedRedirect } from "./use-accepted-redirect";
 import { Button } from "@/components/ui/button";
 import { caseCategories, supportServices } from "@/lib/content/services";
 import { contact, whatsappLink } from "@/lib/content/site";
@@ -47,15 +48,7 @@ export function ConsultationForm({
   const service = useRef(defaultService ?? "");
   useFormTracking("consultation", state, () => ({ service: service.current }));
 
-  // The server decides where an accepted request goes next (portal check-email or sign-in). The browser
-  // follows it only after the lead event above has been queued: gtag sends it as a beacon, and a
-  // navigation in the same tick can cut it off. The portal is untagged, so this is the last chance to count it.
-  useEffect(() => {
-    const target = state.redirectTo;
-    if (state.status !== "success" || !state.accepted || !target?.startsWith("/portal/")) return;
-    const timer = setTimeout(() => window.location.assign(target), 400);
-    return () => clearTimeout(timer);
-  }, [state]);
+  useAcceptedRedirect(state);
 
   if (state.status === "success") {
     return (

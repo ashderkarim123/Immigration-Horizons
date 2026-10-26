@@ -45,16 +45,21 @@ export function Button({
   block,
   className,
   href,
+  sameTab,
   ...props
 }: ButtonVariants &
-  Omit<React.ComponentProps<"button">, "color"> & { href?: string }) {
+  Omit<React.ComponentProps<"button">, "color"> & {
+    href?: string;
+    /** Keep an absolute link in this tab. By default http(s) links open a new tab; a hand-off to our own portal should not. */
+    sameTab?: boolean;
+  }) {
   const classes = cn(BASE, VARIANTS[variant ?? "primary"], SIZES[size ?? "md"], block && "w-full", className);
 
   if (href) {
     // Button-only props have no meaning on an anchor, so they are dropped
     // rather than forwarded into the DOM.
     const { type: _type, disabled: _disabled, ...rest } = props;
-    const external = /^(https?:|mailto:|tel:)/.test(href);
+    const external = !sameTab && /^(https?:|mailto:|tel:)/.test(href);
 
     return (
       <Link

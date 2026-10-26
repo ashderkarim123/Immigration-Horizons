@@ -41,6 +41,7 @@ const CTA_PLACEMENTS = new Set(["hero", "header", "footer", "floating", "service
 const CTA_IDS = new Set(["free_consultation", "service_consultation", "contact_panel"]);
 const LINK_TYPES = new Set(["whatsapp", "phone", "email", "consultation"]);
 const ERROR_CATEGORIES = new Set(["validation", "rate_limit", "delivery"]);
+const SIGN_UP_METHODS = new Set(["consultation_form"]);
 
 /** Only categorical form information is allowed through the event boundary. */
 export function analyticsParams(params: Params): Params {
@@ -54,6 +55,7 @@ export function analyticsParams(params: Params): Params {
   pick("cta_id", CTA_IDS);
   pick("link_type", LINK_TYPES);
   pick("error_category", ERROR_CATEGORIES);
+  pick("method", SIGN_UP_METHODS);
   if (params.form_name === "contact" || params.form_name === "consultation") result.form_name = params.form_name;
   if (typeof params.service === "string" && services.has(params.service)) result.service = params.service;
   if (typeof params.error_fields === "string") {
@@ -65,6 +67,8 @@ export function analyticsParams(params: Params): Params {
 
 export type AnalyticsEvent =
   | "generate_lead" // a consultation or contact form was accepted by the server
+  | "sign_up" // a form submission created a client-portal account (GA4 recommended event)
+  | "thank_you_view" // the thank-you page after an accepted form was viewed; a view, not a conversion
   | "lead_form_submit_attempt" // the visitor pressed submit; NOT a lead, the server may still reject it
   | "form_error" // a submission was rejected (validation / rate limit)
   | "click_whatsapp"

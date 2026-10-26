@@ -141,3 +141,22 @@ test("a lead is counted only when the server ACCEPTED it: the honeypot success, 
   assert.equal(formOutcomeEvent({ status: "error" }), "form_error");
   assert.equal(formOutcomeEvent({ status: "error", accepted: true }), "form_error", "an error is never a lead, whatever else is set");
 });
+
+test("sign_up carries only its own method, and thank_you_view carries only safe dimensions", () => {
+  assert.deepEqual(analyticsParams({ method: "consultation_form" }), { method: "consultation_form" });
+  assert.deepEqual(analyticsParams({ method: "someone@example.com" }), {}, "free text can never ride along in method");
+  assert.deepEqual(analyticsParams({ form_name: "consultation", page_type: "consultation", token: "secret", email: "a@b.co" }), { form_name: "consultation", page_type: "consultation" });
+});
+
+test("sign_up and thank_you_view reach the dataLayer once each, versioned", () => {
+  const dataLayer: unknown[] = [];
+  (globalThis as { window?: unknown }).window = { dataLayer, gtag: (...args: unknown[]) => dataLayer.push(args) };
+  try {
+    trackEvent("sign_up", { method: "consultation_form" });
+    trackEvent("thank_you_view", { form_name: "contact", page_type: "contact" });
+  } finally { delete (globalThis as { window?: unknown }).window; }
+  assert.deepEqual(dataLayer, [
+    ["event", "sign_up", { method: "consultation_form", event_version: "1" }],
+    ["event", "thank_you_view", { form_name: "contact", page_type: "contact", event_version: "1" }],
+  ]);
+});

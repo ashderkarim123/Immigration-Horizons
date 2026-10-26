@@ -57,6 +57,7 @@ export async function submitContact(
   return {
     status: "success",
     accepted: true,
+    redirectTo: "/contact/thank-you",
     message: "Thanks for reaching out — we'll get back to you by email shortly.",
   };
 }

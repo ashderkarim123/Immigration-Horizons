@@ -52,8 +52,11 @@ test("contact: one attempt, then exactly one generate_lead after the server acce
   await page.goto("/contact?utm_source=newsletter&utm_medium=email&utm_campaign=october_guides");
   await fillContact(page);
   await page.getByRole("button", { name: "Send message" }).click();
-  await expect(page.getByRole("heading", { name: "Message sent" })).toBeVisible();
+  // The accepted lead is reported first, then the browser moves to the thank-you page (a conversion URL).
+  await page.waitForURL(/\/contact\/thank-you/, { timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("we've received your message");
   await waitForEvent(page, "generate_lead");
+  await waitForEvent(page, "thank_you_view");
   await page.waitForTimeout(750); // a second, duplicate event would show up here
 
   const events = await queued(page);
@@ -62,6 +65,8 @@ test("contact: one attempt, then exactly one generate_lead after the server acce
   expect(leads).toHaveLength(1);
   expect(leads[0][2]).toEqual({ form_name: "contact", event_version: "1" });
   expect(named(events, "form_error")).toHaveLength(0);
+  expect(named(events, "thank_you_view")).toHaveLength(1);
+  expect(named(events, "sign_up")).toHaveLength(0); // a contact message creates no portal account
 
   const all = JSON.stringify(events);
   for (const private_ of ["casey.example", "Casey", "Synthetic enquiry", "newsletter", "october_guides"]) {
@@ -72,7 +77,8 @@ test("contact: one attempt, then exactly one generate_lead after the server acce
 test("contact: a validation failure is a form_error with a category, and never a lead", async ({ page }) => {
   await page.goto("/contact");
   await page.getByRole("button", { name: "Send message" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  // The form shows a summary alert plus one per invalid field (and Next adds an empty route announcer), so match the summary.
+  await expect(page.getByRole("alert").filter({ hasText: "Please correct the highlighted fields." })).toBeVisible();
   await waitForEvent(page, "form_error");
   await page.waitForTimeout(750);
 
@@ -105,11 +111,11 @@ test("consultation: the accepted lead is reported ONCE before the browser leaves
   await page.getByLabel("Tell us about your situation").fill("Synthetic consultation request from the analytics browser test.");
   await page.getByRole("button", { name: "Request my free consultation" }).click();
 
-  // The server no longer redirects: the form reports the lead, then follows `redirectTo`.
-  await page.waitForURL(/\/portal\//, { timeout: 30_000 });
+  // The server no longer redirects: the form reports the lead, then follows `redirectTo` to the thank-you page.
+  await page.waitForURL(/\/consultation\/thank-you/, { timeout: 30_000 });
   const events = await queued(page);
   const leads = named(events, "generate_lead");
-  expect(leads, "the accepted consultation must survive the navigation to the untagged portal").toHaveLength(1);
+  expect(leads, "the accepted consultation must survive the navigation to the thank-you page").toHaveLength(1);
   expect(leads[0][2]).toMatchObject({ form_name: "consultation", event_version: "1" });
   expect(named(events, "lead_form_submit_attempt")).toHaveLength(1);
   const all = JSON.stringify(events);

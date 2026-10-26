@@ -288,6 +288,28 @@ async function main() {
       res.status(500).json({ error: String(error) });
     }
   });
+  // Stand-in for the emailed activation link (ADR-033): the fixture sends no mail, so a journey asks for a fresh,
+  // known token for an address, exactly as if it had opened the link in its inbox. Revokes any earlier link, like the app does.
+  app.post("/__browser_activation_token", express.json(), async (req, res) => {
+    try {
+      const PortalInvitation = require("../server/models/PortalInvitation");
+      const { createHash, randomBytes } = require("node:crypto");
+      const email = String(req.body.email || "").trim().toLowerCase();
+      const token = randomBytes(32).toString("base64url");
+      await PortalInvitation.updateMany({ normalizedEmail: email, usedAt: null, revokedAt: null }, { $set: { revokedAt: new Date() } });
+      await PortalInvitation.create({
+        normalizedEmail: email,
+        firstName: "Casey",
+        tokenHash: createHash("sha256").update(token).digest("hex"),
+        purpose: "consultation_activation",
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      });
+      res.json({ token });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
   // ADR-030: the shared mailbox against an in-memory fake Microsoft (never the network). One inbound message, created on demand.
   const fakeGraph = require("../server/test/helpers/fakeGraph");
   fakeGraph.useConfig();

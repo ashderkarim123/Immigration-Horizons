@@ -7,6 +7,7 @@ import { CheckCircle2, MessageCircle } from "lucide-react";
 import { submitContact } from "@/app/(site)/contact/actions";
 import type { FormState } from "@/app/(site)/consultation/actions";
 import { trackFormAttempt, useFormTracking } from "@/components/analytics/use-form-tracking";
+import { useAcceptedRedirect } from "./use-accepted-redirect";
 import { Button } from "@/components/ui/button";
 import { contact, whatsappLink } from "@/lib/content/site";
 import { trackingFromSearch, type TrackingParams } from "@/lib/tracking";
@@ -27,6 +28,7 @@ function SubmitButton() {
 export function ContactForm() {
   const [state, formAction] = useActionState(submitContact, initialState);
   useFormTracking("contact", state);
+  useAcceptedRedirect(state);
 
   // Read in the browser so /contact stays a static page. These are only the page's own query-string
   // campaign parameters, submitted with the form; nothing is stored in the browser.
@@ -47,6 +49,11 @@ export function ContactForm() {
         <p className="text-ink-600 max-w-md text-[0.9375rem] leading-relaxed">
           {state.message}
         </p>
+        {state.redirectTo ? (
+          <Button href={state.redirectTo} variant="primary">
+            Continue
+          </Button>
+        ) : null}
         <Button
           href={whatsappLink(contact.whatsappPrimary)}
           variant="outline"
