@@ -72,7 +72,8 @@ test("contact: one attempt, then exactly one generate_lead after the server acce
 test("contact: a validation failure is a form_error with a category, and never a lead", async ({ page }) => {
   await page.goto("/contact");
   await page.getByRole("button", { name: "Send message" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  // The form shows a summary alert plus one per invalid field (and Next adds an empty route announcer), so match the summary.
+  await expect(page.getByRole("alert").filter({ hasText: "Please correct the highlighted fields." })).toBeVisible();
   await waitForEvent(page, "form_error");
   await page.waitForTimeout(750);
 
