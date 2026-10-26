@@ -7,8 +7,12 @@ export default defineConfig({
   globalTeardown: "./e2e/teardown.ts",
   timeout: 120_000,
   expect: { timeout: 30_000 },
-  retries: 0,
-  reporter: [["list"], ["html", { open: "never" }]],
+  // CI only: one retry, so an infrastructure blip does not block a release, while a test that needed it is
+  // reported as FLAKY (never silently passed) and a genuine failure still fails the run. Locally a failure is a failure.
+  retries: process.env.CI ? 1 : 0,
+  // The "github" reporter turns each failure into a public annotation, so a failed CI run names the test and the
+  // error without needing the downloadable report (which needs a GitHub login).
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }], ["github"]] : [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: "http://localhost:3180",
     browserName: "chromium",
