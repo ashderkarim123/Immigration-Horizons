@@ -32,6 +32,7 @@ router.use(staffAuthMiddleware, requirePasswordSetupComplete);
 router.use('/dashboard', require('./dashboard'));
 router.use('/work-queues', require('./work-queues'));
 router.use('/', require('./case-intake'));
+router.use('/', require('./crm'));
 router.use('/cases', require('./cases'));
 router.use('/cases/:caseId', require('./case-mutations'));
 router.use('/clients', require('./clients'));

@@ -50,7 +50,7 @@ export class Navigation {
       ] },
       { label: 'Clients and leads', items: [
         ...(has('clients.view') ? [{ label: 'Clients', path: '/clients', icon: 'users' }] : []),
-        ...(has('leads.view') ? [{ label: 'Leads', path: '/intake', icon: 'user-plus' }] : []),
+        ...(has('leads.view') ? [{ label: 'Leads', path: '/intake', icon: 'user-plus' }, { label: 'CRM pipeline', path: '/crm', icon: 'activity' }] : []),
         ...(has('queries.view') ? [{ label: 'Consultations', path: '/consultations', icon: 'user-check' }] : []),
       ] },
       { label: 'Case work', items: [
@@ -68,4 +68,7 @@ export class Navigation {
     ];
     return groups.filter((group) => group.items.length);
   });
+
+  /** Every entry in menu order, without the grouping. */
+  readonly navItems = computed<NavItem[]>(() => this.navGroups().flatMap((group) => group.items));
 }
