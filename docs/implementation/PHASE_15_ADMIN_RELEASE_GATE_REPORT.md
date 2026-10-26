@@ -35,7 +35,7 @@
 | Check | Result |
 |---|---|
 | `npm run lint`, `npx tsc --noEmit` | clean |
-| Root tests | 480 run; 478 passed before the two calendar tests were fixed, then 13/13 in that file; full run repeated before push (below) |
+| Root tests | 480/480 (after fixing the two time-bomb tests; 478/480 before) |
 | Server tests | 910/910 |
 | Angular Staff | 323/323 |
 | Angular Admin | 77/77 |
@@ -45,7 +45,7 @@
 
 **The `main` CI failure.** CI on `main@4922860` failed only in the browser job (the other four jobs passed). The same suite passes 18/18 on this branch, which contains `4922860`. I could not read the failed run's log (GitHub requires sign-in), so the cause of that single failure is **not established**; it may have been environmental. The CI run on this branch's exact SHA is the evidence that matters.
 
-**Exact-SHA CI:** recorded in the section below once the final commit has run.
+**Exact-SHA CI:** green on `a2c81d0` (run 40286222103, https://github.com/ashderkarim123/Immigration-Horizons/actions/runs/40286222103): Lint · types · build, Tests (Next.js app), Tests (admin CMS), Enterprise UI (Angular), and Browser workflows (Staff and Client) all succeeded. That includes the browser job that had failed on `main@4922860`, so that failure did not reproduce; its cause remains unestablished. Later commits on this branch are documentation only.
 
 ## What did NOT happen
 
