@@ -120,3 +120,10 @@ test("the Admin cutover runbook exists and states that nothing here changes ngin
   assert.match(doc, /Do not serve it under a path/);
   assert.equal(/\bpassword\s*[:=]\s*\S{6,}|BEGIN [A-Z ]*PRIVATE KEY/i.test(doc), false, "no credentials in the runbook");
 });
+
+test("deploy.sh is committed executable, or the server wrapper silently runs a stale copy from shared/bin", async () => {
+  // ssh-forced-command.sh prefers current/scripts/deploy/deploy.sh only when it is `-x`; git records that bit.
+  const { execFileSync } = await import("node:child_process");
+  const entry = execFileSync("git", ["ls-files", "-s", "scripts/deploy/deploy.sh"], { cwd: ROOT, encoding: "utf8" });
+  assert.match(entry, /^100755 /, "run: git update-index --chmod=+x scripts/deploy/deploy.sh");
+});
