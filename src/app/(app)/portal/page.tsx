@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/app/page-header";
 import { Panel, PanelLink, EmptyState, RowList, Row } from "@/components/app/panel";
 import { Badge, stageTone } from "@/components/app/badge";
 import { requireClient } from "@/lib/auth/current-client";
+import { getSessionActorFromCookieStore, getUnverifiedSessionFromCookieStore } from "@/lib/auth/session";
+import { UnverifiedWelcome } from "@/components/portal/unverified-welcome";
 import { getDb } from "@/lib/db";
 import { Consultation } from "@/lib/models/Consultation";
 import { STATUS_LABELS } from "@/lib/content/portal";
@@ -30,6 +32,13 @@ const CASE_TYPE_LABELS = Object.fromEntries(CASE_TYPES.map((t) => [t.value, t.la
  * every page instead of only this one (ADR-011 §1).
  */
 export default async function PortalDashboardPage() {
+  // Someone who just signed up and has not verified their email gets the welcome screen with the
+  // verification alert (ADR-033). It is checked only when there is no active session, so a verified
+  // client never pays for it, and it runs before requireClient, which would send them to a login page.
+  if (!(await getSessionActorFromCookieStore())) {
+    const unverified = await getUnverifiedSessionFromCookieStore();
+    if (unverified) return <UnverifiedWelcome email={unverified.email} firstName={unverified.firstName} />;
+  }
   const client = await requireClient("/portal");
 
   const db = getDb();

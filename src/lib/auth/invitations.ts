@@ -7,6 +7,7 @@ import { Consultation } from "../models/Consultation";
 import { generateToken, hashToken, normalizeEmail } from "./crypto";
 import { sendActivationEmail } from "./email";
 import { createInitialConsultationInteraction } from "./interactions";
+import { isUnverifiedAccount } from "./account-state";
 
 /**
  * Exported so the cross-app contract test can assert the admin app's
@@ -33,6 +34,88 @@ export function splitName(fullName: string): { firstName: string; lastName: stri
 }
 
 /**
+ * At most one active (unused, unrevoked, unexpired) invitation per email+purpose
+ * at a time: any existing one is revoked before a fresh token is issued, so a
+ * repeat submitter never accumulates redeemable links and the newest email link
+ * is always the valid one. The email send is independent of persistence: a
+ * failed send never surfaces as a failed submission.
+ */
+async function issueActivationInvitation(params: {
+  email: string;
+  normalizedEmail: string;
+  firstName: string;
+  lastName: string;
+  consultationId: string | null;
+}): Promise<void> {
+  const now = new Date();
+  await PortalInvitation.updateMany(
+    {
+      normalizedEmail: params.normalizedEmail,
+      purpose: "consultation_activation",
+      usedAt: null,
+      revokedAt: null,
+      expiresAt: { $gt: now },
+    },
+    { $set: { revokedAt: now } },
+  );
+
+  const token = generateToken();
+  await PortalInvitation.create({
+    normalizedEmail: params.normalizedEmail,
+    firstName: params.firstName,
+    lastName: params.lastName,
+    consultation: params.consultationId,
+    tokenHash: hashToken(token),
+    purpose: "consultation_activation",
+    expiresAt: new Date(now.getTime() + INVITATION_TTL_MS),
+    createdByType: "system",
+  });
+
+  await sendActivationEmail({
+    email: params.email,
+    firstName: params.firstName || "there",
+    token,
+  });
+}
+
+/** Minimum gap between activation emails to one address, so the resend button cannot be used to mail-bomb a mailbox. */
+export const RESEND_COOLDOWN_MS = 60 * 1000;
+
+export type ResendOutcome = "sent" | "too_soon" | "unavailable";
+
+/**
+ * Sends a fresh activation link to the address of an unverified account, for the
+ * resend button on the welcome screen. It can only ever email that account's own
+ * address, and no more often than once per cooldown. Never throws.
+ */
+export async function resendActivationInvitation(account: { email: string; firstName: string }): Promise<ResendOutcome> {
+  const db = getDb();
+  if (!db) return "unavailable";
+
+  try {
+    await db;
+    const normalizedEmail = normalizeEmail(account.email);
+    const latest = await PortalInvitation.findOne({ normalizedEmail, purpose: "consultation_activation" }).sort({ createdAt: -1 });
+    if (latest && !latest.usedAt && !latest.revokedAt && Date.now() - latest.createdAt.getTime() < RESEND_COOLDOWN_MS) {
+      return "too_soon";
+    }
+
+    await issueActivationInvitation({
+      email: account.email,
+      normalizedEmail,
+      firstName: account.firstName,
+      lastName: latest?.lastName ?? "",
+      // Keep the link to the original consultation so activation still attaches it to the account.
+      consultationId: latest?.consultation ? String(latest.consultation) : null,
+    });
+    return "sent";
+  } catch (err) {
+    console.error("[portal] Failed to resend the activation email:", err);
+    return "unavailable";
+  }
+}
+
+/**
  * Called after a consultation is persisted (src/lib/leads.ts). Links the
  * submission to an existing client account by normalized email, or issues a
  * single fresh activation invitation and emails it. Never throws — a
@@ -53,7 +136,10 @@ export async function linkOrInviteAfterConsultation(params: {
     const normalizedEmail = normalizeEmail(params.email);
 
     const existingClient = await ClientUser.findOne({ normalizedEmail });
-    if (existingClient) {
+    // An account that never verified its email (created by an earlier submission, or by staff
+    // converting a lead) is NOT a client to link to: there is nothing to sign in to. It gets a
+    // fresh activation link instead, so a visitor who lost the first email is never stranded.
+    if (existingClient && !isUnverifiedAccount(existingClient)) {
       // Never relink a consultation already linked to a different client —
       // only ever set clientUser when it is currently unset.
       await Consultation.updateOne(
@@ -73,41 +159,13 @@ export async function linkOrInviteAfterConsultation(params: {
       return "linked_existing_client";
     }
 
-    // At most one active (unused, unrevoked, unexpired) invitation per
-    // email+purpose at a time — revoke any existing one before issuing a
-    // fresh token, so repeat submitters never accumulate unlimited pending
-    // invitations, and the newest email link is always the valid one.
-    const now = new Date();
-    await PortalInvitation.updateMany(
-      {
-        normalizedEmail,
-        purpose: "consultation_activation",
-        usedAt: null,
-        revokedAt: null,
-        expiresAt: { $gt: now },
-      },
-      { $set: { revokedAt: now } },
-    );
-
     const { firstName, lastName } = splitName(params.name);
-    const token = generateToken();
-    await PortalInvitation.create({
+    await issueActivationInvitation({
+      email: params.email,
       normalizedEmail,
       firstName,
       lastName,
-      consultation: params.consultationId,
-      tokenHash: hashToken(token),
-      purpose: "consultation_activation",
-      expiresAt: new Date(now.getTime() + INVITATION_TTL_MS),
-      createdByType: "system",
-    });
-
-    // Independent of persistence succeeding above — an email failure must
-    // not surface as a consultation-submission failure.
-    await sendActivationEmail({
-      email: params.email,
-      firstName: firstName || "there",
-      token,
+      consultationId: params.consultationId,
     });
 
     return "invitation_issued";

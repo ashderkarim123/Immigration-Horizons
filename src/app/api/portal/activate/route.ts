@@ -7,7 +7,8 @@ import { Consultation } from "../../../../lib/models/Consultation";
 import { activateInvitedMembershipsForClient } from "../../../../lib/auth/case-membership";
 import { createInitialConsultationInteraction } from "../../../../lib/auth/interactions";
 import { hashToken, hashPassword } from "../../../../lib/auth/crypto";
-import { createSession, serializeSessionCookie } from "../../../../lib/auth/session";
+import { createSession, destroyAllSessionsForClient, serializeSessionCookie } from "../../../../lib/auth/session";
+import { isUnverifiedAccount } from "../../../../lib/auth/account-state";
 import { verifyOrigin } from "../../../../lib/auth/csrf";
 import { isRateLimited } from "../../../../lib/rate-limit";
 import { isValidPassword } from "../../../../lib/auth/validation";
@@ -15,10 +16,14 @@ import { jsonError, jsonOk } from "../../../../lib/auth/http";
 import { recordSecurityEvent } from "../../../../lib/security/security-events";
 
 /**
- * Redeems a PortalInvitation: creates the ClientUser, marks the invitation
- * used, links the originating consultation, and starts a fresh session
- * (session rotation — there is no pre-activation session to reuse, so this
- * is the first session id the client ever sees).
+ * Redeems a PortalInvitation: creates the ClientUser (or adopts the unverified
+ * one a form submission already created, ADR-033), marks the invitation used,
+ * links the originating consultation, and starts a fresh session.
+ *
+ * Every earlier session for an adopted account is destroyed first. Whoever
+ * submitted the form held a session on that account before the emailed link
+ * proved the mailbox owner's identity; if that was not the owner (anyone can
+ * type anyone's email), their session must not survive into the verified account.
  */
 export async function POST(request: Request): Promise<Response> {
   if (!verifyOrigin(request)) {
@@ -86,7 +91,9 @@ export async function POST(request: Request): Promise<Response> {
   const existingClient = await ClientUser.findOne({
     normalizedEmail: invitation.normalizedEmail,
   });
-  if (existingClient) {
+  // Only an unverified, passwordless account can be adopted: holding the emailed
+  // token proves control of the mailbox. Anything else is a real account to log in to.
+  if (existingClient && !isUnverifiedAccount(existingClient)) {
     return jsonError(
       "conflict",
       "An account already exists for this email. Please log in instead.",
@@ -95,17 +102,32 @@ export async function POST(request: Request): Promise<Response> {
 
   const now = new Date();
   const passwordHash = await hashPassword(password);
-  const client = await ClientUser.create({
-    email: invitation.normalizedEmail,
-    normalizedEmail: invitation.normalizedEmail,
-    passwordHash,
-    firstName: invitation.firstName,
-    lastName: invitation.lastName,
-    status: "active",
-    emailVerifiedAt: now,
-    acceptedTermsAt: acceptedTerms ? now : null,
-    passwordChangedAt: now,
-  });
+  let client;
+  if (existingClient) {
+    await destroyAllSessionsForClient(String(existingClient._id));
+    existingClient.set({
+      passwordHash,
+      status: "active",
+      emailVerifiedAt: now,
+      firstName: existingClient.firstName || invitation.firstName,
+      lastName: existingClient.lastName || invitation.lastName,
+      acceptedTermsAt: acceptedTerms ? now : existingClient.acceptedTermsAt,
+      passwordChangedAt: now,
+    });
+    client = await existingClient.save();
+  } else {
+    client = await ClientUser.create({
+      email: invitation.normalizedEmail,
+      normalizedEmail: invitation.normalizedEmail,
+      passwordHash,
+      firstName: invitation.firstName,
+      lastName: invitation.lastName,
+      status: "active",
+      emailVerifiedAt: now,
+      acceptedTermsAt: acceptedTerms ? now : null,
+      passwordChangedAt: now,
+    });
+  }
 
   invitation.usedAt = now;
   invitation.clientUser = client._id;

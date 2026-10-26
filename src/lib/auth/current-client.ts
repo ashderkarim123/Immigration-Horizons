@@ -4,7 +4,17 @@ import { redirect } from "next/navigation";
 
 import { getDb } from "../db";
 import { ClientUser } from "../models/ClientUser";
-import { getSessionActorFromCookieStore, type SessionActor } from "./session";
+import { getSessionActorFromCookieStore, getUnverifiedSessionFromCookieStore, type SessionActor } from "./session";
+
+/**
+ * Where a visitor with no usable session goes. Someone holding only the powerless
+ * session of an unverified account (ADR-033) is sent to the welcome screen, which
+ * explains how to unlock the portal, instead of a login page they cannot use.
+ */
+async function redirectToLoginOrWelcome(nextPath: string): Promise<never> {
+  if (await getUnverifiedSessionFromCookieStore()) redirect("/portal");
+  redirect(`/portal/login?next=${encodeURIComponent(nextPath)}`);
+}
 
 /**
  * Server Component guard for /portal/** pages: resolves the active session
@@ -27,7 +37,7 @@ export async function requireClient(nextPath: string) {
 export async function requireClientSession(nextPath: string) {
   const actor: SessionActor | null = await getSessionActorFromCookieStore();
   if (!actor) {
-    redirect(`/portal/login?next=${encodeURIComponent(nextPath)}`);
+    return redirectToLoginOrWelcome(nextPath);
   }
 
   const db = getDb();
@@ -35,7 +45,7 @@ export async function requireClientSession(nextPath: string) {
 
   const client = db ? await ClientUser.findById(actor.clientUserId) : null;
   if (!client || client.status !== "active") {
-    redirect(`/portal/login?next=${encodeURIComponent(nextPath)}`);
+    return redirectToLoginOrWelcome(nextPath);
   }
 
   return { client, actor };

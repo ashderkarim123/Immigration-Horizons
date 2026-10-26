@@ -4,6 +4,7 @@ import { getDb } from "../db";
 import { ClientSession } from "../models/ClientSession";
 import { ClientUser } from "../models/ClientUser";
 import { generateToken, hashToken } from "./crypto";
+import { isUnverifiedAccount } from "./account-state";
 
 /**
  * DB-backed client-portal session (see
@@ -169,4 +170,57 @@ export async function destroyAllSessionsForClient(
   await db;
 
   await ClientSession.deleteMany({ clientUser: clientUserId });
+}
+
+/**
+ * The ONE place a session for an unverified account is accepted (ADR-033).
+ *
+ * Every other lookup in this file, and so every portal page and API, requires
+ * an `active` account and rejects these sessions by default. Callers opt in
+ * explicitly, and only for the welcome screen, the resend-link API and the
+ * welcome hand-off. The session grants no access to any record.
+ */
+export type UnverifiedSessionActor = {
+  clientUserId: string;
+  sessionId: string;
+  email: string;
+  firstName: string;
+};
+
+export async function lookupUnverifiedSessionByToken(token: string | null): Promise<UnverifiedSessionActor | null> {
+  if (!token) return null;
+
+  const db = getDb();
+  if (!db) return null;
+  await db;
+
+  const session = await ClientSession.findOne({ tokenHash: hashToken(token) });
+  if (!session) return null;
+
+  const now = Date.now();
+  if (session.expiresAt.getTime() <= now || session.idleExpiresAt.getTime() <= now) return null;
+
+  const client = await ClientUser.findById(session.clientUser);
+  if (!client || !isUnverifiedAccount(client)) return null;
+
+  session.idleExpiresAt = new Date(now + IDLE_TIMEOUT_MS);
+  session.lastSeenAt = new Date(now);
+  await session.save();
+
+  return {
+    clientUserId: String(client._id),
+    sessionId: String(session._id),
+    email: String(client.email || client.normalizedEmail || ""),
+    firstName: String(client.firstName || ""),
+  };
+}
+
+export async function getUnverifiedSession(request: Request): Promise<UnverifiedSessionActor | null> {
+  return lookupUnverifiedSessionByToken(readSessionToken(request));
+}
+
+export async function getUnverifiedSessionFromCookieStore(): Promise<UnverifiedSessionActor | null> {
+  const { cookies } = await import("next/headers");
+  const store = await cookies();
+  return lookupUnverifiedSessionByToken(store.get(SESSION_COOKIE_NAME)?.value ?? null);
 }
