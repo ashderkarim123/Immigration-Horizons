@@ -23,6 +23,9 @@ import { baseOpenGraph } from "@/lib/seo/og";
  * a bare page inherits everything here.
  */
 export const metadata: Metadata = {
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
   openGraph: baseOpenGraph,
   twitter: {
     card: "summary_large_image",

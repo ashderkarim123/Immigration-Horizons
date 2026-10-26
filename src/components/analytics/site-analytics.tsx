@@ -1,6 +1,6 @@
 import Script from "next/script";
 
-import { GA_MEASUREMENT_ID, GTM_ID } from "@/lib/analytics";
+import { analyticsTransport, GA_MEASUREMENT_ID, GTM_ID } from "@/lib/analytics";
 
 /**
  * Tag loading for the marketing site. Production only, so local and preview
@@ -8,14 +8,14 @@ import { GA_MEASUREMENT_ID, GTM_ID } from "@/lib/analytics";
  * well formed. Mounted from the `(site)` layout alone — the client portal and
  * staff app must never send case or client activity to a third party.
  *
- * Two independent tags: Google Tag Manager (the container owns whatever is
- * configured in the GTM UI) and a direct GA4 gtag. If the GA4 tag is ALSO
- * configured inside the GTM container, every hit is counted twice — then set
- * NEXT_PUBLIC_GA_MEASUREMENT_ID=off and let GTM own GA4.
+ * GA4 ownership is explicit: direct (the existing deployment) or gtm (after
+ * configuring and validating the container). GTM may still load in direct
+ * mode for other tags, but it must not contain GA4 tags in that mode.
  */
-const enabled = process.env.NODE_ENV === "production";
+const transport = analyticsTransport();
+const enabled = process.env.NODE_ENV === "production" && transport !== "off";
 const gtmId = enabled && /^GTM-[A-Z0-9]+$/.test(GTM_ID) ? GTM_ID : null;
-const gaId = enabled && /^G-[A-Z0-9]+$/.test(GA_MEASUREMENT_ID) ? GA_MEASUREMENT_ID : null;
+const gaId = enabled && transport === "direct" && /^G-[A-Z0-9]+$/.test(GA_MEASUREMENT_ID) ? GA_MEASUREMENT_ID : null;
 
 export function AnalyticsScripts() {
   return (
