@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../core/api/api.service';
+import { CrmFunnel } from './crm-funnel';
 import { apiErrorMessage } from '../../core/api/api-error';
 
 interface CrmLead {
@@ -16,7 +17,7 @@ interface Lane { value: string; label: string; total: number; truncated: boolean
 interface Detail { lead: CrmLead; stages: {value: string; label: string}[]; lostReasons: string[]; canEdit: boolean; }
 
 @Component({
-  selector: 'ih-crm-pipeline', standalone: true, imports: [FormsModule, RouterLink, DatePipe],
+  selector: 'ih-crm-pipeline', standalone: true, imports: [FormsModule, RouterLink, DatePipe, CrmFunnel],
   template: `
     <div class="page-header"><h1>CRM pipeline</h1>
       <p class="page-subtitle">Sales progress is separate from case/petition work. Proposals are recorded here, never sent automatically.</p>
@@ -89,6 +90,7 @@ interface Detail { lead: CrmLead; stages: {value: string; label: string}[]; lost
         }
       </div>
       <p><a routerLink="/intake">Search all lead intake records</a></p>
+      <ih-crm-funnel />
     }
 ` ,
   styles: [`
