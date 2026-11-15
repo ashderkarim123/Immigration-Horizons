@@ -59,7 +59,7 @@ export function Hero() {
           <Reveal className="flex min-w-0 flex-col gap-6">
             <Eyebrow className="text-gold-200 flex w-fit max-w-full items-center gap-2 rounded-full border border-gold-400/25 bg-gold-400/10 px-3 py-2 text-[0.62rem] tracking-[0.1em] sm:px-4 sm:text-xs sm:tracking-[0.14em]">
               <Globe2 size={14} aria-hidden />
-              Employment-Based U.S. Immigration
+              EB-2 NIW · EB-1 · RFE / NOID
             </Eyebrow>
 
             {/* The H1 leads with the categories the page is actually trying to
@@ -74,24 +74,12 @@ export function Hero() {
             </h1>
 
             <p className="text-lead text-navy-200 max-w-xl text-pretty">
-              Strategic{" "}
-              <HeroLink href="/services/eb2-niw">EB-2 NIW</HeroLink>,{" "}
-              <HeroLink href="/services/eb1a">EB-1A</HeroLink>,{" "}
-              <HeroLink href="/services/eb1b">EB-1B</HeroLink>,{" "}
-              <HeroLink href="/services/eb1c">EB-1C</HeroLink> and{" "}
-              <HeroLink href="/services/o1-visa">O-1</HeroLink> petition support
-              for professionals and law firms worldwide — from case strategy and
-              original drafting to{" "}
-              <HeroLink href="/services/evidence-packaging">
-                evidence organisation
-              </HeroLink>{" "}
-              and{" "}
-              <HeroLink href="/services/rfe-response">RFE responses</HeroLink>.
+              Complete petition packages for self-petitioners, professionals, researchers and professors — including petition drafting, supporting letters, exhibit organization and focused{" "}\n              <HeroLink href="/services/rfe-response">RFE response</HeroLink>{" "}\n              support.
             </p>
 
             <div className="flex flex-wrap gap-3">
               <Button href="/consultation" variant="gold" size="lg">
-                Book a free consultation <ArrowRight size={17} aria-hidden />
+                Check my NIW / EB-1 eligibility <ArrowRight size={17} aria-hidden />
               </Button>
               <Button
                 href={whatsappLink(contact.whatsappPrimary)}
@@ -105,15 +93,15 @@ export function Hero() {
             <ul className="text-navy-200 grid max-w-2xl gap-3 border-t border-white/10 pt-6 text-sm sm:grid-cols-3">
               <li className="flex items-center gap-2.5">
                 <CheckCircle2 size={17} className="text-gold-400 shrink-0" aria-hidden />
-                Original drafting
+                Full petition packages
               </li>
               <li className="flex items-center gap-2.5">
                 <ShieldCheck size={17} className="text-gold-400 shrink-0" aria-hidden />
-                Confidential handling
+                RFE / NOID support
               </li>
               <li className="flex items-center gap-2.5">
                 <Globe2 size={17} className="text-gold-400 shrink-0" aria-hidden />
-                Worldwide service
+                Self-petitioner focused
               </li>
             </ul>
           </Reveal>
@@ -123,9 +111,9 @@ export function Hero() {
               <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
                 <div>
                   <p className="text-gold-300 text-[0.65rem] font-bold tracking-[0.16em] uppercase">
-                    Preparation workspace
+                    Petition preparation
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-white">Every detail, connected</p>
+                  <p className="mt-1 text-sm font-semibold text-white">Evidence, letters and exhibits aligned</p>
                 </div>
                 <span
                   className="bg-gold-400 h-2.5 w-2.5 rounded-full shadow-[0_0_0_5px_rgba(214,172,70,0.12)]"
