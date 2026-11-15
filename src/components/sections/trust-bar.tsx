@@ -9,11 +9,11 @@ import { Container } from "@/components/ui/container";
  * target those terms.
  */
 const capabilities = [
-  { label: "Employment-Based Immigration", href: "/services" },
-  { label: "Petition Preparation", href: "/services/eb2-niw" },
-  { label: "USCIS Documentation", href: "/services/evidence-packaging" },
-  { label: "Evidence Strategy", href: "/services/eb1a" },
-  { label: "RFE Support", href: "/services/rfe-response" },
+  { label: "4.8/5 on Fiverr", href: "/reviews" },
+  { label: "44 Fiverr reviews", href: "/reviews" },
+  { label: "EB-2 NIW & EB-1 packages", href: "/services" },
+  { label: "RFE response support", href: "/services/rfe-response" },
+  { label: "NOID response support", href: "/services/noid-response" },
 ];
 
 export function TrustBar() {
