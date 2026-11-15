@@ -51,7 +51,7 @@ export function Footer() {
       <Container width="wide" className="relative py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="flex max-w-sm flex-col gap-5">
-            {/* The logo is full-colour navy + gold on transparency, so it needs
+            {/* The logo is full-colour forest + terracotta on transparency, so it needs
                 a light backing to read on the navy footer — recolouring it to a
                 flat white silhouette would lose the mark entirely. */}
             <Link
@@ -60,10 +60,10 @@ export function Footer() {
               className="inline-flex w-fit rounded-xl bg-white px-5 py-4 shadow-subtle"
             >
               <Image
-                src="/images/logo-header.png"
+                src="/images/open-horizons-horizontal-full.svg"
                 alt="Immigration Horizons"
-                width={551}
-                height={320}
+                width={1000}
+                height={280}
                 className="h-20 w-auto"
               />
             </Link>
