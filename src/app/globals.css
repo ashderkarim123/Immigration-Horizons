@@ -4,54 +4,54 @@
   Immigration Horizons — Global Design System
   ------------------------------------------------------------------
   Light-only by design. This is a trust-led professional brand; an
-  auto-inverting dark theme would undermine the navy/gold identity,
+  auto-inverting dark theme would undermine the Forest/Terracotta identity,
   so the scaffold's prefers-color-scheme switch is intentionally gone.
 */
 
 @theme {
   /* ---------- Brand: Navy (primary) ---------- */
-  --color-navy-50: #f3f6fb;
-  --color-navy-100: #e4ebf5;
-  --color-navy-200: #c6d5e9;
-  --color-navy-300: #9cb2d3;
-  --color-navy-400: #6a88b5;
-  --color-navy-500: #446498;
-  --color-navy-600: #2e4c7b;
-  --color-navy-700: #223a61;
-  --color-navy-800: #152c54; /* brand navy */
-  --color-navy-900: #0f1f3d;
-  --color-navy-950: #08132a;
+  --color-navy-50: #f4f7f4;
+  --color-navy-100: #e1e8e1;
+  --color-navy-200: #c7d5ce;
+  --color-navy-300: #94ad9f;
+  --color-navy-400: #668879;
+  --color-navy-500: #3f6d5c;
+  --color-navy-600: #285b49;
+  --color-navy-700: #1f5241;
+  --color-navy-800: #164b3b; /* brand forest */
+  --color-navy-900: #123f32;
+  --color-navy-950: #10372b;
 
   /* ---------- Brand: Gold (secondary) ----------
      500 is the brand gold. It fails AA as text on white (~2.6:1), so it
      is reserved for fills, rules, and ornament. Gold text on light
      surfaces must use 700+; on navy surfaces use 300/400. */
-  --color-gold-50: #fbf7ec;
-  --color-gold-100: #f7ecd3;
-  --color-gold-200: #efdba6;
-  --color-gold-300: #e4c46f;
-  --color-gold-400: #d6ac46;
-  --color-gold-500: #c9992e; /* brand gold */
-  --color-gold-600: #a67c1e;
-  --color-gold-700: #83601a;
-  --color-gold-800: #674c1b;
-  --color-gold-900: #563f1b;
+  --color-gold-50: #fbf3ef;
+  --color-gold-100: #f4e1d8;
+  --color-gold-200: #e9c6b5;
+  --color-gold-300: #dfa68a;
+  --color-gold-400: #d38b67;
+  --color-gold-500: #c9774f; /* brand terracotta */
+  --color-gold-600: #b6603a;
+  --color-gold-700: #9c4c2b;
+  --color-gold-800: #813d22;
+  --color-gold-900: #6c321c;
 
   /* ---------- Neutrals ---------- */
-  --color-ink-50: #f7f8fa;
-  --color-ink-100: #eff1f5;
-  --color-ink-200: #e1e5ec;
-  --color-ink-300: #c9d0db;
-  --color-ink-400: #98a2b3;
-  --color-ink-500: #6b7688;
-  --color-ink-600: #4d5766;
-  --color-ink-700: #38414e;
-  --color-ink-800: #252c36;
-  --color-ink-900: #141922;
+  --color-ink-50: #f6f2e9;
+  --color-ink-100: #eee9df;
+  --color-ink-200: #dfd9cf;
+  --color-ink-300: #c6c1b8;
+  --color-ink-400: #918e86;
+  --color-ink-500: #6d716d;
+  --color-ink-600: #4c5e56;
+  --color-ink-700: #20352e;
+  --color-ink-800: #182b25;
+  --color-ink-900: #10211b;
 
   /* ---------- Typography ---------- */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-display: var(--font-dm-serif), ui-serif, Georgia, serif;
 
   /* Display scale — used for hero and section headings.
      Paired line-heights and tracking keep large type optically tight. */
@@ -147,7 +147,7 @@
   }
 
   body {
-    background-color: var(--color-white);
+    background-color: var(--color-ink-50);
     color: var(--color-ink-700);
     font-family: var(--font-sans);
     text-rendering: optimizeLegibility;
