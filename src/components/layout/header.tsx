@@ -147,12 +147,12 @@ export function Header() {
                 keeps the artwork's 551×320 ratio — a fixed width here would
                 letterbox it. */}
             <Image
-              src="/images/logo-header.png"
+              src="/images/open-horizons-horizontal-full.svg"
               alt="Immigration Horizons"
-              width={551}
-              height={320}
+              width={1000}
+              height={280}
               priority
-              className="h-11 w-auto transition-transform duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 sm:h-14"
+              className="h-auto w-[220px] transition-transform duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5 sm:w-[280px]"
             />
           </Link>
 
@@ -182,7 +182,7 @@ export function Header() {
 
           <div className="hidden shrink-0 lg:block">
             <Button href="/consultation" variant="gold">
-              Free Consultation <ArrowUpRight size={16} aria-hidden />
+              Check eligibility <ArrowUpRight size={16} aria-hidden />
             </Button>
           </div>
 
@@ -403,7 +403,7 @@ function MobileNav({
           className="mt-6"
           onClick={onNavigate}
         >
-          Free Consultation
+          Check eligibility
         </Button>
       </Container>
     </div>
