@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { DM_Serif_Display, Inter } from "next/font/google";
 
 import { site } from "@/lib/content/site";
 import "./globals.css";
@@ -26,9 +26,10 @@ const inter = Inter({
 
 // Display headings: an institutional serif carries the authority and
 // trust an immigration practice needs, without reading as dated.
-const sourceSerif = Source_Serif_4({
-  variable: "--font-source-serif",
+const dmSerif = DM_Serif_Display({
+  variable: "--font-dm-serif",
   subsets: ["latin"],
+  weight: "400",
   display: "swap",
 });
 
@@ -50,7 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#152c54",
+  themeColor: "#164B3B",
 };
 
 export default function RootLayout({
@@ -61,7 +62,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${sourceSerif.variable} h-full antialiased`}
+      className={`${inter.variable} ${dmSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-white">{children}</body>
     </html>
