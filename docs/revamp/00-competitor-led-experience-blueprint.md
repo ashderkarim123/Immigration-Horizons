@@ -117,8 +117,8 @@ Create **separate wireframes** for: home, services index, flagship NIW, EB-1 fam
 
 ## 9. Source precedence and unresolved decisions
 
-1. Existing repository `AGENTS.md` / `CLAUDE.md` govern implementation/security/compliance until the owner authorizes updates.
-2. The owner's original Open Horizons brand guide and SVG masters govern the **intended new brand**, but `CLAUDE.md` still describes the old navy/gold brand. **Reconcile the rules explicitly before changing public UI.**
+1. Existing repository `AGENTS.md` / `CLAUDE.md` govern implementation/security/compliance. The owner has now explicitly authorized the visual direction; `CLAUDE.md` has been updated on the design-planning branch to use Open Horizons and Beyond Border as the primary reference.
+2. The owner's original Open Horizons brand guide and SVG masters govern all new marketing visuals. The application itself remains on the prior colors until the gated UI implementation phase; a documentation approval does not deploy a redesign.
 3. `docs/revamp/README.md` and the Phase 1 report record decisions already confirmed (including consultation enum values and the production host); do not ask for them again.
 4. `01`–`06` retain the exact service-content, data, SEO and phase acceptance requirements.
 5. No live deployment without owner approval. `main` is connected to production.
