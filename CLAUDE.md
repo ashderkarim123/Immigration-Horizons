@@ -24,7 +24,7 @@ Immigration Horizons is an **immigration consulting and paralegal services pract
 - Never: attorney, lawyer, legal advice, legal representation, "we represent you before USCIS"
 - The disclaimer in `site.disclaimer` must never be softened. It is also embedded in the Organization JSON-LD via `disambiguatingDescription`.
 
-Primary services: EB-2 NIW, EB-1A, EB-1B, EB-1C, O-1 Visa, RFE Responses, Recommendation Letters, Expert Opinion Letters, Business Plans, Evidence Packaging, USCIS Forms Preparation.
+Core services: EB-2 NIW, EB-1A, EB-1B, EB-1C, RFE, NOID, recommendation and expert letters, business plans and evidence packaging. Secondary visas: O-1, E-2, F-1, F-2, J-1 and B-1/B-2.
 
 ## Content accuracy rules (enforced throughout)
 
@@ -42,16 +42,20 @@ These exist because the site's core differentiator is verifiability.
 
 ---
 
-## Brand & design system
+## Brand & design system — approved public marketing-site direction
 
-Theme: premium, professional, corporate, government-grade trust — never a cheap template. Design inspiration: Stripe, Vercel, Linear, Apple, OpenAI, Raycast, Notion — a premium SaaS product, not a traditional immigration site.
+**Main website and UI/UX reference: Beyond Border** (https://www.beyondborderglobal.com/), for premium modern immigration-site layout, service hub structure, editorials, trust/proof, team/about, processes and mobile composition. Do **not** copy assets, claims, photos, text or exact visual designs. **Deel Immigration** is a secondary conversion/CTA benchmark only; **Self Petition USA** is a tertiary self-petitioner/package-clarity benchmark only. The result must be a distinctive Immigration Horizons website, not a generic SaaS template.
 
-- **Colors**: Navy = primary, Gold = accent (CTAs/fills/ornament only — see contrast rule below), white/light-gray/black neutrals. Tokens live in `src/app/globals.css` via Tailwind v4 `@theme`.
-- **Gold contrast rule:** `gold-500` is ~2.6:1 on white and fails AA as text. Use it for fills/rules/ornament only. Gold *text* on light must be `gold-700`+; on navy use `gold-300/400`. The gold CTA button is `gold-500` fill + `navy-900` text (passes AA).
-- **Typography**: Source Serif 4 (display/headings) + Inter (UI/body), both variable, self-hosted via `next/font`. Zero external font requests.
-- **Light-only.** Dark mode was deliberately removed — it wrecked the navy/gold trust brand.
-- Icons: pick one family (Lucide/Heroicons/Tabler) and stay consistent.
-- UI: clean layouts, generous white space, premium cards, large hero sections, consistent border radius, soft shadows, smooth transitions. Never cluttered.
+**Brand authority:** the owner-supplied **Open Horizons Brand Guide v1.0 (12 October 2026)** and its original logo ZIP. Open Horizons is the visual direction; the company remains **Immigration Horizons**. Read `docs/revamp/00-competitor-led-experience-blueprint.md`, `07-open-horizons-brand-application.md` and `08-page-design-and-rollout.md` before visual work.
+
+- **Colors:** Forest `#164B3B` (primary), Terracotta `#C9774F` (decorative accent), Ivory `#F6F2E9` (page background), Ink `#20352E` (body), Pale Sage `#E1E8E1` (sections), Deep Forest `#10372B` (dark areas), Deep Clay `#9C4C2B` (readable warm text), White.
+- **Contrast:** Forest background with white text is the primary button; normal white text on Terracotta and small Terracotta text on Ivory do not meet WCAG AA. Do not replace accessible primary buttons with Terracotta/white.
+- **Typography:** DM Serif Display Regular 400 for prominent headings, Inter for body/UI; use approved font assets and `next/font` or equivalent self-hosted font setup. Reference scale: hero 56px desktop/36px mobile, sections 36/28, body 16–18/16.
+- **Logo usage:** original full horizontal SVG in the header at 280px desktop/220px mobile, original reverse SVG in dark footer, original favicon and social files. No redraw, crop, recoloring, effects or distorted proportions.
+- **Visual character:** warm, composed, premium, editorial, confident whitespace; visually prioritize EB-2 NIW, EB-1 and RFE/NOID. Use restrained cards and CSS transitions, no generic SaaS-dashboard feel.
+- **Site-wide consistency:** apply the brand across the public homepage, services, audiences, reviews, About, consultation/forms, resources and legal pages. Reuse existing typed, accessible shared UI primitives.
+
+**Scope:** These are approved **target rules**; their implementation belongs to the reviewable public-site UI phases, not a production patch. The previous navy/gold + Source Serif 4 direction is superseded for the marketing revamp. Do not change the visual identity of the staff, portal, or admin applications.
 
 ### Motion — a real constraint, not a preference
 **Do not add animation libraries** (Framer Motion / `motion`). It was installed and then removed this project — it forced every section into a client component and cost ~39 KB gzipped for effects CSS can do alone. Scroll reveals are CSS-only via `animation-timeline: view()`.
@@ -113,8 +117,9 @@ page inherits, never its URL.
 
 ### Information architecture
 The legacy site conflated two different things into one flat service list. They are now separate:
-- **Case categories** (visa classification): `eb2-niw`, `eb1a`, `eb1b`, `eb1c`, `o1-visa`
-- **Support services** (single deliverables): `rfe-response`, `recommendation-letters`, `expert-opinion-letters`, `business-plans`, `evidence-packaging`
+- **Core immigrant case categories**: `eb2-niw`, `eb1a`, `eb1b`, `eb1c`
+- **Core support services**: `rfe-response`, `noid-response`, `recommendation-letters`, `expert-opinion-letters`, `business-plans`, `evidence-packaging`
+- **Secondary nonimmigrant classifications**: `o1-visa`, `e2-visa`, `f1-visa`, `f2-visa`, `j1-visa`, `b1-b2-visa`
 
 Nav derives from the service catalogue in `src/lib/content/services.ts`, so adding a service updates header, mega menu, and footer automatically. `enumValue` on each case category must stay in sync with the legacy `Consultation` model enum.
 
@@ -155,7 +160,7 @@ Target Lighthouse 95+, strong Core Web Vitals (LCP/CLS/INP). No unnecessary Java
 
 ## Accessibility
 
-WCAG AA, keyboard navigation, ARIA labels, semantic HTML, proper contrast (see the gold contrast rule above), screen-reader support.
+WCAG AA, keyboard navigation, ARIA labels, semantic HTML, proper contrast (see the Open Horizons brand contrast rules above), screen-reader support.
 
 ## Security
 

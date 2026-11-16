@@ -14,18 +14,17 @@ import { Eyebrow, Section, SectionHeading } from "@/components/ui/section";
 import { RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { SnippetAnswer } from "@/components/ui/snippet-answer";
 import { homepageFaqs } from "@/lib/content/faqs";
-import { caseCategories, supportServices } from "@/lib/content/services";
+import { publishedCaseCategories as caseCategories, publishedSupportServices as supportServices, publishedOtherVisas as otherVisas } from "@/lib/content/published-services";
+import { serviceIndexCopy } from "@/lib/content/services";
 
 export const metadata: Metadata = {
-  title: "Our Services",
-  description:
-    "Petition preparation for EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1, plus standalone RFE responses, recommendation letters, business plans and evidence packaging.",
+  title: { absolute: serviceIndexCopy.title },
+  description: serviceIndexCopy.description,
   alternates: { canonical: "/services" },
   openGraph: {
     ...baseOpenGraph,
-    title: "Our Services | Immigration Horizons",
-    description:
-      "Employment-based immigration petition preparation and single-deliverable support services.",
+    title: serviceIndexCopy.title,
+    description: serviceIndexCopy.description,
     url: "/services",
   },
 };
@@ -53,9 +52,7 @@ export default function ServicesPage() {
               Immigration petition preparation services
             </h1>
             <p className="text-lead text-navy-200 text-pretty">
-              We work two ways: full petition preparation for a case category,
-              or a single deliverable prepared on its own. Both are available to
-              individuals and to law firms needing extra drafting capacity.
+              {serviceIndexCopy.intro}
             </p>
             <div className="mt-2 flex flex-wrap gap-3">
               <Button href="/consultation" variant="gold" size="lg">
@@ -71,8 +68,8 @@ export default function ServicesPage() {
 
       <Section id="case-categories" className="scroll-mt-28">
         <SectionHeading
-          eyebrow="Case categories"
-          title="Which employment-based category fits your profile?"
+          eyebrow="Core services"
+          title={serviceIndexCopy.petitionsHeading}
         />
 
         <div className="mx-auto mt-6 max-w-2xl">
@@ -80,8 +77,7 @@ export default function ServicesPage() {
             Employment-based immigration categories differ by what they require
             you to prove. EB-2 NIW requires a nationally important endeavor.
             EB-1A requires sustained acclaim. EB-1B and EB-1C require an
-            employer sponsor. O-1 is a temporary work classification rather than
-            an immigrant petition.
+            employer sponsor.
           </SnippetAnswer>
         </div>
 
@@ -114,7 +110,7 @@ export default function ServicesPage() {
       <Section id="support-services" className="scroll-mt-28">
         <SectionHeading
           eyebrow="Single deliverables"
-          title="Or hire us for one piece of the case"
+          title={serviceIndexCopy.supportHeading}
           description="You do not have to engage a full petition package. Each deliverable below can be prepared on its own — including RFE responses for petitions originally filed by someone else."
         />
 
@@ -144,6 +140,18 @@ export default function ServicesPage() {
           <Button href="/consultation" variant="primary" size="lg">
             Talk to an immigration specialist
           </Button>
+        </div>
+      </Section>
+
+      <Section id="other-visas" tone="tint" space="compact" className="scroll-mt-28">
+        <SectionHeading title={serviceIndexCopy.otherHeading} description={serviceIndexCopy.otherDescription} />
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {otherVisas.map((visa) => (
+            <Card key={visa.slug} href={`/services/${visa.slug}`} className="flex flex-col gap-2">
+              <CardTitle className="text-lg">{visa.name}</CardTitle>
+              <CardBody className="text-sm">{visa.tagline}</CardBody>
+            </Card>
+          ))}
         </div>
       </Section>
 

@@ -4,7 +4,7 @@ import { Badge, Card, CardBody, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { Section, SectionHeading } from "@/components/ui/section";
-import { caseCategories } from "@/lib/content/services";
+import { publishedCaseCategories as caseCategories } from "@/lib/content/published-services";
 
 export function CaseCategories() {
   return (

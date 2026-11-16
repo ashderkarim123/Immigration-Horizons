@@ -9,7 +9,7 @@ export const site = {
   tagline: "Your Future. Our Preparation. One Horizon.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://immigrationhorizons.com",
   description:
-    "Immigration Horizons prepares EB-2 NIW, EB-1A, EB-1B and EB-1C petitions, RFE responses, business plans and recommendation letters for clients worldwide.",
+    "Immigration Horizons prepares EB-2 NIW and EB-1 petitions, RFE and NOID responses, recommendation letters and business plans, plus preparation support for F-1, E-2 and other U.S. visas.",
   /**
    * Required on every page that describes what we do. We are not a law firm
    * and this must never be softened.

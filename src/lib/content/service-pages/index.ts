@@ -8,6 +8,8 @@ import { o1Visa } from "./o1-visa";
 import { recommendationLetters } from "./recommendation-letters";
 import { rfeResponse } from "./rfe-response";
 import type { ServicePageContent } from "./types";
+import type { ServicePageSlug } from "./slugs";
+export { servicePageSlugs } from "./slugs";
 
 /**
  * Registry consumed by the /services/[slug] route.
@@ -16,7 +18,7 @@ import type { ServicePageContent } from "./types";
  * app/services/eb2-niw/page.tsx. Next.js resolves static segments before
  * dynamic ones, so the flagship page wins without any special handling here.
  */
-export const servicePages: Record<string, ServicePageContent> = {
+export const servicePages = {
   eb1a,
   eb1b,
   eb1c,
@@ -26,11 +28,9 @@ export const servicePages: Record<string, ServicePageContent> = {
   "expert-opinion-letters": expertOpinionLetters,
   "business-plans": businessPlans,
   "evidence-packaging": evidencePackaging,
-};
-
-export const servicePageSlugs = Object.keys(servicePages);
+} satisfies Record<ServicePageSlug, ServicePageContent>;
 
 export const getServicePage = (slug: string): ServicePageContent | undefined =>
-  servicePages[slug];
+  Object.hasOwn(servicePages, slug) ? servicePages[slug as ServicePageSlug] : undefined;
 
 export type { ServicePageContent } from "./types";

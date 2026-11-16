@@ -2,7 +2,7 @@
 
 import { deliverLead } from "@/lib/leads";
 import { isRateLimited } from "@/lib/rate-limit";
-import { caseCategories, supportServices } from "@/lib/content/services";
+import { allServices } from "@/lib/content/services";
 import { linkOrInviteAfterConsultation } from "@/lib/auth/invitations";
 import { trackingFromForm } from "@/lib/tracking";
 
@@ -24,7 +24,7 @@ export type FormState = {
 };
 
 const validServiceValues = new Set(
-  [...caseCategories, ...supportServices].map((s) => s.name),
+  [...allServices.map((service) => service.enumValue), "Immigration Consultation"],
 );
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

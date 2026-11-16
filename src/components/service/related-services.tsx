@@ -3,11 +3,10 @@ import { ArrowRight } from "lucide-react";
 import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { Section, SectionHeading } from "@/components/ui/section";
 import {
-  caseCategories,
-  supportServices,
   type CaseCategory,
   type SupportService,
 } from "@/lib/content/services";
+import { publishedServices } from "@/lib/content/published-services";
 
 const isCaseCategory = (
   service: CaseCategory | SupportService,
@@ -26,9 +25,12 @@ export function RelatedServices({
   heading?: string;
   description?: string;
 }) {
-  const related = [...caseCategories, ...supportServices]
-    .filter((service) => service.slug !== exclude)
+  const tier = publishedServices.find((service) => service.slug === exclude)?.tier ?? "core";
+  const related = publishedServices
+    .filter((service) => service.slug !== exclude && service.tier === tier)
     .slice(0, 6);
+
+  if (!related.length) return null;
 
   return (
     <Section tone="tint">

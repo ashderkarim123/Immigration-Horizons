@@ -1,4 +1,5 @@
-import { caseCategories, supportServices } from "./services";
+import { publishedServiceGroups } from "./published-services";
+import type { ServiceTier } from "./services";
 
 export type NavLink = {
   label: string;
@@ -12,20 +13,18 @@ export type NavItem =
   | { label: string; href: string; mega: NavMega };
 
 export type NavMega = {
-  columns: { heading: string; links: NavLink[] }[];
+  columns: { heading: string; links: NavLink[]; tier: ServiceTier }[];
   feature: { heading: string; body: string; ctaLabel: string; ctaHref: string };
 };
 
-const caseCategoryLinks: NavLink[] = caseCategories.map((category) => ({
-  label: category.name,
-  href: `/services/${category.slug}`,
-  description: category.tagline,
-}));
-
-const supportServiceLinks: NavLink[] = supportServices.map((service) => ({
-  label: service.name,
-  href: `/services/${service.slug}`,
-  description: service.tagline,
+const serviceColumns = publishedServiceGroups.map((group) => ({
+  heading: group.heading,
+  tier: group.tier,
+  links: group.services.map((service) => ({
+    label: service.name,
+    href: `/services/${service.slug}`,
+    description: service.tagline,
+  })),
 }));
 
 export const primaryNav: NavItem[] = [
@@ -34,13 +33,10 @@ export const primaryNav: NavItem[] = [
     label: "Services",
     href: "/services",
     mega: {
-      columns: [
-        { heading: "Case Categories", links: caseCategoryLinks },
-        { heading: "Support Services", links: supportServiceLinks },
-      ],
+      columns: serviceColumns,
       feature: {
-        heading: "Not sure which category fits?",
-        body: "Tell us about your background and goals. We will tell you which classification your profile actually supports — before you spend anything on a filing.",
+        heading: "Not sure if you qualify for EB-2 NIW or EB-1?",
+        body: "Book a free consultation to discuss your background, evidence and petition preparation needs.",
         ctaLabel: "Book a free consultation",
         ctaHref: "/consultation",
       },
@@ -53,8 +49,7 @@ export const primaryNav: NavItem[] = [
 ];
 
 export const footerNav: { heading: string; links: NavLink[] }[] = [
-  { heading: "Case Categories", links: caseCategoryLinks },
-  { heading: "Support Services", links: supportServiceLinks },
+  ...serviceColumns,
   {
     heading: "Company",
     links: [

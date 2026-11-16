@@ -3,8 +3,17 @@ import assert from "node:assert/strict";
 
 import { submitConsultation } from "../src/app/(site)/consultation/actions";
 import { submitContact } from "../src/app/(site)/contact/actions";
+import { allServices } from "../src/lib/content/services";
+import { CONSULTATION_SERVICE_VALUES } from "../src/lib/models/Consultation";
 
 const idle = { status: "idle" as const };
+
+test("every consultation catalogue option can be saved without an enum validation failure", () => {
+  const allowed = new Set<string>(CONSULTATION_SERVICE_VALUES);
+  for (const service of allServices) {
+    assert.ok(allowed.has(service.enumValue), `${service.slug}: ${service.enumValue}`);
+  }
+});
 
 function botForm() {
   const form = new FormData();

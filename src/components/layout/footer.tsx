@@ -49,7 +49,7 @@ export function Footer() {
       </Container>
 
       <Container width="wide" className="relative py-16 sm:py-20">
-        <div className="grid gap-12 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(4,minmax(0,1fr))]">
           <div className="flex max-w-sm flex-col gap-5">
             {/* The logo is full-colour navy + gold on transparency, so it needs
                 a light backing to read on the navy footer — recolouring it to a
@@ -68,9 +68,7 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm leading-relaxed">
-              Petition strategy, writing, and RFE responses for EB-2 NIW, EB-1A,
-              EB-1B, EB-1C and O-1 cases. Clients supported across multiple
-              countries and time zones.
+              {site.description}
             </p>
             <div className="flex flex-wrap gap-3">
               {externalProfiles.map((profile) => (

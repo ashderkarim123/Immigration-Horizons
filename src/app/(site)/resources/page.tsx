@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { Eyebrow, Section, SectionHeading } from "@/components/ui/section";
-import { caseCategories, supportServices } from "@/lib/content/services";
+import { publishedCaseCategories as caseCategories, publishedSupportServices as supportServices, publishedOtherVisas as otherVisas } from "@/lib/content/published-services";
 import { officialResources } from "@/lib/content/resources";
 import { baseOpenGraph } from "@/lib/seo/og";
 
@@ -108,6 +108,17 @@ export default function ResourcesPage() {
             ))}
           </ul>
         </div>
+      </Section>
+
+      <Section space="compact" tone="tint">
+        <SectionHeading title="Other US visa guides" />
+        <ul className="mt-6 flex flex-wrap gap-3">
+          {otherVisas.map((visa) => (
+            <li key={visa.slug}>
+              <Link href={`/services/${visa.slug}`} className="text-navy-800 underline underline-offset-4">{visa.name}</Link>
+            </li>
+          ))}
+        </ul>
       </Section>
 
       {/* Official resources */}

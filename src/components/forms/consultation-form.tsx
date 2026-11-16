@@ -7,7 +7,7 @@ import { CheckCircle2, MessageCircle } from "lucide-react";
 import { submitConsultation, type FormState } from "@/app/(site)/consultation/actions";
 import { trackFormAttempt, useFormTracking } from "@/components/analytics/use-form-tracking";
 import { Button } from "@/components/ui/button";
-import { caseCategories, supportServices } from "@/lib/content/services";
+import { serviceGroups } from "@/lib/content/services";
 import { contact, whatsappLink } from "@/lib/content/site";
 
 import {
@@ -150,20 +150,15 @@ export function ConsultationForm({
             <option value="" disabled>
               Choose a service…
             </option>
-            <optgroup label="Case categories">
-              {caseCategories.map((c) => (
-                <option key={c.slug} value={c.name}>
-                  {c.name} — {c.tagline}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Single deliverables">
-              {supportServices.map((s) => (
-                <option key={s.slug} value={s.name}>
-                  {s.name}
-                </option>
-              ))}
-            </optgroup>
+            {serviceGroups.map((group) => (
+              <optgroup key={group.heading} label={group.heading}>
+                {group.services.map((service) => (
+                  <option key={service.slug} value={service.enumValue}>
+                    {service.name} — {service.tagline}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
             <option value="Immigration Consultation">Not sure yet</option>
           </Select>
         </Field>

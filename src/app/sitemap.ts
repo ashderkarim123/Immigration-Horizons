@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { getPublishedBlogPosts } from "@/lib/blogs";
 import { site } from "@/lib/content/site";
-import { caseCategories, supportServices } from "@/lib/content/services";
+import { publishedServices } from "@/lib/content/published-services";
 
 /**
  * Date the marketing content was last meaningfully revised. Kept as a
@@ -11,7 +11,7 @@ import { caseCategories, supportServices } from "@/lib/content/services";
  * crawlers to discount the signal. Bump this when page copy changes; move
  * to per-page dates only once the content model actually carries them.
  */
-const CONTENT_LAST_MODIFIED = "2026-09-04";
+const CONTENT_LAST_MODIFIED = "2026-11-16";
 
 const staticRoutes = [
   { path: "", priority: 1 },
@@ -33,11 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: post.updatedAt,
     priority: 0.7,
   }));
-  const serviceRoutes = [
-    ...caseCategories.map((c) => `/services/${c.slug}`),
-    ...supportServices.map((s) => `/services/${s.slug}`),
-  ].map((path) => ({
-    url: `${site.url}${path}`,
+  const serviceRoutes = publishedServices.map((service) => ({
+    url: `${site.url}/services/${service.slug}`,
     lastModified: CONTENT_LAST_MODIFIED,
     priority: 0.8,
   }));
