@@ -30,19 +30,24 @@ definition of done in `README.md`. **Never push or merge to `main` without the o
 
 Spec: `01-information-architecture.md`.
 
+Status (2026-11-16): active phase. Implementation is on `revamp/1-catalogue` in draft PR #10; the all-green
+validation/release gate remains open. See [the Phase 1 report](phase-1-report.md), including an unchanged server
+calendar DST failure and strict SEO findings. Do not treat the implementation checkboxes as merge/deploy approval.
+
 Tasks:
 
-- [ ] `src/lib/content/services.ts`: add `ServiceTier`, `tier`, `classification`; create `otherVisas`; move O-1 into it;
+- [x] `src/lib/content/services.ts`: add `ServiceTier`, `tier`, `classification`; create `otherVisas`; move O-1 into it;
       add the `noid-response` entry to `supportServices`; extend `allServices`.
-- [ ] Mirror the catalogue in `server/utils/services.js`.
-- [ ] Lead enum: append the six values in `src/lib/models/Consultation.ts` and `server/models/Consultation.js` (if the owner approved).
-- [ ] Add a test that every `allServices` value is in `CONSULTATION_SERVICE_VALUES`.
-- [ ] `navigation.ts`: three mega-menu columns plus "Who we help"; update `footerNav`.
-- [ ] Update every consumer of `caseCategories` / `supportServices` (grep `src/`).
-- [ ] `sitemap.ts`: include `otherVisas` slugs (pages arrive in Phase 6, so **gate on `servicePageSlugs`**: list a
+- [x] Mirror the catalogue in `server/utils/services.js`.
+- [x] Lead enum: append the six values in `src/lib/models/Consultation.ts` and `server/models/Consultation.js` (owner approved 2026-11-16).
+- [x] Add a test that every `allServices` value is in `CONSULTATION_SERVICE_VALUES`.
+- [x] `navigation.ts`: three mega-menu columns; update `footerNav`. "Who we help" links remain gated until Phase 5
+      creates the audience pages, following the owner's explicit no-404-navigation rule.
+- [x] Update every consumer of `caseCategories` / `supportServices` (grep `src/`).
+- [x] `sitemap.ts`: include `otherVisas` slugs (pages arrive in Phase 6, so **gate on `servicePageSlugs`**: list a
       slug only when its content file exists, so the sitemap never lists a 404).
-- [ ] Copy fixes from `02-content-specs.md` §5 ("filing" wording, `site.description`).
-- [ ] `/eb2-niw` → `/services/eb2-niw` permanent redirect if that path resolves in production.
+- [x] Copy fixes from `02-content-specs.md` §5 ("filing" wording, `site.description`).
+- [x] Check `/eb2-niw` → `/services/eb2-niw` conditional redirect: the production source URL returned 404, so no redirect was added.
 
 Acceptance: the header, footer and consultation dropdown show the three groups; no 404 links; all tests green;
 historic lead values unchanged.

@@ -1,5 +1,16 @@
 # Implementation Status — Immigration Horizons Client Portal
 
+## Public website revamp — Phase 1, 2026-11-16
+
+Implemented on `revamp/1-catalogue` for existing draft PR #10: core/secondary service tiers, three service groups,
+publication-gated links, six owner-approved consultation values preserving the historic enum prefix, generated
+CMS catalogue mirror and preparation/filing copy corrections. No SaaS, staff or admin route changes.
+Lint, TypeScript and local production build pass; root tests: 494 pass, 1 skip, 0 fail. Server tests: 910 pass,
+1 fail (unchanged calendar DST ambiguity); final focused catalogue/form tests: 7 pass. The all-green release gate
+remains open. The 21-page SEO audit passes; strict browser checks identify existing robots/description gaps
+for later SEO work. No merge or deployment. See [the Phase 1 report](../revamp/phase-1-report.md) for evidence,
+scope decisions, unresolved specification conflicts and remaining release gates.
+
 ## Production preflight — 2026-10-04
 
 Stabilization merged in PR #6; the isolated fixture repair merged in PR #7. Production is running `1408784255ca0aff8f1a2d6cc7086998bc11fe80`, with all five Main CI jobs and automatic deployment successful. Required environment checks and unauthenticated endpoint/browser checks pass. Private document, admin upload, nginx and MongoDB logical backups were created and checked. A full catalog review found nine missing evidence indexes that the existing index scripts omitted; their provisioning paths are being corrected on `fix/evidence-index-provisioning`. Production database changes, Atlas snapshot confirmation, authenticated real-user QA and the final observation sign-off remain pending. Stabilization stays open and Phase 11 has not started. See the [production preflight record](../deployment/STABILIZATION_PRODUCTION_PREFLIGHT_2026_10_04.md).

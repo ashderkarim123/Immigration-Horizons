@@ -77,13 +77,21 @@ forbids. **The repo rules win** unless the owner explicitly changes `CLAUDE.md`:
 | USCIS fee calculator tool | Not built. Link to the official USCIS fee schedule |
 | Case studies with outcomes | Only from real, consented testimonials already in `testimonials.ts` |
 
+## Owner decisions recorded 2026-11-16
+
+- **Consultation enum approved:** append `NOID Response`, `E-2 Visa`, `F-1 Visa`, `F-2 Visa`, `J-1 Visa` and
+  `B-1/B-2 Visa`. Preserve every historic value and its order.
+- **Production host confirmed:** this Next.js repository serves `immigrationhorizons.com`, rather than the
+  separate legacy Express/EJS repository. No changes to that separate repository are included.
+
 ## Open decisions for the owner (do not guess)
 
-1. **Consultation enum** — add the six secondary visa values to the lead model (three places, see
-   `01-information-architecture.md` §5), or map them all to `"Immigration Consultation"`? Recommended: add them.
-2. **Legacy site** — is `immigrationhorizons.com` currently served by this Next.js app or by the legacy EJS repo?
-   The live page audit found stray "Exhibit 7" text and a raw GTM URL; confirm which codebase produced them before
-   fixing.
+1. **Legacy writer status** — the production website is confirmed above. If the separate legacy repository still
+   writes or edits shared consultation records elsewhere, its model must accept the appended values before it
+   validates those records. That separate checkout was not inspected or changed.
+2. **Brand wording in repository rules** — `CLAUDE.md` still specifies navy/gold and Source Serif 4; the owner brief
+   specifies Open Horizons forest/terracotta/ivory and DM Serif Display. Phase 1 changes catalogue structure only;
+   resolve the visual rules before a phase changes branding.
 3. **Upwork rating and review count** — supply the current numbers; the Fiverr figure (4.8 / 44, checked 2026-11-16)
    is already known.
 4. **Founder photo** — a real photo for `PhotoSlot` in the founder section, or keep the SVG treatment.
