@@ -31,6 +31,12 @@ export const CONSULTATION_SERVICE_VALUES = [
   "Evidence Review & Packaging",
   "Immigration Consultation",
   "Not Sure / Need Guidance",
+  "NOID Response",
+  "E-2 Visa",
+  "F-1 Visa",
+  "F-2 Visa",
+  "J-1 Visa",
+  "B-1/B-2 Visa",
 ] as const;
 
 const ConsultationSchema = new Schema(

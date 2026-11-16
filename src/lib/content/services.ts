@@ -1,7 +1,8 @@
 /**
  * Service catalogue.
  *
- * Two distinct shapes, which the legacy site conflated into one flat list:
+ * Core immigrant petitions and support deliverables come first. Temporary
+ * nonimmigrant classifications live in the quieter `otherVisas` group.
  *
  * - `caseCategories` — the visa classification a client files under. These are
  *   the primary search-intent pages ("EB-2 NIW", "EB-1A").
@@ -17,8 +18,12 @@ export type EngagementOption = {
   description: string;
 };
 
+export type ServiceTier = "core" | "secondary";
+
 export type CaseCategory = {
   slug: string;
+  tier: ServiceTier;
+  classification: "immigrant" | "nonimmigrant";
   /** Value stored on Consultation records — must match the legacy enum. */
   enumValue: string;
   name: string;
@@ -32,6 +37,8 @@ export type CaseCategory = {
 export const caseCategories: CaseCategory[] = [
   {
     slug: "eb2-niw",
+    tier: "core",
+    classification: "immigrant",
     enumValue: "EB-2 NIW",
     name: "EB-2 NIW",
     tagline: "National Interest Waiver",
@@ -58,12 +65,14 @@ export const caseCategories: CaseCategory[] = [
         type: "full-package",
         label: "Full petition package",
         description:
-          "We build your entire EB-2 NIW case from scratch — strategy, writing, letters, and full form filing support.",
+          "We build your entire EB-2 NIW case from scratch — strategy, writing, letters, and full form preparation support. The client or their attorney files.",
       },
     ],
   },
   {
     slug: "eb1a",
+    tier: "core",
+    classification: "immigrant",
     enumValue: "EB-1A",
     name: "EB-1A",
     tagline: "Extraordinary Ability",
@@ -90,12 +99,14 @@ export const caseCategories: CaseCategory[] = [
         type: "full-package",
         label: "Full petition package",
         description:
-          "We map your criteria, write every document, and organize your full EB-1A petition from start to filing.",
+          "We map your criteria, write every document, and organize your full EB-1A petition for you or your attorney to file.",
       },
     ],
   },
   {
     slug: "eb1b",
+    tier: "core",
+    classification: "immigrant",
     enumValue: "EB-1B",
     name: "EB-1B",
     tagline: "Outstanding Professor or Researcher",
@@ -121,12 +132,14 @@ export const caseCategories: CaseCategory[] = [
         type: "full-package",
         label: "Full petition package",
         description:
-          "We build your complete EB-1B case — letters, evidence packaging, and full form filing support.",
+          "We build your complete EB-1B case — letters, evidence packaging, and full form preparation support. Your employer or their attorney files.",
       },
     ],
   },
   {
     slug: "eb1c",
+    tier: "core",
+    classification: "immigrant",
     enumValue: "EB-1C",
     name: "EB-1C",
     tagline: "Multinational Manager or Executive",
@@ -151,13 +164,18 @@ export const caseCategories: CaseCategory[] = [
         type: "full-package",
         label: "Full petition package",
         description:
-          "We build your complete EB-1C case — organizational evidence, letters, and full form filing support.",
+          "We build your complete EB-1C case — organizational evidence, letters, and full form preparation support. Your employer or their attorney files.",
       },
     ],
   },
+];
+
+export const otherVisas: CaseCategory[] = [
   {
     slug: "o1-visa",
-    enumValue: "O-1",
+    tier: "secondary",
+    classification: "nonimmigrant",
+    enumValue: "O-1 Visa",
     name: "O-1 Visa",
     tagline: "Extraordinary Ability or Achievement",
     description:
@@ -176,7 +194,7 @@ export const caseCategories: CaseCategory[] = [
         type: "single-task",
         label: "Hire for a single deliverable",
         description:
-          "Need only your support letters drafted or your exhibits organised for filing? We can take on that piece alone.",
+          "Need only your support letters drafted or your exhibits organized for filing? We can take on that piece alone.",
       },
       {
         type: "full-package",
@@ -186,10 +204,27 @@ export const caseCategories: CaseCategory[] = [
       },
     ],
   },
+  ...[
+    { slug: "e2-visa", name: "E-2 Visa", tagline: "Treaty investor preparation", description: "Business plan drafting and document organization for treaty investor visa applications." },
+    { slug: "f1-visa", name: "F-1 Visa", tagline: "Student visa preparation", description: "Document organization, form preparation and interview coaching for student visa applications." },
+    { slug: "f2-visa", name: "F-2 Visa", tagline: "Student dependent preparation", description: "Document organization and form preparation for spouses and children applying as student dependents." },
+    { slug: "j1-visa", name: "J-1 Visa", tagline: "Exchange visitor preparation", description: "Document organization, form preparation and interview coaching for exchange visitor visa applications." },
+    { slug: "b1-b2-visa", name: "B-1/B-2 Visa", tagline: "Visitor visa preparation", description: "Document organization, form preparation and interview coaching for business or tourism visitor visa applications." },
+  ].map((visa): CaseCategory => ({
+    ...visa,
+    enumValue: visa.name,
+    tier: "secondary",
+    classification: "nonimmigrant",
+    eligibility: "A consultation reviews your intended travel and documents. We prepare documents; the client or their attorney files. We do not determine visa eligibility or guarantee an outcome.",
+    deliverables: ["Document checklist and organization", "Form preparation from your answers", "Supporting document preparation"],
+    engagementOptions: [{ type: "single-task", label: "Discuss preparation support", description: "Tell us which documents you need help preparing in a free consultation." }],
+  })),
 ];
 
 export type SupportService = {
   slug: string;
+  tier: ServiceTier;
+  enumValue: string;
   name: string;
   tagline: string;
   description: string;
@@ -198,13 +233,25 @@ export type SupportService = {
 export const supportServices: SupportService[] = [
   {
     slug: "rfe-response",
+    tier: "core",
+    enumValue: "RFE & NOID Responses",
     name: "RFE & NOID Responses",
     tagline: "Request for Evidence support",
     description:
       "A focused, evidence-led response to a USCIS Request for Evidence or Notice of Intent to Deny — including cases we did not originally prepare.",
   },
   {
+    slug: "noid-response",
+    tier: "core",
+    enumValue: "NOID Response",
+    name: "NOID Response",
+    tagline: "Notice of Intent to Deny support",
+    description: "Response drafting and evidence organization for a USCIS Notice of Intent to Deny, including petitions we did not prepare. The client or their attorney files.",
+  },
+  {
     slug: "recommendation-letters",
+    tier: "core",
+    enumValue: "Recommendation Letters",
     name: "Recommendation Letters",
     tagline: "Written from scratch",
     description:
@@ -212,6 +259,8 @@ export const supportServices: SupportService[] = [
   },
   {
     slug: "expert-opinion-letters",
+    tier: "core",
+    enumValue: "Expert Opinion Letters",
     name: "Expert Opinion Letters",
     tagline: "Independent field expertise",
     description:
@@ -219,6 +268,8 @@ export const supportServices: SupportService[] = [
   },
   {
     slug: "business-plans",
+    tier: "core",
+    enumValue: "Business & Personal Plans",
     name: "Business & Personal Plans",
     tagline: "Endeavor documentation",
     description:
@@ -226,14 +277,32 @@ export const supportServices: SupportService[] = [
   },
   {
     slug: "evidence-packaging",
+    tier: "core",
+    enumValue: "Evidence Review & Packaging",
     name: "Evidence Review & Packaging",
     tagline: "Exhibits, indexing, filing order",
     description:
-      "Review, organisation, and indexing of your supporting evidence into a clean exhibit set an adjudicator can follow.",
+      "Review, organization, and indexing of your supporting evidence into a clean exhibit set an adjudicator can follow.",
   },
 ];
 
-export const allServices = [...caseCategories, ...supportServices];
+export const allServices = [...caseCategories, ...supportServices, ...otherVisas];
+
+export const serviceGroups = [
+  { heading: "Green card petitions", services: caseCategories, tier: "core" },
+  { heading: "RFE, NOID & support", services: supportServices, tier: "core" },
+  { heading: "Other US visas", services: otherVisas, tier: "secondary" },
+] as const;
+
+export const serviceIndexCopy = {
+  title: "Immigration Petition Preparation | Immigration Horizons",
+  description: "EB-2 NIW and EB-1 petition preparation, RFE and NOID responses, letters and evidence packaging. Explore core services and other U.S. visa preparation.",
+  intro: "Our focus is EB-2 NIW and EB-1 petition preparation, plus RFE and NOID responses. Engage us for a full package or a single document. We also prepare documents for other U.S. visas. The client or their attorney files.",
+  petitionsHeading: "Green card petitions",
+  supportHeading: "RFE, NOID & support",
+  otherHeading: "Other US visas",
+  otherDescription: "Document preparation for temporary, nonimmigrant classifications. Our core focus remains EB-2 NIW, EB-1 and RFE/NOID response preparation.",
+} as const;
 
 export const findCaseCategory = (slug: string) =>
   caseCategories.find((category) => category.slug === slug);
