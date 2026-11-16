@@ -7,7 +7,7 @@ import { Card, CardBody, CardTitle } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Reveal } from "@/components/ui/reveal";
 import { Eyebrow, Section, SectionHeading } from "@/components/ui/section";
-import { caseCategories, supportServices } from "@/lib/content/services";
+import { publishedCaseCategories as caseCategories, publishedSupportServices as supportServices, publishedOtherVisas as otherVisas } from "@/lib/content/published-services";
 import { contact, whatsappLink } from "@/lib/content/site";
 
 export const metadata: Metadata = {
@@ -108,6 +108,12 @@ export default function NotFound() {
                   {service.name}
                 </Link>
               </li>
+            ))}
+          </ul>
+          <h2 className="font-display text-navy-800 mt-10 text-xl font-semibold">Other US visas</h2>
+          <ul className="mt-5 flex flex-wrap gap-3">
+            {otherVisas.map((visa) => (
+              <li key={visa.slug}><Link href={`/services/${visa.slug}`} className="text-navy-800 underline underline-offset-4">{visa.name}</Link></li>
             ))}
           </ul>
         </div>

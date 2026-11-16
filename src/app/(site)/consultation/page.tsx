@@ -96,7 +96,7 @@ export default async function ConsultationPage({
           <div className="rounded-panel border-ink-200 relative overflow-hidden border bg-white p-6 shadow-card sm:p-9">
             <span aria-hidden className="bg-gold-500 absolute top-0 left-9 h-1 w-14 rounded-b-full" />
             <ConsultationForm
-              defaultService={matched?.name}
+              defaultService={matched?.enumValue}
               tracking={tracking}
             />
           </div>

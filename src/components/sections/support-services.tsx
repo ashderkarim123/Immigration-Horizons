@@ -6,7 +6,7 @@ import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/section";
 import { Reveal, RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { DocumentStack } from "@/components/visuals/document-stack";
-import { supportServices } from "@/lib/content/services";
+import { publishedSupportServices as supportServices } from "@/lib/content/published-services";
 
 /**
  * The "you don't have to buy the whole package" section. This is a real
