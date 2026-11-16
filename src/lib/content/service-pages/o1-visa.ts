@@ -57,7 +57,7 @@ export const o1Visa: ServicePageContent = {
         "The O-1 is a nonimmigrant classification — a temporary work visa, not a green card. This is the single most important thing to understand about it, because O-1 shares much of its vocabulary with EB-1A and the two are frequently confused.",
         "An O-1 authorises you to work in the United States for a specific petitioner, in a specific field, for an initial period of up to three years, with extensions available in increments of up to one year. It does not confer permanent residence and it does not lead to it automatically.",
         "Unlike EB-1A and EB-2 NIW, the O-1 cannot be self-petitioned. A U.S. employer, or a U.S. agent, must file Form I-129 on your behalf. The agent route is what makes the classification workable for people with multiple engagements rather than a single employer, which is common in the arts, in athletics, and increasingly among senior technical consultants.",
-        "The O-1 also requires something the immigrant categories do not: a written advisory opinion from an appropriate peer group, labor organisation, or management organisation. This is a procedural requirement with its own lead time, and it is a frequent cause of delay in otherwise well-prepared filings.",
+        "The O-1 also requires something the immigrant categories do not: a written advisory opinion from an appropriate peer group, labor oorganization, or management oorganization. This is a procedural requirement with its own lead time, and it is a frequent cause of delay in otherwise well-prepared filings.",
       ],
       callout: {
         title: "O-1 is temporary; EB-1A is permanent",
@@ -76,15 +76,15 @@ export const o1Visa: ServicePageContent = {
         {
           heading: "O-1A — sciences, education, business, or athletics",
           paragraphs: [
-            "O-1A covers individuals with extraordinary ability in the sciences, education, business, or athletics. The standard is sustained national or international acclaim, demonstrated either through a major internationally recognised award or through evidence meeting at least three of eight regulatory criteria.",
-            "This is the route for researchers, engineers, founders, executives, and athletes. The criteria closely resemble the EB-1A set, though there are meaningful differences — notably that O-1A has eight criteria rather than ten, and includes employment in a critical or essential capacity for distinguished organisations.",
+            "O-1A covers individuals with extraordinary ability in the sciences, education, business, or athletics. The standard is sustained national or international acclaim, demonstrated either through a major internationally recognized award or through evidence meeting at least three of eight regulatory criteria.",
+            "This is the route for researchers, engineers, founders, executives, and athletes. The criteria closely resemble the EB-1A set, though there are meaningful differences — notably that O-1A has eight criteria rather than ten, and includes employment in a critical or essential capacity for distinguished oorganizations.",
           ],
         },
         {
           heading: "O-1B — arts, or motion picture and television",
           paragraphs: [
             "O-1B covers individuals with extraordinary ability in the arts, and individuals with a record of extraordinary achievement in the motion picture or television industry. These are two different standards housed in one sub-classification.",
-            "For the arts, the standard is distinction — a high level of achievement evidenced by a degree of skill and recognition substantially above that ordinarily encountered. This is a lower bar than the sustained acclaim required under O-1A, reflecting how careers in the arts are actually built and recognised.",
+            "For the arts, the standard is distinction — a high level of achievement evidenced by a degree of skill and recognition substantially above that ordinarily encountered. This is a lower bar than the sustained acclaim required under O-1A, reflecting how careers in the arts are actually built and recognized.",
             "The qualifying evidence differs too: it can be satisfied by nomination for or receipt of a significant national or international award such as an Academy Award, Emmy, Grammy, or Directors Guild Award, or by meeting at least three of six alternative criteria.",
           ],
         },
@@ -96,16 +96,16 @@ export const o1Visa: ServicePageContent = {
       eyebrow: "The evidentiary test",
       heading: "The eight O-1A criteria",
       intro: [
-        "Absent a major internationally recognised award, an O-1A petition must include evidence meeting at least three of the following criteria, set out at 8 CFR 214.2(o)(3)(iii). Where these criteria do not readily apply to the beneficiary's occupation, comparable evidence may be submitted.",
+        "Absent a major internationally recognized award, an O-1A petition must include evidence meeting at least three of the following criteria, set out at 8 CFR 214.2(o)(3)(iii). Where these criteria do not readily apply to the beneficiary's occupation, comparable evidence may be submitted.",
       ],
       items: [
         {
-          title: "Nationally or internationally recognised awards",
-          body: "Receipt of nationally or internationally recognised prizes or awards for excellence in the field. As always, the selection standard is what needs documenting, not the certificate.",
+          title: "Nationally or internationally recognized awards",
+          body: "Receipt of nationally or internationally recognized prizes or awards for excellence in the field. As always, the selection standard is what needs documenting, not the certificate.",
         },
         {
           title: "Membership in associations requiring outstanding achievement",
-          body: "Membership in associations that require outstanding achievements of their members, as judged by recognised national or international experts.",
+          body: "Membership in associations that require outstanding achievements of their members, as judged by recognized national or international experts.",
         },
         {
           title: "Published material about you",
@@ -124,8 +124,8 @@ export const o1Visa: ServicePageContent = {
           body: "Authorship of scholarly articles in the field, in professional journals or other major media.",
         },
         {
-          title: "Critical or essential capacity for distinguished organisations",
-          body: "Employment in a critical or essential capacity for organisations and establishments that have a distinguished reputation. Both the nature of the role and the standing of the organisation must be evidenced.",
+          title: "Critical or essential capacity for distinguished oorganizations",
+          body: "Employment in a critical or essential capacity for oorganizations and establishments that have a distinguished reputation. Both the nature of the role and the standing of the oorganization must be evidenced.",
         },
         {
           title: "High salary or remuneration",
@@ -156,7 +156,7 @@ export const o1Visa: ServicePageContent = {
         {
           heading: "The advisory opinion",
           paragraphs: [
-            "Every O-1 petition requires a written advisory opinion from a peer group, labor organisation, or management organisation appropriate to the field. In some fields the relevant organisation is obvious; in others — particularly emerging technical fields — identifying an appropriate body takes work.",
+            "Every O-1 petition requires a written advisory opinion from a peer group, labor oorganization, or management oorganization appropriate to the field. In some fields the relevant oorganization is obvious; in others — particularly emerging technical fields — identifying an appropriate body takes work.",
             "Advisory opinions have their own turnaround time, entirely outside your control and outside USCIS's. Requesting the opinion early, rather than after the rest of the petition is assembled, is one of the simplest ways to avoid an otherwise unnecessary delay.",
           ],
         },
@@ -189,7 +189,7 @@ export const o1Visa: ServicePageContent = {
         {
           heading: "Start the advisory opinion first",
           paragraphs: [
-            "Because the consultation is outside your control, it should be initiated at the start of the process rather than at the end. Identifying the appropriate peer group early also surfaces problems — such as no obvious organisation existing for a niche field — while there is still time to address them.",
+            "Because the consultation is outside your control, it should be initiated at the start of the process rather than at the end. Identifying the appropriate peer group early also surfaces problems — such as no obvious oorganization existing for a niche field — while there is still time to address them.",
           ],
         },
         {
@@ -238,7 +238,7 @@ export const o1Visa: ServicePageContent = {
       eyebrow: "Working with us",
       heading: "How we prepare O-1 petitions",
       paragraphs: [
-        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. On O-1 matters we prepare the petition narrative and evidence strategy, draft support and endorsement letters, help identify an appropriate peer group and coordinate the advisory opinion request, and organise exhibits into a filing-ready structure suited to premium processing.",
+        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. On O-1 matters we prepare the petition narrative and evidence strategy, draft support and endorsement letters, help identify an appropriate peer group and coordinate the advisory opinion request, and oorganize exhibits into a filing-ready structure suited to premium processing.",
         "Because the O-1 requires a U.S. petitioner or agent, we work with whoever is filing — an employer's HR team, a founder's own company, or an agent — and we regularly act as additional drafting capacity alongside a firm's own counsel.",
       ],
     },
@@ -267,7 +267,7 @@ export const o1Visa: ServicePageContent = {
     {
       question: "What is the advisory opinion and do I really need one?",
       answer:
-        "Every O-1 petition requires a written advisory opinion from an appropriate peer group, labor organisation, or management organisation in your field. It is a procedural requirement, and because turnaround is outside your control, it should be requested at the start of the process rather than once the rest of the petition is complete.",
+        "Every O-1 petition requires a written advisory opinion from an appropriate peer group, labor oorganization, or management oorganization in your field. It is a procedural requirement, and because turnaround is outside your control, it should be requested at the start of the process rather than once the rest of the petition is complete.",
     },
     {
       question: "Can I apply for a green card while on an O-1?",

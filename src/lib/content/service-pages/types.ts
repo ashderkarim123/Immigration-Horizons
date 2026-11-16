@@ -8,6 +8,9 @@ import type { Faq } from "../faqs";
 
 export type ListItem = { title: string; body: string };
 
+/** Internal links rendered as outline buttons under a section. Only link to published pages. */
+export type SectionLink = { label: string; href: string };
+
 export type PageSection =
   | {
       kind: "prose";
@@ -16,6 +19,7 @@ export type PageSection =
       heading: string;
       paragraphs: string[];
       callout?: { title: string; body: string };
+      links?: SectionLink[];
     }
   | {
       kind: "list";
@@ -26,6 +30,7 @@ export type PageSection =
       items: ListItem[];
       numbered?: boolean;
       callout?: { title: string; body: string };
+      links?: SectionLink[];
     }
   | {
       kind: "subsections";
@@ -35,6 +40,7 @@ export type PageSection =
       intro?: string[];
       subsections: { heading: string; paragraphs: string[] }[];
       callout?: { title: string; body: string };
+      links?: SectionLink[];
     }
   | {
       kind: "criteria";
@@ -45,6 +51,7 @@ export type PageSection =
       /** Rendered as a numbered regulatory criteria set. */
       items: ListItem[];
       callout?: { title: string; body: string };
+      links?: SectionLink[];
     }
   | {
       kind: "cta";

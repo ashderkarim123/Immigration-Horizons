@@ -4,6 +4,7 @@ import { eb1b } from "./eb1b";
 import { eb1c } from "./eb1c";
 import { evidencePackaging } from "./evidence-packaging";
 import { expertOpinionLetters } from "./expert-opinion-letters";
+import { noidResponse } from "./noid-response";
 import { o1Visa } from "./o1-visa";
 import { recommendationLetters } from "./recommendation-letters";
 import { rfeResponse } from "./rfe-response";
@@ -24,6 +25,7 @@ export const servicePages = {
   eb1c,
   "o1-visa": o1Visa,
   "rfe-response": rfeResponse,
+  "noid-response": noidResponse,
   "recommendation-letters": recommendationLetters,
   "expert-opinion-letters": expertOpinionLetters,
   "business-plans": businessPlans,

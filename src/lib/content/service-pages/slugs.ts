@@ -2,7 +2,7 @@
  * Add a slug here when registering its content in index.ts. EB-2 NIW is bespoke.
  */
 export const servicePageSlugs = [
-  "eb1a", "eb1b", "eb1c", "o1-visa", "rfe-response",
+  "eb1a", "eb1b", "eb1c", "o1-visa", "rfe-response", "noid-response",
   "recommendation-letters", "expert-opinion-letters", "business-plans", "evidence-packaging",
 ] as const;
 

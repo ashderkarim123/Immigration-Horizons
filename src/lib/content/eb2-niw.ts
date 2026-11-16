@@ -22,12 +22,12 @@ export type Criterion = {
 
 export const eb2NiwMeta = {
   title: "EB-2 NIW: Complete Guide to the National Interest Waiver",
-  metaTitle: "EB-2 NIW Petition Preparation | National Interest Waiver",
+  metaTitle: "EB-2 NIW Petition Preparation | Immigration Horizons",
   metaDescription:
-    "The EB-2 National Interest Waiver explained: Dhanasar eligibility, evidence strategy, required documents, the USCIS process, and common mistakes.",
-  heroHeadline: "EB-2 National Interest Waiver (NIW)",
+    "Full EB-2 NIW petition packages: Dhanasar eligibility, evidence strategy, what the package includes, RFE and NOID support. We prepare; you file.",
+  heroHeadline: "EB-2 NIW Petition Preparation: Full National Interest Waiver Packages",
   heroSubhead:
-    "The complete guide to eligibility, evidence, and petition strategy — plus how we prepare NIW cases for professionals and law firms worldwide.",
+    "The complete guide to eligibility, evidence, and petition strategy — plus what our full NIW package includes. We prepare the petition; you or your attorney file.",
   /** ~55 words, standalone, positioned for featured-snippet capture. */
   definition:
     "The EB-2 National Interest Waiver (NIW) is a U.S. employment-based immigrant petition that allows a qualified applicant to request USCIS waive the standard job offer and labor certification requirements. Because those requirements can be waived, the EB-2 NIW is a self-petition — no employer sponsorship is needed, and the applicant files Form I-140 on their own behalf.",
@@ -101,7 +101,7 @@ export const exceptionalAbilityCriteria: Criterion[] = [
   },
   {
     title: "Licence or certification",
-    body: "A licence to practise the profession, or a certification for the particular profession or occupation.",
+    body: "A license to practice the profession, or a certification for the particular profession or occupation.",
   },
   {
     title: "Salary demonstrating exceptional ability",
@@ -113,7 +113,7 @@ export const exceptionalAbilityCriteria: Criterion[] = [
   },
   {
     title: "Recognition for achievements",
-    body: "Recognition for achievements and significant contributions to the industry or field, from peers, government entities, or professional or business organisations.",
+    body: "Recognition for achievements and significant contributions to the industry or field, from peers, government entities, or professional or business oorganizations.",
   },
 ];
 
@@ -215,7 +215,7 @@ export const evidenceStrategy: { title: string; body: Paragraphs }[] = [
   {
     title: "Peer review and editorial work",
     body: [
-      "Reviewing for journals or conferences, or serving on programme committees, evidences that your field regards you as qualified to judge others' work. Document the invitations and completed reviews, not merely a claim of reviewer status.",
+      "Reviewing for journals or conferences, or serving on program committees, evidences that your field regards you as qualified to judge others' work. Document the invitations and completed reviews, not merely a claim of reviewer status.",
     ],
   },
   {
@@ -264,7 +264,7 @@ export const processStages: Criterion[] = [
   },
   {
     title: "Assemble and index exhibits",
-    body: "Evidence is organised and indexed so every claim in the petition letter maps to a numbered exhibit an adjudicator can locate immediately.",
+    body: "Evidence is oorganized and indexed so every claim in the petition letter maps to a numbered exhibit an adjudicator can locate immediately.",
   },
   {
     title: "File Form I-140",
@@ -361,7 +361,7 @@ export const eb2NiwFaqs: Faq[] = [
   {
     question: "How long does an EB-2 NIW take, and what does it cost?",
     answer:
-      "USCIS processing times change continuously and vary by service centre and case type, so we will not publish a figure we cannot stand behind. The authoritative sources are the official USCIS processing times tool and the USCIS fee schedule. Our own scope and cost depend on the state of your evidence, which we assess at the consultation.",
+      "USCIS processing times change continuously and vary by service center and case type, so we will not publish a figure we cannot stand behind. The authoritative sources are the official USCIS processing times tool and the USCIS fee schedule. Our own scope and cost depend on the state of your evidence, which we assess at the consultation.",
   },
   {
     question: "Can I file an EB-2 NIW while I am outside the United States?",
@@ -376,7 +376,7 @@ export const eb2NiwFaqs: Faq[] = [
   {
     question: "Can Immigration Horizons guarantee my EB-2 NIW will be approved?",
     answer:
-      "No, and you should be cautious of anyone who says otherwise. USCIS adjudicates every petition on its own record and no preparer controls that outcome. What we control is the quality of the argument, the strength and organisation of the evidence, and the internal consistency of the filing. Our completed-case history and client reviews are public so you can assess the work itself.",
+      "No, and you should be cautious of anyone who says otherwise. USCIS adjudicates every petition on its own record and no preparer controls that outcome. What we control is the quality of the argument, the strength and oorganization of the evidence, and the internal consistency of the filing. Our completed-case history and client reviews are public so you can assess the work itself.",
   },
 ];
 
@@ -404,6 +404,54 @@ export const officialSources = [
   },
 ];
 
+/** Section — What the full package includes. Phrased as what the client receives. */
+export const packageIncludes: Criterion[] = [
+  {
+    title: "Proposed endeavor narrative",
+    body: "A written definition of your endeavor — specific enough to be tested against the three prongs — agreed with you before any other document is drafted.",
+  },
+  {
+    title: "Petition cover letter on the three Dhanasar prongs",
+    body: "The petition letter structured prong by prong: substantial merit and national importance, your positioning to advance the endeavor, and the balance of factors. Every assertion cites an exhibit.",
+  },
+  {
+    title: "Recommendation letters",
+    body: "Independent and collaborator letters drafted from scratch around what each recommender actually knows of your work, for their review and signature.",
+  },
+  {
+    title: "Expert opinion letters",
+    body: "Where the field or the endeavor calls for it, an expert opinion letter explaining the significance of your work to a non-specialist adjudicator.",
+  },
+  {
+    title: "Business or personal endeavor plan",
+    body: "A plan written for a USCIS reader that defines the endeavor, documents its national importance and shows it is feasible, with projections grounded in checkable assumptions.",
+  },
+  {
+    title: "Exhibit index",
+    body: "Every exhibit numbered, tabbed and indexed in the order the letter cites it, so the adjudicator can follow the argument from claim to document.",
+  },
+  {
+    title: "Forms checklist",
+    body: "A checklist of the forms and supporting items the filing needs, confirmed against the current USCIS form page at the time of filing. You or your attorney file.",
+  },
+  {
+    title: "RFE and NOID support",
+    body: "If USCIS issues a Request for Evidence or Notice of Intent to Deny after filing, we prepare the response on the same record.",
+  },
+];
+
+/** Section — Who we prepare NIW petitions for. Audience pages link here once they exist. */
+export const audienceParagraphs: Paragraphs = [
+  "The NIW is the self-petition for people whose work matters beyond their employer. We prepare petitions for self-petitioners filing without a sponsor, for engineers, physicians and industry professionals whose impact shows in projects and adoption rather than publications, for researchers and scientists whose record is citations and peer review, and for professors and academics weighing a self-petitioned NIW against an employer-sponsored EB-1B.",
+  "The argument is built differently for each. A researcher's petition leads on the record of the work and its downstream use; a professional's leads on the endeavor itself and the evidence that it is feasible and nationally important. At the consultation we tell you which framing your record supports, and whether EB-1A or EB-1B is the better fit instead.",
+];
+
+/** Section — Already filed and received an RFE or NOID? */
+export const rfeNoidParagraphs: Paragraphs = [
+  "If you have already filed an EB-2 NIW petition and received a Request for Evidence or a Notice of Intent to Deny, the work changes: the officer has told you what is in question, and the response has to answer those points specifically. We prepare RFE and NOID responses on petitions we did not originally prepare, from the notice and the petition as filed.",
+  "An RFE asks for more information before a decision; a NOID says the officer intends to deny and gives a final chance to respond. Each has its own page explaining what the response needs and what to send us. The response period is stated in the notice and is firm, so start the day it arrives.",
+];
+
 /** Table of contents. Ids must match the section element ids on the page. */
 export const tableOfContents = [
   { id: "what-is-eb2-niw", label: "What is the EB-2 NIW?" },
@@ -414,6 +462,10 @@ export const tableOfContents = [
   { id: "evidence", label: "Evidence strategy" },
   { id: "process", label: "The USCIS process" },
   { id: "mistakes", label: "Common mistakes" },
+  { id: "package", label: "What the full package includes" },
+  { id: "who-for", label: "Who we prepare NIW petitions for" },
+  { id: "rfe-noid", label: "Received an RFE or NOID?" },
+  { id: "reviews", label: "Client reviews" },
   { id: "how-we-help", label: "How we help" },
   { id: "faqs", label: "Frequently asked questions" },
 ];

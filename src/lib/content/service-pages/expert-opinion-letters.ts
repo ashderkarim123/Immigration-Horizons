@@ -8,7 +8,7 @@ export const expertOpinionLetters: ServicePageContent = {
   subhead:
     "Independent expert opinion letters that explain the significance of your work to an adjudicator who is not a specialist in your field — drafted to be credible, specific, and defensible.",
   definition:
-    "An expert opinion letter is a statement from a recognised authority in a field, offering an independent assessment of the significance of someone's work or the standards of their profession. In a petition it functions as third-party expert testimony, helping a non-specialist adjudicator understand why a contribution matters.",
+    "An expert opinion letter is a statement from a recognized authority in a field, offering an independent assessment of the significance of someone's work or the standards of their profession. In a petition it functions as third-party expert testimony, helping a non-specialist adjudicator understand why a contribution matters.",
   metaTitle: "Expert Opinion Letter Preparation for Immigration Petitions",
   metaDescription:
     "Independent expert opinion letters for EB-2 NIW, EB-1A, EB-1B and O-1 petitions — assessments that explain your work's significance to a non-specialist adjudicator.",
@@ -44,7 +44,7 @@ export const expertOpinionLetters: ServicePageContent = {
       heading: "What is an expert opinion letter?",
       paragraphs: [
         "An expert opinion letter is a statement from an established authority in a field, giving an independent, reasoned assessment. In a petition, its job is to bridge a gap: the adjudicator deciding your case is an immigration officer, not a specialist in your discipline, and cannot be expected to judge on their own whether a particular contribution is significant to your field.",
-        "The expert supplies that judgement. A well-drafted expert opinion explains, in accessible terms, what the relevant standards are in the field, where your work sits against them, and why a specific contribution matters. It gives the adjudicator an authoritative basis for a conclusion they could not reach unaided.",
+        "The expert supplies that judgment. A well-drafted expert opinion explains, in accessible terms, what the relevant standards are in the field, where your work sits against them, and why a specific contribution matters. It gives the adjudicator an authoritative basis for a conclusion they could not reach unaided.",
         "Because the letter carries the weight of the expert's authority, its credibility is everything. An opinion that reads as advocacy — as an attempt to argue the case rather than assess it — undermines the very expertise it relies on. The strongest expert letters are measured, specific, and willing to explain their reasoning rather than simply asserting a conclusion.",
       ],
     },
@@ -117,7 +117,7 @@ export const expertOpinionLetters: ServicePageContent = {
         },
         {
           title: "Expert review and endorsement",
-          body: "The letter is provided to the expert to review, adjust, and sign. It must reflect their genuine professional judgement, in their own voice.",
+          body: "The letter is provided to the expert to review, adjust, and sign. It must reflect their genuine professional judgment, in their own voice.",
         },
       ],
     },
@@ -164,7 +164,7 @@ export const expertOpinionLetters: ServicePageContent = {
     {
       question: "What is an expert opinion letter?",
       answer:
-        "It is a statement from a recognised authority in a field giving an independent, reasoned assessment — typically of the significance of someone's work or the standards of their profession. In a petition it helps a non-specialist immigration adjudicator understand why a contribution matters, on the strength of the expert's authority to judge the field.",
+        "It is a statement from a recognized authority in a field giving an independent, reasoned assessment — typically of the significance of someone's work or the standards of their profession. In a petition it helps a non-specialist immigration adjudicator understand why a contribution matters, on the strength of the expert's authority to judge the field.",
     },
     {
       question: "How is it different from a recommendation letter?",
@@ -179,12 +179,12 @@ export const expertOpinionLetters: ServicePageContent = {
     {
       question: "Can you provide the expert as well as the letter?",
       answer:
-        "We draft the letter to be reasoned, accessible, and defensible, and it must be reviewed and signed by an appropriate expert who genuinely endorses it. The expert's authority and independence are central to the letter's value, so the opinion has to reflect their real professional judgement, in their own voice.",
+        "We draft the letter to be reasoned, accessible, and defensible, and it must be reviewed and signed by an appropriate expert who genuinely endorses it. The expert's authority and independence are central to the letter's value, so the opinion has to reflect their real professional judgment, in their own voice.",
     },
     {
       question: "Is an expert opinion letter the same as an O-1 advisory opinion?",
       answer:
-        "No. An O-1 petition requires a formal written advisory opinion from a specific peer, labor, or management organisation, which is a distinct procedural requirement. An expert opinion letter is evidence about the significance of your work and can be used across categories. We can help you understand and coordinate both.",
+        "No. An O-1 petition requires a formal written advisory opinion from a specific peer, labor, or management oorganization, which is a distinct procedural requirement. An expert opinion letter is evidence about the significance of your work and can be used across categories. We can help you understand and coordinate both.",
     },
   ],
   faqTitle: "Expert opinion letter frequently asked questions",

@@ -77,12 +77,14 @@ must not start until the owner approves the direction and `CLAUDE.md` is updated
 
 Spec: `02-content-specs.md` §1–2.
 
-- [ ] New `service-pages/noid-response.ts` and register it in `index.ts`.
-- [ ] Refocus `rfe-response.ts` (H1, title, NOID link; keep the slug and catalogue name).
-- [ ] Expand `eb2-niw.ts` and the bespoke page: package section, audience links, RFE/NOID section.
-- [ ] Expand `eb1a.ts`, `eb1b.ts`, `eb1c.ts`; add the E-2 subsection to `business-plans.ts`.
-- [ ] US spelling pass on every file touched.
-- [ ] Open and verify every URL in `sources`.
+- [x] New `service-pages/noid-response.ts` and register it in `index.ts`.
+- [x] Refocus `rfe-response.ts` (H1, title, NOID link; keep the slug and catalogue name).
+- [x] Expand `eb2-niw.ts` and the bespoke page: package section, audience section (links in Phase 5), RFE/NOID section.
+- [x] Expand `eb1a.ts`, `eb1b.ts`, `eb1c.ts`; add the E-2 subsection to `business-plans.ts` (link in Phase 6).
+- [x] US spelling pass on every file touched.
+- [x] Open and verify every URL in `sources` (two pre-existing USCIS/State links block automated clients).
+
+Delivered 2026-11-16 on `revamp/2-core-content`; see `phase-2-report.md`.
 
 Acceptance: each page meets the §0 rules in `02-content-specs.md`; the rendered-HTML scan (`05` §8) is clean.
 

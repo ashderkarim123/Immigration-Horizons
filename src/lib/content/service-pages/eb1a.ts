@@ -15,7 +15,7 @@ export const eb1a: ServicePageContent = {
     "EB-1A is a U.S. employment-based immigrant category for individuals with extraordinary ability in the sciences, arts, education, business, or athletics. It requires sustained national or international acclaim and is a self-petition — no employer sponsorship or labor certification is required to file Form I-140.",
   metaTitle: "EB-1A Extraordinary Ability Green Card: Criteria & Evidence",
   metaDescription:
-    "The EB-1A extraordinary-ability green card explained: the ten regulatory criteria, the Kazarian two-step test, evidence strategy, and the mistakes that draw RFEs.",
+    "The EB-1A extraordinary-ability green card explained: the ten criteria, the Kazarian two-step test, evidence strategy, and the mistakes that draw RFEs.",
   keywords: [
     "EB1A",
     "EB-1A",
@@ -42,6 +42,8 @@ export const eb1a: ServicePageContent = {
     { id: "evidence", label: "Evidence strategy" },
     { id: "documents", label: "Required documents" },
     { id: "mistakes", label: "Common mistakes" },
+    { id: "package", label: "What the full package includes" },
+    { id: "from-o1", label: "Coming from O-1?" },
     { id: "how-we-help", label: "How we help" },
     { id: "faqs", label: "Frequently asked questions" },
   ],
@@ -52,9 +54,9 @@ export const eb1a: ServicePageContent = {
       eyebrow: "The basics",
       heading: "What is the EB-1A extraordinary ability category?",
       paragraphs: [
-        "EB-1A sits in the first preference of the employment-based immigrant categories. It is reserved for individuals who can demonstrate extraordinary ability in the sciences, arts, education, business, or athletics — defined in the regulation as a level of expertise indicating that the person is one of that small percentage who have risen to the very top of the field of endeavour.",
+        "EB-1A sits in the first preference of the employment-based immigrant categories. It is reserved for individuals who can demonstrate extraordinary ability in the sciences, arts, education, business, or athletics — defined in the regulation as a level of expertise indicating that the person is one of that small percentage who have risen to the very top of the field of endeavor.",
         "Two features make it attractive. First, it is a self-petition: like the EB-2 NIW, no employer needs to sponsor you and no labor certification is required. Second, EB-1 is a higher-preference category than EB-2, which can matter considerably for applicants from countries where the second preference is heavily oversubscribed.",
-        "The trade-off is the standard of proof. EB-2 NIW asks whether your proposed endeavour is nationally important. EB-1A asks a different question entirely: whether you have already achieved sustained national or international acclaim, and whether your achievements have been recognised in your field. It is a backward-looking test about your record, not a forward-looking test about your plans.",
+        "The trade-off is the standard of proof. EB-2 NIW asks whether your proposed endeavor is nationally important. EB-1A asks a different question entirely: whether you have already achieved sustained national or international acclaim, and whether your achievements have been recognized in your field. It is a backward-looking test about your record, not a forward-looking test about your plans.",
         "You must also intend to continue working in your area of extraordinary ability in the United States. Unlike EB-1B and EB-1C, no job offer is required, but evidence of intended continued work in the field is expected.",
       ],
     },
@@ -64,17 +66,17 @@ export const eb1a: ServicePageContent = {
       eyebrow: "The threshold test",
       heading: "The ten EB-1A regulatory criteria",
       intro: [
-        "There are two ways to satisfy the evidentiary threshold. The first is a one-time achievement: a major, internationally recognised award. The regulation's own example is a Nobel Prize, and this route is genuinely rare.",
+        "There are two ways to satisfy the evidentiary threshold. The first is a one-time achievement: a major, internationally recognized award. The regulation's own example is a Nobel Prize, and this route is genuinely rare.",
         "Everyone else must submit evidence meeting at least three of the ten criteria set out at 8 CFR 204.5(h)(3). Where these criteria do not readily apply to your occupation, the regulation permits comparable evidence to be submitted instead.",
       ],
       items: [
         {
-          title: "Nationally or internationally recognised prizes or awards",
-          body: "Receipt of lesser nationally or internationally recognised prizes or awards for excellence in the field. What matters is the selection standard: who is eligible, who judges, and how many are chosen. A student award or an internal company prize rarely carries the required recognition.",
+          title: "Nationally or internationally recognized prizes or awards",
+          body: "Receipt of lesser nationally or internationally recognized prizes or awards for excellence in the field. What matters is the selection standard: who is eligible, who judges, and how many are chosen. A student award or an internal company prize rarely carries the required recognition.",
         },
         {
           title: "Membership in associations requiring outstanding achievement",
-          body: "Membership in associations that require outstanding achievements of their members, as judged by recognised national or international experts. Memberships obtained by paying a fee, or by holding a particular job title, do not satisfy this criterion.",
+          body: "Membership in associations that require outstanding achievements of their members, as judged by recognized national or international experts. Memberships obtained by paying a fee, or by holding a particular job title, do not satisfy this criterion.",
         },
         {
           title: "Published material about you",
@@ -82,7 +84,7 @@ export const eb1a: ServicePageContent = {
         },
         {
           title: "Judging the work of others",
-          body: "Participation, individually or on a panel, as a judge of the work of others in the same or an allied field. Peer review for journals, conference programme committees, grant review panels, and competition judging all fall here. Document the invitations and the completed work.",
+          body: "Participation, individually or on a panel, as a judge of the work of others in the same or an allied field. Peer review for journals, conference program committees, grant review panels, and competition judging all fall here. Document the invitations and the completed work.",
         },
         {
           title: "Original contributions of major significance",
@@ -98,7 +100,7 @@ export const eb1a: ServicePageContent = {
         },
         {
           title: "Leading or critical role",
-          body: "Evidence that you have performed in a leading or critical role for organisations or establishments that have a distinguished reputation. Both halves must be documented: the nature of your role, and the distinguished standing of the organisation.",
+          body: "Evidence that you have performed in a leading or critical role for oorganizations or establishments that have a distinguished reputation. Both halves must be documented: the nature of your role, and the distinguished standing of the oorganization.",
         },
         {
           title: "High salary or remuneration",
@@ -122,7 +124,7 @@ export const eb1a: ServicePageContent = {
       paragraphs: [
         "Following Kazarian v. USCIS, 596 F.3d 1115 (9th Cir. 2010), USCIS evaluates EB-1A petitions in two distinct stages, and understanding the split explains most otherwise-puzzling denials.",
         "At the first stage, the officer counts. Does the evidence submitted meet the plain language of at least three criteria? This is a threshold exercise, and the quality of the evidence is not weighed here beyond determining whether it satisfies each criterion.",
-        "At the second stage — the final merits determination — the officer steps back and asks whether the record as a whole demonstrates sustained national or international acclaim and that you are among the small percentage at the very top of your field. This is a qualitative judgement about the totality of the evidence.",
+        "At the second stage — the final merits determination — the officer steps back and asks whether the record as a whole demonstrates sustained national or international acclaim and that you are among the small percentage at the very top of your field. This is a qualitative judgment about the totality of the evidence.",
         "The practical consequence is that a petition can satisfy four or five criteria on paper and still be denied at the final merits stage. Petitions that are assembled purely to tick criteria, without a coherent argument that the record as a whole demonstrates acclaim, are precisely the ones that fail here. A well-built EB-1A petition argues both stages explicitly.",
       ],
     },
@@ -184,7 +186,7 @@ export const eb1a: ServicePageContent = {
         },
         {
           title: "Evidence for each claimed criterion",
-          body: "Organised criterion by criterion, so an adjudicator assessing criterion four is not searching the whole exhibit set for the relevant material.",
+          body: "Oorganized criterion by criterion, so an adjudicator assessing criterion four is not searching the whole exhibit set for the relevant material.",
         },
         {
           title: "Recommendation and expert opinion letters",
@@ -243,12 +245,71 @@ export const eb1a: ServicePageContent = {
       ],
     },
     {
+      kind: "list",
+      id: "package",
+      eyebrow: "What you receive",
+      heading: "What our full EB-1A package includes",
+      intro: [
+        "A full package is everything the petition needs, written from scratch for your record and delivered for you or your attorney to file. You can also engage us for any single item below.",
+      ],
+      numbered: true,
+      items: [
+        {
+          title: "Criteria mapping and strategy memo",
+          body: "Your record mapped against the ten criteria and the final merits standard, with a written recommendation on which criteria to lead with and which to leave out.",
+        },
+        {
+          title: "Petition cover letter",
+          body: "The petition letter structured criterion by criterion, then the final merits argument, with every assertion tied to an exhibit.",
+        },
+        {
+          title: "Recommendation letters",
+          body: "Independent and collaborator letters drafted from scratch around each recommender's actual knowledge of your work, for their review and signature.",
+        },
+        {
+          title: "Expert opinion letters",
+          body: "Where the field or the evidence calls for it, an expert opinion letter explaining the significance of your contributions to a non-specialist adjudicator.",
+        },
+        {
+          title: "Citation and impact analysis",
+          body: "Your citation record, downstream use and media coverage presented in field context, so the adjudicator can see why the numbers matter.",
+        },
+        {
+          title: "Exhibit index and packaging",
+          body: "Every exhibit numbered, tabbed and indexed in the order the letter cites it.",
+        },
+        {
+          title: "Forms checklist",
+          body: "A checklist of the forms and supporting items the filing needs, confirmed against the current USCIS form page at the time of filing.",
+        },
+        {
+          title: "RFE and NOID support",
+          body: "If USCIS issues a notice after filing, we prepare the response on the same record.",
+        },
+      ],
+      links: [
+        { label: "RFE response preparation", href: "/services/rfe-response" },
+        { label: "NOID response preparation", href: "/services/noid-response" },
+      ],
+    },
+    {
+      kind: "prose",
+      id: "from-o1",
+      eyebrow: "The O-1 bridge",
+      heading: "Coming from O-1?",
+      paragraphs: [
+        "Many EB-1A applicants hold O-1 status when they petition. The two classifications use similar language about extraordinary ability, and much of the evidence assembled for an O-1 petition is reusable, but the standards are not the same. The O-1 is a temporary, employer- or agent-petitioned classification; EB-1A is a self-petitioned immigrant category that asks for sustained acclaim and then a final merits determination on the whole record.",
+        "In practice an approved O-1 is a useful starting point and nothing more. The EB-1A petition has to be argued on its own terms, and the evidence usually needs to be deepened, especially independent letters and downstream evidence of impact, rather than refiled as it was. Because the O-1 is not subject to the strict immigrant-intent restrictions that apply to some other nonimmigrant classifications, the two are often pursued in parallel.",
+      ],
+      links: [{ label: "O-1 visa preparation", href: "/services/o1-visa" }],
+    },
+    {
       kind: "prose",
       id: "how-we-help",
       eyebrow: "Working with us",
       heading: "How we prepare EB-1A petitions",
       paragraphs: [
-        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. What we do is prepare petitions: mapping your record against the ten criteria, selecting which to lead on, drafting the petition letter and supporting letters from scratch, and organising exhibits criterion by criterion so the argument is followable.",
+        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. What we do is prepare petitions: mapping your record against the ten criteria, selecting which to lead on, drafting the petition letter and supporting letters from scratch, and oorganizing exhibits criterion by criterion so the argument is followable.",
         "We work on full EB-1A packages and on single deliverables — a set of recommendation letters, an exhibit index, or an RFE response on a petition someone else prepared. We also act as additional drafting capacity for immigration attorneys and paralegals working to a deadline.",
       ],
     },
@@ -262,7 +323,7 @@ export const eb1a: ServicePageContent = {
     {
       question: "How many EB-1A criteria do I need to meet?",
       answer:
-        "You need evidence meeting at least three of the ten criteria in 8 CFR 204.5(h)(3), unless you have received a one-time major internationally recognised award. Meeting three moves you past the threshold stage, but it does not by itself establish eligibility — the officer then makes a final merits determination on the record as a whole.",
+        "You need evidence meeting at least three of the ten criteria in 8 CFR 204.5(h)(3), unless you have received a one-time major internationally recognized award. Meeting three moves you past the threshold stage, but it does not by itself establish eligibility — the officer then makes a final merits determination on the record as a whole.",
     },
     {
       question: "Do I need a job offer or employer for EB-1A?",
@@ -277,7 +338,7 @@ export const eb1a: ServicePageContent = {
     {
       question: "Is EB-1A harder than EB-2 NIW?",
       answer:
-        "They test different things rather than sitting on a single difficulty scale. EB-1A is backward-looking and asks whether you have already achieved sustained acclaim. EB-2 NIW is forward-looking and asks whether your proposed endeavour is nationally important and whether waiving the job offer requirement benefits the United States. Some records support both.",
+        "They test different things rather than sitting on a single difficulty scale. EB-1A is backward-looking and asks whether you have already achieved sustained acclaim. EB-2 NIW is forward-looking and asks whether your proposed endeavor is nationally important and whether waiving the job offer requirement benefits the United States. Some records support both.",
     },
     {
       question: "Can I use comparable evidence if the criteria do not fit my field?",

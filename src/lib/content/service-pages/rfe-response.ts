@@ -5,17 +5,20 @@ export const rfeResponse: ServicePageContent = {
   slug: "rfe-response",
   name: "RFE & NOID Responses",
   eyebrow: "Request for Evidence Support",
-  headline: "USCIS RFE & NOID response preparation",
+  headline: "I-140 RFE Response Preparation for EB-2 NIW and EB-1",
   subhead:
-    "A focused, evidence-led response to a Request for Evidence or Notice of Intent to Deny — including cases we did not originally prepare, and under deadline.",
+    "A focused, evidence-led response to a USCIS Request for Evidence on an EB-2 NIW, EB-1A, EB-1B or EB-1C petition — including petitions we did not prepare. You or your attorney file.",
   definition:
     "A USCIS Request for Evidence (RFE) is a formal notice asking for additional documentation before an officer decides a petition. It is not a denial. A well-prepared RFE response addresses the specific concerns the officer raised, point by point, with targeted evidence — rather than resubmitting the original filing with more material attached.",
-  metaTitle: "USCIS RFE Response Preparation | RFE & NOID Support",
+  metaTitle: "I-140 RFE Response Help: NIW & EB-1 | Immigration Horizons",
   metaDescription:
-    "USCIS RFE and NOID response preparation for EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions — including cases originally filed by someone else, under deadline.",
+    "I-140 RFE response preparation for EB-2 NIW and EB-1 petitions, including petitions prepared by someone else. Point-by-point, evidence-led, indexed.",
   keywords: [
+    "I-140 RFE response",
     "USCIS RFE",
     "RFE response",
+    "NIW RFE response",
+    "EB1A RFE",
     "Request for Evidence",
     "NOID response",
     "Notice of Intent to Deny",
@@ -24,11 +27,12 @@ export const rfeResponse: ServicePageContent = {
     "immigration RFE",
   ],
   keyFacts: [
-    { label: "Applies to", value: "Any employment-based petition" },
-    { label: "Our own cases", value: "Yes" },
-    { label: "Cases filed elsewhere", value: "Yes" },
+    { label: "Notice type", value: "Request for Evidence" },
+    { label: "Applies to", value: "Form I-140 (EB-2 NIW, EB-1A, EB-1B, EB-1C)" },
+    { label: "Petitions we did not prepare", value: "Yes" },
     { label: "An RFE is", value: "A request, not a denial" },
-    { label: "Deadline-driven", value: "Responses are time-limited" },
+    { label: "Response window", value: "Stated in the notice; respond before it" },
+    { label: "Who files the response", value: "You or your attorney" },
   ],
   toc: [
     { id: "what-is-rfe", label: "What is an RFE?" },
@@ -53,8 +57,8 @@ export const rfeResponse: ServicePageContent = {
         "RFE deadlines are firm. Missing the deadline generally results in the petition being decided on the existing record, which usually means denial. The clock starts when the notice issues, so the time to begin is immediately.",
       ],
       callout: {
-        title: "We respond to cases we did not file",
-        body: "A significant share of the RFE work we do is on petitions originally prepared by someone else — including cases where the applicant's law firm provided limited support. Coming to us at the RFE stage is common and entirely workable.",
+        title: "We respond to RFEs on petitions we did not prepare",
+        body: "A significant share of the RFE work we do is on petitions originally prepared by someone else — the applicant, a document service, or a firm that provided limited support. We need the notice and the petition as filed, not a history with the case. Coming to us at the RFE stage is common and entirely workable.",
       },
     },
     {
@@ -66,7 +70,9 @@ export const rfeResponse: ServicePageContent = {
         "A Notice of Intent to Deny (NOID) is more serious than an RFE. Where an RFE says the officer needs more information, a NOID says the officer is currently inclined to deny the petition and is giving you a final chance to change their mind.",
         "The practical difference is tone and stakes. A NOID response has to do more than supply missing documents: it has to engage directly with the officer's stated reasoning and explain why that reasoning does not support denial, backed by evidence. The margin for a vague or partial response is smaller.",
         "In both cases the underlying discipline is the same — read what the officer actually said, address each point specifically, and support every assertion with evidence the officer can locate. The difference is that a NOID leaves less room for error, which makes careful preparation more important, not less.",
+        "If your notice is a Notice of Intent to Deny, our NOID response page explains how that response is built and what we need from you.",
       ],
+      links: [{ label: "NOID response preparation", href: "/services/noid-response" }],
     },
     {
       kind: "list",
@@ -90,7 +96,7 @@ export const rfeResponse: ServicePageContent = {
           body: "Adding volume is not the same as answering the question. Evidence that does not speak to the officer's specific concern adds length without adding persuasion, and can obscure the material that does answer it.",
         },
         {
-          title: "Consistency with the original filing is scrutinised",
+          title: "Consistency with the original filing is scrutinized",
           body: "The response is read alongside the original petition. Anything in the response that contradicts the original filing creates a new problem, so the two have to be reconciled deliberately.",
         },
       ],
@@ -110,7 +116,7 @@ export const rfeResponse: ServicePageContent = {
         {
           heading: "Answer point by point, in the officer's order",
           paragraphs: [
-            "The response is structured to mirror the RFE. Each concern the officer raised gets its own labelled section, so that when the officer reads the response with the notice beside them, every point is easy to find and visibly addressed. Nothing is left for the officer to infer or hunt for.",
+            "The response is structured to mirror the RFE. Each concern the officer raised gets its own labeled section, so that when the officer reads the response with the notice beside them, every point is easy to find and visibly addressed. Nothing is left for the officer to infer or hunt for.",
           ],
         },
         {
@@ -152,7 +158,7 @@ export const rfeResponse: ServicePageContent = {
         },
         {
           title: "Exhibit assembly",
-          body: "Evidence is organised and indexed so each response point maps to the document that supports it.",
+          body: "Evidence is oorganized and indexed so each response point maps to the document that supports it.",
         },
         {
           title: "Review and submission preparation",
@@ -194,8 +200,8 @@ export const rfeResponse: ServicePageContent = {
       eyebrow: "Working with us",
       heading: "How we help with RFEs and NOIDs",
       paragraphs: [
-        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. On RFE and NOID matters we analyse the notice, plan and draft the response, prepare or revise supporting letters, and assemble an indexed exhibit set that maps to each of the officer's concerns.",
-        "We take these on across all the categories we work in — EB-2 NIW, EB-1A, EB-1B, EB-1C, and O-1 — including petitions we did not originally prepare, and we regularly work as additional drafting capacity for immigration attorneys and paralegals responding under deadline.",
+        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. On RFE and NOID matters we analyze the notice, plan and draft the response, prepare or revise supporting letters, and assemble an indexed exhibit set that maps to each of the officer's concerns.",
+        "We take these on across all the categories we work in — EB-2 NIW, EB-1A, EB-1B, EB-1C, and O-1 — including petitions we did not originally prepare, and we regularly work as additional drafting capacity for immigration attorneys and paralegals responding under deadline. We do not file the response; you or your attorney do.",
       ],
     },
   ],
@@ -236,8 +242,12 @@ export const rfeResponse: ServicePageContent = {
     "The questions we are asked most often about responding to a USCIS Request for Evidence or Notice of Intent to Deny.",
   sources: [
     {
-      label: "USCIS — Responding to a Request for Evidence",
-      href: "https://www.uscis.gov/forms/filing-guidance/tips-for-filing-forms-by-mail",
+      label: "8 CFR 103.2(b) — Evidence and processing; requests for evidence and notices of intent to deny",
+      href: "https://www.ecfr.gov/current/title-8/chapter-I/subchapter-B/part-103/subpart-A/section-103.2",
+    },
+    {
+      label: "USCIS Policy Manual, Volume 1, Part E, Chapter 6 — Evidence",
+      href: "https://www.uscis.gov/policy-manual/volume-1-part-e-chapter-6",
     },
     {
       label: "USCIS — Check Case Processing Times",
@@ -245,5 +255,5 @@ export const rfeResponse: ServicePageContent = {
     },
   ],
   scopeNote:
-    "This page is general educational information about USCIS Requests for Evidence and Notices of Intent to Deny, not legal advice about any individual case.",
+    "We prepare the RFE response, supporting letters and exhibit index for you or your attorney to file. We do not file it, appear before USCIS, or give legal advice about any individual case.",
 };

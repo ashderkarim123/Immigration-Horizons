@@ -11,7 +11,7 @@ export const businessPlans: ServicePageContent = {
     "In an employment-based petition, a business or personal endeavor plan documents the applicant's proposed work in the United States and its prospective impact. Unlike an investor's business plan, its audience is a USCIS adjudicator, and its purpose is to establish national importance and feasibility — not to attract funding.",
   metaTitle: "Immigration Business & Endeavor Plan Preparation",
   metaDescription:
-    "Business and personal endeavor plan preparation for EB-2 NIW and EB-1C petitions — written for a USCIS audience to show national importance and feasibility.",
+    "Business and endeavor plan preparation for EB-2 NIW, EB-1C and E-2 cases — written for a USCIS or consular reader to show importance and feasibility.",
   keywords: [
     "immigration business plan",
     "EB2 NIW business plan",
@@ -25,7 +25,7 @@ export const businessPlans: ServicePageContent = {
     { label: "Audience", value: "USCIS adjudicator" },
     { label: "Purpose", value: "National importance & feasibility" },
     { label: "Not for", value: "Raising investment" },
-    { label: "Used in", value: "EB-2 NIW, EB-1C" },
+    { label: "Used in", value: "EB-2 NIW, EB-1C, E-2" },
     { label: "Available standalone", value: "Yes" },
   ],
   toc: [
@@ -34,6 +34,7 @@ export const businessPlans: ServicePageContent = {
     { id: "components", label: "What a strong plan contains" },
     { id: "process", label: "Our process" },
     { id: "mistakes", label: "Common mistakes" },
+    { id: "e2", label: "E-2 business plans" },
     { id: "how-we-help", label: "How we help" },
     { id: "faqs", label: "Frequently asked questions" },
   ],
@@ -57,7 +58,7 @@ export const businessPlans: ServicePageContent = {
       heading: "Why this is not an investor business plan",
       paragraphs: [
         "The most common mistake with immigration business plans is treating them like the plans written to raise capital. The two look superficially similar and are fundamentally different in purpose.",
-        "An investor plan is written to persuade someone to fund a venture. It emphasises returns, market opportunity, and upside, and a degree of optimistic framing is expected and understood.",
+        "An investor plan is written to persuade someone to fund a venture. It emphasizes returns, market opportunity, and upside, and a degree of optimistic framing is expected and understood.",
         "An immigration plan is written to persuade an adjudicator that the proposed work is nationally important and realistically achievable. Its currency is credibility, not ambition. Overstated projections and promotional language, which an investor would discount automatically, actively harm an immigration plan — they invite the adjudicator to question whether anything in the document can be relied upon.",
         "The tone that works is measured and evidenced. Claims are supported; projections are grounded; the national importance is argued from the nature of the work rather than asserted through enthusiasm. A plan written for investors and repurposed for USCIS reliably reads as what it is.",
       ],
@@ -149,6 +150,17 @@ export const businessPlans: ServicePageContent = {
           title: "Contradicting the rest of the petition",
           body: "A plan that describes the endeavor differently from the petition letter, creating an inconsistency in the record.",
         },
+      ],
+    },
+    {
+      kind: "prose",
+      id: "e2",
+      eyebrow: "Treaty investors",
+      heading: "E-2 business plans",
+      paragraphs: [
+        "The E-2 treaty investor classification is a temporary, nonimmigrant visa for nationals of treaty countries who invest a substantial amount in a real, operating U.S. enterprise they will develop and direct. In an E-2 case the business plan is the central non-legal document: it is where the consular officer or USCIS adjudicator reads what the enterprise is, how the investment has been committed, and why the business is more than marginal.",
+        "An E-2 plan is written to a different question from an NIW endeavor plan. It documents the enterprise and the investment: what the business does, the funds invested and their source, the staffing plan, and five-year financial projections grounded in assumptions the reader can check. We prepare the plan, the investment and source-of-funds document index, and the organizational chart. Treaty eligibility, entity structuring and the filing strategy are your attorney's work, and we do not advise on them.",
+        "E-2 business plans are engaged through this page and the consultation form; a dedicated E-2 preparation page is planned.",
       ],
     },
     {

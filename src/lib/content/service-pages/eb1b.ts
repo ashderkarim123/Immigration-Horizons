@@ -9,7 +9,7 @@ export const eb1b: ServicePageContent = {
   subhead:
     "Petition preparation for academics and industry researchers with international recognition — including the employer-side documentation this category requires.",
   definition:
-    "EB-1B is a U.S. employment-based immigrant category for outstanding professors and researchers who are internationally recognised in a specific academic area. It requires at least three years of teaching or research experience in that area and a qualifying job offer from a U.S. employer, who files Form I-140 on the applicant's behalf.",
+    "EB-1B is a U.S. employment-based immigrant category for outstanding professors and researchers who are internationally recognized in a specific academic area. It requires at least three years of teaching or research experience in that area and a qualifying job offer from a U.S. employer, who files Form I-140 on the applicant's behalf.",
   metaTitle: "EB-1B Outstanding Professor & Researcher Petitions",
   metaDescription:
     "The EB-1B outstanding professor or researcher green card: the six regulatory criteria, employer requirements, qualifying positions, and evidence strategy.",
@@ -38,6 +38,8 @@ export const eb1b: ServicePageContent = {
     { id: "employer", label: "Employer and position requirements" },
     { id: "evidence", label: "Evidence strategy" },
     { id: "mistakes", label: "Common mistakes" },
+    { id: "package", label: "What the full package includes" },
+    { id: "professors-postdocs", label: "Professors and postdocs" },
     { id: "how-we-help", label: "How we help" },
     { id: "faqs", label: "Frequently asked questions" },
   ],
@@ -65,11 +67,11 @@ export const eb1b: ServicePageContent = {
       items: [
         {
           title: "International recognition as outstanding",
-          body: "You must be recognised internationally as outstanding in a specific academic area. The recognition must be international in scope, and it must attach to a defined academic area rather than to general professional competence.",
+          body: "You must be recognized internationally as outstanding in a specific academic area. The recognition must be international in scope, and it must attach to a defined academic area rather than to general professional competence.",
         },
         {
           title: "At least three years of teaching or research experience",
-          body: "Three years of experience in teaching or research in that academic area. Experience gained while pursuing an advanced degree can count where the applicant had full responsibility for the classes taught, or where the research is recognised as outstanding.",
+          body: "Three years of experience in teaching or research in that academic area. Experience gained while pursuing an advanced degree can count where the applicant had full responsibility for the classes taught, or where the research is recognized as outstanding.",
         },
         {
           title: "A qualifying job offer",
@@ -100,7 +102,7 @@ export const eb1b: ServicePageContent = {
         },
         {
           title: "Judging the work of others",
-          body: "Participation, either individually or on a panel, as the judge of the work of others in the same or an allied academic field. Journal peer review, conference programme committees, and grant panels all fall here — document invitations and completed reviews.",
+          body: "Participation, either individually or on a panel, as the judge of the work of others in the same or an allied academic field. Journal peer review, conference program committees, and grant panels all fall here — document invitations and completed reviews.",
         },
         {
           title: "Original scientific or scholarly research contributions",
@@ -136,7 +138,7 @@ export const eb1b: ServicePageContent = {
           heading: "Qualifying private-employer positions",
           paragraphs: [
             "A comparable research position with a private employer can qualify, but the regulation imposes additional conditions: the employer must employ at least three full-time researchers, and must have documented accomplishments in the academic field.",
-            "Both conditions require evidence from the employer — organisational documentation of the research staff, and documentation of the department's or company's research accomplishments. This is not something the applicant can supply alone.",
+            "Both conditions require evidence from the employer — oorganizational documentation of the research staff, and documentation of the department's or company's research accomplishments. This is not something the applicant can supply alone.",
           ],
         },
         {
@@ -169,7 +171,7 @@ export const eb1b: ServicePageContent = {
         {
           heading: "Define the academic area precisely",
           paragraphs: [
-            "Recognition must attach to a specific academic area. Defining that area too broadly makes the recognition look thin relative to the field; defining it too narrowly invites the argument that the area is not a recognised field at all. Getting this framing right is one of the more consequential drafting decisions in an EB-1B.",
+            "Recognition must attach to a specific academic area. Defining that area too broadly makes the recognition look thin relative to the field; defining it too narrowly invites the argument that the area is not a recognized field at all. Getting this framing right is one of the more consequential drafting decisions in an EB-1B.",
           ],
         },
         {
@@ -219,6 +221,77 @@ export const eb1b: ServicePageContent = {
       ],
     },
     {
+      kind: "list",
+      id: "package",
+      eyebrow: "What you receive",
+      heading: "What our full EB-1B package includes",
+      intro: [
+        "A full package covers both halves of an EB-1B: your record against the six criteria, and the employer's side of the petition. Your employer files; we prepare. Any single item below can be engaged on its own.",
+      ],
+      numbered: true,
+      items: [
+        {
+          title: "Criteria mapping and strategy memo",
+          body: "Your record mapped against the six criteria and the international-recognition standard, with a recommendation on which two or more to lead with.",
+        },
+        {
+          title: "Petition cover letter",
+          body: "The petition letter, structured criterion by criterion and addressing the three core requirements, prepared for the sponsoring employer to sign and file.",
+        },
+        {
+          title: "Employer document request",
+          body: "A specific list for your HR or faculty affairs contact: the offer letter, the permanence of the position, and the institution's or department's standing.",
+        },
+        {
+          title: "Recommendation letters",
+          body: "Independent letters from researchers outside your institution, drafted from scratch for their review and signature.",
+        },
+        {
+          title: "Expert opinion letters",
+          body: "Where needed, an expert opinion letter explaining your contribution to the academic area for a non-specialist adjudicator.",
+        },
+        {
+          title: "Publication and citation evidence",
+          body: "Your publications, citations and peer-review record presented in field context.",
+        },
+        {
+          title: "Exhibit index and packaging",
+          body: "Every exhibit numbered, tabbed and indexed in the order the letter cites it.",
+        },
+        {
+          title: "RFE and NOID support",
+          body: "If USCIS issues a notice after filing, we prepare the response on the same record.",
+        },
+      ],
+      links: [
+        { label: "RFE response preparation", href: "/services/rfe-response" },
+        { label: "NOID response preparation", href: "/services/noid-response" },
+      ],
+    },
+    {
+      kind: "subsections",
+      id: "professors-postdocs",
+      eyebrow: "Who EB-1B is for",
+      heading: "EB-1B for professors, researchers and postdocs",
+      intro: [
+        "EB-1B is the category built for academia, and it is the one most often overlooked by the people it fits. It needs a U.S. employer to petition, so it is only available where an institution or research employer is willing to sponsor. Where that sponsor exists, the standard is lower than EB-1A and the evidence is the kind academics already have: publications, citations, peer review, and letters from researchers in the field.",
+      ],
+      subsections: [
+        {
+          heading: "Tenured and tenure-track faculty",
+          paragraphs: [
+            "A tenured or tenure-track teaching position is the clearest qualifying offer. The institution's faculty affairs or HR office supplies the offer letter and documentation of the position; we prepare the request they need and the petition letter the institution signs. Where the same record might also support a self-petitioned EB-2 NIW, we say which route fits and why, because the two are frequently run together.",
+          ],
+        },
+        {
+          heading: "Research scientists and postdocs",
+          paragraphs: [
+            "Research positions qualify where they are comparable to a tenure-track role, which generally means permanent rather than for a defined term. That is the point on which postdoctoral appointments most often need careful handling: the permanence of the role has to be addressed directly in the petition, with the employer's documentation, rather than assumed. Where a postdoc cannot be framed as permanent, EB-2 NIW or EB-1A are the self-petition alternatives, and we assess all three against the same record.",
+          ],
+        },
+      ],
+    },
+    {
       kind: "prose",
       id: "how-we-help",
       eyebrow: "Working with us",
@@ -233,7 +306,7 @@ export const eb1b: ServicePageContent = {
     {
       question: "What is the EB-1B outstanding professor or researcher category?",
       answer:
-        "EB-1B is a U.S. employment-based immigrant category for professors and researchers who are internationally recognised as outstanding in a specific academic area. It requires at least three years of teaching or research experience in that area and a qualifying job offer from a U.S. employer, who files the petition.",
+        "EB-1B is a U.S. employment-based immigrant category for professors and researchers who are internationally recognized as outstanding in a specific academic area. It requires at least three years of teaching or research experience in that area and a qualifying job offer from a U.S. employer, who files the petition.",
     },
     {
       question: "Can I self-petition for EB-1B?",
@@ -243,7 +316,7 @@ export const eb1b: ServicePageContent = {
     {
       question: "How many EB-1B criteria do I need to meet?",
       answer:
-        "At least two of the six criteria set out in 8 CFR 204.5(i)(3)(i). Meeting two is a threshold rather than a conclusion — USCIS then assesses whether the record as a whole establishes that you are internationally recognised as outstanding in your academic area.",
+        "At least two of the six criteria set out in 8 CFR 204.5(i)(3)(i). Meeting two is a threshold rather than a conclusion — USCIS then assesses whether the record as a whole establishes that you are internationally recognized as outstanding in your academic area.",
     },
     {
       question: "Does a postdoctoral position qualify as the job offer?",
@@ -263,7 +336,7 @@ export const eb1b: ServicePageContent = {
     {
       question: "Does the three years of experience have to be after my PhD?",
       answer:
-        "Not necessarily. Experience gained while working on an advanced degree can count where the applicant had full responsibility for the classes taught, or where the research conducted is recognised as outstanding. How that experience is documented matters, and it should be addressed explicitly in the petition.",
+        "Not necessarily. Experience gained while working on an advanced degree can count where the applicant had full responsibility for the classes taught, or where the research conducted is recognized as outstanding. How that experience is documented matters, and it should be addressed explicitly in the petition.",
     },
     {
       question: "Can you work with my university's HR or faculty affairs office?",

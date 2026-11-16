@@ -1,5 +1,14 @@
 # Implementation Status — Immigration Horizons Client Portal
 
+## Public website revamp — Phase 2, 2026-11-16
+
+Core content delivered on `revamp/2-core-content`: new `/services/noid-response`, `/services/rfe-response` refocused
+on I-140 RFEs, EB-2 NIW flagship and EB-1A/B/C pages expanded with package, O-1, professors/postdocs and L-1A
+sections, E-2 section on business plans, one optional `links` field in the service-page renderer, US spelling pass.
+Lint, types, build and 495 root tests pass; rendered-HTML scan clean on all eight checked pages except the
+pre-existing zero robots meta. Audience and E-2 links deferred to Phases 5–6. See
+[the Phase 2 report](../revamp/phase-2-report.md). No merge or deployment.
+
 ## Public website revamp — Design Gate D0, 2026-11-16
 
 Design package delivered on `revamp/d0-design-gate` under `docs/revamp/design/` (no production code changed):

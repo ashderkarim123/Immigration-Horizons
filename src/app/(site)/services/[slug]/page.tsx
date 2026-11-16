@@ -112,6 +112,16 @@ function RenderSection({ section }: { section: PageSection }) {
           <Callout title={section.callout.title}>{section.callout.body}</Callout>
         </div>
       ) : null}
+
+      {section.links?.length ? (
+        <div className="mt-8 flex flex-wrap gap-3">
+          {section.links.map((link) => (
+            <Button key={link.href} href={link.href} variant="outline" size="sm">
+              {link.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
     </ContentSection>
   );
 }

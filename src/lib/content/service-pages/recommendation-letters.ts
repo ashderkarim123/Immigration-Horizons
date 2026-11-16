@@ -130,7 +130,7 @@ export const recommendationLetters: ServicePageContent = {
       items: [
         {
           title: "Templated letters",
-          body: "Several letters built from the same skeleton, with names swapped. Adjudicators read many petitions and recognise shared structure and phrasing immediately.",
+          body: "Several letters built from the same skeleton, with names swapped. Adjudicators read many petitions and recognize shared structure and phrasing immediately.",
         },
         {
           title: "Praise without specifics",
@@ -138,7 +138,7 @@ export const recommendationLetters: ServicePageContent = {
         },
         {
           title: "Only collaborator letters",
-          body: "A set drawn entirely from supervisors and co-authors invites the question of whether the work has been recognised beyond people with a reason to help.",
+          body: "A set drawn entirely from supervisors and co-authors invites the question of whether the work has been recognized beyond people with a reason to help.",
         },
         {
           title: "Claims the recommender cannot support",
@@ -190,7 +190,7 @@ export const recommendationLetters: ServicePageContent = {
     {
       question: "Why do templated letters hurt a petition?",
       answer:
-        "Adjudicators read a great many petitions and recognise shared structure and phrasing quickly. When several letters follow the same skeleton, it signals that the letters were produced for the filing rather than written independently by the recommenders, which reduces the weight of all of them.",
+        "Adjudicators read a great many petitions and recognize shared structure and phrasing quickly. When several letters follow the same skeleton, it signals that the letters were produced for the filing rather than written independently by the recommenders, which reduces the weight of all of them.",
     },
   ],
   faqTitle: "Recommendation letter frequently asked questions",

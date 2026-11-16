@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { CtaBanner } from "@/components/sections/cta-banner";
 import { Faqs } from "@/components/sections/faqs";
+import { TestimonialCard } from "@/components/sections/testimonials";
 import { InlineCta } from "@/components/service/inline-cta";
 import { OfficialSources } from "@/components/service/official-sources";
 import {
@@ -25,6 +26,7 @@ import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import {
   advancedDegreeRoute,
+  audienceParagraphs,
   benefits,
   commonMistakes,
   dhanasarIntro,
@@ -36,13 +38,18 @@ import {
   exceptionalAbilityRoute,
   keyFacts,
   officialSources,
+  packageIncludes,
   processStages,
   requiredDocuments,
+  rfeNoidParagraphs,
   tableOfContents,
   whatItIs,
 } from "@/lib/content/eb2-niw";
 import { findCaseCategory } from "@/lib/content/services";
 import { site } from "@/lib/content/site";
+import { testimonials } from "@/lib/content/testimonials";
+
+const niwReviews = testimonials.filter((t) => t.service === "EB-2 NIW").slice(0, 5);
 
 export const metadata: Metadata = {
   title: { absolute: eb2NiwMeta.metaTitle },
@@ -245,7 +252,7 @@ export default function Eb2NiwPage() {
             >
               <Prose
                 paragraphs={[
-                  "The stages below describe what happens and in what order. We do not publish processing-time estimates: USCIS timelines change continuously and vary by service centre and case type, so any figure printed here would be misleading by the time you read it. The official USCIS processing times tool is the authority, and we walk through what it means for your filing at the consultation.",
+                  "The stages below describe what happens and in what order. We do not publish processing-time estimates: USCIS timelines change continuously and vary by service center and case type, so any figure printed here would be misleading by the time you read it. The official USCIS processing times tool is the authority, and we walk through what it means for your filing at the consultation.",
                 ]}
               />
               <DefinitionList items={processStages} numbered className="mt-8" />
@@ -265,13 +272,69 @@ export default function Eb2NiwPage() {
             </ContentSection>
 
             <ContentSection
+              id="package"
+              eyebrow="What you receive"
+              heading="What our full EB-2 NIW package includes"
+            >
+              <Prose
+                paragraphs={[
+                  "A full package is everything the petition needs, written from scratch for your record and delivered for you or your attorney to file. You can also engage us for any single item below.",
+                ]}
+              />
+              <DefinitionList items={packageIncludes} numbered className="mt-8" />
+            </ContentSection>
+
+            <ContentSection
+              id="who-for"
+              eyebrow="Who we help"
+              heading="Who we prepare NIW petitions for"
+            >
+              <Prose paragraphs={audienceParagraphs} />
+            </ContentSection>
+
+            <ContentSection
+              id="rfe-noid"
+              eyebrow="Already filed?"
+              heading="Already filed and received an RFE or NOID?"
+            >
+              <Prose paragraphs={rfeNoidParagraphs} />
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button href="/services/rfe-response" variant="outline" size="sm">
+                  RFE response preparation
+                </Button>
+                <Button href="/services/noid-response" variant="outline" size="sm">
+                  NOID response preparation
+                </Button>
+              </div>
+            </ContentSection>
+
+            {niwReviews.length > 0 ? (
+              <ContentSection
+                id="reviews"
+                eyebrow="Client reviews"
+                heading="EB-2 NIW client reviews"
+              >
+                <Prose
+                  paragraphs={[
+                    "Every review links to our public profile so you can confirm it yourself. We do not publish testimonials that cannot be checked.",
+                  ]}
+                />
+                <div className="mt-8 grid gap-5 sm:grid-cols-2">
+                  {niwReviews.map((testimonial) => (
+                    <TestimonialCard key={testimonial.id} testimonial={testimonial} />
+                  ))}
+                </div>
+              </ContentSection>
+            ) : null}
+
+            <ContentSection
               id="how-we-help"
               eyebrow="Working with us"
               heading="How we prepare EB-2 NIW petitions"
             >
               <Prose
                 paragraphs={[
-                  "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. What we do is prepare petitions: defining the endeavor, mapping evidence to the Dhanasar prongs, drafting every document from scratch, and organising exhibits so an adjudicator can follow the argument.",
+                  "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. What we do is prepare petitions: defining the endeavor, mapping evidence to the Dhanasar prongs, drafting every document from scratch, and oorganizing exhibits so an adjudicator can follow the argument.",
                   "You can engage us for a full petition package or for a single deliverable. Many clients working with their own attorney use us for one piece of the case, and we regularly act as additional drafting capacity for immigration attorneys and paralegals under deadline.",
                 ]}
               />

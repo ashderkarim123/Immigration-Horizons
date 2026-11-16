@@ -11,7 +11,7 @@ export const eb1c: ServicePageContent = {
   eyebrow: "Multinational Manager or Executive",
   headline: "EB-1C Multinational Manager & Executive petitions",
   subhead:
-    "Petition preparation for executives and managers transferring into a U.S. entity — including the corporate relationship and organisational evidence this category turns on.",
+    "Petition preparation for executives and managers transferring into a U.S. entity — including the corporate relationship and oorganizational evidence this category turns on.",
   definition:
     "EB-1C is a U.S. employment-based immigrant category for multinational managers and executives. It generally requires one year of qualifying employment abroad in a managerial or executive capacity within the three years before the petition, and a U.S. employer — related to the foreign entity — offering a managerial or executive role.",
   metaTitle: "EB-1C Multinational Manager & Executive Petitions",
@@ -42,6 +42,8 @@ export const eb1c: ServicePageContent = {
     { id: "relationship", label: "Qualifying corporate relationships" },
     { id: "evidence", label: "Evidence strategy" },
     { id: "mistakes", label: "Common mistakes" },
+    { id: "package", label: "What the full package includes" },
+    { id: "l1a", label: "EB-1C vs L-1A" },
     { id: "how-we-help", label: "How we help" },
     { id: "faqs", label: "Frequently asked questions" },
   ],
@@ -54,7 +56,7 @@ export const eb1c: ServicePageContent = {
       paragraphs: [
         "EB-1C is the immigrant counterpart to the L-1A intracompany transferee classification. It allows a multinational business to move a senior manager or executive from a foreign entity into a related U.S. entity on a permanent basis, without going through labor certification.",
         "The category is structurally different from EB-1A and EB-1B. There are no criteria to count and no acclaim to demonstrate. EB-1C turns almost entirely on two factual questions: whether a qualifying corporate relationship exists between the foreign and U.S. entities, and whether your role — abroad and in the United States — genuinely meets the statutory definition of managerial or executive capacity.",
-        "That makes it a documentation case rather than an argumentation case. The evidence is organisational: corporate ownership records, organisational charts, payroll and staffing data, and descriptions of duties and decision-making authority. Where petitions fail, it is usually because the corporate structure was not evidenced properly or because the role, on examination, looks operational rather than managerial.",
+        "That makes it a documentation case rather than an argumentation case. The evidence is oorganizational: corporate ownership records, oorganizational charts, payroll and staffing data, and descriptions of duties and decision-making authority. Where petitions fail, it is usually because the corporate structure was not evidenced properly or because the role, on examination, looks operational rather than managerial.",
         "Because the petition is employer-filed, the company is the petitioner and much of the record has to come from the business rather than from the individual.",
       ],
     },
@@ -98,7 +100,7 @@ export const eb1c: ServicePageContent = {
         {
           heading: "Managerial capacity",
           paragraphs: [
-            "A manager, in the statutory sense, manages the organisation or a department, subdivision, function, or component of it; supervises and controls the work of other supervisory, professional, or managerial employees, or manages an essential function; has authority over personnel actions such as hiring and firing, or — where no employees are directly supervised — functions at a senior level within the organisational hierarchy or with respect to the function managed; and exercises discretion over the day-to-day operations of the activity or function.",
+            "A manager, in the statutory sense, manages the oorganization or a department, subdivision, function, or component of it; supervises and controls the work of other supervisory, professional, or managerial employees, or manages an essential function; has authority over personnel actions such as hiring and firing, or — where no employees are directly supervised — functions at a senior level within the oorganizational hierarchy or with respect to the function managed; and exercises discretion over the day-to-day operations of the activity or function.",
             "Critically, a person who primarily supervises non-professional employees is not considered to be acting in a managerial capacity merely by virtue of supervisory duties. This is a frequent point of failure for first-line supervisors of operational staff.",
           ],
         },
@@ -106,20 +108,20 @@ export const eb1c: ServicePageContent = {
           heading: "Function managers",
           paragraphs: [
             "The statute expressly contemplates managing an essential function rather than managing people. This route is available where the applicant directs a core function of the business without a direct-report structure beneath them.",
-            "Function-manager cases require particularly careful documentation: the function must be identified and shown to be essential to the organisation, the applicant's seniority relative to that function must be established, and it must be clear that the applicant directs the function rather than performing it personally. Function-manager petitions attract scrutiny precisely because the usual organisational-chart evidence is absent.",
+            "Function-manager cases require particularly careful documentation: the function must be identified and shown to be essential to the oorganization, the applicant's seniority relative to that function must be established, and it must be clear that the applicant directs the function rather than performing it personally. Function-manager petitions attract scrutiny precisely because the usual oorganizational-chart evidence is absent.",
           ],
         },
         {
           heading: "Executive capacity",
           paragraphs: [
-            "An executive directs the management of the organisation or a major component or function of it; establishes the goals and policies of that organisation, component, or function; exercises wide latitude in discretionary decision-making; and receives only general supervision or direction from higher-level executives, the board of directors, or the stockholders.",
-            "The distinguishing feature is policy and direction-setting authority, and the degree of independence from supervision. An executive sets what the organisation does; a manager runs how it gets done.",
+            "An executive directs the management of the oorganization or a major component or function of it; establishes the goals and policies of that oorganization, component, or function; exercises wide latitude in discretionary decision-making; and receives only general supervision or direction from higher-level executives, the board of directors, or the stockholders.",
+            "The distinguishing feature is policy and direction-setting authority, and the degree of independence from supervision. An executive sets what the oorganization does; a manager runs how it gets done.",
           ],
         },
       ],
       callout: {
         title: "Small companies are not excluded — but they are examined",
-        body: "There is no minimum headcount in the statute. Small organisations can and do succeed under EB-1C. What they must do is document the organisational structure carefully enough to show the role is genuinely managerial or executive rather than the applicant performing the operational work themselves.",
+        body: "There is no minimum headcount in the statute. Small oorganizations can and do succeed under EB-1C. What they must do is document the oorganizational structure carefully enough to show the role is genuinely managerial or executive rather than the applicant performing the operational work themselves.",
       },
     },
     {
@@ -128,7 +130,7 @@ export const eb1c: ServicePageContent = {
       eyebrow: "The corporate side",
       heading: "Qualifying corporate relationships",
       intro: [
-        "The relationship between the foreign and U.S. entities must fall into one of the recognised categories, and must be proven through ownership and control documentation.",
+        "The relationship between the foreign and U.S. entities must fall into one of the recognized categories, and must be proven through ownership and control documentation.",
       ],
       items: [
         {
@@ -145,7 +147,7 @@ export const eb1c: ServicePageContent = {
         },
         {
           title: "Branch",
-          body: "An operating division or office of the same organisation housed in a different location.",
+          body: "An operating division or office of the same oorganization housed in a different location.",
         },
         {
           title: "Affiliate",
@@ -160,7 +162,7 @@ export const eb1c: ServicePageContent = {
     {
       kind: "cta",
       title: "Not sure whether the role or the corporate structure qualifies?",
-      body: "We assess both the organisational relationship and the substance of the role against the statutory definitions before drafting begins — including where a function-manager argument is the realistic route.",
+      body: "We assess both the oorganizational relationship and the substance of the role against the statutory definitions before drafting begins — including where a function-manager argument is the realistic route.",
       ctaLabel: "Book a free assessment",
     },
     {
@@ -170,7 +172,7 @@ export const eb1c: ServicePageContent = {
       heading: "EB-1C evidence strategy",
       subsections: [
         {
-          heading: "Organisational charts that show substance",
+          heading: "Oorganizational charts that show substance",
           paragraphs: [
             "Charts should show the applicant's position, everyone reporting to them, and what those people do — with job titles, education levels, and duties. A chart showing boxes and titles alone does not establish that the applicant supervises professional or managerial staff rather than operational staff.",
             "Charts for both the foreign entity during the qualifying year and the U.S. entity are needed. Petitions that document only the U.S. side leave the qualifying-year requirement unevidenced.",
@@ -229,12 +231,83 @@ export const eb1c: ServicePageContent = {
       ],
     },
     {
+      kind: "list",
+      id: "package",
+      eyebrow: "What you receive",
+      heading: "What our full EB-1C package includes",
+      intro: [
+        "A full package covers the corporate side and the personal side of an EB-1C. The U.S. entity files; we prepare. Any single item below can be engaged on its own.",
+      ],
+      numbered: true,
+      items: [
+        {
+          title: "Eligibility and structure memo",
+          body: "The corporate relationship, the qualifying employment abroad and the capacity argument assessed against the statutory definitions before drafting begins.",
+        },
+        {
+          title: "Petition cover letter",
+          body: "The petition letter establishing the qualifying relationship, the year of qualifying employment abroad, the U.S. entity doing business, and managerial or executive capacity.",
+        },
+        {
+          title: "Corporate document request",
+          body: "A structured list for finance, HR and legal: ownership records, organizational charts, tax filings, payroll, contracts and premises evidence.",
+        },
+        {
+          title: "Organizational charts and duty descriptions",
+          body: "Charts that show reporting lines and substance, and duty descriptions with time allocation for the role abroad and the role in the United States.",
+        },
+        {
+          title: "Supporting letters and affidavits",
+          body: "Letters from the foreign and U.S. entities confirming the employment history and the role, drafted for signature.",
+        },
+        {
+          title: "Business plan where the case calls for it",
+          body: "Where the U.S. entity is new or growing, a plan documenting operations, structure and the role you will hold.",
+        },
+        {
+          title: "Exhibit index and packaging",
+          body: "Every exhibit numbered, tabbed and indexed in the order the letter cites it.",
+        },
+        {
+          title: "RFE and NOID support",
+          body: "If USCIS issues a notice after filing, we prepare the response on the same record.",
+        },
+      ],
+      links: [
+        { label: "RFE response preparation", href: "/services/rfe-response" },
+        { label: "NOID response preparation", href: "/services/noid-response" },
+      ],
+    },
+    {
+      kind: "subsections",
+      id: "l1a",
+      eyebrow: "Related classification",
+      heading: "EB-1C compared with L-1A",
+      intro: [
+        "EB-1C and L-1A are built on the same concepts, which is why many EB-1C applicants have previously held L-1A status. They are not the same thing, and prior L-1A status is not a requirement for EB-1C.",
+      ],
+      subsections: [
+        {
+          heading: "What is shared",
+          paragraphs: [
+            "Both require a qualifying relationship between a foreign entity and a U.S. entity, a year of qualifying employment abroad within the preceding three years, and a role in managerial or executive capacity. The statutory definitions of managerial and executive capacity are the same, so the duty descriptions and organizational evidence prepared for one are the foundation for the other.",
+          ],
+        },
+        {
+          heading: "What is different",
+          paragraphs: [
+            "L-1A is a temporary nonimmigrant classification filed on Form I-129; EB-1C is a permanent immigrant category filed on Form I-140. The L-1A new-office provisions allow a U.S. entity that has only just opened; EB-1C requires the U.S. entity to have been doing business for at least a year before the petition is filed. An EB-1C petition is also adjudicated afresh: an approved L-1A is useful evidence of the relationship and the role, but the EB-1C record has to establish each requirement on its own.",
+          ],
+        },
+      ],
+    },
+    {
       kind: "prose",
       id: "how-we-help",
       eyebrow: "Working with us",
       heading: "How we prepare EB-1C petitions",
       paragraphs: [
-        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. On EB-1C matters we prepare the petition letter, build the organisational and corporate-structure documentation, draft supporting affidavits and letters, and assemble business plan or corporate structure materials where the case calls for them.",
+        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. On EB-1C matters we prepare the petition letter, build the oorganizational and corporate-structure documentation, draft supporting affidavits and letters, and assemble business plan or corporate structure materials where the case calls for them.",
         "Because EB-1C petitions are company-filed and evidence-heavy on the corporate side, we typically produce a structured document request for the business, so finance, HR, and legal each know exactly what is needed from them. We frequently work as additional capacity alongside a company's own counsel.",
       ],
     },
@@ -248,22 +321,22 @@ export const eb1c: ServicePageContent = {
     {
       question: "Can I self-petition for EB-1C?",
       answer:
-        "No. EB-1C is employer-filed. The U.S. entity is the petitioner and files Form I-140 on your behalf, and a substantial part of the evidence — corporate ownership records, organisational charts, and proof the entity has been doing business — must come from the company rather than from you.",
+        "No. EB-1C is employer-filed. The U.S. entity is the petitioner and files Form I-140 on your behalf, and a substantial part of the evidence — corporate ownership records, oorganizational charts, and proof the entity has been doing business — must come from the company rather than from you.",
     },
     {
       question: "What counts as managerial capacity?",
       answer:
-        "Under the statutory definition, a manager manages the organisation or a department, function, or component of it; supervises other supervisory, professional, or managerial employees or manages an essential function; has authority over personnel actions or functions at a senior level; and exercises discretion over day-to-day operations. Supervising non-professional employees alone does not qualify.",
+        "Under the statutory definition, a manager manages the oorganization or a department, function, or component of it; supervises other supervisory, professional, or managerial employees or manages an essential function; has authority over personnel actions or functions at a senior level; and exercises discretion over day-to-day operations. Supervising non-professional employees alone does not qualify.",
     },
     {
       question: "Can I qualify if I do not supervise anyone?",
       answer:
-        "Potentially, through the function-manager route. The statute contemplates managing an essential function rather than personnel. These cases require careful documentation identifying the function, establishing that it is essential to the organisation, and showing that you direct the function rather than personally performing the work.",
+        "Potentially, through the function-manager route. The statute contemplates managing an essential function rather than personnel. These cases require careful documentation identifying the function, establishing that it is essential to the oorganization, and showing that you direct the function rather than personally performing the work.",
     },
     {
       question: "Does my company need to be large?",
       answer:
-        "There is no minimum headcount in the statute, and smaller organisations do qualify. What matters is that the organisational structure is documented well enough to show the role is genuinely managerial or executive rather than the applicant carrying out the operational work personally.",
+        "There is no minimum headcount in the statute, and smaller oorganizations do qualify. What matters is that the oorganizational structure is documented well enough to show the role is genuinely managerial or executive rather than the applicant carrying out the operational work personally.",
     },
     {
       question: "How long must the U.S. company have been operating?",
@@ -278,7 +351,7 @@ export const eb1c: ServicePageContent = {
     {
       question: "What if my company restructures during the process?",
       answer:
-        "A qualifying relationship between the foreign and U.S. entities must exist and be maintained. Acquisitions, divestitures, and internal reorganisations can affect eligibility, so they are worth identifying early rather than being discovered partway through adjudication.",
+        "A qualifying relationship between the foreign and U.S. entities must exist and be maintained. Acquisitions, divestitures, and internal reorganizations can affect eligibility, so they are worth identifying early rather than being discovered partway through adjudication.",
     },
   ],
   faqTitle: "EB-1C frequently asked questions",

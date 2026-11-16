@@ -32,7 +32,8 @@ test("publication manifest exactly matches the renderer registry plus the bespok
   assert.deepEqual([...servicePageSlugs].sort(), Object.keys(servicePages).sort());
   assert.deepEqual(publishedServices.map((s) => s.slug).sort(), ["eb2-niw", ...servicePageSlugs].sort());
   assert.ok(publishedServices.some((s) => s.slug === "o1-visa"));
-  assert.ok(!publishedServices.some((s) => s.slug === "noid-response" || s.slug === "f1-visa"));
+  assert.ok(publishedServices.some((s) => s.slug === "noid-response"));
+  assert.ok(!publishedServices.some((s) => s.slug === "f1-visa"));
 });
 
 test("header and footer expose three groups and only implemented routes", () => {
