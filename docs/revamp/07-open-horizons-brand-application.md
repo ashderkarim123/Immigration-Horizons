@@ -75,7 +75,7 @@ Design mobile first and test 360, 768, 1024 and 1440px. Header must be usable wi
 
 ## 6. Visual work must respect repo scope and phase boundaries
 
-- The current `CLAUDE.md` still says **navy/gold and Source Serif 4**. That is an unresolved **governing-rule conflict** with the owner-provided Open Horizons guide. Obtain/update the owner's explicit rule alignment **before modifying public UI styles**. Do not quietly edit the master rules.
+- The owner approved Beyond Border as the primary website-design reference and the original Open Horizons brand; `CLAUDE.md` has now been explicitly aligned on the design-planning branch. This updates the governing **target design**, but does not apply branding code to production.
 - `feature/open-horizons-revamp` is a prior visual prototype, **not** the approved asset source or automatic integration branch. Audit it, then reuse only verified content/components.
 - New design docs are not implementation completion. Page designs must be reviewed first; code ships through the phase branches in `06-implementation-plan.md`.
 - Only the marketing host `immigrationhorizons.com` is in scope. Preserve portal, staff, CMS and enterprise UI.
@@ -83,9 +83,9 @@ Design mobile first and test 360, 768, 1024 and 1440px. Header must be usable wi
 
 ## 7. What must be approved before visual implementation
 
-1. Confirmation that `CLAUDE.md` should be updated to the supplied Open Horizons palette, fonts and logo rules.
-2. Approval of the homepage visual direction and a representative service-page direction (both using Beyond Border as the primary design reference).
-3. Any real founder photo/credentials to publish; Upwork values and office address remain owner-gated.
-4. A visual review of mobile header, trust strip, flagship service card, CTA, form and dark footer with the **original** logos.
+1. **Completed:** owner approved the brand/reference hierarchy and the governing `CLAUDE.md` design instructions were aligned.
+2. **Pending:** approval of original homepage and representative service-page visual mockups, both Beyond Border-led.
+3. **Pending if applicable:** real founder photo/credentials; Upwork values and office address are owner-gated.
+4. **Pending:** a responsive visual review of header, trust strip, cards, CTAs, forms and footer with original SVG masters.
 
 No other competitor may override our original branding, accessibility, content accuracy or not-a-law-firm requirements.
