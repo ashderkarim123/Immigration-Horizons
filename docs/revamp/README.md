@@ -97,20 +97,18 @@ forbids. **The repo rules win** unless the owner explicitly changes `CLAUDE.md`:
   `B-1/B-2 Visa`. Preserve every historic value and its order.
 - **Production host confirmed:** this Next.js repository serves `immigrationhorizons.com`, rather than the
   separate legacy Express/EJS repository. No changes to that separate repository are included.
+- **Design identity and reference hierarchy approved:** Beyond Border is the dominant website-design/structure reference, Deel Immigration the conversion/CTA reference, Self Petition USA the tertiary service-package reference; original Open Horizons logos and Forest/Terracotta/Ivory + DM Serif/Inter assets govern our appearance. `CLAUDE.md` has been updated on this branch to match.
 
 ## Open decisions for the owner (do not guess)
 
 1. **Legacy writer status** — the production website is confirmed above. If the separate legacy repository still
    writes or edits shared consultation records elsewhere, its model must accept the appended values before it
    validates those records. That separate checkout was not inspected or changed.
-2. **Brand wording in repository rules** — `CLAUDE.md` still specifies navy/gold and Source Serif 4; the owner brief
-   specifies Open Horizons forest/terracotta/ivory and DM Serif Display. Phase 1 changes catalogue structure only;
-   resolve the visual rules before a phase changes branding.
-3. **Upwork rating and review count** — supply the current numbers; the Fiverr figure (4.8 / 44, checked 2026-11-16)
+2. **Upwork rating and review count** — supply the current numbers; the Fiverr figure (4.8 / 44, checked 2026-11-16)
    is already known.
-4. **Founder photo** — a real photo for `PhotoSlot` in the founder section, or keep the SVG treatment.
-5. **Office address** for the footer and `Organization` schema (Tallahassee, FL) — confirm it may be published.
-6. **"Countries served"** — still open from CLAUDE.md; keep "Global" until supplied.
+3. **Founder photo** — a real photo for `PhotoSlot` in the founder section, or keep the SVG treatment.
+4. **Office address** for the footer and `Organization` schema (Tallahassee, FL) — confirm it may be published.
+5. **"Countries served"** — still open from CLAUDE.md; keep "Global" until supplied.
 
 ## Definition of done (every phase)
 
