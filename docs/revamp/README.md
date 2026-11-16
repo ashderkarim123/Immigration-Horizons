@@ -17,6 +17,7 @@ build instructions for this repo. It is written for two readers:
 
 | File | What it covers |
 | --- | --- |
+| `00-competitor-led-experience-blueprint.md` | Beyond Border-first website reference; Deel conversion; Self Petition USA tertiary |
 | `README.md` | Goals, priorities, guardrails, decisions still open |
 | `01-information-architecture.md` | Service tiers, new slugs, navigation, URL map, the Consultation enum change |
 | `02-content-specs.md` | Page-by-page content specs for every new or changed page |
@@ -24,6 +25,8 @@ build instructions for this repo. It is written for two readers:
 | `04-reviews-and-proof.md` | Testimonials model, importing Fiverr and Upwork reviews, the reviews page |
 | `05-seo-technical.md` | Metadata, keyword map, schema, sitemap, internal linking, verification |
 | `06-implementation-plan.md` | Phases, tasks, acceptance criteria, AI-assistant prompts |
+| `07-open-horizons-brand-application.md` | The owner's original logo files, colors, typography, accessibility and component rules |
+| `08-page-design-and-rollout.md` | Separate design deliverables for the homepage and each page family, mapped to code phases |
 
 ## Goal in one paragraph
 
@@ -41,14 +44,25 @@ F-2, J-1, B-1/B-2) that brings in students, families and investors without dilut
 
 O-1 moves from core to secondary: it is a nonimmigrant classification and the business focus is immigrant petitions.
 
+## Primary design reference — owner confirmed 2026-11-16
+
+The owner's explicit design direction is **Beyond Border as the primary reference for website layout, modern visual composition, page structure and overall UI/UX**.
+
+- **Beyond Border:** dominant visual and structural benchmark for header, hero, page hierarchy, service cards, process, trust, founder credibility, educational pages, FAQs and responsive behavior.
+- **Deel Immigration:** secondary benchmark **only** for conversion-oriented CTA placement, audience journeys and lead forms.
+- **Self Petition USA:** tertiary benchmark for clear petition-package / standalone-deliverable positioning and self-petitioners.
+- **Immigration Horizons / Open Horizons:** **all** logos, colors, typography, icons, illustrations and other brand assets must be ours, from the approved owner-supplied brand kit. Do not import competitor assets or copy their copy.
+- **Brand CTA rule:** use Forest `#164B3B` with white text for primary buttons. Terracotta `#C9774F` is an accent; normal white button text on Terracotta does not meet the guide's stated AA contrast requirement.
+
+Keep **design track** (reference audit → distinct page mockups → design approval) separate from **implementation track** (phased typed content/component work, PRs, tests, no deploy). See `00`, `07` and `08`.
+
 ## Benchmarks
 
-Design and SEO patterns are modelled on two non-law competitors:
+Use the following hierarchy; these are **not equal visual references**:
 
-- **Beyond Border** — https://www.beyondborderglobal.com — content engine: comparison articles, pages by
-  profession, named author and reviewer on each article, free eligibility checkers.
-- **Deel Immigration** — https://www.deel.com/plp/immigration-eb-2-niw — conversion landing pages: stat strip, review
-  badge in the hero, one CTA, short FAQ.
+- **Beyond Border (primary website design)** — https://www.beyondborderglobal.com — modern specialist immigration layout, service/audience hierarchy, rich content, team/proof/process modules and homepage composition.
+- **Deel Immigration (secondary conversion)** — https://www.deel.com/hr-services/employee-immigration/ — conversion placement, audience routes, low-friction lead capture, concise CTA/FAQ rhythm.
+- **Self Petition USA (tertiary service clarity)** — https://www.selfpetitionusa.com — package versus single-deliverable explanation, self-petitioner routes and RFE support.
 
 Copy their **structure**. Never copy their text, and never copy their claims (see the guardrails below).
 
