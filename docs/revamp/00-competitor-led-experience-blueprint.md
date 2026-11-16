@@ -13,17 +13,37 @@ Keep these decisions separate:
 2. **Our brand expression:** use the approved Open Horizons logo masters and palette/typography from the owner's supplied brand kit. See [07 — Brand application](07-open-horizons-brand-application.md).
 3. **Implementation sequencing:** extend the current Next.js marketing site in small, tested changes, following the existing Phase 0–8 ordering. See [08 — Page-by-page design and rollout](08-page-design-and-rollout.md) and [06 — Implementation plan](06-implementation-plan.md).
 
-The reference websites answer **what kind of experience we should build**. The Open Horizons kit answers **what ours looks like**. The engineering specifications answer **how it is delivered**.
+The reference websites answer **what kind of experience we should build**. **Beyond Border is the lead design and website-structure reference**, not one of three equal options. The Open Horizons kit answers **what ours looks like**. The engineering specifications answer **how it is delivered**.
 
-## 2. Competitor benchmark matrix — live sites
+## 2. Explicit reference hierarchy — owner-approved 2026-11-16
+
+**Primary (dominant): Beyond Border — website design, visual composition and structure.** Use it to inform section order, spacious page layout, premium editorial scale, the specialist-services grid, segmented audience routes, process storytelling, social proof layout, founder/about credibility, FAQs and mobile treatment. Build a fresh contemporary execution rather than copying pixels or proprietary art.
+
+**Secondary: Deel Immigration — conversion optimization only.** Adapt prominent consultation calls-to-action, two-action hero hierarchy, trust adjacent to CTAs, appropriate repetition of consultation prompts, low-friction forms and audience-specific journeys. Deel is **not** our visual design template.
+
+**Tertiary: Self Petition USA — offer clarity and specialized self-petitioner journeys.** Use it to frame full petition package vs standalone deliverables, self-petitioner needs, drafting/review services and separate RFE help. Self Petition USA is **not** our visual design template.
+
+**Our independent identity:** all brand colors, typography, SVG logo variants, illustration treatment, button colors, icons, photographs and social assets follow the original **Open Horizons** kit, not any competitor.
+
+### How to evaluate any proposed UI element
+
+1. Does the **overall layout/visual quality feel Beyond Border–inspired** (strong editorial presentation, confident whitespace, refined service cards and progression of sections)?
+2. Does the page make conversion easy with **Deel-inspired CTA placement and clear contact path**?
+3. Do specialized petition services have **Self Petition USA–level scope clarity** without reproducing their products or wording?
+4. Is the finished artifact **recognizably Immigration Horizons**, with approved brand visuals and legally accurate scope?
+5. Is the final design genuinely original, accessible and responsive rather than an imitation screenshot?
+
+If not, revise the design before coding.
+
+## 3. Competitor benchmark matrix — live sites
 
 The table records *observed patterns* on accessible pages. It is not a license to reuse competitor assets, promises, reviews or statistics.
 
 | Reference | Verified site | What the site demonstrates | Pattern we adapt | What we must **not** reuse |
 | --- | --- | --- | --- | --- |
-| **Beyond Border — primary content and trust benchmark** | https://www.beyondborderglobal.com/ | Specialization in EB-2 NIW, EB-1A, O-1, L-1, E-2; audience-led hero, evidence-focused educational explanations, testimonials/people, staged process and consultation action. Its resources include named writers/reviewers. | Rich service pages, profession-specific educational content, concise trust strip, consistent hero → evidence → process → FAQ → CTA progression | Their logo, photos, attorney network claims, refund guarantee, approval percentages, client counts, or speed promises |
-| **Deel Immigration — primary conversion benchmark** | https://www.deel.com/immigration (currently redirects to https://www.deel.com/hr-services/employee-immigration/) | Simple consultation-led headline, review/social proof near the top, journeys for individuals/founders/people teams, concise benefit cards, service explanation, repeat consultation prompts, FAQs | Landing pages that explain the offer fast; one dominant CTA and one secondary action; segment routes; low-friction inquiry | Deel branding, G2 numbers as our own, claims of legal representation, SaaS mobility features we do not offer |
-| **Self Petition USA — self-petitioner/service-product benchmark** | https://www.selfpetitionusa.com/ | Distinct service options for NIW DIY, draft review, prepared narrative and RFE response; clear audience segmentation for individual self-petitioners and lawyers; educational tools | Explain **full package vs individual deliverable**, compare offers without jargon, make RFE help a direct entry point | Their copy, packages, software/AI claims, prices, client reviews, performance figures |
+| **Beyond Border — primary design, structure, content and trust benchmark** | https://www.beyondborderglobal.com/ | Specialization in EB-2 NIW, EB-1A, O-1, L-1, E-2; audience-led hero, evidence-focused educational explanations, testimonials/people, staged process and consultation action. Its resources include named writers/reviewers. | Rich service pages, profession-specific educational content, concise trust strip, consistent hero → evidence → process → FAQ → CTA progression | Their logo, photos, attorney network claims, refund guarantee, approval percentages, client counts, or speed promises |
+| **Deel Immigration — secondary conversion benchmark** | https://www.deel.com/immigration (currently redirects to https://www.deel.com/hr-services/employee-immigration/) | Simple consultation-led headline, review/social proof near the top, journeys for individuals/founders/people teams, concise benefit cards, service explanation, repeat consultation prompts, FAQs | Landing pages that explain the offer fast; one dominant CTA and one secondary action; segment routes; low-friction inquiry | Deel branding, G2 numbers as our own, claims of legal representation, SaaS mobility features we do not offer |
+| **Self Petition USA — tertiary self-petitioner/service-product benchmark** | https://www.selfpetitionusa.com/ | Distinct service options for NIW DIY, draft review, prepared narrative and RFE response; clear audience segmentation for individual self-petitioners and lawyers; educational tools | Explain **full package vs individual deliverable**, compare offers without jargon, make RFE help a direct entry point | Their copy, packages, software/AI claims, prices, client reviews, performance figures |
 
 **Live-research limitation:** the previously referenced Deel campaign URL (`/plp/immigration-eb-2-niw`) did not resolve in this review. The verified Deel Immigration entry point above is used instead. Self Petition USA's server-rendered HTML could not be fully opened without JavaScript; its indexed site content was accessible. Recheck each site's layout in a real browser before design sign-off; do not pretend the live site was visually pixel-audited.
 
@@ -34,7 +54,7 @@ The table records *observed patterns* on accessible pages. It is not a license t
 - Deel NIW education example: https://www.deel.com/blog/eb-2-niw-self-petition-visa-for-exceptional-talent-explained/
 - Self Petition USA: https://www.selfpetitionusa.com/
 
-## 3. Our differentiated positioning
+## 4. Our differentiated positioning
 
 Our principal offer is **original EB-2 NIW / EB-1 petition preparation and standalone RFE / NOID response preparation**, including work on petitions prepared elsewhere.
 
@@ -48,7 +68,7 @@ Priority order:
 
 The user should understand within the first screen: what we prepare; whom we help; what happens next; that we are not a law firm; and why our public reviews are verifiable.
 
-## 4. Five-hub information architecture
+## 5. Five-hub information architecture
 
 The homepage directs visitors into five connected areas:
 
@@ -60,7 +80,7 @@ The homepage directs visitors into five connected areas:
 
 The **core hubs must be visible first** in mega navigation, homepage and services index. Secondary paths must remain discoverable without dominating. Do not link to any route until its page actually exists.
 
-## 5. Homepage — competitor-informed experience, our own visual design
+## 6. Homepage — Beyond Border-led experience, our own visual design
 
 The homepage is a custom Immigration Horizons page, **not a screenshot recreation**.
 
@@ -80,7 +100,7 @@ The homepage is a custom Immigration Horizons page, **not a screenshot recreatio
 
 Do not add a scored “you qualify” eligibility verdict to the hero. Until the optional readiness checklist is approved and built, “Free consultation” is the truthful lead action.
 
-## 6. UX conventions for all pages
+## 7. UX conventions for all pages
 
 - **One site-wide system:** same logo, navigation, typography, button hierarchy, forms, FAQ treatment, footer, breadcrumb, link styles and trust elements.
 - **One offer per page:** lead with the page's distinct keyword and visitor question, then practical preparation deliverables and a clear next step.
@@ -89,13 +109,13 @@ Do not add a scored “you qualify” eligibility verdict to the hero. Until the
 - **Responsive first:** mobile experience is authored deliberately, not a scaled desktop screenshot. Test at 360/768/1024/1440 px.
 - **Progressive navigation:** the visitor can reach a flagship service, audience page or consultation in one or two actions without horizontal scrolling.
 
-## 7. Competitive design review deliverables
+## 8. Competitive design review deliverables
 
 Before UI coding, save a reference audit for **each** of the three benchmark sites: desktop and mobile screenshot (if accessible), navigation pattern, hero anatomy, proof presentation, service-card treatment, CTA placements, footer pattern, and the parts we will **not** copy. Record dates and URLs. Do not include competitor logos or protected photos in shipping code.
 
 Create **separate wireframes** for: home, services index, flagship NIW, EB-1 family, RFE/NOID, deliverables, other visa, audience, reviews, about/founder, consultation/contact, blog/resources, FAQ and legal. The route-by-route content and CTA differences are in [08](08-page-design-and-rollout.md).
 
-## 8. Source precedence and unresolved decisions
+## 9. Source precedence and unresolved decisions
 
 1. Existing repository `AGENTS.md` / `CLAUDE.md` govern implementation/security/compliance until the owner authorizes updates.
 2. The owner's original Open Horizons brand guide and SVG masters govern the **intended new brand**, but `CLAUDE.md` still describes the old navy/gold brand. **Reconcile the rules explicitly before changing public UI.**
