@@ -117,8 +117,9 @@ page inherits, never its URL.
 
 ### Information architecture
 The legacy site conflated two different things into one flat service list. They are now separate:
-- **Case categories** (visa classification): `eb2-niw`, `eb1a`, `eb1b`, `eb1c`, `o1-visa`
-- **Support services** (single deliverables): `rfe-response`, `recommendation-letters`, `expert-opinion-letters`, `business-plans`, `evidence-packaging`
+- **Core immigrant case categories**: `eb2-niw`, `eb1a`, `eb1b`, `eb1c`
+- **Core support services**: `rfe-response`, `noid-response`, `recommendation-letters`, `expert-opinion-letters`, `business-plans`, `evidence-packaging`
+- **Secondary nonimmigrant classifications**: `o1-visa`, `e2-visa`, `f1-visa`, `f2-visa`, `j1-visa`, `b1-b2-visa`
 
 Nav derives from the service catalogue in `src/lib/content/services.ts`, so adding a service updates header, mega menu, and footer automatically. `enumValue` on each case category must stay in sync with the legacy `Consultation` model enum.
 
@@ -159,7 +160,7 @@ Target Lighthouse 95+, strong Core Web Vitals (LCP/CLS/INP). No unnecessary Java
 
 ## Accessibility
 
-WCAG AA, keyboard navigation, ARIA labels, semantic HTML, proper contrast (see the gold contrast rule above), screen-reader support.
+WCAG AA, keyboard navigation, ARIA labels, semantic HTML, proper contrast (see the Open Horizons brand contrast rules above), screen-reader support.
 
 ## Security
 
