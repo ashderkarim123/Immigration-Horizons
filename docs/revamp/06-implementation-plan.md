@@ -17,9 +17,25 @@ definition of done in `README.md`. **Never push or merge to `main` without the o
 
 ---
 
+## Design direction and approval track (runs separately from code phases)
+
+**Primary structural and visual reference: Beyond Border.** The owner's website should feel like a modern original counterpart to its premium immigration-consulting site, using only the original Open Horizons logo, Forest/Terracotta/Ivory color palette and DM Serif Display/Inter typography. **Deel Immigration is only the conversion/CTA benchmark** and **Self Petition USA is only the third-level service-package/self-petitioner benchmark**.
+
+Before any public-facing UI is redesigned, read:
+- `00-competitor-led-experience-blueprint.md` — competitor hierarchy and UX inspiration
+- `07-open-horizons-brand-application.md` — exact original logo assets, color contrast and component treatments
+- `08-page-design-and-rollout.md` — homepage and all other public page design requirements, separately mapped to phases
+
+**Design gate D0:** audit the relevant Beyond Border pages, inspect the approved original brand kit, produce and approve desktop/mobile homepage wireframes plus the shared component design direction. The owner has confirmed the desired brand and reference hierarchy on 2026-11-16; `CLAUDE.md` has been aligned to remove old navy/gold guidance. This does **not** authorize production deployment.
+
+**Implementation gates remain unchanged.** Keep designs/mockups separate from code implementation; this plan continues to require one feature branch, a draft PR, tests and owner-controlled merge/deploy per phase. A visual mockup is not a production-ready page.
+
+---
+
 ## Phase 0 — Baseline and decisions (owner, ~1 hour)
 
-- [ ] Answer the open decisions in `README.md` (enum, which app serves production, Upwork figures, founder photo, address).
+- [x] Record confirmed decisions: core/secondary catalogue, primary Beyond Border design reference, original Open Horizons branding, consultation enum and production-host app.
+- [ ] Resolve remaining open decisions in `README.md` (Upwork figures, founder photo/credentials, publishable address, legacy writer status).
 - [ ] Record a baseline: `npm run build && npm start`, then `npm run seo:audit` and a mobile Lighthouse run on `/` and
       `/services/eb2-niw`. Save the output as `docs/revamp/baseline-2026-11.md`.
 - [ ] Export Search Console Performance data (queries, pages, last 3 months) for later comparison.
