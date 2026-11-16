@@ -1,5 +1,13 @@
 # Implementation Status — Immigration Horizons Client Portal
 
+## Public website revamp — Design Gate D0, 2026-11-16
+
+Design package delivered on `revamp/d0-design-gate` under `docs/revamp/design/` (no production code changed):
+competitor review of Beyond Border / Deel / Self Petition USA from live renders, Open Horizons brand asset audit with
+checksummed masters, design system, runnable homepage and service-page prototypes rendered at 360/768/1024/1440 px,
+page-family specifications, conversion journey map, phase mapping and a verification report. Awaiting owner approval;
+`CLAUDE.md` brand section still says navy/gold and must change before Phase 3. No merge or deployment.
+
 ## Public website revamp — Phase 1, 2026-11-16
 
 Implemented on `revamp/1-catalogue` for existing draft PR #10: core/secondary service tiers, three service groups,

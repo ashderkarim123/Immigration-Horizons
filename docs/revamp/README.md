@@ -24,6 +24,7 @@ build instructions for this repo. It is written for two readers:
 | `04-reviews-and-proof.md` | Testimonials model, importing Fiverr and Upwork reviews, the reviews page |
 | `05-seo-technical.md` | Metadata, keyword map, schema, sitemap, internal linking, verification |
 | `06-implementation-plan.md` | Phases, tasks, acceptance criteria, AI-assistant prompts |
+| `design/` | Design Gate D0: competitor-led design direction, Open Horizons design system, prototypes and handoff (awaiting approval) |
 
 ## Goal in one paragraph
 

@@ -64,6 +64,15 @@ Run lint, tsc, build, npm test and (cd server && npm test). Show me the diff sum
 
 ---
 
+## Design Gate D0 — design direction (between Phase 1 and any UI phase)
+
+Status (2026-11-16): delivered on `revamp/d0-design-gate`, **awaiting owner approval**. See `design/README.md`
+(competitor analysis, brand audit, design system, rendered homepage and service-page prototypes, page-family specs,
+journey map, implementation mapping, verification report). Phase 3 and every later phase that touches shared UI
+must not start until the owner approves the direction and `CLAUDE.md` is updated to Open Horizons.
+
+---
+
 ## Phase 2 — Core content
 
 Spec: `02-content-specs.md` §1–2.

@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Homepage design — Immigration Horizons (Open Horizons) · design prototype, not a production route</title>
+<link rel="icon" href="../assets/favicons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  /* Page-specific composition only; everything reusable lives in tokens.css */
+  .hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 60% at 85% 20%, rgba(201,119,79,.10), transparent 70%); pointer-events: none; }
+  .audience-card { display: flex; flex-direction: column; gap: 10px; }
+  .audience-card .icon { margin-bottom: 6px; }
+  .audience-card p { color: var(--ink-muted); font-size: .9375rem; flex: 1; }
+  .niw { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  .prong { display: grid; grid-template-columns: 48px 1fr; gap: 16px; padding: 20px 0; border-top: 1px solid var(--rule); }
+  .prong .n { font-family: var(--font-display); font-size: 2rem; line-height: 1; color: var(--terracotta); }
+  .prong h3 { font-size: 1.125rem; margin-bottom: 4px; }
+  .prong p { font-size: .9375rem; color: var(--ink-muted); }
+  .founder { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 56px; align-items: center; }
+  .photo-slot { aspect-ratio: 4/5; border-radius: var(--radius-panel); background: var(--white); border: 1px solid var(--rule); display: grid; place-items: center; color: var(--ink-muted); font-size: .8125rem; text-align: center; padding: 24px; position: relative; overflow: hidden; }
+  .photo-slot svg { width: 120px; opacity: .9; margin-bottom: 12px; }
+  .cred { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .cred li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; }
+  .cred svg { width: 20px; height: 20px; color: var(--terracotta); margin-top: 3px; }
+  .diff { display: grid; grid-template-columns: 44px 1fr; gap: 16px; }
+  .diff h3 { font-size: 1.125rem; margin-bottom: 4px; }
+  .diff p { font-size: .9375rem; color: var(--ink-muted); }
+  .final { text-align: center; }
+  .final h2 { font-size: clamp(2rem, 4vw, 3rem); max-width: 20ch; margin-inline: auto; }
+  @media (max-width: 1024px) { .niw, .founder { grid-template-columns: 1fr; gap: 32px; } .photo-slot { max-width: 360px; } }
+</style>
+</head>
+<body>
+
+<!-- ───────── 1. Header ───────── -->
+<header class="header">
+  <div class="container wide bar">
+    <a href="#" aria-label="Immigration Horizons home">
+      <img class="logo" src="../assets/logos/open-horizons-horizontal-full.svg" alt="Immigration Horizons" width="1000" height="280" fetchpriority="high">
+    </a>
+    <nav aria-label="Primary">
+      <ul class="nav">
+        <li><a class="nav-link active" href="#" aria-current="page">Home</a></li>
+        <li>
+          <button class="nav-link" aria-expanded="false" aria-controls="mega-services" id="mega-btn">Services <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="mega" id="mega-services" role="region" aria-label="Services">
+            <div>
+              <p class="label">Green card petitions</p>
+              <a href="#"><strong>EB-2 NIW</strong><span>National Interest Waiver</span></a>
+              <a href="#"><strong>EB-1A</strong><span>Extraordinary Ability</span></a>
+              <a href="#"><strong>EB-1B</strong><span>Outstanding Professor or Researcher</span></a>
+              <a href="#"><strong>EB-1C</strong><span>Multinational Manager or Executive</span></a>
+            </div>
+            <div>
+              <p class="label">RFE, NOID &amp; support</p>
+              <a href="#"><strong>RFE Response</strong><span>Request for Evidence support</span></a>
+              <a href="#"><strong>NOID Response</strong><span>Notice of Intent to Deny support</span></a>
+              <a href="#"><strong>Recommendation Letters</strong><span>Written from scratch</span></a>
+              <a href="#"><strong>Expert Opinion Letters</strong><span>Independent field expertise</span></a>
+              <a href="#"><strong>Business &amp; Personal Plans</strong><span>Endeavor documentation</span></a>
+              <a href="#"><strong>Evidence Review &amp; Packaging</strong><span>Exhibits, indexing, filing order</span></a>
+            </div>
+            <div class="secondary">
+              <p class="label secondary">Other US visas</p>
+              <a href="#"><strong>O-1 Visa</strong></a>
+              <a href="#"><strong>E-2 Visa</strong></a>
+              <a href="#"><strong>F-1 Visa</strong></a>
+              <a href="#"><strong>F-2 Visa</strong></a>
+              <a href="#"><strong>J-1 Visa</strong></a>
+              <a href="#"><strong>B-1/B-2 Visa</strong></a>
+            </div>
+            <div class="feature">
+              <p class="label">Not sure if you qualify for EB-2 NIW or EB-1?</p>
+              <p>Book a free consultation to discuss your background, evidence and petition preparation needs.</p>
+              <a class="btn btn-on-dark btn-sm" href="#">Book a free consultation</a>
+            </div>
+          </div>
+        </li>
+        <li><a class="nav-link" href="#">Who we help</a></li>
+        <li><a class="nav-link" href="#">Reviews</a></li>
+        <li><a class="nav-link" href="#">About</a></li>
+        <li><a class="nav-link" href="#">Resources</a></li>
+        <li><a class="nav-link" href="#">Contact</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn-primary cta" href="#">Book a free consultation</a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu" id="menu-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div class="mobile-nav container" id="mobile-nav">
+    <a class="item" href="#">Home</a>
+    <div class="group">
+      <p class="label">Green card petitions</p>
+      <a href="#">EB-2 NIW</a><a href="#">EB-1A</a><a href="#">EB-1B</a><a href="#">EB-1C</a>
+      <p class="label">RFE, NOID &amp; support</p>
+      <a href="#">RFE Response</a><a href="#">NOID Response</a><a href="#">Recommendation Letters</a><a href="#">Expert Opinion Letters</a><a href="#">Business &amp; Personal Plans</a><a href="#">Evidence Review &amp; Packaging</a>
+      <p class="label secondary">Other US visas</p>
+      <a class="quiet" href="#">O-1 · E-2 · F-1 · F-2 · J-1 · B-1/B-2</a>
+    </div>
+    <a class="item" href="#">Who we help</a>
+    <a class="item" href="#">Reviews</a>
+    <a class="item" href="#">About</a>
+    <a class="item" href="#">Resources</a>
+    <a class="item" href="#">Contact</a>
+    <a class="btn btn-primary" href="#">Book a free consultation</a>
+  </div>
+</header>
+
+<main>
+
+<!-- ───────── 2. Hero ───────── -->
+<section class="hero tone-ivory" data-cta-placement="hero">
+  <div class="container wide">
+    <div class="copy">
+      <span class="eyebrow">EB-2 NIW · EB-1 · RFE &amp; NOID</span>
+      <h1>EB-2 NIW and EB-1 petitions, prepared with precision.</h1>
+      <p class="lead">Full petition packages for self-petitioners, professionals, researchers and professors — plus RFE and NOID responses, even for petitions we did not prepare.</p>
+      <div class="actions">
+        <a class="btn btn-primary btn-lg" href="#">Book a free consultation</a>
+        <a class="btn btn-outline btn-lg" href="#">Got an RFE or NOID?</a>
+      </div>
+      <ul class="checks">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Original drafting</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Verifiable reviews</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>Not a law firm — we prepare, you file</li>
+      </ul>
+    </div>
+    <!-- Original illustration: the Open Horizons motif (doors, horizon, sunrise, path) as a landscape. Inline SVG, no raster, no people. -->
+    <svg class="hero-art" viewBox="0 0 500 400" role="img" aria-label="Illustration: an open doorway framing a sunrise over a horizon, with a path leading toward it">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6F2E9"/><stop offset="1" stop-color="#F3E3D8"/></linearGradient>
+        <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E1E8E1"/><stop offset="1" stop-color="#CDD9D0"/></linearGradient>
+        <clipPath id="frame"><rect x="40" y="20" width="420" height="360" rx="28"/></clipPath>
+      </defs>
+      <rect x="40" y="20" width="420" height="360" rx="28" fill="url(#sky)" stroke="rgba(22,75,59,.14)"/>
+      <g clip-path="url(#frame)">
+        <!-- horizon bands -->
+        <ellipse cx="250" cy="250" rx="300" ry="38" fill="#F3E3D8" opacity=".7"/>
+        <ellipse cx="250" cy="262" rx="300" ry="30" fill="#E9C6B5" opacity=".35"/>
+        <!-- sun -->
+        <path d="M190 236 A60 60 0 0 1 310 236 Z" fill="#C9774F"/>
+        <rect x="178" y="244" width="144" height="8" rx="4" fill="#C9774F"/>
+        <!-- ground -->
+        <rect x="40" y="252" width="420" height="140" fill="url(#ground)"/>
+        <!-- winding path -->
+        <path d="M250 260 C 290 285, 170 300, 215 330 C 262 362, 160 372, 200 400 L 300 400 C 330 372, 240 362, 285 330 C 330 300, 215 285, 250 260 Z" fill="#164B3B"/>
+        <!-- doors -->
+        <path d="M40 20 L170 95 L170 320 L40 390 Z" fill="#164B3B"/>
+        <path d="M460 20 L330 95 L330 320 L460 390 Z" fill="#164B3B"/>
+        <path d="M40 20 L170 95 L170 320 L40 390 Z" fill="#10372B" opacity=".35"/>
+        <!-- door edge highlights -->
+        <path d="M170 95 L170 320" stroke="#C9774F" stroke-width="3"/>
+        <path d="M330 95 L330 320" stroke="#C9774F" stroke-width="3"/>
+      </g>
+      <!-- document motifs floating in the sky: petition, letter, exhibits -->
+      <g transform="translate(372 56)" fill="#fff" stroke="rgba(22,75,59,.25)">
+        <rect width="64" height="80" rx="8"/><g stroke="#164B3B" stroke-width="3" stroke-linecap="round"><path d="M14 22h36M14 36h36M14 50h24"/></g><circle cx="48" cy="62" r="8" fill="#C9774F" stroke="none"/>
+      </g>
+      <g transform="translate(64 300)" fill="#fff" stroke="rgba(22,75,59,.25)">
+        <rect width="78" height="56" rx="8"/><g stroke="#164B3B" stroke-width="3" stroke-linecap="round"><path d="M14 18h50M14 30h50M14 42h30"/></g>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<!-- ───────── 3. Proof strip ───────── -->
+<section class="proof tone-sage" aria-label="Verified reviews">
+  <div class="container wide">
+    <a class="rating" href="https://www.fiverr.com/rahatkarim487" rel="noopener noreferrer" target="_blank">
+      <span class="stars" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
+      </span>
+      <span><strong>4.8 / 5</strong></span>
+      <span>from <b>44 reviews</b> on Fiverr <span class="muted small">· checked 16 Nov 2026 · view source ↗</span></span>
+    </a>
+    <ul class="facts">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Every review links to its source</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg>Full packages or single deliverables</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>Clients across multiple countries</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ───────── 4. Core services ───────── -->
+<section class="section tone-white" id="services">
+  <div class="container wide">
+    <div class="section-head center">
+      <span class="eyebrow">What we prepare</span>
+      <h2>Immigrant petitions and USCIS responses</h2>
+      <p class="lead">Our core work is employment-based green card petitions and the RFE or NOID responses that follow them.</p>
+    </div>
+    <div class="grid grid-3" style="margin-top:48px">
+      <a class="card service-card" href="#"><div class="top"><h3>EB-2 NIW</h3><span class="badge badge-forest">Immigrant petition</span></div><p class="tagline">National Interest Waiver</p><p class="body">Self-petition without a job offer. We define the endeavor, map the Dhanasar prongs and draft the full package.</p><span class="text-link">What's included <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+      <a class="card service-card" href="#"><div class="top"><h3>EB-1A</h3><span class="badge badge-forest">Immigrant petition</span></div><p class="tagline">Extraordinary Ability</p><p class="body">Criteria-by-criteria evidence mapping, petition narrative and exhibit organization for sustained acclaim.</p><span class="text-link">What's included <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+      <a class="card service-card" href="#"><div class="top"><h3>EB-1B</h3><span class="badge badge-forest">Immigrant petition</span></div><p class="tagline">Outstanding Professor or Researcher</p><p class="body">Employer-sponsored academic petitions: recognition evidence, letters and a petition that holds together.</p><span class="text-link">What's included <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+      <a class="card service-card" href="#"><div class="top"><h3>EB-1C</h3><span class="badge badge-forest">Immigrant petition</span></div><p class="tagline">Multinational Manager or Executive</p><p class="body">Corporate relationship documentation, role descriptions and supporting evidence for transferring executives.</p><span class="text-link">What's included <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+      <a class="card service-card" href="#"><div class="top"><h3>RFE Response</h3><span class="badge badge-clay">Response service</span></div><p class="tagline">Request for Evidence support</p><p class="body">A point-by-point response to what the officer actually questioned — including petitions we did not prepare.</p><span class="text-link">What's included <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+      <a class="card service-card" href="#"><div class="top"><h3>NOID Response</h3><span class="badge badge-clay">Response service</span></div><p class="tagline">Notice of Intent to Deny support</p><p class="body">A focused rebuttal of the stated grounds, with new evidence organized so the argument is easy to follow.</p><span class="text-link">What's included <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 5. Full petition packages ───────── -->
+<section class="section tone-forest">
+  <div class="container wide">
+    <div class="split">
+      <div class="section-head">
+        <span class="eyebrow on-dark">What you receive</span>
+        <h2>A full petition package — or just the piece you need.</h2>
+        <p class="lead">Every deliverable below is prepared for your record, from scratch. Engage the whole package, or a single document for a case you or your attorney are already preparing.</p>
+        <div class="row" style="margin-top:8px">
+          <a class="btn btn-on-dark" href="#">Book a free consultation</a>
+          <a class="text-link" href="#" style="color:#fff">Compare package vs single deliverable <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+        </div>
+      </div>
+      <dl class="deliverables">
+        <div><span class="n">01</span><div><dt>Petition narrative and cover letter</dt><dd>The argument an adjudicator reads first, written around your evidence.</dd></div></div>
+        <div><span class="n">02</span><div><dt>Proposed endeavor or criteria mapping</dt><dd>Dhanasar prongs for NIW; regulatory criteria for EB-1A, EB-1B and EB-1C.</dd></div></div>
+        <div><span class="n">03</span><div><dt>Recommendation letters</dt><dd>Drafted from scratch for each recommender, consistent with the petition.</dd></div></div>
+        <div><span class="n">04</span><div><dt>Expert opinion letters</dt><dd>Independent field-expert assessments of your work and its significance.</dd></div></div>
+        <div><span class="n">05</span><div><dt>Evidence and exhibit organization</dt><dd>Indexed exhibits in filing order, so every claim points to its document.</dd></div></div>
+        <div><span class="n">06</span><div><dt>Forms preparation checklist</dt><dd>USCIS forms prepared and checked for consistency with the petition. You file.</dd></div></div>
+        <div><span class="n">07</span><div><dt>RFE and NOID drafting support</dt><dd>If USCIS asks for more, we prepare the focused response.</dd></div></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 6. Who we help ───────── -->
+<section class="section tone-ivory" id="who-we-help">
+  <div class="container wide">
+    <div class="section-head">
+      <span class="eyebrow">Who we help</span>
+      <h2>Built for people preparing their own case — and the professionals supporting them.</h2>
+    </div>
+    <div class="grid grid-4" style="margin-top:48px">
+      <a class="card audience-card" href="#"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><h3>Self-petitioners</h3><p>Filing EB-2 NIW or EB-1A without an employer, with or without your own attorney.</p><span class="text-link">For self-petitioners <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+      <a class="card audience-card" href="#"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><h3>Professionals</h3><p>Engineers, clinicians, founders and specialists with a record that needs to be argued, not just listed.</p><span class="text-link">For professionals <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+      <a class="card audience-card" href="#"><span class="icon"><svg viewBox="0 0 24 24"><path d="M9 3h6v6l4 9H5l4-9z"/><path d="M8 15h8"/></svg></span><h3>Researchers &amp; scientists</h3><p>Publications, citations and funding translated into a national-importance argument.</p><span class="text-link">For researchers <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+      <a class="card audience-card" href="#"><span class="icon"><svg viewBox="0 0 24 24"><path d="M2 10 12 5l10 5-10 5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></span><h3>Professors &amp; academics</h3><p>EB-1B with your institution, or EB-2 NIW on your own record of teaching and research.</p><span class="text-link">For professors <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></a>
+    </div>
+    <p class="muted" style="margin-top:24px">Student or investor? <a href="#other-visas">See other US visas we prepare →</a></p>
+  </div>
+</section>
+
+<!-- ───────── 7. EB-2 NIW explainer ───────── -->
+<section class="section tone-white">
+  <div class="container wide niw">
+    <div class="stack">
+      <span class="eyebrow">Understanding EB-2 NIW</span>
+      <h2>What the National Interest Waiver actually asks of you</h2>
+      <p class="lead muted">The EB-2 NIW lets a qualified applicant ask USCIS to waive the job offer and labor certification requirements. First you must meet the EB-2 baseline — an advanced degree or exceptional ability. Then USCIS applies the three-part framework from <em>Matter of Dhanasar</em> (AAO 2016).</p>
+      <p class="muted">The petition is won or lost on how precisely the endeavor is defined and how directly the evidence supports each prong. That is the work we do before anything is drafted.</p>
+      <div class="row" style="margin-top:8px"><a class="btn btn-outline" href="#">Read the complete EB-2 NIW guide</a><a class="text-link" href="#">See EB-2 NIW preparation <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a></div>
+    </div>
+    <div>
+      <div class="prong"><span class="n">1</span><div><h3>Substantial merit and national importance</h3><p>Two tests in one prong. Merit is broad; national importance turns on the prospective impact of the specific endeavor you describe.</p></div></div>
+      <div class="prong"><span class="n">2</span><div><h3>Well positioned to advance the endeavor</h3><p>Education, skills, record of success, plans, progress and the interest of others in your work.</p></div></div>
+      <div class="prong"><span class="n">3</span><div><h3>On balance, waiving the job offer benefits the United States</h3><p>Why it would be impractical to require labor certification, or why the national benefit outweighs it.</p></div></div>
+      <p class="small muted" style="padding-top:16px">Source: <em>Matter of Dhanasar</em>, 26 I&amp;N Dec. 884 (AAO 2016); INA §203(b)(2)(B); 8 CFR 204.5(k). Educational summary, not advice about any individual case.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 8. Founder credibility ───────── -->
+<section class="section tone-sage">
+  <div class="container wide founder">
+    <div class="photo-slot" role="img" aria-label="Photo of Rahat Karim, founder (photo to be supplied)">
+      <div>
+        <img src="../assets/logos/open-horizons-symbol-full.svg" alt="" width="280" height="280" style="width:120px;margin:0 auto 12px">
+        <span>PhotoSlot — approved photograph to be supplied by the owner. No stock imagery.</span>
+      </div>
+    </div>
+    <div class="stack">
+      <span class="eyebrow">Who prepares your case</span>
+      <h2>Rahat Karim, Founder &amp; Immigration Case Consultant</h2>
+      <p class="lead muted">Rahat founded Immigration Horizons after 5+ years preparing EB-1A, EB-1B, EB-1C and EB-2 NIW self-petitions for clients worldwide, both directly for individuals and as additional support for immigration attorneys and paralegals.</p>
+      <ul class="cred">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span>200+ cases: petition letters, recommendation and expert opinion letters, business plans and RFE responses</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span>One dedicated point of contact from first consultation to final package</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span class="muted">[Further professional background to be added only in owner-approved wording]</span></li>
+      </ul>
+      <a class="text-link" href="#">About Immigration Horizons <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 9. Process ───────── -->
+<section class="section tone-ivory">
+  <div class="container wide">
+    <div class="section-head">
+      <span class="eyebrow">How we work</span>
+      <h2>Eight steps from first conversation to a filing-ready package</h2>
+      <p class="lead">We prepare. You, or your attorney, file. Each step describes what happens, never how long it takes — timing is checked against the official USCIS processing-times tool at consultation.</p>
+    </div>
+    <ol class="steps" style="margin-top:48px">
+      <li><h3>Consultation</h3><p>You tell us about your background, your field and your goals. Free, and for assessment — not a sales pitch.</p></li>
+      <li><h3>Eligibility review</h3><p>We assess your record against each category you might qualify under and say honestly which ones it supports.</p></li>
+      <li><h3>Case strategy</h3><p>Evidence mapped to the criteria an adjudicator will apply; we decide which to lead on and where to reinforce.</p></li>
+      <li><h3>Evidence collection</h3><p>A specific list of what to gather, what each item must show and why it matters to your argument.</p></li>
+      <li><h3>Drafting</h3><p>Petition letters, personal statements, recommendation and expert letters, business or endeavor plans — from scratch.</p></li>
+      <li><h3>Review</h3><p>Every document checked for internal consistency so the whole filing tells one story.</p></li>
+      <li><h3>Exhibit packaging</h3><p>Evidence organized and indexed into a clean exhibit set an adjudicator can follow.</p></li>
+      <li><h3>Submission preparation</h3><p>Forms prepared and the package assembled so what you submit is complete. If an RFE or NOID follows, we prepare the response.</p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ───────── 10. Why Immigration Horizons ───────── -->
+<section class="section tone-white">
+  <div class="container wide">
+    <div class="section-head center">
+      <span class="eyebrow">Why Immigration Horizons</span>
+      <h2>Specific, verifiable differences — not promises</h2>
+    </div>
+    <div class="grid grid-3" style="margin-top:48px; gap: 40px 32px">
+      <div class="diff"><span class="icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><div><h3>Full packages or single deliverables</h3><p>Engage the whole petition, or one letter, plan or exhibit set for a case already in progress.</p></div></div>
+      <div class="diff"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><div><h3>Original drafting</h3><p>Petition letters, recommendation letters and expert opinions written from scratch around your record — no boilerplate.</p></div></div>
+      <div class="diff"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/></svg></span><div><h3>Evidence organization</h3><p>Exhibits indexed in filing order so every claim in the narrative points to its document.</p></div></div>
+      <div class="diff"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><div><h3>RFE and NOID responses</h3><p>Focused, evidence-led responses to what the officer actually questioned.</p></div></div>
+      <div class="diff"><span class="icon"><svg viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M21 3 10 14"/><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></svg></span><div><h3>Support for petitions prepared elsewhere</h3><p>Many clients come to us with a filing from another preparer. We review it and work from there.</p></div></div>
+      <div class="diff"><span class="icon"><svg viewBox="0 0 24 24"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></span><div><h3>Verifiable client reviews</h3><p>Reviews and completed-case history are public on our marketplace profiles. Every review on this site links to its source.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 11. Reviews ───────── -->
+<section class="section tone-sage" id="reviews">
+  <div class="container wide">
+    <div class="row" style="justify-content:space-between; align-items:end">
+      <div class="section-head">
+        <span class="eyebrow">Client reviews</span>
+        <h2>In their words — verbatim, with the source linked</h2>
+      </div>
+      <a class="btn btn-outline" href="#" style="background:transparent">All reviews</a>
+    </div>
+    <div class="grid grid-3" style="margin-top:40px">
+      <article class="card review"><span class="stars" aria-label="5 out of 5"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></span><blockquote>I'm thrilled to share that my EB2 NIW was approved — and I owe a great deal of that success to Rahat. My original petition received an RFE because my law firm didn't provide much support. Rahat stepped in and made a real difference; the RFE reply he crafted was outstanding.</blockquote><footer><div><strong>Verified Fiverr Client</strong>EB-2 NIW · RFE response</div><a href="https://www.fiverr.com/rahatkarim487" rel="noopener noreferrer" target="_blank">Fiverr ↗</a></footer></article>
+      <article class="card review"><span class="stars" aria-label="5 out of 5"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></span><blockquote>Rahat is polite and communicative, delivered in a timely manner, helped arrange and index huge amounts of exhibits for EB1A.</blockquote><footer><div><strong>Juliet Mirambo</strong>EB-1A · United States</div><a href="https://www.fiverr.com/rahatkarim487" rel="noopener noreferrer" target="_blank">Fiverr ↗</a></footer></article>
+      <article class="card review"><span class="stars" aria-label="5 out of 5"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></span><blockquote>No problem, Rahat! The other attorney I sent the case to (after very minor edits) called it a "work of genius." Looking forward to working with you again soon.</blockquote><footer><div><strong>Henry Lindpere</strong>RFE response · Lindpere Legal, contract paralegal</div><a href="https://www.fiverr.com/rahatkarim487" rel="noopener noreferrer" target="_blank">Fiverr ↗</a></footer></article>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 12. Other US visas (secondary, quieter) ───────── -->
+<section class="section compact tone-ivory" id="other-visas">
+  <div class="container wide">
+    <div class="row" style="justify-content:space-between; gap:24px">
+      <div class="stack" style="gap:6px; max-width: 36rem">
+        <span class="eyebrow" style="color:var(--ink-muted)">Other US visas we prepare</span>
+        <h3 style="font-size:1.5rem">Nonimmigrant visa document preparation and interview coaching</h3>
+        <p class="muted small">Temporary classifications. We prepare documents and coach for interviews; we do not file or represent.</p>
+      </div>
+      <ul class="chips">
+        <li><a href="#">O-1 <span>Extraordinary ability</span></a></li>
+        <li><a href="#">E-2 <span>Treaty investor</span></a></li>
+        <li><a href="#">F-1 <span>Student</span></a></li>
+        <li><a href="#">F-2 <span>Student dependent</span></a></li>
+        <li><a href="#">J-1 <span>Exchange visitor</span></a></li>
+        <li><a href="#">B-1/B-2 <span>Visitor</span></a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 13. FAQ ───────── -->
+<section class="section tone-white" id="faq">
+  <div class="container">
+    <div class="split narrow">
+      <div class="section-head">
+        <span class="eyebrow">Questions</span>
+        <h2>Answered plainly</h2>
+        <p class="lead">Visible answers match the FAQ structured data exactly.</p>
+        <a class="text-link" href="#">All FAQs <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+      </div>
+      <div class="faq">
+        <details open><summary>What is the EB-2 National Interest Waiver (NIW)?</summary><div class="answer">The EB-2 National Interest Waiver is an employment-based immigrant petition route that lets a qualified applicant ask USCIS to waive the standard job offer and labor certification (PERM) requirements. USCIS assesses these petitions under the framework set out in Matter of Dhanasar, which asks three things: whether the proposed endeavor has substantial merit and national importance, whether the applicant is well positioned to advance it, and whether, on balance, it benefits the United States to waive the job offer requirement.</div></details>
+        <details><summary>What is the difference between EB-1A and EB-2 NIW?</summary><div class="answer">EB-1A is for individuals with extraordinary ability who can show sustained national or international acclaim. EB-2 NIW has a lower acclaim threshold but requires you to show that your specific proposed endeavor is nationally important and that waiving the job offer requirement benefits the United States. They are different arguments, not different tiers of the same argument.</div></details>
+        <details><summary>Can you help if I have already received an RFE or NOID?</summary><div class="answer">Yes, and this is one of the most common ways clients come to us — including on petitions we did not originally prepare. We review the notice, identify precisely what the officer is questioning, and prepare a focused response addressing those specific points with supporting evidence.</div></details>
+        <details><summary>Can I hire you for just one document instead of a full petition?</summary><div class="answer">Yes. Every deliverable can be engaged on its own — a recommendation letter set, an expert opinion letter, a business or endeavor plan, an evidence and exhibit package, or an RFE response.</div></details>
+        <details><summary>Are you an immigration law firm?</summary><div class="answer">No. Immigration Horizons is an immigration consulting and paralegal services practice. We prepare petitions, draft documents, conduct research, organise evidence, and assist with USCIS forms and packaging. We are not attorneys, we do not provide legal advice, and we do not represent clients before USCIS or any court.</div></details>
+        <details><summary>Can you guarantee my petition will be approved?</summary><div class="answer">No, and you should be cautious of anyone who does. USCIS adjudicates every petition on its own record, and no preparer controls that outcome. What we control is the quality of the argument, the strength and organisation of the evidence, and the internal consistency of the filing.</div></details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── 14. Final CTA ───────── -->
+<section class="section spacious tone-forest final" data-cta-placement="closing">
+  <div class="container">
+    <span class="eyebrow on-dark">Start with a conversation</span>
+    <h2 style="margin-top:16px">Tell us about your record. We'll tell you honestly what it supports.</h2>
+    <p class="lead muted" style="max-width:40rem; margin:20px auto 32px">A free consultation to assess your background against EB-2 NIW, EB-1 or the response you need to prepare. No obligation, no sales pitch.</p>
+    <div class="row" style="justify-content:center">
+      <a class="btn btn-on-dark btn-lg" href="#">Book a free consultation</a>
+      <a class="btn btn-ghost-dark btn-lg" href="https://wa.me/923305507598"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-13.3 7.9L3 21l1.2-4.5A9 9 0 1 1 21 12z"/></svg>Chat on WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ───────── Footer ───────── -->
+<footer class="footer">
+  <div class="container wide">
+    <div class="top">
+      <div class="brand-col stack">
+        <img class="logo-reverse" src="../assets/logos/open-horizons-horizontal-reverse.svg" alt="Immigration Horizons" width="1000" height="280">
+        <p class="disclaimer">Immigration Horizons provides petition preparation, writing, and document support services. We are not a law firm and do not provide legal representation before USCIS or any court.</p>
+        <ul style="margin-top:8px">
+          <li><a href="mailto:info@immigrationhorizons.com">info@immigrationhorizons.com</a></li>
+          <li><a href="https://wa.me/923305507598">WhatsApp</a> · <a href="https://www.fiverr.com/rahatkarim487">Fiverr profile</a> · <a href="https://www.upwork.com/freelancers/smartwork?p=1930154108755910656">Upwork profile</a></li>
+        </ul>
+      </div>
+      <div><h3>Green card petitions</h3><ul><li><a href="#">EB-2 NIW</a></li><li><a href="#">EB-1A</a></li><li><a href="#">EB-1B</a></li><li><a href="#">EB-1C</a></li></ul></div>
+      <div><h3>RFE, NOID &amp; support</h3><ul><li><a href="#">RFE Response</a></li><li><a href="#">NOID Response</a></li><li><a href="#">Recommendation Letters</a></li><li><a href="#">Expert Opinion Letters</a></li><li><a href="#">Business &amp; Personal Plans</a></li><li><a href="#">Evidence Review &amp; Packaging</a></li></ul></div>
+      <div><h3>Other US visas</h3><ul><li><a href="#">O-1 Visa</a></li><li><a href="#">E-2 Visa</a></li><li><a href="#">F-1 Visa</a></li><li><a href="#">F-2 Visa</a></li><li><a href="#">J-1 Visa</a></li><li><a href="#">B-1/B-2 Visa</a></li></ul></div>
+      <div><h3>Company</h3><ul><li><a href="#">Who we help</a></li><li><a href="#">About</a></li><li><a href="#">Client reviews</a></li><li><a href="#">Resources</a></li><li><a href="#">Blog</a></li><li><a href="#">FAQs</a></li><li><a href="#">Contact</a></li><li><a href="#">Client portal</a></li></ul></div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 Immigration Horizons. All rights reserved.</span>
+      <span><a href="#">Privacy Policy</a> · <a href="#">Terms of Use</a></span>
+    </div>
+  </div>
+</footer>
+
+<a class="fab" href="https://wa.me/923305507598" aria-label="Chat on WhatsApp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-13.3 7.9L3 21l1.2-4.5A9 9 0 1 1 21 12z"/></svg></a>
+
+<script>
+  // Prototype-only toggles. The production header keeps its existing client component; this is not implementation code.
+  const mb = document.getElementById('menu-btn'), mn = document.getElementById('mobile-nav');
+  mb.addEventListener('click', () => { const o = mn.classList.toggle('open'); mb.setAttribute('aria-expanded', o); mb.setAttribute('aria-label', o ? 'Close menu' : 'Open menu'); });
+  const gb = document.getElementById('mega-btn'), gm = document.getElementById('mega-services');
+  gb.addEventListener('click', () => { const o = gm.classList.toggle('open'); gb.setAttribute('aria-expanded', o); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { gm.classList.remove('open'); gb.setAttribute('aria-expanded', 'false'); } });
+</script>
+</body>
+</html>
