@@ -6,18 +6,18 @@ import { differentiators } from "@/lib/content/about";
 
 export function Differentiators() {
   return (
-    <Section tone="tint">
+    <Section>
       <SectionHeading
         eyebrow="Why choose us"
-        title="Eight reasons clients trust us with their case"
+        title="Why Immigration Horizons"
       />
 
-      <RevealGroup className="mt-16 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-        {differentiators.map((item) => (
+      <RevealGroup className="mt-14 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+        {differentiators.slice(0, 6).map((item) => (
           <RevealItem key={item.title}>
             <div className="flex flex-col gap-4">
               <FeatureIcon name={item.icon} />
-              <h3 className="font-display text-lg font-semibold">
+              <h3 className="text-xl">
                 {item.title}
               </h3>
               <p className="text-ink-600 text-[0.9375rem] leading-relaxed text-pretty">

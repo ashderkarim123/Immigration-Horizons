@@ -9,7 +9,7 @@
 
 export const mission = {
   heading: "Our mission",
-  body: "To give professionals the same quality of petition preparation that large firms reserve for their biggest cases — clear strategy, evidence organised to be read, and documents written from scratch around one person's record.",
+  body: "To give professionals the same quality of petition preparation that large firms reserve for their biggest cases — clear strategy, evidence organized to be read, and documents written from scratch around one person's record.",
 };
 
 export const vision = {
@@ -37,7 +37,7 @@ export const coreValues: CoreValue[] = [
   },
   {
     title: "Clear scope, clear boundaries",
-    body: "We prepare, draft, research, and organise. We are not attorneys and do not provide legal representation or legal advice — and we tell every client exactly where that line sits.",
+    body: "We prepare, draft, research, and organize. We are not attorneys and do not provide legal representation or legal advice — and we tell every client exactly where that line sits.",
   },
 ];
 

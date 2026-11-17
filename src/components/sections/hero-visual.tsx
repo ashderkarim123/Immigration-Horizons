@@ -1,58 +1,62 @@
-import Image from "next/image";
-import { FileCheck2, ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /**
- * Human-led hero visual generated for this project and stored locally.
- * The image remains decorative because the adjacent copy carries the full
- * meaning; the overlaid cards reinforce the service without adding noise for
- * screen-reader users. Motion is CSS-only and suppressed by the global
- * reduced-motion rule.
+ * The approved hero illustration: an open doorway framing a sunrise, a path
+ * toward it, and two document motifs. Inline SVG with brand hex values so it
+ * costs no request and no JavaScript; the only motion is a CSS float on the
+ * documents, suppressed by prefers-reduced-motion in globals.css.
  */
-export function HeroVisual({ className }: { className?: string }) {
+export function HeroVisual({ alt, className }: { alt: string; className?: string }) {
   return (
-    <div
-      className={`relative mx-auto w-full max-w-md ${className ?? ""}`}
-      aria-hidden
+    <svg
+      viewBox="0 0 500 400"
+      role="img"
+      aria-label={alt}
+      className={cn("h-auto w-full", className)}
     >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-navy-900 shadow-lifted sm:aspect-[5/4]">
-        <Image
-          src="/images/immigration-consultation-hero-v1.png"
-          alt=""
-          fill
-          priority
-          sizes="(min-width: 1024px) 360px, (min-width: 640px) 320px, 240px"
-          className="object-cover object-[68%_center]"
+      <defs>
+        <linearGradient id="hero-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#F6F2E9" />
+          <stop offset="1" stopColor="#F3E3D8" />
+        </linearGradient>
+        <linearGradient id="hero-ground" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#E1E8E1" />
+          <stop offset="1" stopColor="#CDD9D0" />
+        </linearGradient>
+        <clipPath id="hero-frame">
+          <rect x="40" y="20" width="420" height="360" rx="28" />
+        </clipPath>
+      </defs>
+      <rect x="40" y="20" width="420" height="360" rx="28" fill="url(#hero-sky)" stroke="rgba(22,75,59,.14)" />
+      <g clipPath="url(#hero-frame)">
+        <ellipse cx="250" cy="250" rx="300" ry="38" fill="#F3E3D8" opacity=".7" />
+        <ellipse cx="250" cy="262" rx="300" ry="30" fill="#E9C6B5" opacity=".35" />
+        <path d="M190 236 A60 60 0 0 1 310 236 Z" fill="#C9774F" />
+        <rect x="178" y="244" width="144" height="8" rx="4" fill="#C9774F" />
+        <rect x="40" y="252" width="420" height="140" fill="url(#hero-ground)" />
+        <path
+          d="M250 260 C 290 285, 170 300, 215 330 C 262 362, 160 372, 200 400 L 300 400 C 330 372, 240 362, 285 330 C 330 300, 215 285, 250 260 Z"
+          fill="#164B3B"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/5 to-transparent" />
-
-        <div className="absolute inset-x-3 bottom-3 flex items-center gap-3 rounded-xl border border-white/12 bg-navy-950/82 px-3.5 py-3 shadow-card backdrop-blur-md sm:inset-x-4 sm:bottom-4">
-          <span className="bg-gold-400/15 text-gold-300 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-            <ShieldCheck size={17} />
-          </span>
-          <div>
-            <p className="font-sans text-xs font-semibold text-white">
-              Thoughtfully prepared
-            </p>
-            <p className="text-navy-300 mt-0.5 font-sans text-[0.625rem]">
-              Strategy, evidence, and drafting in one process
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="motion-safe:animate-(--animate-float-slow) absolute -top-3 -left-3 hidden sm:block">
-        <div className="flex items-center gap-2.5 rounded-xl border border-white/15 bg-navy-800/90 px-3.5 py-2.5 shadow-lifted backdrop-blur-md">
-          <FileCheck2 size={15} className="text-gold-400 shrink-0" />
-          <div>
-            <p className="font-sans text-xs font-semibold whitespace-nowrap text-white">
-              Evidence organised
-            </p>
-            <p className="text-navy-300 font-sans text-[0.625rem] whitespace-nowrap">
-              Clear, review-ready structure
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+        <path d="M40 20 L170 95 L170 320 L40 390 Z" fill="#164B3B" />
+        <path d="M460 20 L330 95 L330 320 L460 390 Z" fill="#164B3B" />
+        <path d="M40 20 L170 95 L170 320 L40 390 Z" fill="#10372B" opacity=".35" />
+        <path d="M170 95 L170 320" stroke="#C9774F" strokeWidth="3" />
+        <path d="M330 95 L330 320" stroke="#C9774F" strokeWidth="3" />
+      </g>
+      <g className="animate-float-slow" transform="translate(372 56)" fill="#fff" stroke="rgba(22,75,59,.25)">
+        <rect width="64" height="80" rx="8" />
+        <g stroke="#164B3B" strokeWidth="3" strokeLinecap="round">
+          <path d="M14 22h36M14 36h36M14 50h24" />
+        </g>
+        <circle cx="48" cy="62" r="8" fill="#C9774F" stroke="none" />
+      </g>
+      <g transform="translate(64 300)" fill="#fff" stroke="rgba(22,75,59,.25)">
+        <rect width="78" height="56" rx="8" />
+        <g stroke="#164B3B" strokeWidth="3" strokeLinecap="round">
+          <path d="M14 18h50M14 30h50M14 42h30" />
+        </g>
+      </g>
+    </svg>
   );
 }

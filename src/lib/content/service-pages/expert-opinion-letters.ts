@@ -11,7 +11,7 @@ export const expertOpinionLetters: ServicePageContent = {
     "An expert opinion letter is a statement from a recognized authority in a field, offering an independent assessment of the significance of someone's work or the standards of their profession. In a petition it functions as third-party expert testimony, helping a non-specialist adjudicator understand why a contribution matters.",
   metaTitle: "Expert Opinion Letter Preparation for Immigration Petitions",
   metaDescription:
-    "Independent expert opinion letters for EB-2 NIW, EB-1A, EB-1B and O-1 petitions — assessments that explain your work's significance to a non-specialist adjudicator.",
+    "Expert opinion letters for EB-2 NIW, EB-1A, EB-1B and O-1 petitions: independent assessments that explain your work's significance to an adjudicator.",
   keywords: [
     "expert opinion letter",
     "immigration expert letter",
@@ -184,7 +184,7 @@ export const expertOpinionLetters: ServicePageContent = {
     {
       question: "Is an expert opinion letter the same as an O-1 advisory opinion?",
       answer:
-        "No. An O-1 petition requires a formal written advisory opinion from a specific peer, labor, or management oorganization, which is a distinct procedural requirement. An expert opinion letter is evidence about the significance of your work and can be used across categories. We can help you understand and coordinate both.",
+        "No. An O-1 petition requires a formal written advisory opinion from a specific peer, labor, or management organization, which is a distinct procedural requirement. An expert opinion letter is evidence about the significance of your work and can be used across categories. We can help you understand and coordinate both.",
     },
   ],
   faqTitle: "Expert opinion letter frequently asked questions",

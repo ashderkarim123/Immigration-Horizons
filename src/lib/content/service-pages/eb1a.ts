@@ -100,7 +100,7 @@ export const eb1a: ServicePageContent = {
         },
         {
           title: "Leading or critical role",
-          body: "Evidence that you have performed in a leading or critical role for oorganizations or establishments that have a distinguished reputation. Both halves must be documented: the nature of your role, and the distinguished standing of the oorganization.",
+          body: "Evidence that you have performed in a leading or critical role for organizations or establishments that have a distinguished reputation. Both halves must be documented: the nature of your role, and the distinguished standing of the organization.",
         },
         {
           title: "High salary or remuneration",
@@ -186,7 +186,7 @@ export const eb1a: ServicePageContent = {
         },
         {
           title: "Evidence for each claimed criterion",
-          body: "Oorganized criterion by criterion, so an adjudicator assessing criterion four is not searching the whole exhibit set for the relevant material.",
+          body: "Organized criterion by criterion, so an adjudicator assessing criterion four is not searching the whole exhibit set for the relevant material.",
         },
         {
           title: "Recommendation and expert opinion letters",
@@ -309,7 +309,7 @@ export const eb1a: ServicePageContent = {
       eyebrow: "Working with us",
       heading: "How we prepare EB-1A petitions",
       paragraphs: [
-        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. What we do is prepare petitions: mapping your record against the ten criteria, selecting which to lead on, drafting the petition letter and supporting letters from scratch, and oorganizing exhibits criterion by criterion so the argument is followable.",
+        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. What we do is prepare petitions: mapping your record against the ten criteria, selecting which to lead on, drafting the petition letter and supporting letters from scratch, and organizing exhibits criterion by criterion so the argument is followable.",
         "We work on full EB-1A packages and on single deliverables — a set of recommendation letters, an exhibit index, or an RFE response on a petition someone else prepared. We also act as additional drafting capacity for immigration attorneys and paralegals working to a deadline.",
       ],
     },

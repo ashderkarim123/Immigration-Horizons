@@ -26,6 +26,7 @@ build instructions for this repo. It is written for two readers:
 | `06-implementation-plan.md` | Phases, tasks, acceptance criteria, AI-assistant prompts |
 | `design/` | Design Gate D0: competitor-led design direction, Open Horizons design system, prototypes and handoff (awaiting approval) |
 | `phase-2-report.md` | Phase 2 delivery: NOID page, RFE refocus, EB-2 NIW / EB-1 / business-plan expansions, validation and deferrals |
+| `phase-3-report.md` | Phase 3 delivery: Open Horizons rebrand across every public page, homepage rebuild, validation |
 | `phase-4-report.md` | Phase 4 delivery: testimonial model, ratings, `/reviews` filter, service-page review slots; import blocked on owner data |
 
 ## Goal in one paragraph

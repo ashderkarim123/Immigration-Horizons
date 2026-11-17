@@ -299,7 +299,7 @@ export function ChatPanel({
                     className="border-ink-200 focus:border-navy-400 w-full rounded-xl border p-3 text-sm focus:outline-none"
                   />
                   <div className="flex gap-2">
-                    <Button type="button" variant="gold" size="sm" onClick={() => saveEdit(message)}>
+                    <Button type="button" variant="primary" size="sm" onClick={() => saveEdit(message)}>
                       Save
                     </Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => setEditing(null)}>
@@ -388,7 +388,7 @@ export function ChatPanel({
         ) : null}
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" variant="gold" size="sm" disabled={sending || !!uploading}>
+          <Button type="submit" variant="primary" size="sm" disabled={sending || !!uploading}>
             {sending ? "Sending…" : composeError && text ? "Retry send" : "Send"}
           </Button>
           <label className="text-navy-700 cursor-pointer text-xs font-medium hover:underline">

@@ -3,13 +3,12 @@ import Link from "next/link";
 import { ArrowRight, ExternalLink } from "lucide-react";
 
 import { CtaBanner } from "@/components/sections/cta-banner";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { Badge, Card, CardBody, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
 import { RevealGroup, RevealItem } from "@/components/ui/reveal";
-import { Eyebrow, Section, SectionHeading } from "@/components/ui/section";
+import { Section, SectionHeading } from "@/components/ui/section";
 import { publishedCaseCategories as caseCategories, publishedSupportServices as supportServices, publishedOtherVisas as otherVisas } from "@/lib/content/published-services";
 import { officialResources } from "@/lib/content/resources";
 import { baseOpenGraph } from "@/lib/seo/og";
@@ -38,27 +37,12 @@ export default function ResourcesPage() {
     <>
       <JsonLd data={breadcrumbSchema(trail)} />
 
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-16 sm:py-20">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="max-w-3xl">
-            <Eyebrow className="text-gold-300">Resources</Eyebrow>
-            <h1 className="text-display-lg sm:text-display-xl mt-4 font-semibold text-white">
-              Guides and official immigration resources
-            </h1>
-            <p className="text-lead text-navy-200 mt-5 text-pretty">
-              Our in-depth guides to each category, alongside links to the
-              authoritative government sources. When it comes to processing
-              times, fees, and current policy, the official pages are always the
-              source of truth — and we link you straight to them.
-            </p>
-          </div>
-        </Container>
-      </section>
+      <PageHero
+        trail={trail}
+        eyebrow="Resources"
+        title="Guides and official immigration resources"
+        description="Our in-depth guides to each category, alongside links to the authoritative government sources. When it comes to processing times, fees, and current policy, the official pages are always the source of truth — and we link you straight to them."
+      />
 
       {/* Our guides */}
       <Section>

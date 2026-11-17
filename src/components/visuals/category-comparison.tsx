@@ -25,7 +25,7 @@ const rows: Row[] = [
     selfPetition: true,
     employer: false,
     laborCert: false,
-    standard: "Nationally important endeavour",
+    standard: "Nationally important endeavor",
   },
   {
     slug: "eb1a",

@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 import { ExternalLink, ShieldCheck } from "lucide-react";
 
+import { PageHero } from "@/components/layout/page-hero";
 import { CtaBanner } from "@/components/sections/cta-banner";
 import { TestimonialCard } from "@/components/sections/testimonials";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { RatingBadge } from "@/components/ui/rating-badge";
 import { RevealGroup, RevealItem } from "@/components/ui/reveal";
-import { Eyebrow } from "@/components/ui/section";
 import { ratings, social } from "@/lib/content/site";
 import {
   findReviewFilter,
@@ -41,6 +40,8 @@ const trail = [
 
 const chipBase =
   "inline-flex items-center rounded-full border px-4 py-1.5 font-sans text-sm font-semibold transition-colors";
+const chipOn = "border-navy-800 bg-navy-800 text-white";
+const chipOff = "border-navy-800/28 text-navy-800 hover:border-navy-800 hover:bg-navy-50 bg-white";
 
 export default async function ReviewsPage({
   searchParams,
@@ -55,49 +56,30 @@ export default async function ReviewsPage({
     <>
       <JsonLd data={breadcrumbSchema(trail)} />
 
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-16 sm:py-20">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="max-w-3xl">
-            <Eyebrow className="text-gold-300">Verifiable, not just quotable</Eyebrow>
-            <h1 className="text-display-lg sm:text-display-xl mt-4 font-semibold text-white">
-              Client Reviews
-            </h1>
-            <p className="text-lead text-navy-200 mt-5 text-pretty">
-              Every review below is a real client message from our public
-              marketplace profile. Each one links back to its source, so you can
-              confirm it yourself. We don&apos;t publish testimonials that
-              can&apos;t be checked.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              {Object.entries(ratings).map(([platform, rating]) => (
-                <RatingBadge key={platform} platform={platform} rating={rating} tone="dark" />
-              ))}
-              <Button href={social.fiverrProfile} variant="inverse">
-                <ShieldCheck size={16} aria-hidden />
-                View our public profile
-                <ExternalLink size={14} aria-hidden />
-              </Button>
-            </div>
-          </div>
-        </Container>
-      </section>
+      <PageHero
+        trail={trail}
+        eyebrow="Verifiable, not just quotable"
+        title="Client Reviews"
+        description="Every review below is a real client message from our public marketplace profile. Each one links back to its source, so you can confirm it yourself. We don't publish testimonials that can't be checked."
+      >
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+          {Object.entries(ratings).map(([platform, rating]) => (
+            <RatingBadge key={platform} platform={platform} rating={rating} />
+          ))}
+          <Button href={social.fiverrProfile} variant="outline">
+            <ShieldCheck size={16} aria-hidden />
+            View our public profile
+            <ExternalLink size={14} aria-hidden />
+          </Button>
+        </div>
+      </PageHero>
 
       <Container width="wide" className="py-16 sm:py-20">
         <nav aria-label="Filter reviews by service" className="flex flex-wrap gap-2">
           <a
             href="/reviews"
             aria-current={active ? undefined : "page"}
-            className={cn(
-              chipBase,
-              active
-                ? "border-ink-200 text-navy-800 hover:border-navy-300 bg-white"
-                : "border-navy-900 bg-navy-900 text-white",
-            )}
+            className={cn(chipBase, active ? chipOff : chipOn)}
           >
             All
           </a>
@@ -108,12 +90,7 @@ export default async function ReviewsPage({
                 key={filter.label}
                 href={`/reviews?service=${filter.slugs[0]}`}
                 aria-current={selected ? "page" : undefined}
-                className={cn(
-                  chipBase,
-                  selected
-                    ? "border-navy-900 bg-navy-900 text-white"
-                    : "border-ink-200 text-navy-800 hover:border-navy-300 bg-white",
-                )}
+                className={cn(chipBase, selected ? chipOn : chipOff)}
               >
                 {filter.label}
               </a>
@@ -140,12 +117,20 @@ export default async function ReviewsPage({
             .
           </p>
         )}
+
+        <div className="rounded-card bg-ink-100 mt-14 flex flex-col gap-2 p-6 sm:p-7">
+          <h2 className="text-xl">How to verify a review</h2>
+          <p className="text-ink-600 max-w-[66ch] text-[0.9375rem] leading-relaxed">
+            Follow the source link on any card to the public marketplace profile
+            where it was left. The rating above is read from that profile on the
+            date shown and is never rounded up.
+          </p>
+        </div>
       </Container>
 
       <CtaBanner
         title="Want to be our next approval?"
         body="Book a free consultation and tell us about your case. We'll assess it honestly and tell you where you stand."
-        ctaLabel="Book your free consultation"
       />
     </>
   );

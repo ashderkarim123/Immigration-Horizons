@@ -62,7 +62,7 @@ export function StaffLoginForm({ next }: { next?: string }) {
         />
       </Field>
 
-      <Button type="submit" variant="gold" disabled={!ready || pending} block>
+      <Button type="submit" variant="primary" disabled={!ready || pending} block>
         {pending ? "Signing in…" : "Sign in"}
       </Button>
     </form>

@@ -9,7 +9,7 @@ import { featuredTestimonials, type Testimonial } from "@/lib/content/testimonia
 function Stars({ rating }: { rating: number }) {
   return (
     <span
-      className="flex items-center gap-0.5"
+      className="text-gold-500 flex items-center gap-0.5"
       role="img"
       aria-label={`${rating} out of 5 stars`}
     >
@@ -17,7 +17,7 @@ function Stars({ rating }: { rating: number }) {
         <Star
           key={i}
           size={15}
-          className="fill-gold-500 text-gold-500"
+          className="fill-current"
           aria-hidden
         />
       ))}
@@ -33,11 +33,11 @@ export function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
         <Stars rating={testimonial.rating} />
       </div>
 
-      <blockquote className="text-ink-700 flex-1 text-[0.9375rem] leading-relaxed text-pretty">
+      <blockquote className="text-ink-700 flex-1 text-base leading-relaxed text-pretty">
         &ldquo;{testimonial.text}&rdquo;
       </blockquote>
 
-      <footer className="border-ink-200 mt-2 flex items-end justify-between gap-3 border-t pt-4">
+      <footer className="border-navy-800/14 mt-2 flex items-end justify-between gap-3 border-t pt-4">
         <div>
           <p className="text-navy-800 font-sans text-sm font-semibold">
             {testimonial.name}
@@ -50,7 +50,7 @@ export function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           href={testimonial.verifyUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-navy-700 hover:text-navy-900 inline-flex shrink-0 items-center gap-1.5 font-sans text-xs font-semibold"
+          className="text-navy-800 inline-flex shrink-0 items-center gap-1.5 font-sans text-xs font-semibold underline-offset-4 hover:underline"
         >
           Verify on {testimonial.source}
           <ExternalLink size={12} aria-hidden />
@@ -62,14 +62,20 @@ export function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 
 export function Testimonials({ limit = 3 }: { limit?: number }) {
   return (
-    <Section>
-      <SectionHeading
-        eyebrow="Client reviews"
-        title="Verifiable, not just quotable"
-        description="Every review below links to our public Fiverr profile so you can confirm it yourself. We do not publish testimonials that cannot be checked."
-      />
+    <Section tone="tint">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <SectionHeading
+          align="left"
+          eyebrow="Client reviews"
+          title="Verifiable, not just quotable"
+          description="Every review links to the public profile it came from so you can confirm it yourself. We do not publish testimonials that cannot be checked."
+        />
+        <Button href="/reviews" variant="outline" className="shrink-0">
+          All reviews
+        </Button>
+      </div>
 
-      <RevealGroup className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <RevealGroup className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {featuredTestimonials.slice(0, limit).map((testimonial) => (
           <RevealItem key={testimonial.id}>
             <TestimonialCard testimonial={testimonial} />
@@ -77,11 +83,6 @@ export function Testimonials({ limit = 3 }: { limit?: number }) {
         ))}
       </RevealGroup>
 
-      <div className="mt-12 text-center">
-        <Button href="/reviews" variant="outline">
-          Read all reviews
-        </Button>
-      </div>
     </Section>
   );
 }

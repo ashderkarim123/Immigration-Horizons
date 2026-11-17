@@ -6,12 +6,12 @@ export const evidencePackaging: ServicePageContent = {
   eyebrow: "Exhibits, Indexing, Filing Order",
   headline: "Evidence review, packaging & document organization",
   subhead:
-    "Review, oorganization, and indexing of your supporting evidence into a clean, navigable exhibit set — so every claim in the petition maps to a document an adjudicator can find immediately.",
+    "Review, organization, and indexing of your supporting evidence into a clean, navigable exhibit set — so every claim in the petition maps to a document an adjudicator can find immediately.",
   definition:
-    "Evidence packaging is the review, oorganization, and indexing of a petition's supporting documents into a structured exhibit set. Well-oorganized evidence lets an adjudicator locate the proof behind each claim without searching; poorly oorganized evidence, however strong, can be overlooked simply because it could not be found.",
+    "Evidence packaging is the review, organization, and indexing of a petition's supporting documents into a structured exhibit set. Well-organized evidence lets an adjudicator locate the proof behind each claim without searching; poorly organized evidence, however strong, can be overlooked simply because it could not be found.",
   metaTitle: "USCIS Evidence Packaging & Document Organization",
   metaDescription:
-    "Evidence review, exhibit oorganization, and indexing for EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions — a strong record made into a filing-ready exhibit set.",
+    "Evidence review, exhibit organization and indexing for EB-2 NIW, EB-1 and O-1 petitions: a strong record turned into a filing-ready exhibit set.",
   keywords: [
     "evidence packaging",
     "USCIS documentation",
@@ -30,7 +30,7 @@ export const evidencePackaging: ServicePageContent = {
   ],
   toc: [
     { id: "what-is-it", label: "What evidence packaging is" },
-    { id: "why-it-matters", label: "Why oorganization changes outcomes" },
+    { id: "why-it-matters", label: "Why organization changes outcomes" },
     { id: "what-good-looks-like", label: "What a good exhibit set looks like" },
     { id: "process", label: "Our process" },
     { id: "mistakes", label: "Common mistakes" },
@@ -53,9 +53,9 @@ export const evidencePackaging: ServicePageContent = {
       kind: "list",
       id: "why-it-matters",
       eyebrow: "The stakes",
-      heading: "Why oorganization changes outcomes",
+      heading: "Why organization changes outcomes",
       intro: [
-        "Adjudicators work through a high volume of petitions under time pressure. How evidence is oorganized directly affects whether it is seen and credited.",
+        "Adjudicators work through a high volume of petitions under time pressure. How evidence is organized directly affects whether it is seen and credited.",
       ],
       items: [
         {
@@ -85,7 +85,7 @@ export const evidencePackaging: ServicePageContent = {
         {
           heading: "A clear index at the front",
           paragraphs: [
-            "A tabbed, numbered index lists every exhibit with a short description, so the adjudicator has a map of the evidence before they enter it. The index is the first thing that tells the adjudicator this is an oorganized filing.",
+            "A tabbed, numbered index lists every exhibit with a short description, so the adjudicator has a map of the evidence before they enter it. The index is the first thing that tells the adjudicator this is an organized filing.",
           ],
         },
         {
@@ -125,7 +125,7 @@ export const evidencePackaging: ServicePageContent = {
         },
         {
           title: "Sequence and group",
-          body: "Exhibits are oorganized to follow the argument, grouped by the point they support and ordered to match the petition.",
+          body: "Exhibits are organized to follow the argument, grouped by the point they support and ordered to match the petition.",
         },
         {
           title: "Build the index",
@@ -175,8 +175,8 @@ export const evidencePackaging: ServicePageContent = {
       eyebrow: "Working with us",
       heading: "How we help with evidence packaging",
       paragraphs: [
-        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. We review your supporting evidence, decide what belongs in the exhibit set, oorganize and sequence it to follow the argument, build a clear exhibit index, and produce a clean, filing-ready package.",
-        "Evidence packaging can be engaged on its own — including for a petition you or your attorney have otherwise prepared — or as part of a full petition package. We regularly provide this as additional capacity for immigration attorneys and paralegals who have the evidence but need it oorganized to a high standard under deadline.",
+        "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. We review your supporting evidence, decide what belongs in the exhibit set, organize and sequence it to follow the argument, build a clear exhibit index, and produce a clean, filing-ready package.",
+        "Evidence packaging can be engaged on its own — including for a petition you or your attorney have otherwise prepared — or as part of a full petition package. We regularly provide this as additional capacity for immigration attorneys and paralegals who have the evidence but need it organized to a high standard under deadline.",
       ],
     },
   ],
@@ -184,10 +184,10 @@ export const evidencePackaging: ServicePageContent = {
     {
       question: "What is evidence packaging?",
       answer:
-        "It is the review, oorganization, and indexing of a petition's supporting documents into a structured exhibit set. The aim is that every claim the petition makes is traceable to a specific numbered exhibit, so an adjudicator can move from a claim to its proof immediately rather than searching an unsorted stack.",
+        "It is the review, organization, and indexing of a petition's supporting documents into a structured exhibit set. The aim is that every claim the petition makes is traceable to a specific numbered exhibit, so an adjudicator can move from a claim to its proof immediately rather than searching an unsorted stack.",
     },
     {
-      question: "Does how I oorganize my evidence really affect the outcome?",
+      question: "Does how I organize my evidence really affect the outcome?",
       answer:
         "Yes. Adjudicators work through many petitions under time pressure and are not obliged to hunt through a disorganized set for support the petition asserts exists. Strong evidence that cannot be located can be overlooked entirely, while a clean, indexed package builds credibility before the argument is even read.",
     },
@@ -199,7 +199,7 @@ export const evidencePackaging: ServicePageContent = {
     {
       question: "Can you package evidence for a petition I prepared myself?",
       answer:
-        "Yes. Evidence packaging can be engaged on its own, including for a petition you or your attorney have otherwise prepared. We review the record, oorganize and index it, and produce a filing-ready exhibit set, whether or not we prepared any of the other documents.",
+        "Yes. Evidence packaging can be engaged on its own, including for a petition you or your attorney have otherwise prepared. We review the record, organize and index it, and produce a filing-ready exhibit set, whether or not we prepared any of the other documents.",
     },
     {
       question: "What is an exhibit index?",
@@ -209,7 +209,7 @@ export const evidencePackaging: ServicePageContent = {
   ],
   faqTitle: "Evidence packaging frequently asked questions",
   faqDescription:
-    "The questions we are asked most often about oorganizing, indexing, and packaging petition evidence.",
+    "The questions we are asked most often about organizing, indexing, and packaging petition evidence.",
   sources: [
     {
       label: "USCIS — Employment-Based Immigration: First Preference EB-1",
@@ -221,5 +221,5 @@ export const evidencePackaging: ServicePageContent = {
     },
   ],
   scopeNote:
-    "This page is general educational information about evidence oorganization for immigration petitions, not legal advice about any individual case.",
+    "This page is general educational information about evidence organization for immigration petitions, not legal advice about any individual case.",
 };

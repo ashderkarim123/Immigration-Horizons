@@ -33,7 +33,7 @@ export const homepageFaqs: Faq[] = [
   {
     question: "What is the difference between EB-1A and EB-2 NIW?",
     answer:
-      "EB-1A is for individuals with extraordinary ability who can show sustained national or international acclaim, evidenced either by a one-time major internationally recognised award or by satisfying at least three of the ten regulatory criteria in 8 CFR 204.5(h)(3). EB-2 NIW has a lower acclaim threshold but requires you to show that your specific proposed endeavor is nationally important and that waiving the job offer requirement benefits the United States. They are different arguments, not different tiers of the same argument, and some profiles genuinely support both.",
+      "EB-1A is for individuals with extraordinary ability who can show sustained national or international acclaim, evidenced either by a one-time major internationally recognized award or by satisfying at least three of the ten regulatory criteria in 8 CFR 204.5(h)(3). EB-2 NIW has a lower acclaim threshold but requires you to show that your specific proposed endeavor is nationally important and that waiving the job offer requirement benefits the United States. They are different arguments, not different tiers of the same argument, and some profiles genuinely support both.",
   },
   {
     question: "What is EB-1B, and how is it different from EB-1A?",
@@ -46,14 +46,14 @@ export const homepageFaqs: Faq[] = [
       "EB-1C is for multinational managers and executives. It generally requires that you worked abroad in a managerial or executive capacity for at least one of the three years before the petition, for an entity related to the U.S. employer — such as a parent, branch, subsidiary, or affiliate — and that you are coming to the United States to work in a managerial or executive role for that related entity. It is employer-sponsored, and the corporate relationship between the two entities has to be documented properly.",
   },
   {
-    question: "Are you an immigration law firm?",
-    answer:
-      "No. Immigration Horizons is an immigration consulting and paralegal services practice. We prepare petitions, draft documents, conduct research, organise evidence, and assist with USCIS forms and packaging. We are not attorneys, we do not provide legal advice, and we do not represent clients before USCIS or any court. Where a case needs legal representation, we say so.",
-  },
-  {
     question: "Can you help if I have already received an RFE or NOID?",
     answer:
       "Yes, and this is one of the most common ways clients come to us — including on petitions we did not originally prepare. We review the notice, identify precisely what the officer is questioning, and prepare a focused response addressing those specific points with supporting evidence, rather than resubmitting the original filing with more material attached.",
+  },
+  {
+    question: "Are you an immigration law firm?",
+    answer:
+      "No. Immigration Horizons is an immigration consulting and paralegal services practice. We prepare petitions, draft documents, conduct research, organize evidence, and assist with USCIS forms and packaging. We are not attorneys, we do not provide legal advice, and we do not represent clients before USCIS or any court. Where a case needs legal representation, we say so.",
   },
   {
     question: "Can I hire you for just one document instead of a full petition?",
@@ -68,11 +68,11 @@ export const homepageFaqs: Faq[] = [
   {
     question: "How long does a petition take, and what does it cost?",
     answer:
-      "Both depend on the category, the current state of your evidence, and the scope of work you actually need, so we quote after the consultation rather than publishing a fixed price list. On timing, USCIS processing times change continuously and vary by service centre and case type — we will not quote you a figure we cannot stand behind. The authoritative source is the official USCIS processing times tool, and we will walk you through what it means for your specific filing.",
+      "Both depend on the category, the current state of your evidence, and the scope of work you actually need, so we quote after the consultation rather than publishing a fixed price list. On timing, USCIS processing times change continuously and vary by service center and case type — we will not quote you a figure we cannot stand behind. The authoritative source is the official USCIS processing times tool, and we will walk you through what it means for your specific filing.",
   },
   {
     question: "Can you guarantee my petition will be approved?",
     answer:
-      "No, and you should be cautious of anyone who does. USCIS adjudicates every petition on its own record, and no preparer controls that outcome. What we control is the quality of the argument, the strength and organisation of the evidence, and the internal consistency of the filing. Our completed-case history and client reviews are public on our marketplace profiles so you can assess our work rather than take a promise on trust.",
+      "No, and you should be cautious of anyone who does. USCIS adjudicates every petition on its own record, and no preparer controls that outcome. What we control is the quality of the argument, the strength and organization of the evidence, and the internal consistency of the filing. Our completed-case history and client reviews are public on our marketplace profiles so you can assess our work rather than take a promise on trust.",
   },
 ];

@@ -41,7 +41,7 @@ export const officialResources: OfficialResource[] = [
   {
     label: "USCIS — Check Case Processing Times",
     description:
-      "The authoritative, always-current source for how long cases are taking at each service centre. Always use this rather than any figure quoted elsewhere.",
+      "The authoritative, always-current source for how long cases are taking at each service center. Always use this rather than any figure quoted elsewhere.",
     href: "https://egov.uscis.gov/processing-times/",
   },
   {

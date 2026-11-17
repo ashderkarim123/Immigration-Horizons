@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 
 import { BlogContent } from "@/components/blog/blog-content";
 import { CtaBanner } from "@/components/sections/cta-banner";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { Badge } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
@@ -73,26 +73,18 @@ export default async function BlogPostPage({ params }: RouteProps) {
   return (
     <>
       <JsonLd data={[breadcrumbSchema(trail), articleSchema]} />
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-16 sm:py-24">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="max-w-4xl">
-            <Badge tone="gold">{post.category}</Badge>
-            <h1 className="text-display-lg sm:text-display-xl mt-5 font-semibold text-white">
-              {post.title}
-            </h1>
-            <p className="text-lead text-navy-200 mt-5 text-pretty">{post.excerpt}</p>
-            <p className="text-navy-300 mt-7 font-sans text-sm">
-              By {post.author} · {displayDate(post.publishedAt)}
-              {post.readingTime > 0 ? ` · ${post.readingTime} min read` : ""}
-            </p>
-          </div>
-        </Container>
-      </section>
+      <PageHero
+        trail={trail}
+        eyebrow={post.category}
+        title={post.title}
+        description={post.excerpt}
+        className="max-w-4xl"
+      >
+        <p className="text-ink-600 font-sans text-sm">
+          By {post.author} · {displayDate(post.publishedAt)}
+          {post.readingTime > 0 ? ` · ${post.readingTime} min read` : ""}
+        </p>
+      </PageHero>
 
       <Container width="prose" className="py-14 sm:py-20">
         {post.coverImage ? (

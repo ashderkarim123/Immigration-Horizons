@@ -3,17 +3,16 @@ import type { Metadata } from "next";
 import { CtaBanner } from "@/components/sections/cta-banner";
 import { Differentiators } from "@/components/sections/differentiators";
 import { Process } from "@/components/sections/process";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHero } from "@/components/layout/page-hero";
 import {
   JsonLd,
   breadcrumbSchema,
   organizationSchema,
 } from "@/components/seo/json-ld";
 import { Card } from "@/components/ui/card";
-import { Container } from "@/components/ui/container";
 import { PhotoSlot } from "@/components/ui/photo-slot";
 import { Reveal } from "@/components/ui/reveal";
-import { Eyebrow, Section, SectionHeading } from "@/components/ui/section";
+import { Section, SectionHeading } from "@/components/ui/section";
 import { coreValues, mission, vision } from "@/lib/content/brand";
 import { team } from "@/lib/content/about";
 import { stats } from "@/lib/content/site";
@@ -43,54 +42,27 @@ export default function AboutPage() {
     <>
       <JsonLd data={[organizationSchema, breadcrumbSchema(trail)]} />
 
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-16 sm:py-20">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="max-w-3xl">
-            <Eyebrow className="text-gold-300">About us</Eyebrow>
-            <h1 className="text-display-lg sm:text-display-xl mt-4 font-semibold text-white">
-              Petition preparation, built around one person&apos;s record
-            </h1>
-            <p className="text-lead text-navy-200 mt-5 text-pretty">
-              Immigration Horizons is an immigration consulting and paralegal
-              services practice specialising in employment-based U.S. petitions.
-              We are not a law firm — we prepare, draft, research, and organise,
-              and we tell every client exactly where that line sits.
-            </p>
+      <PageHero
+        trail={trail}
+        eyebrow="About us"
+        title="An immigration preparation practice, not a law firm"
+        description="Immigration Horizons is an immigration consulting and paralegal services practice specializing in employment-based U.S. petitions. We prepare, draft, research and organize, and we tell every client exactly where that line sits."
+      >
+        <dl className="border-navy-800/14 grid max-w-xl grid-cols-3 gap-6 border-t pt-8">
+          <div>
+            <dt className="text-ink-500 font-sans text-xs tracking-wide uppercase">Cases handled</dt>
+            <dd className="font-display text-navy-800 mt-1 text-3xl">{stats.casesHandled}</dd>
           </div>
-
-          <dl className="mt-12 grid max-w-xl grid-cols-3 gap-6 border-t border-white/10 pt-8">
-            <div>
-              <dt className="text-navy-300 font-sans text-xs tracking-wide uppercase">
-                Cases handled
-              </dt>
-              <dd className="font-display mt-1 text-3xl font-semibold text-white">
-                {stats.casesHandled}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-navy-300 font-sans text-xs tracking-wide uppercase">
-                Years experience
-              </dt>
-              <dd className="font-display mt-1 text-3xl font-semibold text-white">
-                {stats.yearsExperience}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-navy-300 font-sans text-xs tracking-wide uppercase">
-                Client base
-              </dt>
-              <dd className="font-display mt-1 text-3xl font-semibold text-white">
-                Global
-              </dd>
-            </div>
-          </dl>
-        </Container>
-      </section>
+          <div>
+            <dt className="text-ink-500 font-sans text-xs tracking-wide uppercase">Years experience</dt>
+            <dd className="font-display text-navy-800 mt-1 text-3xl">{stats.yearsExperience}</dd>
+          </div>
+          <div>
+            <dt className="text-ink-500 font-sans text-xs tracking-wide uppercase">Client base</dt>
+            <dd className="font-display text-navy-800 mt-1 text-3xl">Global</dd>
+          </div>
+        </dl>
+      </PageHero>
 
       {/* Mission & Vision */}
       <Section>

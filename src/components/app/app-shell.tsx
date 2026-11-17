@@ -111,10 +111,10 @@ export function AppShell({
                     name, so it must keep naming the area. */}
                 <span className="flex h-14 w-[6.25rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white px-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 ease-(--ease-out-soft) motion-safe:group-hover:-translate-y-0.5">
                   <Image
-                    src="/images/logo-header.png"
+                    src="/images/open-horizons-horizontal-full.svg"
                     alt=""
-                    width={551}
-                    height={320}
+                    width={1000}
+                    height={280}
                     priority
                     className="h-full w-full object-contain"
                   />

@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 /**
  * A place a real photograph will go.
  *
- * Until a real asset is supplied, this renders a tasteful, on-brand branded
- * placeholder — never a fake stock person. When `src` is provided it renders
- * an optimised, lazy-loaded, responsive next/image with the alt text already
- * in place. Dropping a WebP into /public and passing its path is the only
- * change needed to go live.
+ * Until a real asset is supplied, this renders a quiet branded placeholder
+ * built on the approved symbol mark — never a fake stock person. When `src`
+ * is provided it renders an optimised, lazy-loaded, responsive next/image
+ * with the alt text already in place. Dropping a WebP into /public and
+ * passing its path is the only change needed to go live.
  *
  * `alt` is required precisely because these slots must never ship without it.
  */
@@ -62,54 +62,23 @@ export function PhotoSlot({
       role="img"
       aria-label={alt}
       className={cn(
-        "rounded-panel border-navy-200/60 bg-navy-50 relative flex items-center justify-center overflow-hidden border",
+        "rounded-panel border-navy-800/14 relative flex flex-col items-center justify-center gap-4 overflow-hidden border bg-white px-4 text-center",
         ratio,
         className,
       )}
     >
-      {/* Subtle brand motif so the empty slot still reads as premium. */}
-      <svg
-        aria-hidden
-        viewBox="0 0 200 150"
-        className="absolute inset-0 h-full w-full opacity-[0.5]"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          <pattern
-            id="ps-grid"
-            width="20"
-            height="20"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M20 0H0V20"
-              fill="none"
-              stroke="#c6d5e9"
-              strokeWidth="0.5"
-            />
-          </pattern>
-        </defs>
-        <rect width="200" height="150" fill="url(#ps-grid)" />
-      </svg>
-      <div className="relative flex flex-col items-center gap-2 px-4 text-center">
-        <svg
-          aria-hidden
-          viewBox="0 0 24 24"
-          className="text-navy-300 h-8 w-8"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path d="m21 15-5-5L5 21" />
-        </svg>
-        {label ? (
-          <span className="text-navy-400 font-sans text-xs font-medium">
-            {label}
-          </span>
-        ) : null}
-      </div>
+      <Image
+        src="/images/open-horizons-symbol-full.svg"
+        alt=""
+        width={280}
+        height={280}
+        className="h-[120px] w-[120px] opacity-70"
+      />
+      {label ? (
+        <span className="text-ink-500 font-sans text-xs font-medium">
+          {label}
+        </span>
+      ) : null}
     </div>
   );
 }

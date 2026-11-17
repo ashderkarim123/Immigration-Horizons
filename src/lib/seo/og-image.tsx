@@ -14,11 +14,11 @@ import { OG_SIZE } from "@/lib/seo/og";
  * colour, not font-weight.
  */
 
-const NAVY = "#152c54";
-const NAVY_DEEP = "#0f1f3d";
-const GOLD = "#c9992e";
-const GOLD_LIGHT = "#e4c46f";
-const NAVY_200 = "#c6d5e9";
+const NAVY = "#164b3b";
+const NAVY_DEEP = "#10372b";
+const GOLD = "#c9774f";
+const GOLD_LIGHT = "#e9c6b5";
+const NAVY_200 = "#d3e0d9";
 
 export function renderOgImage(): ImageResponse {
   return new ImageResponse(

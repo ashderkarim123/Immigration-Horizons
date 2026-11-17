@@ -1,91 +1,100 @@
 @import "tailwindcss";
 
 /*
-  Immigration Horizons — Global Design System
+  Immigration Horizons — Open Horizons design system
   ------------------------------------------------------------------
-  Light-only by design. This is a trust-led professional brand; an
-  auto-inverting dark theme would undermine the navy/gold identity,
-  so the scaffold's prefers-color-scheme switch is intentionally gone.
+  Light-only by design. The palette is forest / terracotta / ivory / sage
+  (docs/revamp/design/02-design-system.md). The ramp *names* below are the
+  ones the codebase has always used: `navy-*` is the forest ramp, `gold-*`
+  is the terracotta ramp and `ink-*` is the warm ink ramp, so no class
+  names had to change when the brand did. Rename them only as a dedicated
+  mechanical pass.
 */
 
 @theme {
-  /* ---------- Brand: Navy (primary) ---------- */
-  --color-navy-50: #f3f6fb;
-  --color-navy-100: #e4ebf5;
-  --color-navy-200: #c6d5e9;
-  --color-navy-300: #9cb2d3;
-  --color-navy-400: #6a88b5;
-  --color-navy-500: #446498;
-  --color-navy-600: #2e4c7b;
-  --color-navy-700: #223a61;
-  --color-navy-800: #152c54; /* brand navy */
-  --color-navy-900: #0f1f3d;
-  --color-navy-950: #08132a;
+  /* ---------- Brand: Forest (primary; the `navy-*` ramp) ----------
+     800 is `forest`, 950 is `forest-deep` (dark sections, footer),
+     50 is `forest-tint` (badge and icon backgrounds, nav hover). */
+  --color-navy-50: #e7eee9;
+  --color-navy-100: #d3e0d9;
+  --color-navy-200: #b2c8bc;
+  --color-navy-300: #86a997;
+  --color-navy-400: #5b8a74;
+  --color-navy-500: #3a6d57;
+  --color-navy-600: #265a47;
+  --color-navy-700: #1d5141;
+  --color-navy-800: #164b3b; /* forest */
+  --color-navy-900: #123f31;
+  --color-navy-950: #10372b; /* forest-deep */
 
-  /* ---------- Brand: Gold (secondary) ----------
-     500 is the brand gold. It fails AA as text on white (~2.6:1), so it
-     is reserved for fills, rules, and ornament. Gold text on light
-     surfaces must use 700+; on navy surfaces use 300/400. */
-  --color-gold-50: #fbf7ec;
-  --color-gold-100: #f7ecd3;
-  --color-gold-200: #efdba6;
-  --color-gold-300: #e4c46f;
-  --color-gold-400: #d6ac46;
-  --color-gold-500: #c9992e; /* brand gold */
-  --color-gold-600: #a67c1e;
-  --color-gold-700: #83601a;
-  --color-gold-800: #674c1b;
-  --color-gold-900: #563f1b;
+  /* ---------- Accent: Terracotta (the `gold-*` ramp) ----------
+     500 is `terracotta`: 3.0:1 on ivory, so it is for numerals at 2rem+,
+     stars, rules and ornament only — never body text and never a button
+     fill that carries text. Warm *text* on light surfaces uses 700
+     (`clay`, 5.4:1); labels on deep forest use 200 (`terracotta-light`). */
+  --color-gold-50: #f3e3d8; /* terracotta-tint */
+  --color-gold-100: #efd6c6;
+  --color-gold-200: #e9c6b5; /* terracotta-light */
+  --color-gold-300: #e0a98c;
+  --color-gold-400: #d58f6b;
+  --color-gold-500: #c9774f; /* terracotta */
+  --color-gold-600: #b3603a;
+  --color-gold-700: #9c4c2b; /* clay */
+  --color-gold-800: #7e3d23;
+  --color-gold-900: #63301c;
 
-  /* ---------- Neutrals ---------- */
-  --color-ink-50: #f7f8fa;
-  --color-ink-100: #eff1f5;
-  --color-ink-200: #e1e5ec;
-  --color-ink-300: #c9d0db;
-  --color-ink-400: #98a2b3;
-  --color-ink-500: #6b7688;
-  --color-ink-600: #4d5766;
-  --color-ink-700: #38414e;
-  --color-ink-800: #252c36;
-  --color-ink-900: #141922;
+  /* ---------- Neutrals: warm ink ----------
+     50 is `ivory` (page background), 100 is `sage` (alternating sections),
+     200 is `sage-deep`, 600 is `ink-muted`, 700 is `ink` (body text). */
+  --color-ink-50: #f6f2e9;
+  --color-ink-100: #e1e8e1;
+  --color-ink-200: #cdd9d0;
+  --color-ink-300: #aebdb3;
+  --color-ink-400: #86978d;
+  --color-ink-500: #57685f;
+  --color-ink-600: #4c5e56;
+  --color-ink-700: #20352e;
+  --color-ink-800: #1a2b25;
+  --color-ink-900: #121e1a;
 
   /* ---------- Typography ---------- */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-display: var(--font-dm-serif), Georgia, ui-serif, serif;
 
-  /* Display scale — used for hero and section headings.
-     Paired line-heights and tracking keep large type optically tight. */
-  --text-display-2xl: 4.5rem;
+  /* Display scale. DM Serif Display has one weight, so hierarchy is size
+     and colour; tracking stays near zero because the face is already
+     tight. */
+  --text-display-2xl: 4rem;
   --text-display-2xl--line-height: 1.04;
-  --text-display-2xl--letter-spacing: -0.022em;
+  --text-display-2xl--letter-spacing: -0.005em;
   --text-display-xl: 3.5rem;
-  --text-display-xl--line-height: 1.07;
-  --text-display-xl--letter-spacing: -0.02em;
+  --text-display-xl--line-height: 1.06;
+  --text-display-xl--letter-spacing: -0.005em;
   --text-display-lg: 2.75rem;
-  --text-display-lg--line-height: 1.12;
-  --text-display-lg--letter-spacing: -0.018em;
-  --text-display-md: 2.125rem;
-  --text-display-md--line-height: 1.18;
-  --text-display-md--letter-spacing: -0.014em;
-  --text-display-sm: 1.625rem;
-  --text-display-sm--line-height: 1.25;
-  --text-display-sm--letter-spacing: -0.01em;
+  --text-display-lg--line-height: 1.08;
+  --text-display-lg--letter-spacing: -0.005em;
+  --text-display-md: 2.25rem;
+  --text-display-md--line-height: 1.12;
+  --text-display-md--letter-spacing: -0.005em;
+  --text-display-sm: 1.5rem;
+  --text-display-sm--line-height: 1.22;
+  --text-display-sm--letter-spacing: 0;
 
   /* Body scale */
-  --text-lead: 1.1875rem;
-  --text-lead--line-height: 1.68;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.6;
 
   /* ---------- Radii ---------- */
   --radius-card: 1rem;
   --radius-panel: 1.5rem;
 
-  /* ---------- Elevation — navy-tinted, deliberately soft ---------- */
-  --shadow-subtle: 0 1px 2px rgba(15, 31, 61, 0.04),
-    0 4px 12px rgba(15, 31, 61, 0.05);
-  --shadow-card: 0 2px 4px rgba(15, 31, 61, 0.04),
-    0 12px 28px rgba(15, 31, 61, 0.07);
-  --shadow-lifted: 0 4px 8px rgba(15, 31, 61, 0.05),
-    0 24px 48px rgba(15, 31, 61, 0.11);
+  /* ---------- Elevation — forest-tinted, deliberately soft ---------- */
+  --shadow-subtle: 0 1px 2px rgba(16, 55, 43, 0.04),
+    0 4px 12px rgba(16, 55, 43, 0.05);
+  --shadow-card: 0 1px 2px rgba(16, 55, 43, 0.04),
+    0 10px 28px rgba(16, 55, 43, 0.07);
+  --shadow-lifted: 0 4px 10px rgba(16, 55, 43, 0.06),
+    0 24px 48px rgba(16, 55, 43, 0.12);
 
   /* ---------- Motion ----------
      Decorative animations are CSS-only so the hero illustration costs no
@@ -95,22 +104,6 @@
 
   --animate-float-slow: float-slow 7s ease-in-out infinite;
   --animate-pulse-dot: pulse-dot 3.2s ease-in-out infinite;
-
-  /* Sweeping the ellipse radius is what sells rotation on a wireframe
-     globe — each meridian is offset in time so the set reads as one
-     turning sphere. `rx` is an animatable SVG presentation attribute, so
-     this needs no JavaScript. */
-  @keyframes meridian-sweep {
-    0%,
-    100% {
-      rx: 68;
-      opacity: 0.5;
-    }
-    50% {
-      rx: 3;
-      opacity: 0.22;
-    }
-  }
 
   @keyframes float-slow {
     0%,
@@ -138,18 +131,20 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    /* Offset anchor targets so a sticky header never covers a heading.
-       The sticky header is 7.25rem at sm and up (2.25rem utility strip +
-       5rem logo row); this clears it with a little breathing room. Below
-       sm the strip is hidden, so the extra gap is slack, not overlap. */
-    scroll-padding-top: 7.5rem;
+    /* Offset anchor targets so the sticky header (84px) never covers a
+       heading. */
+    scroll-padding-top: 6.5rem;
     -webkit-text-size-adjust: 100%;
+    /* DM Serif Display ships one weight. Without this, every `font-semibold`
+       heading would get a faux-bold the browser fabricates. */
+    font-synthesis: none;
   }
 
   body {
-    background-color: var(--color-white);
+    background-color: var(--color-ink-50);
     color: var(--color-ink-700);
     font-family: var(--font-sans);
+    line-height: 1.65;
     text-rendering: optimizeLegibility;
   }
 
@@ -164,15 +159,16 @@
   h4 {
     color: var(--color-navy-800);
     font-family: var(--font-display);
+    font-weight: 400;
     text-wrap: balance;
   }
 
   /* A single, consistent focus ring across every interactive element.
-     Visible on both light and navy surfaces. */
+     Clay reads on ivory, white and deep forest alike. */
   :focus-visible {
-    outline: 2px solid var(--color-gold-500);
+    outline: 3px solid var(--color-gold-700);
     outline-offset: 3px;
-    border-radius: 2px;
+    border-radius: 4px;
   }
 
   ::selection {
@@ -188,9 +184,9 @@
     position: relative;
     isolation: isolate;
     background:
-      radial-gradient(circle at 8% 4%, rgba(201, 153, 46, 0.09), transparent 22rem),
-      radial-gradient(circle at 94% 8%, rgba(68, 100, 152, 0.1), transparent 26rem),
-      linear-gradient(180deg, #f8faff 0%, #f5f7fb 45%, #f8f9fc 100%);
+      radial-gradient(circle at 8% 4%, rgba(201, 119, 79, 0.09), transparent 22rem),
+      radial-gradient(circle at 94% 8%, rgba(22, 75, 59, 0.1), transparent 26rem),
+      linear-gradient(180deg, #f8f9f7 0%, #f4f6f3 45%, #f8f9f7 100%);
   }
 
   .ih-app-canvas::before {
@@ -200,8 +196,8 @@
     z-index: -1;
     pointer-events: none;
     opacity: 0.28;
-    background-image: linear-gradient(rgba(21, 44, 84, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(21, 44, 84, 0.035) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(22, 75, 59, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 75, 59, 0.035) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: linear-gradient(to bottom, black, transparent 32rem);
   }

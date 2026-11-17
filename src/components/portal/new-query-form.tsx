@@ -123,7 +123,7 @@ export function NewQueryForm({
         <TextArea id="description" name="description" required maxLength={5000} />
       </Field>
 
-      <Button type="submit" variant="gold" size="lg" disabled={pending} className="w-full sm:w-auto">
+      <Button type="submit" variant="primary" size="lg" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Submitting…" : "Submit"}
       </Button>
     </form>

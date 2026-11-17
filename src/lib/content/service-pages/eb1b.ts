@@ -138,7 +138,7 @@ export const eb1b: ServicePageContent = {
           heading: "Qualifying private-employer positions",
           paragraphs: [
             "A comparable research position with a private employer can qualify, but the regulation imposes additional conditions: the employer must employ at least three full-time researchers, and must have documented accomplishments in the academic field.",
-            "Both conditions require evidence from the employer — oorganizational documentation of the research staff, and documentation of the department's or company's research accomplishments. This is not something the applicant can supply alone.",
+            "Both conditions require evidence from the employer — organizational documentation of the research staff, and documentation of the department's or company's research accomplishments. This is not something the applicant can supply alone.",
           ],
         },
         {

@@ -84,7 +84,7 @@ export function LoginForm() {
 
       <Button
         type="submit"
-        variant="gold"
+        variant="primary"
         size="lg"
         disabled={!ready || pending}
         className="w-full"

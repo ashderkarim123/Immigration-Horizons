@@ -32,39 +32,38 @@ export function CaseOutcomes() {
     .filter((testimonial) => testimonial !== undefined);
 
   return (
-    <Section tone="navy" space="spacious">
+    <Section tone="tint">
       <SectionHeading
         eyebrow="Why clients trust us"
         title="Outcomes you can check yourself"
         description="Each of these is a real client message from our marketplace profile, linked so you can verify it. We do not publish case studies that cannot be traced back to a source."
-        className="[&_p]:text-navy-200 [&_span]:text-gold-300"
       />
 
-      <RevealGroup className="mt-16 grid gap-6 md:grid-cols-2">
+      <RevealGroup className="mt-14 grid gap-6 md:grid-cols-2">
         {outcomes.map((outcome) => (
           <RevealItem key={outcome.id}>
-            <figure className="rounded-card flex h-full flex-col gap-4 border border-white/12 bg-white/[0.06] p-7">
+            <figure className="rounded-card border-navy-800/14 shadow-card flex h-full flex-col gap-4 border bg-white p-7">
               <div className="flex items-center gap-3">
                 <Badge tone="gold">{outcome.service}</Badge>
-                <span className="text-navy-300 font-sans text-xs">
+                <span className="text-ink-500 font-sans text-xs">
                   {outcome.date}
                 </span>
               </div>
 
-              <h3 className="font-display text-lg font-semibold text-white text-pretty">
+              <h3 className="text-xl text-pretty">
                 {outcomeHeadlines[outcome.id]}
               </h3>
 
-              <blockquote className="text-navy-200 flex-1 text-[0.9375rem] leading-relaxed text-pretty">
+              <blockquote className="text-ink-700 flex-1 text-[0.9375rem] leading-relaxed text-pretty">
                 &ldquo;{outcome.text}&rdquo;
               </blockquote>
 
-              <figcaption className="flex items-end justify-between gap-3 border-t border-white/12 pt-4">
+              <figcaption className="border-navy-800/14 flex items-end justify-between gap-3 border-t pt-4">
                 <div>
-                  <p className="font-sans text-sm font-semibold text-white">
+                  <p className="text-navy-800 font-sans text-sm font-semibold">
                     {outcome.name}
                   </p>
-                  <p className="text-navy-300 font-sans text-xs">
+                  <p className="text-ink-500 font-sans text-xs">
                     {outcome.location}
                   </p>
                 </div>
@@ -72,9 +71,9 @@ export function CaseOutcomes() {
                   href={outcome.verifyUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gold-300 inline-flex shrink-0 items-center gap-1.5 font-sans text-xs font-semibold hover:text-gold-200"
+                  className="text-navy-800 inline-flex shrink-0 items-center gap-1.5 font-sans text-xs font-semibold underline-offset-4 hover:underline"
                 >
-                  Verify
+                  Verify on {outcome.source}
                   <ExternalLink size={12} aria-hidden />
                 </a>
               </figcaption>

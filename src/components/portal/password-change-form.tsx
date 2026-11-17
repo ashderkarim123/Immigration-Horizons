@@ -112,7 +112,7 @@ export function PasswordChangeForm({ minLength }: { minLength: number }) {
       </div>
 
       <div>
-        <Button type="submit" variant="gold" size="sm" disabled={pending}>
+        <Button type="submit" variant="primary" size="sm" disabled={pending}>
           {pending ? "Changing…" : "Change password"}
         </Button>
       </div>

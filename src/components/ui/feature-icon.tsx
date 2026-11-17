@@ -23,6 +23,7 @@ const icons = {
   badge: BadgeCheck,
 } as const satisfies Record<IconName, unknown>;
 
+/** 44px tile, Lucide at 1.75 stroke. The only icon family on the site. */
 export function FeatureIcon({
   name,
   tone = "navy",
@@ -34,15 +35,15 @@ export function FeatureIcon({
 }) {
   const Icon = icons[name];
   const tones = {
-    navy: "bg-navy-50 text-navy-700",
+    navy: "bg-navy-50 text-navy-800",
     gold: "bg-gold-50 text-gold-700",
-    inverse: "bg-white/10 text-gold-300",
+    inverse: "bg-white/10 text-gold-500",
   } as const;
 
   return (
     <span
       className={cn(
-        "inline-flex h-12 w-12 items-center justify-center rounded-xl",
+        "inline-flex h-11 w-11 items-center justify-center rounded-xl",
         tones[tone],
         className,
       )}

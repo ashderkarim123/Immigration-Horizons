@@ -158,7 +158,7 @@ export const rfeResponse: ServicePageContent = {
         },
         {
           title: "Exhibit assembly",
-          body: "Evidence is oorganized and indexed so each response point maps to the document that supports it.",
+          body: "Evidence is organized and indexed so each response point maps to the document that supports it.",
         },
         {
           title: "Review and submission preparation",

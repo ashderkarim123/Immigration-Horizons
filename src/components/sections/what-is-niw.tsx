@@ -34,7 +34,7 @@ const dhanasarProngs = [
 
 export function WhatIsNiw() {
   return (
-    <Section tone="tint">
+    <Section>
       <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
         <Reveal>
           <SectionHeading
@@ -79,18 +79,15 @@ export function WhatIsNiw() {
         <RevealGroup className="flex flex-col gap-4">
           {dhanasarProngs.map((prong) => (
             <RevealItem key={prong.label}>
-              <div className="rounded-card border-ink-200 flex gap-5 border bg-white p-6">
-                <span
-                  aria-hidden
-                  className="bg-navy-800 font-display inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
-                >
+              <div className="rounded-card border-navy-800/14 shadow-card flex gap-5 border bg-white p-6">
+                <span aria-hidden className="font-display text-gold-500 w-8 shrink-0 text-3xl leading-none">
                   {prong.number}
                 </span>
                 <div className="flex flex-col gap-2">
                   <span className="text-gold-700 font-sans text-[0.6875rem] font-bold tracking-[0.14em] uppercase">
                     {prong.label}
                   </span>
-                  <h3 className="font-display text-navy-800 text-lg font-semibold">
+                  <h3 className="text-xl">
                     {prong.title}
                   </h3>
                   <p className="text-ink-600 text-[0.9375rem] leading-relaxed text-pretty">

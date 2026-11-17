@@ -1,7 +1,7 @@
 # Design Gate D0 — competitor-led design direction and handoff
 
-**Status:** complete as a design package; **awaiting owner approval** before any Track B (implementation) phase changes
-the public UI. Produced 2026-11-16 on branch `revamp/d0-design-gate` (branched from `revamp/1-catalogue`).
+**Status:** approved by the owner on 2026-11-17 (without the founder section) and implemented in Phase 3 — see
+`../phase-3-report.md`. Produced 2026-11-16 on branch `revamp/d0-design-gate` (branched from `revamp/1-catalogue`).
 
 Nothing in this folder is served by the website. The prototypes are static HTML opened from disk; they are not routes.
 

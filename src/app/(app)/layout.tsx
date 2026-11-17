@@ -105,10 +105,10 @@ export default async function AppLayout({
               name here — this is not a decorative logo any more. */}
           <span className="flex h-14 w-[6.25rem] items-center justify-center overflow-hidden rounded-xl bg-white px-2.5 shadow-lg">
             <Image
-              src="/images/logo-header.png"
+              src="/images/open-horizons-horizontal-full.svg"
               alt={site.name}
-              width={551}
-              height={320}
+              width={1000}
+              height={280}
               priority
               className="h-full w-full object-contain"
             />

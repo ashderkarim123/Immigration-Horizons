@@ -4,21 +4,25 @@ import { cn } from "@/lib/utils";
 
 const BASE = [
   "inline-flex items-center justify-center gap-2 rounded-full font-sans font-semibold",
-  "transition-[background-color,color,box-shadow,transform] duration-200 ease-(--ease-out-soft)",
+  "transition-[background-color,color,box-shadow,transform,border-color] duration-200 ease-(--ease-out-soft)",
   "disabled:pointer-events-none disabled:opacity-55",
   // Lift is decorative only, so reduced-motion users simply don't get it.
-  "motion-safe:hover:-translate-y-0.5",
+  "motion-safe:hover:-translate-y-px",
 ];
 
+/**
+ * Terracotta is never a button fill: white on it is 3.4:1. Primary CTAs are
+ * forest on light surfaces and white on deep forest (`onDark`).
+ */
 const VARIANTS = {
-  /** Default action. Navy on light surfaces. */
-  primary: "bg-navy-800 text-white shadow-subtle hover:bg-navy-900 hover:shadow-card",
-  /** High-intent conversion CTA. Navy text on gold clears AA comfortably. */
-  gold: "bg-gold-500 text-navy-900 shadow-subtle hover:bg-gold-400 hover:shadow-card",
+  /** Default action on light surfaces. */
+  primary: "bg-navy-800 text-white shadow-card hover:bg-navy-950 hover:shadow-lifted",
+  /** Primary action on deep-forest surfaces. */
+  onDark: "bg-white text-navy-800 hover:bg-ink-50",
   /** Secondary action on light surfaces. */
-  outline: "border border-ink-300 bg-white text-navy-800 hover:border-navy-300 hover:bg-navy-50",
-  /** Secondary action on navy surfaces. */
-  inverse: "border border-white/30 text-white hover:border-white/60 hover:bg-white/10",
+  outline: "border border-navy-800/28 text-navy-800 hover:border-navy-800 hover:bg-navy-50",
+  /** Secondary action on deep-forest surfaces. */
+  inverse: "border border-white/35 text-white hover:border-white hover:bg-white/8",
   /** Tertiary / inline action. */
   ghost: "text-navy-800 hover:bg-navy-50",
 };

@@ -38,7 +38,7 @@ export default async function PortalQueriesPage() {
           { name: "Questions", href: "/portal/queries" },
         ]}
         actions={
-          <Button href="/portal/queries/new" variant="gold" size="sm">
+          <Button href="/portal/queries/new" variant="primary" size="sm">
             Ask a question
           </Button>
         }
@@ -54,7 +54,7 @@ export default async function PortalQueriesPage() {
             title="No questions yet"
             body="Start a question here and keep every reply together in your portal."
             action={
-              <Button href="/portal/queries/new" variant="gold" size="sm">
+              <Button href="/portal/queries/new" variant="primary" size="sm">
                 Ask a question
               </Button>
             }

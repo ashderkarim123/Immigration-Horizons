@@ -3,10 +3,9 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { CtaBanner } from "@/components/sections/cta-banner";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd, breadcrumbSchema, faqSchema } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/container";
-import { Eyebrow } from "@/components/ui/section";
 import { homepageFaqs, type Faq } from "@/lib/content/faqs";
 import { eb2NiwFaqs } from "@/lib/content/eb2-niw";
 import { getServicePage } from "@/lib/content/service-pages";
@@ -79,41 +78,27 @@ export default function FaqsPage() {
     <>
       <JsonLd data={[breadcrumbSchema(trail), faqSchema(allFaqs)]} />
 
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-16 sm:py-20">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="max-w-3xl">
-            <Eyebrow className="text-gold-300">FAQs</Eyebrow>
-            <h1 className="text-display-lg sm:text-display-xl mt-4 font-semibold text-white">
-              Frequently asked questions
-            </h1>
-            <p className="text-lead text-navy-200 mt-5 text-pretty">
-              Straight answers on eligibility, evidence, scope, and what we can
-              and cannot do. For depth on any category, follow the link at the
-              top of each section.
-            </p>
-          </div>
-
-          <nav aria-label="FAQ topics" className="mt-10">
-            <ul className="flex flex-wrap gap-2.5">
-              {groups.map((group) => (
-                <li key={group.id}>
-                  <a
-                    href={`#${group.id}`}
-                    className="inline-flex rounded-full border border-white/20 px-4 py-1.5 font-sans text-xs font-semibold text-white transition-colors duration-200 hover:border-white/50 hover:bg-white/10"
-                  >
-                    {group.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </Container>
-      </section>
+      <PageHero
+        trail={trail}
+        eyebrow="FAQs"
+        title="Frequently asked questions"
+        description="Straight answers on eligibility, evidence, scope, and what we can and cannot do. For depth on any category, follow the link at the top of each section."
+      >
+        <nav aria-label="FAQ topics">
+          <ul className="flex flex-wrap gap-2.5">
+            {groups.map((group) => (
+              <li key={group.id}>
+                <a
+                  href={`#${group.id}`}
+                  className="border-navy-800/28 text-navy-800 hover:border-navy-800 hover:bg-navy-50 inline-flex rounded-full border bg-white px-4 py-1.5 font-sans text-xs font-semibold transition-colors duration-200"
+                >
+                  {group.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </PageHero>
 
       <Container width="default" className="py-16 sm:py-20">
         <div className="flex flex-col gap-14">

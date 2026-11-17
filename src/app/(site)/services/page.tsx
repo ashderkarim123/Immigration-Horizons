@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHero } from "@/components/layout/page-hero";
 import { CtaBanner } from "@/components/sections/cta-banner";
 import { Faqs } from "@/components/sections/faqs";
 import { CategoryComparison } from "@/components/visuals/category-comparison";
@@ -9,8 +10,7 @@ import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { baseOpenGraph } from "@/lib/seo/og";
 import { Badge, Card, CardBody, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
-import { Eyebrow, Section, SectionHeading } from "@/components/ui/section";
+import { Section, SectionHeading } from "@/components/ui/section";
 import { RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { SnippetAnswer } from "@/components/ui/snippet-answer";
 import { homepageFaqs } from "@/lib/content/faqs";
@@ -34,43 +34,32 @@ const trail = [
   { name: "Services", path: "/services" },
 ];
 
+const responseSlugs = new Set(["rfe-response", "noid-response"]);
+
+/** A router, not a landing page: three tiered sections matching the mega menu, core first and larger. */
 export default function ServicesPage() {
   return (
     <>
       <JsonLd data={breadcrumbSchema(trail)} />
 
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-14 sm:py-20">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="flex max-w-3xl flex-col gap-5">
-            <Eyebrow className="text-gold-300">What we do</Eyebrow>
-            <h1 className="text-display-lg sm:text-display-xl font-semibold text-white">
-              Immigration petition preparation services
-            </h1>
-            <p className="text-lead text-navy-200 text-pretty">
-              {serviceIndexCopy.intro}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-3">
-              <Button href="/consultation" variant="gold" size="lg">
-                Get a free eligibility assessment
-              </Button>
-              <Button href="#support-services" variant="inverse" size="lg">
-                Browse single deliverables
-              </Button>
-            </div>
-          </div>
-        </Container>
-      </section>
+      <PageHero
+        trail={trail}
+        eyebrow="What we do"
+        title="What we prepare"
+        description={serviceIndexCopy.intro}
+      >
+        <div className="flex flex-wrap gap-3">
+          <Button href="/consultation" variant="primary" size="lg">
+            Book a free consultation
+          </Button>
+          <Button href="#support-services" variant="outline" size="lg">
+            Browse single deliverables
+          </Button>
+        </div>
+      </PageHero>
 
-      <Section id="case-categories" className="scroll-mt-28">
-        <SectionHeading
-          eyebrow="Core services"
-          title={serviceIndexCopy.petitionsHeading}
-        />
+      <Section id="case-categories">
+        <SectionHeading eyebrow="Green card petitions" title={serviceIndexCopy.petitionsHeading} />
 
         <div className="mx-auto mt-6 max-w-2xl">
           <SnippetAnswer>
@@ -81,23 +70,19 @@ export default function ServicesPage() {
           </SnippetAnswer>
         </div>
 
-        <RevealGroup className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <RevealGroup className="mt-14 grid gap-6 md:grid-cols-2">
           {caseCategories.map((category) => (
             <RevealItem key={category.slug}>
-              <Card
-                href={`/services/${category.slug}`}
-                className="group flex h-full flex-col gap-4"
-              >
-                <Badge>{category.tagline}</Badge>
-                <CardTitle>{category.name}</CardTitle>
-                <CardBody className="text-sm">{category.description}</CardBody>
-                <span className="text-navy-700 group-hover:text-navy-900 mt-auto inline-flex items-center gap-1.5 pt-2 font-sans text-sm font-semibold">
+              <Card href={`/services/${category.slug}`} className="group flex h-full flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <CardTitle>{category.name}</CardTitle>
+                  <Badge>Immigrant petition</Badge>
+                </div>
+                <p className="text-gold-700 font-sans text-sm font-semibold">{category.tagline}</p>
+                <CardBody className="text-[0.9375rem]">{category.description}</CardBody>
+                <span className="text-navy-800 mt-auto inline-flex items-center gap-1.5 pt-2 font-sans text-sm font-semibold">
                   Full guide
-                  <ArrowRight
-                    size={15}
-                    aria-hidden
-                    className="transition-transform duration-200 ease-(--ease-out-soft) motion-safe:group-hover:translate-x-1"
-                  />
+                  <ArrowRight size={15} aria-hidden className="transition-transform duration-200 ease-(--ease-out-soft) motion-safe:group-hover:translate-x-1" />
                 </span>
               </Card>
             </RevealItem>
@@ -107,55 +92,52 @@ export default function ServicesPage() {
 
       <CategoryComparison />
 
-      <Section id="support-services" className="scroll-mt-28">
+      <Section id="support-services" tone="tint">
         <SectionHeading
-          eyebrow="Single deliverables"
+          eyebrow="RFE, NOID & support"
           title={serviceIndexCopy.supportHeading}
-          description="You do not have to engage a full petition package. Each deliverable below can be prepared on its own — including RFE responses for petitions originally filed by someone else."
+          description="You do not have to engage a full petition package. Each deliverable below can be prepared on its own — including RFE and NOID responses for petitions originally filed by someone else."
         />
 
         <RevealGroup className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {supportServices.map((service) => (
             <RevealItem key={service.slug}>
-              <Card
-                href={`/services/${service.slug}`}
-                className="group flex h-full flex-col gap-3"
-              >
-                <CardTitle className="text-xl">{service.name}</CardTitle>
+              <Card href={`/services/${service.slug}`} className="group flex h-full flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <CardTitle className="text-xl">{service.name}</CardTitle>
+                  <Badge tone={responseSlugs.has(service.slug) ? "gold" : "neutral"}>
+                    {responseSlugs.has(service.slug) ? "Response service" : "Single deliverable"}
+                  </Badge>
+                </div>
                 <CardBody className="text-sm">{service.description}</CardBody>
-                <span className="text-navy-700 group-hover:text-navy-900 mt-auto inline-flex items-center gap-1.5 pt-2 font-sans text-sm font-semibold">
+                <span className="text-navy-800 mt-auto inline-flex items-center gap-1.5 pt-2 font-sans text-sm font-semibold">
                   Learn more
-                  <ArrowRight
-                    size={15}
-                    aria-hidden
-                    className="transition-transform duration-200 ease-(--ease-out-soft) motion-safe:group-hover:translate-x-1"
-                  />
+                  <ArrowRight size={15} aria-hidden className="transition-transform duration-200 ease-(--ease-out-soft) motion-safe:group-hover:translate-x-1" />
                 </span>
               </Card>
             </RevealItem>
           ))}
         </RevealGroup>
-
-        <div className="mt-12 text-center">
-          <Button href="/consultation" variant="primary" size="lg">
-            Talk to an immigration specialist
-          </Button>
-        </div>
       </Section>
 
-      <Section id="other-visas" tone="tint" space="compact" className="scroll-mt-28">
-        <SectionHeading title={serviceIndexCopy.otherHeading} description={serviceIndexCopy.otherDescription} />
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Section id="other-visas" tone="ivory" space="compact">
+        <SectionHeading as="h2" title={serviceIndexCopy.otherHeading} description={serviceIndexCopy.otherDescription} align="left" />
+        <ul className="mt-8 flex flex-wrap gap-2.5">
           {otherVisas.map((visa) => (
-            <Card key={visa.slug} href={`/services/${visa.slug}`} className="flex flex-col gap-2">
-              <CardTitle className="text-lg">{visa.name}</CardTitle>
-              <CardBody className="text-sm">{visa.tagline}</CardBody>
-            </Card>
+            <li key={visa.slug}>
+              <Link
+                href={`/services/${visa.slug}`}
+                className="border-navy-800/28 text-navy-800 hover:border-navy-800 hover:bg-navy-50 inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2.5 font-sans text-[0.9375rem] font-medium transition-colors duration-200"
+              >
+                {visa.name}
+                <span className="text-ink-600 font-normal">{visa.tagline}</span>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       </Section>
 
-      <Faqs faqs={homepageFaqs.slice(0, 8)} />
+      <Faqs faqs={homepageFaqs.slice(0, 8)} tone="white" />
       <CtaBanner />
     </>
   );

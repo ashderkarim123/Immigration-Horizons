@@ -241,7 +241,7 @@ export function SmartFormEditor({ initial }: { initial: ClientFormDto }) {
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           <span>{banner}</span>
           {saveState === "conflict" ? (
-            <Button type="button" size="sm" variant="gold" onClick={() => void reload()}>
+            <Button type="button" size="sm" variant="primary" onClick={() => void reload()}>
               Reload latest version
             </Button>
           ) : null}
@@ -267,7 +267,7 @@ export function SmartFormEditor({ initial }: { initial: ClientFormDto }) {
 
         {form.actions.canSubmit ? (
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" variant="gold" disabled={!editable || submitting}>
+            <Button type="submit" variant="primary" disabled={!editable || submitting}>
               {submitting ? "Submitting…" : form.status === "needs_changes" ? "Resubmit for review" : "Submit for review"}
             </Button>
             {saveState === "error" ? (

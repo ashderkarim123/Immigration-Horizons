@@ -1,44 +1,30 @@
-import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
+import { RatingBadge } from "@/components/ui/rating-badge";
+import { proofFacts } from "@/lib/content/home";
+import { ratings } from "@/lib/content/site";
 
 /**
- * Keyword-rich capability strip directly beneath the hero. Each item is also
- * an internal link, so the bar does double duty: it tells a visitor what we
- * do in their own search language, and passes authority to the pages that
- * target those terms.
+ * Sage proof strip under the hero: the real marketplace rating, linked and
+ * dated, beside three facts. A platform without a figure renders nothing.
  */
-const capabilities = [
-  { label: "Employment-Based Immigration", href: "/services" },
-  { label: "Petition Preparation", href: "/services/eb2-niw" },
-  { label: "USCIS Documentation", href: "/services/evidence-packaging" },
-  { label: "Evidence Strategy", href: "/services/eb1a" },
-  { label: "RFE Support", href: "/services/rfe-response" },
-];
-
 export function TrustBar() {
   return (
-    <div className="border-ink-200 bg-ink-50 border-b">
-      <Container width="wide">
-        <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 py-5 sm:gap-x-6">
-          {capabilities.map((capability, index) => (
-            <li key={capability.href} className="flex items-center gap-3 sm:gap-6">
-              <Link
-                href={capability.href}
-                className="text-navy-800 hover:text-gold-700 font-sans text-[0.8125rem] font-semibold tracking-wide transition-colors duration-200"
-              >
-                {capability.label}
-              </Link>
-              {index < capabilities.length - 1 ? (
-                <span
-                  aria-hidden
-                  className="bg-gold-500/50 hidden h-1 w-1 rounded-full sm:block"
-                />
-              ) : null}
+    <section aria-label="Verified reviews" className="border-navy-800/14 bg-ink-100 border-y">
+      <Container width="wide" className="flex flex-wrap items-center gap-x-10 gap-y-4 py-5">
+        {Object.entries(ratings).map(([platform, rating]) => (
+          <RatingBadge key={platform} platform={platform} rating={rating} />
+        ))}
+        <ul className="text-ink-600 flex flex-wrap gap-x-7 gap-y-2 font-sans text-sm sm:ml-auto">
+          {proofFacts.map((fact) => (
+            <li key={fact} className="inline-flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-navy-800 shrink-0" aria-hidden />
+              {fact}
             </li>
           ))}
         </ul>
       </Container>
-    </div>
+    </section>
   );
 }

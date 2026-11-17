@@ -22,8 +22,8 @@ export const organizationSchema = {
   "@id": `${site.url}/#organization`,
   name: site.name,
   url: site.url,
-  logo: `${site.url}/images/logo-header.png`,
-  image: `${site.url}/images/logo-header.png`,
+  logo: `${site.url}/images/open-horizons-stacked-full.svg`,
+  image: `${site.url}/images/open-horizons-stacked-full.svg`,
   slogan: site.tagline,
   description:
     "Immigration consulting and paralegal services practice preparing EB-2 NIW, EB-1A, EB-1B, EB-1C and O-1 petitions, RFE responses, recommendation letters and business plans.",

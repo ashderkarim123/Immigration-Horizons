@@ -106,7 +106,7 @@ export default async function PortalDashboardPage() {
               body="Book a free consultation and we'll review your background and eligibility."
               icon={<Inbox size={28} aria-hidden />}
               action={
-                <Button href="/consultation" variant="gold" size="sm">
+                <Button href="/consultation" variant="primary" size="sm">
                   Book a free consultation
                 </Button>
               }

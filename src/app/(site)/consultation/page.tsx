@@ -3,10 +3,9 @@ import { CalendarCheck, Clock, MessageCircle, ShieldCheck } from "lucide-react";
 
 import { ConsultationForm } from "@/components/forms/consultation-form";
 import { sanitizeTracking } from "@/lib/tracking";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/container";
-import { Eyebrow } from "@/components/ui/section";
 import { allServices } from "@/lib/content/services";
 import { contact, stats, whatsappLink } from "@/lib/content/site";
 import { baseOpenGraph } from "@/lib/seo/og";
@@ -70,26 +69,12 @@ export default async function ConsultationPage({
     <>
       <JsonLd data={breadcrumbSchema(trail)} />
 
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-14 sm:py-16">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="max-w-2xl">
-            <Eyebrow className="text-gold-300">Free consultation</Eyebrow>
-            <h1 className="text-display-lg sm:text-display-xl mt-4 font-semibold text-white">
-              Tell us about your case
-            </h1>
-            <p className="text-lead text-navy-200 mt-5 text-pretty">
-              Share your background and goals. We&apos;ll tell you which
-              employment-based route your profile genuinely supports — and if
-              it&apos;s not ready yet, we&apos;ll tell you that too.
-            </p>
-          </div>
-        </Container>
-      </section>
+      <PageHero
+        trail={trail}
+        eyebrow="Free consultation"
+        title="Tell us about your case"
+        description="Share your background and goals. We'll tell you which employment-based route your profile genuinely supports — and if it's not ready yet, we'll tell you that too."
+      />
 
       <Container width="wide" className="py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.3fr_0.7fr] lg:gap-16">
@@ -123,8 +108,8 @@ export default async function ConsultationPage({
               ))}
             </ul>
 
-            <div className="rounded-card bg-navy-900 flex flex-col gap-3 p-6">
-              <p className="font-display text-base font-semibold text-white">
+            <div className="rounded-card bg-navy-950 flex flex-col gap-3 p-6">
+              <p className="font-display text-lg text-white">
                 Prefer to message us directly?
               </p>
               <p className="text-navy-200 text-sm leading-relaxed">

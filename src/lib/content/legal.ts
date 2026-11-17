@@ -74,7 +74,7 @@ export const termsContent: LegalBlock[] = [
   {
     heading: "We are not a law firm",
     paragraphs: [
-      "Immigration Horizons provides immigration consulting and paralegal services — petition preparation, drafting, research, evidence organisation, and document support. We are not attorneys, we do not provide legal advice, and we do not represent clients before USCIS or any court. Nothing on this site creates an attorney-client relationship, and nothing on it is legal advice.",
+      "Immigration Horizons provides immigration consulting and paralegal services — petition preparation, drafting, research, evidence organization, and document support. We are not attorneys, we do not provide legal advice, and we do not represent clients before USCIS or any court. Nothing on this site creates an attorney-client relationship, and nothing on it is legal advice.",
       "Where a matter requires legal representation or legal advice, you should consult a licensed immigration attorney.",
     ],
   },

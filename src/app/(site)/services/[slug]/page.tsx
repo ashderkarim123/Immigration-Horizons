@@ -27,6 +27,7 @@ import {
   type ServicePageContent,
 } from "@/lib/content/service-pages";
 import type { PageSection } from "@/lib/content/service-pages/types";
+import { publishedServices } from "@/lib/content/published-services";
 import { site } from "@/lib/content/site";
 
 type RouteProps = { params: Promise<{ slug: string }> };
@@ -137,6 +138,8 @@ export default async function ServiceDetailPage({ params }: RouteProps) {
 }
 
 function ServicePage({ page }: { page: ServicePageContent }) {
+  const tier = publishedServices.find((s) => s.slug === page.slug)?.tier ?? "core";
+  const hasPackage = page.sections.some((s) => s.kind !== "cta" && s.id === "package");
   const trail = [
     { name: "Home", path: "/" },
     { name: "Services", path: "/services" },
@@ -154,7 +157,8 @@ function ServicePage({ page }: { page: ServicePageContent }) {
         definition={page.definition}
         trail={trail}
         keyFacts={page.keyFacts}
-        ctaLabel={`Get a free ${page.name} assessment`}
+        badgeTone={tier === "secondary" ? "neutral" : hasPackage ? "navy" : "gold"}
+        secondaryCta={hasPackage ? { label: "What's in the package", href: "#package" } : undefined}
       />
 
       <Section space="compact">
@@ -171,18 +175,18 @@ function ServicePage({ page }: { page: ServicePageContent }) {
           </article>
 
           <aside className="order-first lg:order-last">
-            <div className="flex flex-col gap-6 lg:sticky lg:top-28">
+            <div className="flex flex-col gap-6 lg:sticky lg:top-27">
               <TableOfContents items={page.toc} />
 
-              <div className="rounded-card bg-navy-900 hidden flex-col gap-3 p-6 lg:flex">
-                <p className="font-display text-base font-semibold text-white">
+              <div className="rounded-card bg-ink-100 hidden flex-col gap-3 p-6 lg:flex">
+                <p className="font-display text-navy-800 text-lg">
                   Free {page.name} assessment
                 </p>
-                <p className="text-navy-200 text-[0.8125rem] leading-relaxed">
+                <p className="text-ink-600 text-[0.8125rem] leading-relaxed">
                   Tell us about your background and we will tell you honestly
                   whether your profile supports this route today.
                 </p>
-                <Button href="/consultation" variant="gold" size="sm" block>
+                <Button href="/consultation" variant="primary" size="sm" block>
                   Book a consultation
                 </Button>
               </div>
@@ -204,7 +208,7 @@ function ServicePage({ page }: { page: ServicePageContent }) {
       <RelatedServices exclude={page.slug} />
 
       <Container width="wide" className="pb-4">
-        <p className="text-ink-500 border-ink-200 border-t pt-8 text-xs leading-relaxed">
+        <p className="text-ink-600 border-navy-800/14 border-t pt-8 text-xs leading-relaxed">
           {page.scopeNote} {site.disclaimer}
         </p>
       </Container>

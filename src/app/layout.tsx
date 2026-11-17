@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Source_Serif_4 } from "next/font/google";
+import { DM_Serif_Display, Inter } from "next/font/google";
 
 import { site } from "@/lib/content/site";
 import "./globals.css";
@@ -24,10 +24,11 @@ const inter = Inter({
   display: "swap",
 });
 
-// Display headings: an institutional serif carries the authority and
-// trust an immigration practice needs, without reading as dated.
-const sourceSerif = Source_Serif_4({
-  variable: "--font-source-serif",
+// Display headings: the approved Open Horizons face. One weight, no italic;
+// `font-synthesis: none` in globals.css stops browsers faking the rest.
+const dmSerif = DM_Serif_Display({
+  variable: "--font-dm-serif",
+  weight: "400",
   subsets: ["latin"],
   display: "swap",
 });
@@ -42,15 +43,14 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/images/favicon.ico", sizes: "any" },
-      { url: "/images/favicon-32.png", type: "image/png", sizes: "32x32" },
-      { url: "/images/favicon-16.png", type: "image/png", sizes: "16x16" },
+      { url: "/images/favicon.svg", type: "image/svg+xml" },
     ],
     apple: "/images/apple-touch-icon.png",
   },
 };
 
 export const viewport = {
-  themeColor: "#152c54",
+  themeColor: "#164B3B",
 };
 
 export default function RootLayout({
@@ -61,9 +61,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${sourceSerif.variable} h-full antialiased`}
+      className={`${inter.variable} ${dmSerif.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-white">{children}</body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

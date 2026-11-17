@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { Clock, Mail, MessageCircle } from "lucide-react";
 
 import { ContactForm } from "@/components/forms/contact-form";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { Eyebrow } from "@/components/ui/section";
 import { contact, whatsappLink } from "@/lib/content/site";
 import { baseOpenGraph } from "@/lib/seo/og";
 
@@ -54,26 +53,12 @@ export default function ContactPage() {
     <>
       <JsonLd data={breadcrumbSchema(trail)} />
 
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-14 sm:py-16">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="max-w-2xl">
-            <Eyebrow className="text-gold-300">Contact</Eyebrow>
-            <h1 className="text-display-lg sm:text-display-xl mt-4 font-semibold text-white">
-              Get in touch
-            </h1>
-            <p className="text-lead text-navy-200 mt-5 text-pretty">
-              A general question, a quick query, or something about an existing
-              case — reach us however suits you. For a full case review, the
-              free consultation is the better starting point.
-            </p>
-          </div>
-        </Container>
-      </section>
+      <PageHero
+        trail={trail}
+        eyebrow="Contact"
+        title="Get in touch"
+        description="A general question, a quick query, or something about an existing case — reach us however suits you. For a full case review, the free consultation is the better starting point."
+      />
 
       <Container width="wide" className="py-16 sm:py-20">
         <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
@@ -118,15 +103,15 @@ export default function ContactPage() {
               </p>
             </div>
 
-            <div className="rounded-card bg-navy-900 flex flex-col gap-3 p-6">
-              <p className="font-display text-base font-semibold text-white">
+            <div className="rounded-card bg-navy-950 flex flex-col gap-3 p-6">
+              <p className="font-display text-lg text-white">
                 Ready for a full case review?
               </p>
               <p className="text-navy-200 text-sm leading-relaxed">
                 The free consultation is built for that — share your background
                 and we&apos;ll assess your options.
               </p>
-              <Button href="/consultation" variant="gold" size="sm" className="mt-1 w-fit">
+              <Button href="/consultation" variant="onDark" size="sm" className="mt-1 w-fit">
                 Book a free consultation
               </Button>
             </div>

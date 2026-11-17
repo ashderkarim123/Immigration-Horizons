@@ -93,7 +93,7 @@ export default function Eb2NiwPage() {
         definition={eb2NiwMeta.definition}
         trail={trail}
         keyFacts={keyFacts}
-        ctaLabel="Get a free EB-2 NIW assessment"
+        secondaryCta={{ label: "What's in the package", href: "#package" }}
       />
 
       <Section space="compact">
@@ -313,7 +313,7 @@ export default function Eb2NiwPage() {
             >
               <Prose
                 paragraphs={[
-                  "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. What we do is prepare petitions: defining the endeavor, mapping evidence to the Dhanasar prongs, drafting every document from scratch, and oorganizing exhibits so an adjudicator can follow the argument.",
+                  "Immigration Horizons is an immigration consulting and paralegal services practice. We are not attorneys and do not provide legal representation or legal advice. What we do is prepare petitions: defining the endeavor, mapping evidence to the Dhanasar prongs, drafting every document from scratch, and organizing exhibits so an adjudicator can follow the argument.",
                   "You can engage us for a full petition package or for a single deliverable. Many clients working with their own attorney use us for one piece of the case, and we regularly act as additional drafting capacity for immigration attorneys and paralegals under deadline.",
                 ]}
               />
@@ -344,18 +344,18 @@ export default function Eb2NiwPage() {
 
           {/* Sidebar */}
           <aside className="order-first lg:order-last">
-            <div className="flex flex-col gap-6 lg:sticky lg:top-28">
+            <div className="flex flex-col gap-6 lg:sticky lg:top-27">
               <TableOfContents items={tableOfContents} />
 
-              <div className="rounded-card bg-navy-900 hidden flex-col gap-3 p-6 lg:flex">
-                <p className="font-display text-base font-semibold text-white">
+              <div className="rounded-card bg-ink-100 hidden flex-col gap-3 p-6 lg:flex">
+                <p className="font-display text-navy-800 text-lg">
                   Free EB-2 NIW assessment
                 </p>
-                <p className="text-navy-200 text-[0.8125rem] leading-relaxed">
+                <p className="text-ink-600 text-[0.8125rem] leading-relaxed">
                   Tell us about your background and we will tell you honestly
                   whether your profile supports an NIW filing today.
                 </p>
-                <Button href="/consultation" variant="gold" size="sm" block>
+                <Button href="/consultation" variant="primary" size="sm" block>
                   Book a consultation
                 </Button>
               </div>
@@ -377,7 +377,7 @@ export default function Eb2NiwPage() {
       <RelatedServices exclude="eb2-niw" />
 
       <Container width="wide" className="pb-4">
-        <p className="text-ink-500 border-ink-200 border-t pt-8 text-xs leading-relaxed">
+        <p className="text-ink-600 border-navy-800/14 border-t pt-8 text-xs leading-relaxed">
           This page is general educational information about the EB-2 National
           Interest Waiver category, not legal advice about any individual case.
           {" "}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, LifeBuoy, Mail, MessageCircle } from "lucide-react";
 
@@ -27,37 +28,32 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <>
-      <section className="bg-navy-900 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(201,153,46,0.14),transparent_60%)]"
-        />
-
-        <Container width="wide" className="relative py-24 sm:py-32">
+      <section className="bg-ink-50 border-navy-800/14 border-b">
+        <Container width="wide" className="py-20 sm:py-28">
           <Reveal className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
-            <Eyebrow className="text-gold-300">Error 404</Eyebrow>
+            <Image
+              src="/images/open-horizons-stacked-full.svg"
+              alt=""
+              width={800}
+              height={720}
+              className="h-auto w-40"
+            />
+            <Eyebrow>Error 404</Eyebrow>
 
-            <p
-              aria-hidden
-              className="font-display text-gold-400/25 text-7xl leading-none font-semibold sm:text-8xl"
-            >
-              404
-            </p>
-
-            <h1 className="text-display-lg sm:text-display-xl font-semibold text-white">
+            <h1 className="text-display-lg sm:text-display-xl">
               We couldn&apos;t find that page
             </h1>
 
-            <p className="text-lead text-navy-200 text-pretty">
+            <p className="text-lead text-ink-600 text-pretty">
               The link may be out of date, or the page may have moved. Your case
               is what matters — here is where to pick things back up.
             </p>
 
             <div className="mt-2 flex flex-wrap justify-center gap-3">
-              <Button href="/" variant="gold" size="lg">
+              <Button href="/" variant="primary" size="lg">
                 Back to home
               </Button>
-              <Button href="/consultation" variant="inverse" size="lg">
+              <Button href="/consultation" variant="outline" size="lg">
                 Book a free consultation
               </Button>
             </div>

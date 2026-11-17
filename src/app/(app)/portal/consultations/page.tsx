@@ -40,7 +40,7 @@ export default async function PortalConsultationsPage() {
           { name: "Consultations", href: "/portal/consultations" },
         ]}
         actions={
-          <Button href="/consultation" variant="gold" size="sm">
+          <Button href="/consultation" variant="primary" size="sm">
             Book consultation
           </Button>
         }
@@ -56,7 +56,7 @@ export default async function PortalConsultationsPage() {
             title="No consultations yet"
             body="Book a free consultation and we will review your background and eligibility."
             action={
-              <Button href="/consultation" variant="gold" size="sm">
+              <Button href="/consultation" variant="primary" size="sm">
                 Book a free consultation
               </Button>
             }

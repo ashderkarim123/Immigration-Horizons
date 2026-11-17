@@ -1,140 +1,57 @@
-import Link from "next/link";
-import { ArrowRight, CheckCircle2, Globe2, ShieldCheck } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/ui/section";
-import { Reveal } from "@/components/ui/reveal";
-import { contact, whatsappLink } from "@/lib/content/site";
+import { hero } from "@/lib/content/home";
 
 import { HeroVisual } from "./hero-visual";
 
 /**
- * Contextual link inside the hero lead. In-body links with descriptive
- * anchor text are the ones that carry weight — these put an exact-match
- * anchor to every case-category page above the fold, where the categories
- * were previously named as plain text.
- *
- * Underline-only styling so a sentence with seven links still reads as a
- * sentence rather than a link list.
+ * Ivory split hero. Two CTAs only: WhatsApp is the floating button, because
+ * a third button wraps badly at 360px. The explicit {" "} between the H1
+ * lines matters: without it the two lines concatenate to
+ * "petitions,prepared" for a screen reader and for a crawler.
  */
-function HeroLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className="decoration-gold-400/45 hover:decoration-gold-300 rounded-sm underline decoration-1 underline-offset-4 transition-colors duration-200 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400"
-    >
-      {children}
-    </Link>
-  );
-}
-
 export function Hero() {
   return (
-    <section data-cta-placement="hero" className="bg-navy-950 relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.16),transparent_55%)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:72px_72px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]"
-      />
-      <div
-        aria-hidden
-        className="bg-gold-500/10 pointer-events-none absolute -top-48 right-[12%] h-96 w-96 rounded-full blur-3xl"
-      />
+    <section data-cta-placement="hero" className="bg-ink-50 overflow-hidden">
+      <Container width="wide" className="py-14 sm:py-20 lg:py-22">
+        <div className="grid min-w-0 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          <div className="flex min-w-0 flex-col gap-6">
+            <Eyebrow>{hero.eyebrow}</Eyebrow>
 
-      <Container
-        width="wide"
-        className="relative px-6 py-16 sm:px-10 sm:py-20 lg:px-12 lg:py-24"
-      >
-        <div className="grid min-w-0 items-center gap-14 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
-          <Reveal className="flex min-w-0 flex-col gap-6">
-            <Eyebrow className="text-gold-200 flex w-fit max-w-full items-center gap-2 rounded-full border border-gold-400/25 bg-gold-400/10 px-3 py-2 text-[0.62rem] tracking-[0.1em] sm:px-4 sm:text-xs sm:tracking-[0.14em]">
-              <Globe2 size={14} aria-hidden />
-              Employment-Based U.S. Immigration
-            </Eyebrow>
-
-            {/* The H1 leads with the categories the page is actually trying to
-                rank for — the title targets EB-2 NIW, and a brand slogan alone
-                left the strongest on-page element carrying no query term. The
-                explicit {" "} matters: without it the two lines concatenate to
-                "petitions,prepared" for a screen reader and for a crawler,
-                because JSX drops whitespace that spans a newline. */}
-            <h1 className="text-[2rem] leading-[1.12] font-semibold text-white sm:text-display-lg lg:text-display-xl">
-              EB-2 NIW and EB-1 petitions,{" "}
-              <span className="text-gold-300 block">prepared with precision.</span>
+            <h1 className="text-display-lg sm:text-display-xl max-w-[14ch]">
+              {hero.headline[0]}{" "}
+              <span className="block">{hero.headline[1]}</span>
             </h1>
 
-            <p className="text-lead text-navy-200 max-w-xl text-pretty">
-              Strategic{" "}
-              <HeroLink href="/services/eb2-niw">EB-2 NIW</HeroLink>,{" "}
-              <HeroLink href="/services/eb1a">EB-1A</HeroLink>,{" "}
-              <HeroLink href="/services/eb1b">EB-1B</HeroLink>,{" "}
-              <HeroLink href="/services/eb1c">EB-1C</HeroLink> and{" "}
-              <HeroLink href="/services/o1-visa">O-1</HeroLink> petition support
-              for professionals and law firms worldwide — from case strategy and
-              original drafting to{" "}
-              <HeroLink href="/services/evidence-packaging">
-                evidence organisation
-              </HeroLink>{" "}
-              and{" "}
-              <HeroLink href="/services/rfe-response">RFE responses</HeroLink>.
+            <p className="text-lead text-ink-600 max-w-xl text-pretty">
+              {hero.subline}
             </p>
 
-            <div className="flex flex-wrap gap-3">
-              <Button href="/consultation" variant="gold" size="lg">
-                Book a free consultation <ArrowRight size={17} aria-hidden />
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Button href={hero.primaryCta.href} variant="primary" size="lg">
+                {hero.primaryCta.label} <ArrowRight size={17} aria-hidden />
               </Button>
-              <Button
-                href={whatsappLink(contact.whatsappPrimary)}
-                variant="inverse"
-                size="lg"
-              >
-                Chat on WhatsApp
+              <Button href={hero.secondaryCta.href} variant="outline" size="lg">
+                {hero.secondaryCta.label}
               </Button>
             </div>
 
-            <ul className="text-navy-200 grid max-w-2xl gap-3 border-t border-white/10 pt-6 text-sm sm:grid-cols-3">
-              <li className="flex items-center gap-2.5">
-                <CheckCircle2 size={17} className="text-gold-400 shrink-0" aria-hidden />
-                Original drafting
-              </li>
-              <li className="flex items-center gap-2.5">
-                <ShieldCheck size={17} className="text-gold-400 shrink-0" aria-hidden />
-                Confidential handling
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Globe2 size={17} className="text-gold-400 shrink-0" aria-hidden />
-                Worldwide service
-              </li>
+            <ul className="text-ink-600 flex flex-wrap gap-x-5 gap-y-2 font-sans text-sm">
+              {hero.checks.map((check) => (
+                <li key={check} className="inline-flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-navy-800 shrink-0" aria-hidden />
+                  {check}
+                </li>
+              ))}
             </ul>
-          </Reveal>
+          </div>
 
-          <Reveal delay={0.14} className="flex justify-center lg:justify-end">
-            <div className="relative min-w-0 w-full max-w-md rounded-[2rem] border border-white/12 bg-white/[0.055] p-6 shadow-[0_40px_90px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-8">
-              <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
-                <div>
-                  <p className="text-gold-300 text-[0.65rem] font-bold tracking-[0.16em] uppercase">
-                    Preparation workspace
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-white">Every detail, connected</p>
-                </div>
-                <span
-                  className="bg-gold-400 h-2.5 w-2.5 rounded-full shadow-[0_0_0_5px_rgba(214,172,70,0.12)]"
-                  aria-hidden
-                />
-              </div>
-              <HeroVisual className="max-w-[15rem] sm:max-w-xs lg:max-w-sm" />
-            </div>
-          </Reveal>
+          <div className="mx-auto w-full max-w-[520px] lg:max-w-none">
+            <HeroVisual alt={hero.artAlt} />
+          </div>
         </div>
       </Container>
     </section>

@@ -46,10 +46,12 @@ These exist because the site's core differentiator is verifiability.
 
 Theme: premium, professional, corporate, government-grade trust — never a cheap template. Design inspiration: Stripe, Vercel, Linear, Apple, OpenAI, Raycast, Notion — a premium SaaS product, not a traditional immigration site.
 
-- **Colors**: Navy = primary, Gold = accent (CTAs/fills/ornament only — see contrast rule below), white/light-gray/black neutrals. Tokens live in `src/app/globals.css` via Tailwind v4 `@theme`.
-- **Gold contrast rule:** `gold-500` is ~2.6:1 on white and fails AA as text. Use it for fills/rules/ornament only. Gold *text* on light must be `gold-700`+; on navy use `gold-300/400`. The gold CTA button is `gold-500` fill + `navy-900` text (passes AA).
-- **Typography**: Source Serif 4 (display/headings) + Inter (UI/body), both variable, self-hosted via `next/font`. Zero external font requests.
-- **Light-only.** Dark mode was deliberately removed — it wrecked the navy/gold trust brand.
+- **Brand: Open Horizons** (approved 2026-11-17; spec in `docs/revamp/design/02-design-system.md`). Forest `#164B3B` = primary, deep forest `#10372B` = dark sections and footer, terracotta `#C9774F` = accent, ivory `#F6F2E9` = page background, sage `#E1E8E1` = alternating sections, warm ink `#20352E` = body text. Tokens live in `src/app/globals.css` via Tailwind v4 `@theme`. **The ramp names are unchanged on purpose:** `navy-*` is the forest ramp, `gold-*` is the terracotta ramp, `ink-*` is the warm ink ramp — renaming is a separate mechanical pass, not something to do inside a feature.
+- **Terracotta contrast rule:** `gold-500` (terracotta) is 3.0:1 on ivory and fails AA as text. Use it for numerals at 2rem+, stars, rules and ornament only. It is **never a button fill that carries text** (white on terracotta is 3.4:1). Warm *text* on light surfaces must be `gold-700` (clay); labels on deep forest use `gold-200` (terracotta-light). Primary buttons are forest/white on light and white/forest (`onDark`) on deep forest.
+- **Surfaces rotate** ivory → white → sage → deep forest; no two adjacent sections share one.
+- **Typography**: DM Serif Display 400 (display/headings; one weight, no italic, so never bold or italicize display text) + Inter variable (UI/body), both via `next/font`. Zero external font requests. `font-synthesis: none` is set so a `font-semibold` heading cannot get a faux bold.
+- **Logo**: the SVG masters in `public/images/open-horizons-*.svg`, byte-identical to `docs/revamp/design/assets/logos/`. Never a raster logo, never the old navy mark.
+- **Light-only.** Dark mode was deliberately removed — it wrecks a trust brand built on one palette.
 - Icons: pick one family (Lucide/Heroicons/Tabler) and stay consistent.
 - UI: clean layouts, generous white space, premium cards, large hero sections, consistent border radius, soft shadows, smooth transitions. Never cluttered.
 

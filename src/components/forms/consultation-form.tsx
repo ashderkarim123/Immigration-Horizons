@@ -26,7 +26,7 @@ function SubmitButton() {
   return (
     <Button
       type="submit"
-      variant="gold"
+      variant="primary"
       size="lg"
       disabled={pending}
       className="w-full sm:w-auto"

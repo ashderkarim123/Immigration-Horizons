@@ -121,7 +121,7 @@ export default function StyleguidePage() {
             Every component on this page is the real one used in production.
           </p>
           <div className="mt-2 flex flex-wrap gap-3">
-            <Button variant="gold" size="lg" href="#components">
+            <Button variant="primary" size="lg" href="#components">
               View components
             </Button>
             <Button variant="inverse" size="lg" href="#colour">
@@ -235,7 +235,7 @@ export default function StyleguidePage() {
         <div className="mt-12 flex flex-col gap-8">
           <div className="flex flex-wrap items-center gap-4">
             <Button variant="primary">Primary</Button>
-            <Button variant="gold">Book a consultation</Button>
+            <Button variant="primary">Book a consultation</Button>
             <Button variant="outline">Outline</Button>
             <Button variant="ghost">Ghost</Button>
             <Button variant="primary" disabled>
@@ -248,7 +248,7 @@ export default function StyleguidePage() {
             <Button size="lg">Large</Button>
           </div>
           <div className="bg-navy-900 rounded-panel flex flex-wrap items-center gap-4 p-8">
-            <Button variant="gold">Gold on navy</Button>
+            <Button variant="primary">Gold on navy</Button>
             <Button variant="inverse">Inverse on navy</Button>
           </div>
         </div>

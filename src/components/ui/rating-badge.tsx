@@ -1,20 +1,32 @@
 import { ExternalLink, Star } from "lucide-react";
 
 import type { PlatformRating } from "@/lib/content/site";
+import { cn } from "@/lib/utils";
+
+const checkedLabel = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 
 /**
- * Aggregate marketplace rating, linked to the profile it was read from.
- * Renders nothing until the owner supplies a figure, and never rounds a
- * 4.8 up to "5-star": the number shown must match what the visitor sees.
+ * Aggregate marketplace rating, linked to the profile it was read from and
+ * dated, so a stale figure is visible rather than silently wrong. Renders
+ * nothing until the owner supplies a figure, and prints the real score: a
+ * 4.8 is never rounded up to "5-star".
  */
 export function RatingBadge({
   platform,
   rating,
   tone = "light",
+  className,
 }: {
   platform: string;
   rating: PlatformRating;
   tone?: "light" | "dark";
+  className?: string;
 }) {
   if (rating.score === null || rating.count === null) return null;
 
@@ -25,18 +37,29 @@ export function RatingBadge({
       href={rating.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={
-        dark
-          ? "inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 font-sans text-sm text-white hover:bg-white/10"
-          : "border-ink-200 text-navy-800 hover:border-navy-200 inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 font-sans text-sm"
-      }
+      className={cn(
+        "inline-flex flex-wrap items-center gap-x-3 gap-y-1 font-sans text-sm",
+        dark ? "text-ink-50" : "text-ink-700",
+        className,
+      )}
     >
-      <Star size={15} className="fill-gold-500 text-gold-500" aria-hidden />
-      <span className="font-semibold">{rating.score.toFixed(1)} / 5</span>
-      <span className={dark ? "text-navy-200" : "text-ink-500"}>
-        {rating.count} reviews on {platform}
+      <span className="text-gold-500 inline-flex gap-0.5" aria-hidden>
+        {Array.from({ length: 5 }, (_, i) => (
+          <Star key={i} size={18} className="fill-current" />
+        ))}
       </span>
-      <ExternalLink size={13} aria-hidden />
+      <span className={cn("font-display text-2xl leading-none", dark ? "text-white" : "text-navy-800")}>
+        {rating.score.toFixed(1)} / 5
+      </span>
+      <span>
+        from <b className="font-semibold">{rating.count} reviews</b> on {platform}
+        {rating.checkedOn ? (
+          <span className={cn("text-xs", dark ? "text-ink-50/70" : "text-ink-500")}>
+            {" "}· checked {checkedLabel(rating.checkedOn)} · view source
+            <ExternalLink size={12} className="ml-1 inline" aria-hidden />
+          </span>
+        ) : null}
+      </span>
     </a>
   );
 }

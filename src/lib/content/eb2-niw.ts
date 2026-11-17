@@ -113,7 +113,7 @@ export const exceptionalAbilityCriteria: Criterion[] = [
   },
   {
     title: "Recognition for achievements",
-    body: "Recognition for achievements and significant contributions to the industry or field, from peers, government entities, or professional or business oorganizations.",
+    body: "Recognition for achievements and significant contributions to the industry or field, from peers, government entities, or professional or business organizations.",
   },
 ];
 
@@ -264,7 +264,7 @@ export const processStages: Criterion[] = [
   },
   {
     title: "Assemble and index exhibits",
-    body: "Evidence is oorganized and indexed so every claim in the petition letter maps to a numbered exhibit an adjudicator can locate immediately.",
+    body: "Evidence is organized and indexed so every claim in the petition letter maps to a numbered exhibit an adjudicator can locate immediately.",
   },
   {
     title: "File Form I-140",
@@ -376,7 +376,7 @@ export const eb2NiwFaqs: Faq[] = [
   {
     question: "Can Immigration Horizons guarantee my EB-2 NIW will be approved?",
     answer:
-      "No, and you should be cautious of anyone who says otherwise. USCIS adjudicates every petition on its own record and no preparer controls that outcome. What we control is the quality of the argument, the strength and oorganization of the evidence, and the internal consistency of the filing. Our completed-case history and client reviews are public so you can assess the work itself.",
+      "No, and you should be cautious of anyone who says otherwise. USCIS adjudicates every petition on its own record and no preparer controls that outcome. What we control is the quality of the argument, the strength and organization of the evidence, and the internal consistency of the filing. Our completed-case history and client reviews are public so you can assess the work itself.",
   },
 ];
 

@@ -109,7 +109,7 @@ export function NotificationPreferencesForm({
       </p>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" variant="gold" size="sm" disabled={pending}>
+        <Button type="submit" variant="primary" size="sm" disabled={pending}>
           {pending ? "Saving…" : "Save preferences"}
         </Button>
         {saved ? <span className="text-ink-500 text-xs">Saved.</span> : null}

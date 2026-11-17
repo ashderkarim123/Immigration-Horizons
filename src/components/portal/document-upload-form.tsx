@@ -114,7 +114,7 @@ export function DocumentUploadForm({
       />
       <p className="mt-2 text-xs text-ink-500" role="status">{file ? `${file.name} · ${(file.size / 1024 / 1024).toFixed(1)} MB` : `PDF, Word, Excel, or image. Maximum ${Math.ceil(maxFileBytes / 1024 / 1024)} MB.`}</p>
       </div>
-      <Button type="submit" variant="gold" size="sm" disabled={pending}>
+      <Button type="submit" variant="primary" size="sm" disabled={pending}>
         {pending ? "Uploading…" : label}
       </Button>
     </form>

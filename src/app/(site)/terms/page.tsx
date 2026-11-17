@@ -7,7 +7,7 @@ import { legalUpdated, termsContent } from "@/lib/content/legal";
 export const metadata: Metadata = {
   title: "Terms of Use",
   description:
-    "The terms governing use of the Immigration Horizons website, including our scope as an immigration consulting and paralegal services practice — not a law firm.",
+    "Terms of use for the Immigration Horizons website, including our scope as an immigration consulting and paralegal services practice, not a law firm.",
   alternates: { canonical: "/terms" },
   robots: { index: true, follow: true },
 };

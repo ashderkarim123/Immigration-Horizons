@@ -33,7 +33,7 @@ export function RelatedServices({
   if (!related.length) return null;
 
   return (
-    <Section tone="tint">
+    <Section tone="ivory">
       <SectionHeading eyebrow="Keep exploring" title={heading} description={description} />
 
       <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -47,7 +47,7 @@ export function RelatedServices({
             <CardBody className="text-sm">
               {isCaseCategory(service) ? service.tagline : service.description}
             </CardBody>
-            <span className="text-navy-700 group-hover:text-navy-900 mt-auto inline-flex items-center gap-1.5 pt-2 font-sans text-sm font-semibold">
+            <span className="text-navy-800 mt-auto inline-flex items-center gap-1.5 pt-2 font-sans text-sm font-semibold">
               Learn more
               <ArrowRight
                 size={15}

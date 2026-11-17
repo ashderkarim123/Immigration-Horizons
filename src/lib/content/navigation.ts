@@ -44,7 +44,7 @@ export const primaryNav: NavItem[] = [
   },
   { label: "About", href: "/about" },
   { label: "Resources", href: "/resources" },
-  { label: "Blog", href: "/blog" },
+  { label: "Reviews", href: "/reviews" },
   { label: "Contact", href: "/contact" },
 ];
 

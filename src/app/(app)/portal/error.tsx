@@ -39,7 +39,7 @@ export default function PortalError({
         been affected. Trying again usually resolves it.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Button type="button" onClick={reset} variant="gold" size="sm">
+        <Button type="button" onClick={reset} variant="primary" size="sm">
           Try again
         </Button>
         <Button href="/portal" variant="outline" size="sm">

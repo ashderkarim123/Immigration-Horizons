@@ -23,7 +23,7 @@ export type IconName =
 
 export const differentiators: Differentiator[] = [
   {
-    title: "Transparent, personalised case strategy",
+    title: "Transparent, personalized case strategy",
     body: "Every case strategy is built around your specific credentials and goals, not a generic template.",
     icon: "target",
   },
@@ -72,7 +72,7 @@ export type ProcessStep = {
 /**
  * Deliberately describes *what happens* at each stage, never how long it
  * takes. USCIS processing times change continuously and are case- and
- * service-centre-specific; publishing figures here would go stale and could
+ * service-center-specific; publishing figures here would go stale and could
  * mislead someone making a filing decision. Timing questions are answered at
  * consultation against the official USCIS processing-times tool.
  */
@@ -103,7 +103,7 @@ export const processSteps: ProcessStep[] = [
   },
   {
     title: "Final petition & exhibit packaging",
-    body: "Your supporting evidence is organised and indexed into a clean exhibit set an adjudicator can follow without hunting for the document a claim refers to.",
+    body: "Your supporting evidence is organized and indexed into a clean exhibit set an adjudicator can follow without hunting for the document a claim refers to.",
   },
   {
     title: "Submission preparation",

@@ -1,9 +1,8 @@
-import { List } from "lucide-react";
-
 /**
  * In-page navigation for long-form pages. Plain anchor links — no scroll
  * spying, no client JS. `scroll-padding-top` in globals.css keeps the sticky
- * header from covering the target heading.
+ * header from covering the target heading. A sage-deep rail on the left;
+ * ≤lg it becomes a wrapping inline list under the hero.
  */
 export function TableOfContents({
   items,
@@ -11,27 +10,16 @@ export function TableOfContents({
   items: { id: string; label: string }[];
 }) {
   return (
-    <nav
-      aria-label="On this page"
-      className="rounded-panel border-ink-200 relative overflow-hidden border bg-white p-6 shadow-subtle lg:sticky lg:top-36"
-    >
-      <span aria-hidden className="bg-gold-500 absolute top-0 left-6 h-1 w-10 rounded-b-full" />
-      <p className="text-navy-800 mb-4 inline-flex items-center gap-2 font-sans text-xs font-bold tracking-[0.14em] uppercase">
-        <List size={14} aria-hidden />
+    <nav aria-label="On this page">
+      <p className="text-ink-500 mb-3 font-sans text-xs font-bold tracking-[0.14em] uppercase">
         On this page
       </p>
-      <ol className="flex flex-col gap-2.5">
-        {items.map((item, index) => (
-          <li key={item.id} className="group flex gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-navy-50">
-            <span
-              aria-hidden
-              className="text-gold-600 font-sans text-xs font-semibold tabular-nums"
-            >
-              {String(index + 1).padStart(2, "0")}
-            </span>
+      <ol className="border-ink-200 flex flex-wrap gap-x-5 gap-y-1 lg:flex-col lg:gap-0 lg:border-l-2">
+        {items.map((item) => (
+          <li key={item.id}>
             <a
               href={`#${item.id}`}
-              className="text-ink-600 group-hover:text-navy-800 font-sans text-sm font-medium transition-colors duration-200"
+              className="text-ink-600 hover:text-navy-800 hover:border-gold-500 -ml-0.5 block border-l-2 border-transparent py-1.5 font-sans text-sm font-medium transition-colors duration-200 lg:pl-4"
             >
               {item.label}
             </a>

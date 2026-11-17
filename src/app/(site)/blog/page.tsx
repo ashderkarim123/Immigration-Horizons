@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 /* eslint-disable @next/next/no-img-element -- CMS images use runtime external URLs. */
 
 import { CtaBanner } from "@/components/sections/cta-banner";
-import { Breadcrumbs } from "@/components/service/breadcrumbs";
+import { PageHero } from "@/components/layout/page-hero";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/json-ld";
 import { Badge, Card, CardBody, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { getPublishedBlogPosts } from "@/lib/blogs";
 import { baseOpenGraph } from "@/lib/seo/og";
@@ -46,37 +45,21 @@ export default async function BlogPage() {
     <>
       <JsonLd data={breadcrumbSchema(trail)} />
 
-      <section className="bg-navy-950 relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(201,153,46,0.15),transparent_58%)]"
-        />
-        <Container width="wide" className="relative py-16 sm:py-24">
-          <Breadcrumbs trail={trail} tone="dark" className="mb-8" />
-          <div className="max-w-3xl">
-            <span className="bg-gold-500/15 text-gold-300 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-sans text-xs font-semibold">
-              <BookOpen size={14} aria-hidden />
-              Immigration insights
-            </span>
-            <h1 className="text-display-lg sm:text-display-xl mt-5 font-semibold text-white">
-              The Immigration Horizons blog
-            </h1>
-            <p className="text-lead text-navy-200 mt-5 text-pretty">
-              Practical, profession-specific articles on employment-based US
-              immigration, including eligibility, evidence strategy, and common
-              petition mistakes.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button href="#articles" variant="gold" size="lg">
-                Read the latest articles
-              </Button>
-              <Button href="/consultation" variant="inverse" size="lg">
-                Book a free consultation
-              </Button>
-            </div>
-          </div>
-        </Container>
-      </section>
+      <PageHero
+        trail={trail}
+        eyebrow="Immigration insights"
+        title="The Immigration Horizons blog"
+        description="Practical, profession-specific articles on employment-based US immigration, including eligibility, evidence strategy, and common petition mistakes."
+      >
+        <div className="flex flex-wrap gap-3">
+          <Button href="#articles" variant="primary" size="lg">
+            Read the latest articles
+          </Button>
+          <Button href="/consultation" variant="outline" size="lg">
+            Book a free consultation
+          </Button>
+        </div>
+      </PageHero>
 
       <Section id="articles">
         <SectionHeading

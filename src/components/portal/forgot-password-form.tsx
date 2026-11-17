@@ -52,7 +52,7 @@ export function ForgotPasswordForm() {
 
       <Button
         type="submit"
-        variant="gold"
+        variant="primary"
         size="lg"
         disabled={pending}
         className="w-full"

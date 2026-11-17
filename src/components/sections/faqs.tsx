@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Reveal } from "@/components/ui/reveal";
 import { Section, SectionHeading } from "@/components/ui/section";
 import type { Faq } from "@/lib/content/faqs";
 
@@ -21,7 +19,8 @@ const onwardLinks = [
 /**
  * Native <details>/<summary> accordion — keyboard accessible, screen-reader
  * correct, findable by in-page search, and works with JavaScript disabled.
- * No client component and no JS payload.
+ * The first item is open. Visible answer text must equal the FAQPage schema
+ * string, so the answer is rendered verbatim with no reflow.
  */
 export function Faqs({
   faqs,
@@ -35,79 +34,61 @@ export function Faqs({
   eyebrow?: string;
   title?: string;
   description?: string;
-  /** Set to "white" when the preceding section is already tinted. */
+  /** Set to "white" when the preceding section is already sage. */
   tone?: "tint" | "white";
   id?: string;
 }) {
   return (
-    <Section id={id} tone={tone} className={id ? "scroll-mt-28" : undefined}>
-      <SectionHeading eyebrow={eyebrow} title={title} description={description} />
-
-      <div className="mx-auto mt-14 max-w-3xl">
-        <Reveal>
-          <dl className="flex flex-col gap-3">
-            {faqs.map((faq) => (
-              <div
-                key={faq.question}
-                className="rounded-card border-ink-200 overflow-hidden border bg-white"
-              >
-                <details className="group">
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
-                    <dt className="font-display text-navy-800 text-lg font-semibold text-pretty">
-                      {faq.question}
-                    </dt>
-                    <Plus
-                      size={20}
-                      aria-hidden
-                      className="text-navy-500 mt-0.5 shrink-0 transition-transform duration-200 ease-(--ease-out-soft) group-open:rotate-45"
-                    />
-                  </summary>
-                  <dd className="text-ink-600 px-6 pb-6 text-[0.9375rem] leading-relaxed text-pretty">
-                    {faq.answer}
-                  </dd>
-                </details>
-              </div>
-            ))}
-          </dl>
-        </Reveal>
-
-        <div className="mt-10 text-center">
-          <p className="text-ink-600 mb-5 text-[0.9375rem]">
-            Still have a question about your own case?
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button href="/consultation" variant="primary">
-              Talk to an immigration specialist
-            </Button>
-            <Button href="/contact" variant="outline">
-              Contact us
-            </Button>
-          </div>
+    <Section id={id} tone={tone}>
+      <div className="grid gap-10 lg:grid-cols-[1fr_1.8fr] lg:gap-16">
+        <div className="flex flex-col items-start gap-6">
+          <SectionHeading align="left" eyebrow={eyebrow} title={title} description={description} />
+          <Button href="/faqs" variant="outline">
+            All FAQs
+          </Button>
         </div>
 
-        {/* Onward links. Each passes authority to a page that would otherwise
-            only be reachable from the header and footer. */}
-        <nav
-          aria-label="Continue exploring"
-          className="border-ink-200 mt-12 border-t pt-8"
-        >
-          <p className="text-ink-500 mb-4 text-center font-sans text-xs font-bold tracking-[0.14em] uppercase">
-            Continue exploring
-          </p>
-          <ul className="flex flex-wrap justify-center gap-x-6 gap-y-3">
-            {onwardLinks.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="text-navy-800 hover:text-gold-700 font-sans text-sm font-semibold underline-offset-4 transition-colors duration-200 hover:underline"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <dl className="border-navy-800/14 border-t">
+          {faqs.map((faq, index) => (
+            <details
+              key={faq.question}
+              open={index === 0}
+              className="group border-navy-800/14 border-b"
+            >
+              <summary className="text-navy-800 flex cursor-pointer list-none items-center justify-between gap-6 py-5 font-sans text-[1.0625rem] leading-snug font-semibold [&::-webkit-details-marker]:hidden">
+                <dt>{faq.question}</dt>
+                <span aria-hidden className="font-display text-gold-500 shrink-0 text-2xl leading-none">
+                  <span className="group-open:hidden">+</span>
+                  <span className="hidden group-open:inline">–</span>
+                </span>
+              </summary>
+              <dd className="text-ink-600 max-w-[66ch] pb-6 text-[0.9375rem] leading-relaxed">
+                {faq.answer}
+              </dd>
+            </details>
+          ))}
+        </dl>
       </div>
+
+      {/* Onward links. Each passes authority to a page that would otherwise
+          only be reachable from the header and footer. */}
+      <nav
+        aria-label="Continue exploring"
+        className="border-navy-800/14 mt-14 border-t pt-8"
+      >
+        <ul className="flex flex-wrap justify-center gap-x-6 gap-y-3">
+          {onwardLinks.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                className="text-navy-800 hover:text-gold-700 font-sans text-sm font-semibold underline-offset-4 transition-colors duration-200 hover:underline"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </Section>
   );
 }

@@ -66,7 +66,7 @@ Run lint, tsc, build, npm test and (cd server && npm test). Show me the diff sum
 
 ## Design Gate D0 — design direction (between Phase 1 and any UI phase)
 
-Status (2026-11-16): delivered on `revamp/d0-design-gate`, **awaiting owner approval**. See `design/README.md`
+Status (2026-11-17): **approved by the owner**; implemented in Phase 3. Originally delivered 2026-11-16 on `revamp/d0-design-gate`. See `design/README.md`
 (competitor analysis, brand audit, design system, rendered homepage and service-page prototypes, page-family specs,
 journey map, implementation mapping, verification report). Phase 3 and every later phase that touches shared UI
 must not start until the owner approves the direction and `CLAUDE.md` is updated to Open Horizons.
@@ -104,13 +104,17 @@ Then run the checks in docs/revamp/05-seo-technical.md section 8 on the producti
 
 Spec: `03-homepage-and-components.md`.
 
-- [ ] Create `src/lib/content/home.ts`; move hero copy out of `hero.tsx`.
-- [ ] Build `CoreServices`, `PackageIncludes`, `AudienceRouter`, `FounderCredibility`, `OtherVisasRow`, `RatingBadge`.
-- [ ] Reorder `src/app/(site)/page.tsx`; re-check alternating backgrounds.
-- [ ] Update homepage `metadata` (title stays `EB-2 NIW & EB-1 Petition Preparation | Immigration Horizons` or the
+- [x] Create `src/lib/content/home.ts`; move hero copy out of `hero.tsx`.
+- [x] Build `CoreServices`, `PackageIncludes`, `AudienceRouter`, `OtherVisasRow`, `RatingBadge`.
+      `FounderCredibility` **dropped by the owner** (2026-11-17): verifiable client outcomes take its slot.
+- [x] Reorder `src/app/(site)/page.tsx`; re-check alternating backgrounds.
+- [x] Update homepage `metadata` (title stays `EB-2 NIW & EB-1 Petition Preparation | Immigration Horizons` or the
       existing equivalent ≤ 60 chars; description mentions RFE/NOID).
-- [ ] `homepageFaqs`: NIW, EB-1, RFE/NOID first.
-- [ ] `/services` index: three tiered sections.
+- [x] `homepageFaqs`: NIW, EB-1, RFE/NOID first.
+- [x] `/services` index: three tiered sections.
+- [x] Open Horizons tokens, fonts, assets and shared chrome applied to every public page (owner request).
+
+Delivered 2026-11-17 on `revamp/3-homepage`; Lighthouse still to be measured. See `phase-3-report.md`.
 
 Acceptance: zero new client JS on `/`; no horizontal scroll at the four widths; one H1; Lighthouse mobile ≥ 95 performance.
 

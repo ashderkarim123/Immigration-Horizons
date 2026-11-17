@@ -1,5 +1,16 @@
 # Implementation Status — Immigration Horizons Client Portal
 
+## Public website revamp — Phase 3, 2026-11-17
+
+Design Gate D0 approved by the owner. Open Horizons applied to every public page on `revamp/3-homepage`: forest /
+terracotta / warm-ink tokens under the existing ramp names, DM Serif Display + Inter, approved SVG logos and icons,
+rebuilt header, footer, heroes and primitives, and the homepage rebuilt from `src/lib/content/home.ts` with core
+services, package, audience, outcomes and reviews sections (no founder section, per the owner). `CLAUDE.md` brand
+section updated. Also fixed 62 "oorganiz-" typos introduced by the Phase 2 spelling pass and five over-length meta
+descriptions. Lint, types, build and 498 root tests pass; all 22 sitemap URLs pass the rendered-HTML scan; no
+horizontal scroll at four widths; homepage JS below baseline. Lighthouse not yet run. See
+[the Phase 3 report](../revamp/phase-3-report.md). No merge or deployment.
+
 ## Public website revamp — Phase 4, 2026-11-17
 
 Reviews layer delivered on `revamp/4-reviews`: `Testimonial` type extended (`serviceSlug`, `featured`, typed

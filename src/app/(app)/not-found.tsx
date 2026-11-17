@@ -27,7 +27,7 @@ export default function AppNotFound() {
         shared with you.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Button href="/portal" variant="gold" size="sm">
+        <Button href="/portal" variant="primary" size="sm">
           Back to your dashboard
         </Button>
         <Link

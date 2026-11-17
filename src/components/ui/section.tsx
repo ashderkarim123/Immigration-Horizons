@@ -2,21 +2,27 @@ import { cn } from "@/lib/utils";
 
 import { Container } from "./container";
 
+/**
+ * Surfaces rotate ivory → white → sage → deep forest; no two adjacent
+ * sections share one. `ivory` is the page background, so it is also what a
+ * bare `<section>` gets.
+ */
 const tones = {
+  ivory: "bg-ink-50",
   white: "bg-white",
   /** Quiet alternating band — keeps long pages from flattening out. */
-  tint: "bg-ink-50",
+  tint: "bg-ink-100",
   /** Cool brand wash. */
   navyTint: "bg-navy-50",
-  /** Full navy. Sets light-on-dark defaults for descendants. */
-  navy: "bg-navy-900 text-navy-100 [&_h2]:text-white [&_h3]:text-white",
+  /** Deep forest. Sets light-on-dark defaults for descendants. */
+  navy: "bg-navy-950 text-ink-50/82 [&_h2]:text-white [&_h3]:text-white",
 } as const;
 
 const spacing = {
   compact: "py-16 sm:py-20",
-  default: "py-20 sm:py-28",
+  default: "py-16 sm:py-24",
   /** Generous whitespace for hero-adjacent and closing sections. */
-  spacious: "py-24 sm:py-36",
+  spacious: "py-20 sm:py-30",
 } as const;
 
 export function Section({
@@ -88,9 +94,7 @@ export function SectionHeading({
       )}
     >
       {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      <Heading className="text-display-md sm:text-display-lg font-semibold">
-        {title}
-      </Heading>
+      <Heading className="text-display-md">{title}</Heading>
       {description ? (
         <p className="text-lead text-ink-600 text-pretty">{description}</p>
       ) : null}

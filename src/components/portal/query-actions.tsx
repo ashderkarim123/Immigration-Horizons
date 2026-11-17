@@ -75,7 +75,7 @@ export function ResolutionActions({ interactionId }: { interactionId: string }) 
       <div className="flex flex-wrap gap-3">
         <Button
           type="button"
-          variant="gold"
+          variant="primary"
           size="sm"
           disabled={pending !== null}
           onClick={() => respond(true)}

@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 
-import { CaseCategories } from "@/components/sections/case-categories";
+import { AudienceRouter } from "@/components/sections/audience-router";
 import { CaseOutcomes } from "@/components/sections/case-outcomes";
+import { CoreServices } from "@/components/sections/core-services";
 import { CtaBanner } from "@/components/sections/cta-banner";
 import { Differentiators } from "@/components/sections/differentiators";
 import { Faqs } from "@/components/sections/faqs";
 import { Hero } from "@/components/sections/hero";
-import { Mission } from "@/components/sections/mission";
+import { OtherVisasRow } from "@/components/sections/other-visas-row";
+import { PackageIncludes } from "@/components/sections/package-includes";
 import { Process } from "@/components/sections/process";
-import { SupportServices } from "@/components/sections/support-services";
 import { Testimonials } from "@/components/sections/testimonials";
 import { TrustBar } from "@/components/sections/trust-bar";
 import { WhatIsNiw } from "@/components/sections/what-is-niw";
-import { WhoCanApply } from "@/components/sections/who-can-apply";
 import {
   JsonLd,
   faqSchema,
@@ -27,27 +27,24 @@ export const metadata: Metadata = {
     absolute: "EB-2 NIW Petition Preparation | Immigration Horizons",
   },
   description:
-    "EB-2 NIW petition preparation, USCIS RFE support, and employment-based US immigration consulting for professionals building stronger petitions.",
+    "EB-2 NIW and EB-1 petition preparation, RFE and NOID responses, recommendation letters and business plans. We prepare the package; you file it.",
   alternates: { canonical: "/" },
   openGraph: {
     ...baseOpenGraph,
     title: "EB-2 NIW Petition Preparation | Immigration Horizons",
     description:
-      "EB-2 NIW petition preparation, USCIS RFE support, and employment-based US immigration consulting.",
+      "EB-2 NIW and EB-1 petition preparation, RFE and NOID responses, recommendation letters and business plans.",
     url: "/",
   },
   // twitter:* falls back to the openGraph values above.
 };
 
 /**
- * Section order follows the journey in the content strategy: landing →
- * who we are → what we do → why us → education → who qualifies → process →
- * proof → questions → conversion. Background tones alternate so no two
- * adjacent sections read as a single block.
- *
- * Not yet present: the "Latest Articles" section. It depends on the blog
- * data layer, which is ported in Phase 6 — stubbing it now would mean
- * shipping fake posts.
+ * Section order follows docs/revamp/03-homepage-and-components.md §2, with
+ * verifiable client outcomes in the slot the founder section would take
+ * (owner decision, 2026-11-17). Surfaces rotate so no two adjacent sections
+ * share one: ivory → sage → white → forest → ivory → white → sage → ivory →
+ * white → sage → ivory → white → forest.
  */
 export default function HomePage() {
   return (
@@ -56,21 +53,18 @@ export default function HomePage() {
         data={[organizationSchema, websiteSchema, faqSchema(homepageFaqs)]}
       />
 
-      {/* Tones run navy → white → tint → white → tint → white → navy → tint →
-          navy → white → tint → white, so no two adjacent sections share a
-          background and the page never reads as one slab. */}
       <Hero />
       <TrustBar />
-      <Mission />
-      <CaseCategories />
-      <SupportServices />
+      <CoreServices />
+      <PackageIncludes />
+      <AudienceRouter />
       <WhatIsNiw />
-      <WhoCanApply />
+      <CaseOutcomes />
       <Process />
       <Differentiators />
-      <CaseOutcomes />
       <Testimonials />
-      <Faqs faqs={homepageFaqs} />
+      <OtherVisasRow />
+      <Faqs faqs={homepageFaqs} tone="white" />
       <CtaBanner />
     </>
   );
