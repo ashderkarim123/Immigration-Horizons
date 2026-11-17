@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { CtaBanner } from "@/components/sections/cta-banner";
 import { Faqs } from "@/components/sections/faqs";
-import { TestimonialCard } from "@/components/sections/testimonials";
+import { ServiceReviews } from "@/components/sections/service-reviews";
 import { InlineCta } from "@/components/service/inline-cta";
 import { OfficialSources } from "@/components/service/official-sources";
 import {
@@ -47,9 +47,7 @@ import {
 } from "@/lib/content/eb2-niw";
 import { findCaseCategory } from "@/lib/content/services";
 import { site } from "@/lib/content/site";
-import { testimonials } from "@/lib/content/testimonials";
 
-const niwReviews = testimonials.filter((t) => t.service === "EB-2 NIW").slice(0, 5);
 
 export const metadata: Metadata = {
   title: { absolute: eb2NiwMeta.metaTitle },
@@ -308,25 +306,6 @@ export default function Eb2NiwPage() {
               </div>
             </ContentSection>
 
-            {niwReviews.length > 0 ? (
-              <ContentSection
-                id="reviews"
-                eyebrow="Client reviews"
-                heading="EB-2 NIW client reviews"
-              >
-                <Prose
-                  paragraphs={[
-                    "Every review links to our public profile so you can confirm it yourself. We do not publish testimonials that cannot be checked.",
-                  ]}
-                />
-                <div className="mt-8 grid gap-5 sm:grid-cols-2">
-                  {niwReviews.map((testimonial) => (
-                    <TestimonialCard key={testimonial.id} testimonial={testimonial} />
-                  ))}
-                </div>
-              </ContentSection>
-            ) : null}
-
             <ContentSection
               id="how-we-help"
               eyebrow="Working with us"
@@ -384,6 +363,8 @@ export default function Eb2NiwPage() {
           </aside>
         </div>
       </Section>
+
+      <ServiceReviews slug="eb2-niw" name="EB-2 NIW" />
 
       <Faqs
         id="faqs"

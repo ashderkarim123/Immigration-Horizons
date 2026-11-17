@@ -1,5 +1,13 @@
 # Implementation Status — Immigration Horizons Client Portal
 
+## Public website revamp — Phase 4, 2026-11-17
+
+Reviews layer delivered on `revamp/4-reviews`: `Testimonial` type extended (`serviceSlug`, `featured`, typed
+`source`), `testimonialsFor` and filter helpers, dated `ratings` in `site.ts`, `RatingBadge`, `/reviews` rebuilt with
+server-side `?service=` filtering and a fixed canonical, `ServiceReviews` slot on every service page, guard test.
+The 44-review Fiverr/Upwork import is blocked: the platforms block automated clients and no export exists under
+`docs/revamp/data/`. See [the Phase 4 report](../revamp/phase-4-report.md). No merge or deployment.
+
 ## Public website revamp — Phase 2, 2026-11-16
 
 Core content delivered on `revamp/2-core-content`: new `/services/noid-response`, `/services/rfe-response` refocused

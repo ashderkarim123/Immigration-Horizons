@@ -129,10 +129,13 @@ Reorder the homepage, keep alternating tones, then compare the / route's first-l
 
 Spec: `04-reviews-and-proof.md`.
 
-- [ ] Extend the `Testimonial` type; add `testimonialsFor`; add `ratings` to `site.ts`.
-- [ ] Import Fiverr (44) and Upwork reviews into `testimonials.ts` verbatim; save raw exports under `docs/revamp/data/`.
-- [ ] Rebuild `/reviews` with `?service=` filtering (server-side, no client JS).
-- [ ] Add review slots to the `[slug]` renderer and the EB-2 NIW page.
+- [x] Extend the `Testimonial` type; add `testimonialsFor`; add `ratings` to `site.ts`.
+- [ ] Import Fiverr (44) and Upwork reviews into `testimonials.ts` verbatim; save raw exports under `docs/revamp/data/`
+      (**blocked**: Fiverr returns 403 to automated clients; owner supplies the export).
+- [x] Rebuild `/reviews` with `?service=` filtering (server-side, no client JS).
+- [x] Add review slots to the `[slug]` renderer and the EB-2 NIW page.
+
+Delivered 2026-11-17 on `revamp/4-reviews` except the import; see `phase-4-report.md`.
 
 Acceptance: every review has a working `verifyUrl`; "5-star rated" appears nowhere; `/reviews?service=eb2-niw` canonicals to `/reviews`.
 

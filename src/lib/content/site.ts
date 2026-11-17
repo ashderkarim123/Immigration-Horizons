@@ -38,6 +38,21 @@ export const social = {
     "https://www.upwork.com/services/product/writing-translation-rfe-response-for-your-eb-2-niw-petition-1848244928306240108",
 } as const;
 
+export type PlatformRating = {
+  /** `null` until the owner supplies the figure; nothing renders for it. */
+  score: number | null;
+  count: number | null;
+  /** ISO date the figure was read from the profile, so a stale number is easy to spot. */
+  checkedOn: string | null;
+  url: string;
+};
+
+/** Show the real score; never round it up to five stars. */
+export const ratings: Record<"Fiverr" | "Upwork", PlatformRating> = {
+  Fiverr: { score: 4.8, count: 44, checkedOn: "2026-11-16", url: social.fiverrProfile },
+  Upwork: { score: null, count: null, checkedOn: null, url: social.upworkProfile },
+};
+
 export const stats = {
   casesHandled: "200+",
   yearsExperience: "5+",

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { CtaBanner } from "@/components/sections/cta-banner";
 import { Faqs } from "@/components/sections/faqs";
+import { ServiceReviews } from "@/components/sections/service-reviews";
 import { InlineCta } from "@/components/service/inline-cta";
 import { OfficialSources } from "@/components/service/official-sources";
 import {
@@ -189,6 +190,8 @@ function ServicePage({ page }: { page: ServicePageContent }) {
           </aside>
         </div>
       </Section>
+
+      <ServiceReviews slug={page.slug} name={page.name} />
 
       <Faqs
         id="faqs"

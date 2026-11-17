@@ -4,7 +4,7 @@ import { Badge, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { Section, SectionHeading } from "@/components/ui/section";
-import { testimonials, type Testimonial } from "@/lib/content/testimonials";
+import { featuredTestimonials, type Testimonial } from "@/lib/content/testimonials";
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -52,7 +52,7 @@ export function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           rel="noopener noreferrer"
           className="text-navy-700 hover:text-navy-900 inline-flex shrink-0 items-center gap-1.5 font-sans text-xs font-semibold"
         >
-          Verify
+          Verify on {testimonial.source}
           <ExternalLink size={12} aria-hidden />
         </a>
       </footer>
@@ -70,7 +70,7 @@ export function Testimonials({ limit = 3 }: { limit?: number }) {
       />
 
       <RevealGroup className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {testimonials.slice(0, limit).map((testimonial) => (
+        {featuredTestimonials.slice(0, limit).map((testimonial) => (
           <RevealItem key={testimonial.id}>
             <TestimonialCard testimonial={testimonial} />
           </RevealItem>
